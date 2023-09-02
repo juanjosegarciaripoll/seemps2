@@ -2,32 +2,45 @@
 
 ## Introduction
 
-SEEMPS is the SElf-Explaining Matrix-Product-State library.
+SEEMPS is the second iteration of the SElf-Explaining Matrix-Product-State
+library.
 
-It is a collection of Jupyter notebooks that literary programming
-Python implementation of Matrix-Product-State algorithms. The
-notebooks combine brief explanations of the algorithms and the details
-of the implementations. We have chosen the most essential algorithms
-in their simplest form, so as to provide a gentle introduction to the
-field.
+The original library, still available [here](https://github.com/juanjosegarciaripoll/seemps)
+was a collection of Jupyter notebooks with a well documented implementation
+of matrix-product state algorithms.
 
-The library is thought out as introduction to the world of Matrix
-Product States and DMRG-inspired algorithms. Its main goal is not
-performance, but rapid prototyping and testing of ideas, providing a
-good playground before dwelling in more advanced (C++, Julia) versions
-of the algorithms.
+The current iteration aims to be more useable and have better and more standard
+documentation, while preserving the same degree of accessibility of the
+algorithms.
+
+## Intended audience
+
+The library is thought out as introduction to the world of Matrix Product States
+and DMRG-inspired algorithms. Its main goal is not performance, but rapid
+prototyping and testing of ideas, providing a good playground before dwelling in
+more advanced (C++, Julia) versions of the algorithms.
+
+This said, the library as it stands has been used in some heavy-duty simulations
+involving tens and hundreds of qubits, and, in particular, its current iteration
+arises from two works on quantum-inspired algorithms for numerical analysis:
+
+- *Quantum-inspired algorithms for multivariate analysis: from interpolation to partial differential equations*,
+  Juan José García-Ripoll, Quantum 5, 431 (2021), https://doi.org/10.22331/q-2021-04-15-431
+
+- *Global optimization of MPS in quantum-inspired numerical analysis*,
+  Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll,
+  https://arxiv.org/abs/2303.09430
 
 ## Requirements
 
-The library is entirely developed in Python 3 using Numpy and Scipy,
-and a standard Jupyter environment. We recommend using Anaconda3 or
-Miniconda3, although any other distribution of Python should suffice.
+The library is developed in a mixture of Python 3 and Cython, with the support
+of Numpy, Scipy and h5py. Installation instructions are provided in
+[the documentation](https://juanjosegarciaripoll.github.io/seemps2)
 
-Version: 0.0
+Version: 1.0
 
 Authors:
 
 * Juan José García Ripoll (Institute of Fundamental Physics)
 * Paula García Molina (Institute of Fundmental Physics)
-* Burçin Danaci (Istanbul Technical University)
 

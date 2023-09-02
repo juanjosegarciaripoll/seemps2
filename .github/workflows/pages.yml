@@ -1,0 +1,25 @@
+name: GitHub pages
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: actions/setup-python@v4
+      - name: Install dependencies
+        run: |
+          pip install cython sphinx sphinx-design pydata-sphinx-theme numpydoc
+          pip install .
+          python setup.py build_ext --inplace
+      - name: Sphinx build
+        run: |
+          cd docs
+          sphinx-build docs _site
+      - name: Fix permissions
+        run: |
+            cmhod -c -R +rX "_site/" | while read line; do
+              echo "::warning title=Invalid file permissions automatically fixed::$line"
+            done
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v2
