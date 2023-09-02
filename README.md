@@ -9,9 +9,9 @@ The original library, still available [here](https://github.com/juanjosegarciari
 was a collection of Jupyter notebooks with a well documented implementation
 of matrix-product state algorithms.
 
-The current iteration aims to be more useable and have better and more standard
-documentation, while preserving the same degree of accessibility of the
-algorithms.
+The [current iteration](https://github.com/juanjosegarciaripoll/seemps2) aims to
+be more useable and have better and more standard documentation, while
+preserving the same degree of accessibility of the algorithms.
 
 ## Intended audience
 
@@ -31,11 +31,11 @@ arises from two works on quantum-inspired algorithms for numerical analysis:
   Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll,
   https://arxiv.org/abs/2303.09430
 
-## Requirements
+## Usage
 
 The library is developed in a mixture of Python 3 and Cython, with the support
 of Numpy, Scipy and h5py. Installation instructions are provided in
-[the documentation](https://juanjosegarciaripoll.github.io/seemps2)
+[the documentation](https://juanjosegarciaripoll.github.io/seemps2).
 
 Version: 1.0
 
