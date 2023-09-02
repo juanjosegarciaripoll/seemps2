@@ -16,7 +16,6 @@ jobs:
           python setup.py build_ext --inplace
       - name: Sphinx build
         run: |
-          cd docs
           sphinx-build docs _site
       - name: Fix permissions
         run: |
