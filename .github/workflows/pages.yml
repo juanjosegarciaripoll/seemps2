@@ -7,6 +7,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
+        with:
+            python-version: 3.10
       - name: Install dependencies
         run: |
           pip install cython sphinx sphinx-design pydata-sphinx-theme numpydoc
@@ -18,8 +20,8 @@ jobs:
           sphinx-build docs _site
       - name: Fix permissions
         run: |
-            cmhod -c -R +rX "_site/" | while read line; do
-              echo "::warning title=Invalid file permissions automatically fixed::$line"
-            done
+          cmhod -c -R +rX "_site/" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v2
