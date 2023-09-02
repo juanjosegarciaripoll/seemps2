@@ -37,6 +37,7 @@ objects into ordinary :class:`seemps.state.MPS` states (see
 
    ~seemps.truncate.simplify
    ~seemps.truncate.combine
+   ~seemps.state.MPSSum.toMPS
 
 .. _mps_tebd:
 
@@ -64,3 +65,19 @@ the bond dimension does not grow too much.
 
    ~seemps.evolution.Trotter2ndOrder
    ~seemps.evolution.Trotter3rdOrder
+
+The following is an example evolving a matrix-product state with 20 qubits
+under a spin-1/2 Heisenberg Hamiltonian::
+
+   >>> import seemps
+   >>> mps = seemps.random_mps(2, 20)
+   >>> H = seemps.hamiltonians.HeisenbergHamiltonian(20)
+   >>> dt = 0.1
+   >>> U = seemps.Trotter2ndOrder(H, dt)
+   >>> strategy = seemps.DEFAULT_STRATEGY.replace(tolerance = 1e-8)
+   >>> t = 0.0
+   >>> for steps in range(0, 50):
+   ...   mps = U.apply_inplace(mps)
+   ...   t += dt
+   >>> mps
+   <seemps.state.canonical_mps.CanonicalMPS object at 0x000002166AFFC1D0>
