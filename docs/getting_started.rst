@@ -4,7 +4,7 @@
 Getting started
 ***************
 
-The SeeMPS project is available from at `GitHub <https://github.com/juanjosegarciaripoll/seemps>`_.
+The SeeMPS project is available from at `GitHub <https://github.com/juanjosegarciaripoll/seemps2>`_.
 You can clone it using git from the command line::
 
   git clone https://github.com/juanjosegarciaripoll/seemps.git
