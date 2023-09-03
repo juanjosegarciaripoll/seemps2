@@ -1,8 +1,9 @@
 import numpy as np
 from ..typing import *
+from ._contractions import _contract_li_ijk_ljk_nk
 
 
-def begin_environment(χ=1) -> Environment:
+def begin_environment(χ: int = 1) -> Environment:
     """Initiate the computation of a left environment from two MPSLike. The bond
     dimension χ defaults to 1. Other values are used for states in canonical
     form that we know how to open and close."""
@@ -16,16 +17,15 @@ def update_left_environment(
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket."""
     if operator is not None:
-        A = np.einsum("ji,aib->ajb", operator, A)
-    if False:
-        rho = np.einsum("li,ijk->ljk", rho, A)
-        return np.einsum("lmn,lmk->nk", B.conj(), rho)
-    else:
-        i, j, k = A.shape
-        l, j, n = B.shape
-        rho = np.dot(rho, A.reshape(i, j * k))
-        rho = np.dot(B.conj().reshape(l * j, n).T, rho.reshape(l * j, k))
-        return rho
+        # A = np.einsum("ji,aib->ajb", operator, A)
+        A = np.matmul(operator, A)
+    # np.einsum("ijk,li,ljk->nk", A, rho, B.conj())
+    i, j, k = A.shape
+    l, j, n = B.shape
+    # np.einsum("li,ijk->ljk")
+    rho = np.matmul(rho, A.reshape(i, j * k))
+    # np.einsum("nlj,ljk->nk")
+    return np.matmul(B.reshape(l * j, n).T.conj(), rho.reshape(l * j, k))
 
 
 def update_right_environment(
@@ -35,16 +35,14 @@ def update_right_environment(
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket."""
     if operator is not None:
-        A = np.einsum("ji,aib->ajb", operator, A)
-    if False:
-        rho = np.einsum("ijk,kn->ijn", A, rho)
-        return np.einsum("ijn,ljn->il", rho, B.conj())
-    else:
-        # np.einsum("ijk,kn,ljn->il", A, rho, B.conj())
-        i, j, k = A.shape
-        l, j, n = B.shape
-        rho = np.dot(A.reshape(i * j, k), rho)
-        return np.dot(rho.reshape(i, j * n), B.reshape(l, j * n).T.conj())
+        # A = np.einsum("ji,aib->ajb", operator, A)
+        A = np.matmul(operator, A)
+    # np.einsum("ijk,kn,ljn->il", A, rho, B.conj())
+    i, j, k = A.shape
+    l, j, n = B.shape
+    # np.einsum("ijk,kn->ijn", A, rho)
+    rho = np.matmul(A.reshape(i * j, k), rho)
+    return np.matmul(rho.reshape(i, j * n), B.reshape(l, j * n).T.conj())
 
 
 def end_environment(ρ: Environment) -> Weight:
@@ -52,10 +50,14 @@ def end_environment(ρ: Environment) -> Weight:
     return ρ[0, 0]
 
 
+# TODO: Separate formats for left- and right- environments so that we
+# can replace this with a simple np.dot(ρL.reshape(-1), ρR.reshape(-1))
+# This involves ρR -> ρR.T with respect to current conventions
 def join_environments(ρL: Environment, ρR: Environment) -> Weight:
     """Join left and right environments to produce a scalar."""
     # np.einsum("ij,ji", ρL, ρR)
-    return np.trace(np.dot(ρL, ρR))
+    # return np.trace(np.dot(ρL, ρR))
+    return np.dot(ρL.reshape(-1), ρR.T.reshape(-1))
 
 
 def scprod(bra: MPSLike, ket: MPSLike) -> Weight:
@@ -76,6 +78,7 @@ def scprod(bra: MPSLike, ket: MPSLike) -> Weight:
     """
     ρ: Environment = begin_environment()
     # TODO: Verify if the order of Ai and Bi matches being bra and ket
+    # Add tests for that
     for Ai, Bi in zip(bra, ket):
         ρ = update_left_environment(Ai, Bi, ρ)
     return end_environment(ρ)
