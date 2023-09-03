@@ -1,6 +1,5 @@
 import numpy as np
 from ..typing import *
-from ._contractions import _contract_li_ijk_ljk_nk
 
 
 def begin_environment(χ: int = 1) -> Environment:
