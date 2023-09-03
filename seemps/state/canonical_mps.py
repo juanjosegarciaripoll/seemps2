@@ -1,5 +1,4 @@
 from __future__ import annotations
-import warnings
 import numpy as np
 from ..typing import *
 from .mps import MPS
@@ -10,41 +9,47 @@ from .. import expectation
 
 
 # TODO: Replace einsum by a more efficient form
-def _update_in_canonical_form(
-    Ψ: list[Tensor3], A: Tensor3, site: int, direction: int, truncation: Strategy
+def _update_in_canonical_form_right(
+    Ψ: list[Tensor3], A: Tensor3, site: int, truncation: Strategy
 ) -> tuple[int, float]:
     """Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process."""
-    if direction > 0:
-        if site + 1 == len(Ψ):
-            Ψ[site] = A
-            err = 0.0
-        else:
-            Ψ[site], sV, err = schmidt.ortho_right(A, truncation)
-            site += 1
-            # np.einsum("ab,bic->aic", sV, Ψ[site])
-            Ψ[site] = _contract_last_and_first(sV, Ψ[site])
-    else:
-        if site == 0:
-            Ψ[site] = A
-            err = 0.0
-        else:
-            Ψ[site], Us, err = schmidt.ortho_left(A, truncation)
-            site -= 1
-            # np.einsum("aib,bc->aic", Ψ[site], Us)
-            Ψ[site] = np.matmul(Ψ[site], Us)
+    if site + 1 == len(Ψ):
+        Ψ[site] = A
+        return site, 0.0
+    Ψ[site], sV, err = schmidt.ortho_right(A, truncation)
+    site += 1
+    # np.einsum("ab,bic->aic", sV, Ψ[site])
+    Ψ[site] = _contract_last_and_first(sV, Ψ[site])
+    return site, err
+
+
+# TODO: Replace einsum by a more efficient form
+def _update_in_canonical_form_left(
+    Ψ: list[Tensor3], A: Tensor3, site: int, truncation: Strategy
+) -> tuple[int, float]:
+    """Insert a tensor in canonical form into the MPS Ψ at the given site.
+    Update the neighboring sites in the process."""
+    if site == 0:
+        Ψ[site] = A
+        return site, 0.0
+    Ψ[site], Us, err = schmidt.ortho_left(A, truncation)
+    site -= 1
+    # np.einsum("aib,bc->aic", Ψ[site], Us)
+    Ψ[site] = np.matmul(Ψ[site], Us)
     return site, err
 
 
 def _canonicalize(Ψ: list[Tensor3], center: int, truncation: Strategy) -> float:
     """Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`."""
+    # TODO: Revise the cumulative error update. Does it follow update_error()?
     err = 0.0
     for i in range(0, center):
-        _, errk = _update_in_canonical_form(Ψ, Ψ[i], i, +1, truncation)
+        _, errk = _update_in_canonical_form_right(Ψ, Ψ[i], i, truncation)
         err += errk
     for i in range(len(Ψ) - 1, center, -1):
-        _, errk = _update_in_canonical_form(Ψ, Ψ[i], i, -1, truncation)
+        _, errk = _update_in_canonical_form_left(Ψ, Ψ[i], i, truncation)
         err += errk
     return err
 
@@ -215,11 +220,15 @@ class CanonicalMPS(MPS):
         float
             The truncation error of this update.
         """
-        self.center, err = _update_in_canonical_form(
-            self._data, A, self.center, direction, truncation
-        )
+        if direction > 0:
+            self.center, err = _update_in_canonical_form_right(
+                self._data, A, self.center, truncation
+            )
+        else:
+            self.center, err = _update_in_canonical_form_left(
+                self._data, A, self.center, truncation
+            )
         self.update_error(err)
-        return err
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
