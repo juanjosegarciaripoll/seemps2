@@ -54,6 +54,7 @@ class MPO(array.TensorArray):
         assert data[0].shape[0] == data[-1].shape[-1] == 1
         self.strategy = strategy
 
+    # TODO: The deep copy also copies the tensors. This should be improved.
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `n * self`"""
         if isinstance(n, (float, complex)):
