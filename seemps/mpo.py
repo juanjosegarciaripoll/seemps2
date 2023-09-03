@@ -130,7 +130,7 @@ class MPO(array.TensorArray):
             [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
             error=state.error(),
         )
-        if strategy.get_simplify_flag():
+        if simplify:
             state, err, _ = truncate.simplify(
                 state,
                 maxsweeps=strategy.get_max_sweeps(),
