@@ -4,19 +4,7 @@ from .typing import Unitary, Tensor3, Tensor4, Union
 import scipy.linalg  # type: ignore
 from seemps.hamiltonians import NNHamiltonian  # type: ignore
 from .state import Strategy, DEFAULT_STRATEGY, MPS, CanonicalMPS
-
-
-def _contract_U_A_B(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4:
-    #
-    # Assuming U[n*r,j*l], A[i,j,k] and B[k,l,m]
-    # Implements np.einsum('ijk,klm,nrjl -> inrm', A, B, U)
-    # See tests.test_contractions for other implementations and timing
-    #
-    a, d, b = A.shape
-    b, e, c = B.shape
-    return np.matmul(
-        U, np.matmul(A.reshape(-1, b), B.reshape(b, -1)).reshape(a, -1, c)
-    ).reshape(a, d, e, c)
+from .state._contractions import _contract_nrjl_ijk_klm
 
 
 class PairwiseUnitaries:
@@ -89,7 +77,7 @@ class PairwiseUnitaries:
             for j in range(L - 1):
                 ## AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
                 state.update_2site_right(
-                    _contract_U_A_B(U[j], state[j], state[j + 1]), j, strategy
+                    _contract_nrjl_ijk_klm(U[j], state[j], state[j + 1]), j, strategy
                 )
         else:
             if center < L - 2:
@@ -97,7 +85,7 @@ class PairwiseUnitaries:
             for j in range(L - 2, -1, -1):
                 ## AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
                 state.update_2site_left(
-                    _contract_U_A_B(U[j], state[j], state[j + 1]), j, strategy
+                    _contract_nrjl_ijk_klm(U[j], state[j], state[j + 1]), j, strategy
                 )
         return state
 

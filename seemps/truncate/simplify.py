@@ -8,7 +8,8 @@ from ..state import (
     MPS,
     CanonicalMPS,
 )
-from ..tools import log, mydot
+from ..tools import log
+from ..state._contractions import _contract_last_and_first
 from ..expectation import (
     begin_environment,
     update_right_environment,
@@ -89,9 +90,12 @@ class AntilinearForm:
         A = self.ket[i]
         B = self.ket[j]
         R = self.R[j]
-        LA = mydot(L, A)  # np.einsum("li,ijk->ljk", L, A)
-        BR = mydot(B, R)  # np.einsum("kmn,no->kmo", B, R)
-        return mydot(LA, BR)  # np.einsum("ljk,kmo->ljmo", LA, BR)
+        # np.einsum("li,ijk->ljk", L, A)
+        LA = _contract_last_and_first(L, A)
+        # np.einsum("kmn,no->kmo", B, R)
+        BR = np.matmul(B, R)
+        # np.einsum("ljk,kmo->ljmo", LA, BR)
+        return _contract_last_and_first(LA, BR)
 
     def update(self, direction: int) -> None:
         """Notify that the `bra` state has been changed, and that we move to

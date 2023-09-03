@@ -85,10 +85,3 @@ def creation(d):
 def annihilation(d):
     """Bosonic annihilation operator for a Hilbert space with occupations 0 to `d-1`."""
     return np.diag(np.sqrt(np.arange(1, d)), 1).astype(complex)
-
-
-def mydot(a, b):
-    """Contract last index of a with first index of b."""
-    lefta = a.shape[:-1]
-    rightb = b.shape[1:]
-    return np.dot(a, b.reshape(b.shape[0], -1)).reshape(lefta + rightb)

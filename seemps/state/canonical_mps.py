@@ -4,10 +4,12 @@ import numpy as np
 from ..typing import *
 from .mps import MPS
 from . import schmidt
-from .core import DEFAULT_STRATEGY, Strategy, DEFAULT_TOLERANCE
+from .core import DEFAULT_STRATEGY, Strategy
+from ._contractions import _contract_last_and_first
 from .. import expectation
 
 
+# TODO: Replace einsum by a more efficient form
 def _update_in_canonical_form(
     Ψ: list[Tensor3], A: Tensor3, site: int, direction: int, truncation: Strategy
 ) -> tuple[int, float]:
@@ -20,7 +22,8 @@ def _update_in_canonical_form(
         else:
             Ψ[site], sV, err = schmidt.ortho_right(A, truncation)
             site += 1
-            Ψ[site] = np.einsum("ab,bic->aic", sV, Ψ[site])
+            # np.einsum("ab,bic->aic", sV, Ψ[site])
+            Ψ[site] = _contract_last_and_first(sV, Ψ[site])
     else:
         if site == 0:
             Ψ[site] = A
@@ -28,7 +31,8 @@ def _update_in_canonical_form(
         else:
             Ψ[site], Us, err = schmidt.ortho_left(A, truncation)
             site -= 1
-            Ψ[site] = np.einsum("aib,bc->aic", Ψ[site], Us)
+            # np.einsum("aib,bc->aic", Ψ[site], Us)
+            Ψ[site] = np.matmul(Ψ[site], Us)
     return site, err
 
 
