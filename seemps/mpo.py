@@ -8,9 +8,25 @@ from .tools import log, InvalidOperation
 
 
 def _mpo_multiply_tensor(A, B):
-    C = np.einsum("aijb,cjd->acibd", A, B)
-    s = C.shape
-    return C.reshape(s[0] * s[1], s[2], s[3] * s[4])
+    # Implements
+    # np.einsum("cjd,aijb->caidb", A, B)
+    #
+    # Matmul takes two arguments
+    #     B(c, 1, 1, d, j)
+    #     A(1, a, i, j, b)
+    # It broadcasts, repeating the indices that are of size 1
+    #     B(c, a, i, d, j)
+    #     A(c, a, i, j, b)
+    # And then multiplies the matrices that are formed by the last two
+    # indices, (d,j) * (j,b) -> (b,d) so that the outcome has size
+    #     C(c, a, i, d, b)
+    #
+    a, i, j, b = A.shape
+    c, j, d = B.shape
+    # np.matmul(...) -> C(a,i,b,c,d)
+    return np.matmul(
+        B.transpose(0, 2, 1).reshape(c, 1, 1, d, j), A.reshape(1, a, i, j, b)
+    ).reshape(c * a, i, d * b)
 
 
 class MPO(array.TensorArray):
