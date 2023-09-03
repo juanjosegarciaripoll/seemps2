@@ -3,7 +3,11 @@ from seemps.state import (
     DEFAULT_STRATEGY,
     CanonicalMPS,
 )
-from seemps.state.canonical_mps import _update_in_canonical_form, _canonicalize
+from seemps.state.canonical_mps import (
+    _update_in_canonical_form_left,
+    _update_in_canonical_form_right,
+    _canonicalize,
+)
 
 
 class TestCanonicalForm(TestCase):
@@ -16,11 +20,11 @@ class TestCanonicalForm(TestCase):
             strategy = DEFAULT_STRATEGY.replace(normalize=normalization)
             for i in range(Ψ.size - 1):
                 ξ = Ψ.copy()
-                _update_in_canonical_form(ξ, ξ[i], i, +1, strategy)
+                _update_in_canonical_form_right(ξ, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], +1))
             for i in range(1, Ψ.size):
                 ξ = Ψ.copy()
-                _update_in_canonical_form(ξ, ξ[i], i, -1, strategy)
+                _update_in_canonical_form_left(ξ, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], -1))
 
         run_over_random_mps(ok)
