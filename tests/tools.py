@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
-from seemps.state import MPS
+from seemps.state import MPS, CanonicalMPS, random_mps
 import seemps.state
 import unittest
 
@@ -37,6 +37,13 @@ class TestCase(unittest.TestCase):
     def assertAlmostIdentity(self, A, **kwdargs) -> None:
         if not almostIdentity(A, **kwdargs):
             raise self.failureException(f"Object not close to identity:\nA={A}")
+
+    def random_mps(
+        self, d: int, size: int, truncate: bool = False, **kwdargs
+    ) -> CanonicalMPS:
+        return CanonicalMPS(
+            random_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
+        )
 
 
 def similar(A, B, **kwdargs):

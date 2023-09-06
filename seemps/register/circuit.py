@@ -1,4 +1,7 @@
 import numpy as np
+
+from seemps.state import MPS, CanonicalMPS
+from seemps.typing import Optional, Vector
 from ..typing import *
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..state._contractions import _contract_nrjl_ijk_klm
@@ -59,6 +62,9 @@ class UnitaryCircuit:
     ) -> CanonicalMPS:
         ...
 
+    def __matmul__(self, state: MPS) -> CanonicalMPS:
+        return self.apply(state)
+
     def apply(self, state: MPS, parameters: Optional[Vector] = None) -> CanonicalMPS:
         return self.apply_inplace(
             state.copy() if isinstance(state, CanonicalMPS) else state, parameters
@@ -66,9 +72,8 @@ class UnitaryCircuit:
 
 
 class ParameterizedCircuit(UnitaryCircuit):
-    register_size: int
     parameters: Vector
-    stategy: Strategy
+    parameters_size: int
 
     def __init__(
         self,
@@ -86,13 +91,38 @@ class ParameterizedCircuit(UnitaryCircuit):
             default_parameters = np.zeros(parameters_size)
         elif parameters_size != len(default_parameters):
             raise IndexError(
-                "'default_parameters' does not match size 'parameter_size'"
+                f"'default_parameters' length {len(default_parameters)} does not match size 'parameters_size' {parameters_size}"
             )
         self.parameters = np.asarray(default_parameters)
         self.parameters_size = parameters_size
 
 
 class LocalRotationsLayer(ParameterizedCircuit):
+    """Layer of local rotations acting on the each qubit with the
+    same generator and possibly different angles.
+
+    Parameters
+    ----------
+    register_size : int
+        Number of qubits on which to operate.
+    operator : str | Operator
+        Either the name of a generator ("Sx", "Sy", "Sz") or a 2x2 matrix.
+    same_parameter : bool
+        If `True`, the same angle is reused by all gates and
+        `self.parameters_size=1`. Otherwise, the user must provide one value
+        for each rotation.
+    default_parameters : Optional[Vector]
+        A vector of angles to use if no other one is provided.
+    strategy : Strategy
+        Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
+
+    Examples
+    --------
+    >>> state = random_mps(2, 3)
+    >>> U = LocalRotationsLayer(register_size=state.size, operator="Sz")
+    >>> Ustate = U @ state
+    """
+
     factor: float = 1.0
     operator: Operator
 
@@ -141,6 +171,8 @@ class LocalRotationsLayer(ParameterizedCircuit):
             state = CanonicalMPS(state, center=0, strategy=self.strategy)
         if len(parameters) == 1:
             parameters = np.full(self.register_size, parameters[0])
+        else:
+            parameters = np.asarray(parameters)
         angle = parameters.reshape(-1, 1, 1) * self.factor
         ops = np.cos(angle) * id2 - 1j * np.sin(angle) * self.operator
         for i, (opi, A) in enumerate(zip(ops, state)):
@@ -150,6 +182,20 @@ class LocalRotationsLayer(ParameterizedCircuit):
 
 
 class TwoQubitGatesLayer(UnitaryCircuit):
+    """Layer of CNOT gates, acting on qubits 0 to N-1, from left to right
+    or right to left, depending on the direction.
+
+    Parameters
+    ----------
+    register_size : int
+        Number of qubits on which to operate.
+    operator : str | Operator
+        A two-qubit gate, either denoted by a string ("CNOT", "CZ")
+        or by a 4x4 two-qubit matrix.
+    strategy : Strategy
+        Truncation strategy (Defaults to `DEFAULT_STRATEGY`)
+    """
+
     operator: Operator
 
     def __init__(
@@ -168,9 +214,8 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         self, state: MPS, parameters: Optional[Vector] = None
     ) -> CanonicalMPS:
         assert self.register_size == state.size
-        if parameters is not None:
-            if len(parameters) > 0:
-                raise Exception("{self.cls} does not accept parameters")
+        if parameters is not None and len(parameters) > 0:
+            raise Exception("{self.cls} does not accept parameters")
         if not isinstance(state, CanonicalMPS):
             state = CanonicalMPS(state, center=0, strategy=self.strategy)
         L = self.register_size
@@ -193,3 +238,104 @@ class TwoQubitGatesLayer(UnitaryCircuit):
                     _contract_nrjl_ijk_klm(op, state[j], state[j + 1]), j, strategy
                 )
         return state
+
+
+class ParameterizedLayeredCircuit(ParameterizedCircuit):
+    """Variational quantum circuit with Ry rotations and CNOTs.
+
+    Constructs a unitary circuit with variable parameters, composed of
+    operations such as :class:`LocalRotationsLayer`, :class:`TwoQubitGatesLayer`
+    or similar gates. This is the basis for more useful algorithms such as
+    the :class:`VariationalQuantumEigensolver`
+
+    Parameters
+    ----------
+    register_size : int
+        Number of qubits on which to operate
+    layers : list[UnitaryCircuit]
+        List of constant or parameterized unitary layers.
+    default_parameters : Vector
+        Default angles for the rotations (Defaults to zeros).
+    strategy : Strategy
+        Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
+    """
+
+    layers: list[tuple[UnitaryCircuit, int, int]]
+
+    def __init__(
+        self,
+        register_size: int,
+        layers: list[UnitaryCircuit],
+        default_parameters: Optional[Vector] = None,
+        strategy: Strategy = DEFAULT_STRATEGY,
+    ):
+        parameters_size = 0
+        segments = []
+        for circuit in layers:
+            if isinstance(circuit, ParameterizedCircuit):
+                l = circuit.parameters_size
+                segments.append((circuit, parameters_size, parameters_size + l))
+                parameters_size += l
+            else:
+                segments.append((circuit, 0, 0))
+        super().__init__(register_size, parameters_size, default_parameters, strategy)
+        self.layers = segments
+
+    def apply_inplace(
+        self, state: MPS, parameters: Optional[Vector] = None
+    ) -> CanonicalMPS:
+        if parameters is None:
+            parameters = self.parameters
+        for circuit, start, end in self.layers:
+            state = circuit.apply_inplace(state, parameters[start:end])
+        return state
+
+
+class VQECircuit(ParameterizedLayeredCircuit):
+    """Variational quantum circuit with Ry rotations and CNOTs.
+
+    Parameters
+    ----------
+    register_size : int
+        Number of qubits on which to operate
+    layers : int
+        Number of local rotation layers
+    default_parameters : Vector
+        Default angles for the rotations (Defaults to zeros). Must have
+        size `layers * register_size`.
+    strategy : Strategy
+        Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
+    """
+
+    def __init__(
+        self,
+        register_size: int,
+        layers: int,
+        default_parameters: Optional[Vector] = None,
+        strategy: Strategy = DEFAULT_STRATEGY,
+    ):
+        if default_parameters is not None:
+            default_parameters = np.array(default_parameters).reshape(-1, register_size)
+
+        def get_default_parameters(layer: int):
+            if default_parameters is None:
+                return None
+            return default_parameters[layer // 2, :]
+
+        super().__init__(
+            register_size,
+            [
+                LocalRotationsLayer(
+                    register_size,
+                    operator="Sy",
+                    same_parameter=False,
+                    default_parameters=get_default_parameters(layer),
+                    strategy=strategy,
+                )
+                if (layer % 2 == 0)
+                else TwoQubitGatesLayer(register_size, operator="CNOT")
+                for layer in range(2 * layers)
+            ],
+            default_parameters.reshape(-1),
+            strategy,
+        )
