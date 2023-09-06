@@ -73,7 +73,7 @@ class MPS(array.TensorArray):
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
         **kwdargs,
-    ) -> "MPS":
+    ) -> MPS:
         """Create a matrix-product state from a state vector.
 
         Parameters
@@ -95,7 +95,7 @@ class MPS(array.TensorArray):
         """
         return MPS(vector2mps(ψ, dimensions, strategy, normalize))
 
-    def __add__(self, state: Union["MPS", "MPSSum"]) -> "MPSSum":
+    def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
         if isinstance(state, MPS):
             return MPSSum([1.0, 1.0], [self, state], self.strategy)
@@ -103,7 +103,7 @@ class MPS(array.TensorArray):
             return MPSSum([1.0] + state.weights, [self] + state.states, self.strategy)
         raise InvalidOperation("+", self, state)
 
-    def __sub__(self, state: Union["MPS", "MPSSum"]) -> "MPSSum":
+    def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self - state` as :class:`.MPSSum`"""
         if isinstance(state, MPS):
             return MPSSum([1, -1], [self, state], self.strategy)
@@ -115,16 +115,18 @@ class MPS(array.TensorArray):
             )
         raise InvalidOperation("-", self, state)
 
-    def __mul__(self, n: Weight) -> "MPS":
+    def __mul__(self, n: Weight) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
         if isinstance(n, (float, complex)):
             mps_mult = copy.deepcopy(self)
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
             return mps_mult
+        if isinstance(n, MPS):
+            return self.wavefunction_product(n)
         raise InvalidOperation("*", self, n)
 
-    def __rmul__(self, n: Weight) -> "MPS":
+    def __rmul__(self, n: Weight) -> MPS:
         """Compute `self * n`, where `n` is a scalar."""
         if isinstance(n, (float, complex)):
             mps_mult = copy.deepcopy(self)
@@ -360,6 +362,46 @@ class MPS(array.TensorArray):
                 D = A.shape[-1]
         return MPS(data, strategy=self.strategy)
 
+    def wavefunction_product(self, other: MPS) -> MPS:
+        """Elementwise product of the wavefunctions of two quantum states.
+
+        Given two MPS `self` and `other, return another MPS whose
+        wavefunction is the element-wise product of those. This
+        product grows the bond dimensions, combining the tensors
+        `A[a,i,b]` and `B[c,i,d]` of both states into the composite
+        `C[a*c,i,b*d]`. Naturally, the physical dimensions of `self`
+        and `other` must be identical.
+
+        Parameters
+        ----------
+            other : MPS
+                Another quantum state.
+
+        Returns
+        -------
+            MPS
+                The state that results from the `self .* other`
+        """
+
+        def combine(A, B):
+            # Combine both tensors
+            a, d, b = A.shape
+            c, db, e = B.shape
+            if d != db:
+                raise Exception("Non matching MPS physical dimensions.")
+            # np.einsum('adb,cde->acdbe', A, B)
+            C = A.reshape(a, 1, d, b, 1) * B.reshape(1, c, d, 1, e)
+            return C.reshape(a * c, d, b * e)
+
+        return MPS([combine(A, B) for A, B in zip(self, other)])
+
+    def conj(self) -> MPS:
+        """Return the complex-conjugate of this quantum state."""
+        output = self.copy()
+        for i, A in enumerate(output._data):
+            output._data[i] = A.conj()
+        return output
+
 
 def _mps2vector(data: list[Tensor3]) -> Vector:
     #
@@ -421,7 +463,7 @@ class MPSSum:
         self.states = states
         self.strategy = strategy
 
-    def __add__(self, state: Union[MPS, "MPSSum"]) -> "MPSSum":
+    def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""
         if isinstance(state, MPS):
             return MPSSum(
@@ -437,7 +479,7 @@ class MPSSum:
             )
         raise InvalidOperation("+", self, state)
 
-    def __sub__(self, state: Union[MPS, "MPSSum"]) -> "MPSSum":
+    def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Subtract `self - state`, incorporating it to the lists."""
         if isinstance(state, MPS):
             return MPSSum(self.weights + [-1], self.states + [state], self.strategy)
@@ -449,13 +491,13 @@ class MPSSum:
             )
         raise InvalidOperation("-", self, state)
 
-    def __mul__(self, n: Weight) -> "MPSSum":
+    def __mul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `n * self` for scalar `n`."""
         if isinstance(n, (float, complex)):
             return MPSSum([n * w for w in self.weights], self.states, self.strategy)
         raise InvalidOperation("*", self, n)
 
-    def __rmul__(self, n: Weight) -> "MPSSum":
+    def __rmul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `self * n` for scalar `n`."""
         if isinstance(n, (float, complex)):
             return MPSSum([n * w for w in self.weights], self.states, self.strategy)
@@ -500,3 +542,11 @@ class MPSSum:
             max_bond_dimension=strategy.get_max_bond_dimension(),
         )
         return ψ
+
+    def conj(self) -> MPSSum:
+        """Return the complex-conjugate of this quantum state."""
+        return MPSSum(
+            [np.conj(w) for w in self.weights],
+            [state.conj() for state in self.states],
+            self.strategy,
+        )

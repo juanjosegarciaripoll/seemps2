@@ -50,6 +50,20 @@ offer some functions to create convenience states
     ~seemps.state.random_mps
     ~seemps.state.W
 
+.. _mps_operations:
+
+Simple operations
+=================
+
+Matrix product states can be combined with each other and transformed:
+
+- An MPS `a` can be rescaled by a number `n * a`
+- An MPS can be conjugated `a.conj()`
+- Two MPS `a` and `b` can be added, producing an :class:`~seemps.state.MPSSum`
+  (see :doc:`seemps_objects_sum`).
+- The wavefunctions of two states can be multiplied element-wise `a * b`
+  in an unphysical transformation.
+
 .. _mps_expectation:
 
 Observables

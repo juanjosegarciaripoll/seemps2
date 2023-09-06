@@ -229,6 +229,7 @@ class CanonicalMPS(MPS):
                 self._data, A, self.center, truncation
             )
         self.update_error(err)
+        return err
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
