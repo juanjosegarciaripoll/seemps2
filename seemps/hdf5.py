@@ -120,7 +120,7 @@ def write_mpo(parent: Union[h5py.File, h5py.Group], name: str, M: MPO) -> None:
         g.create_dataset(f"MPO[{i}]", shape=A.shape, data=A)
 
 
-def read_mpo(parent: Union[h5py.File, h5py.Group], name: str) -> MPS:
+def read_mpo(parent: Union[h5py.File, h5py.Group], name: str) -> MPO:
     """Reand an MPO from an HDF5 file or group.
 
     Parameters
