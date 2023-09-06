@@ -120,7 +120,7 @@ class TestMPSOperations(MPSStatesFixture):
         with self.assertRaises(TypeError):
             A = A * np.array([1.0])
         with self.assertRaises(TypeError):
-            A = A * A
+            A = A * np.zeros((3, 3))
 
     def test_scaled_mps_produces_scaled_wavefunction(self):
         factor = 1.0 + 3.0j
@@ -134,3 +134,12 @@ class TestMPSOperations(MPSStatesFixture):
         factor = 1.0 + 3.0j
         A = MPS(self.inhomogeneous_state)
         self.assertAlmostEqual(abs(factor) * A.norm(), (factor * A).norm())
+
+    def test_multiplying_two_mps_produces_product_wavefunction(self):
+        A = MPS(self.inhomogeneous_state)
+        C = A * A
+        self.assertSimilar(A.to_vector() * A.to_vector(), C.to_vector())
+
+    def test_mps_complex_conjugate(self):
+        A = MPS(self.inhomogeneous_state)
+        self.assertSimilar(A.to_vector().conj(), A.conj().to_vector())

@@ -55,12 +55,4 @@ class TestAlgebraic(TestCase):
             ξmps = MPS.from_vector(ξ, [2] * N)
             ξ = ξmps.to_vector()
 
-            ψξ = wavefunction_product(
-                ψmps, ξmps, simplify=True, normalize=False
-            ).to_vector()
-            self.assertSimilar(ψξ, ψ * ξ)
-
-            ψcξ = wavefunction_product(
-                ψmps, ξmps, conjugate=True, simplify=False, normalize=False
-            ).to_vector()
-            self.assertSimilar(ψcξ, ψ.conj() * ξ)
+            self.assertSimilar(ψmps * ξmps, ψ * ξ)

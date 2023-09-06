@@ -1,8 +1,9 @@
 import unittest
 import numpy as np
+from .tools import TestCase
 
 
-class MPSStatesFixture(unittest.TestCase):
+class MPSStatesFixture(TestCase):
     def setUp(self):
         self.product_state = [
             np.reshape([1.0, 2.0], (1, 2, 1)),
