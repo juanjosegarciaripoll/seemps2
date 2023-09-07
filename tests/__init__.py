@@ -6,6 +6,7 @@ from .test_canonical import *
 from .test_expectation import *
 from .test_hamiltonians import *
 from .test_register import *
+from .test_circuits import *
 from .test_linear_form import *
 from .test_truncate import *
 from .test_mpssum import *
