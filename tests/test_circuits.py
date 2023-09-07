@@ -154,6 +154,18 @@ class TestVQE(TestCase):
         U4 = self.CNOT
         self.assertSimilar(U.apply(a).to_vector(), U4 @ U3 @ U2 @ U1 @ a.to_vector())
 
+    def test_VQE_entangling_layer_order(self):
+        a = self.random_mps(2, 3, truncate=True, normalize=True)
+        U = VQECircuit(3, 2, [0.13] * 3 * 2)
+        U1 = expm(-1j * 0.13 * self.Sy)
+        Ulocal = np.kron(U1, np.kron(U1, U1))
+        Uright_to_left = np.kron(self.CNOT, np.eye(2)) @ np.kron(np.eye(2), self.CNOT)
+        Uleft_to_right = np.kron(np.eye(2), self.CNOT) @ np.kron(self.CNOT, np.eye(2))
+        self.assertSimilar(
+            U.apply(a).to_vector(),
+            Uright_to_left @ Ulocal @ Uleft_to_right @ Ulocal @ a.to_vector(),
+        )
+
     def test_VQE_apply_uses_parameters(self):
         a = self.random_mps(2, 2, truncate=True, normalize=True)
         U = VQECircuit(2, 1, 2 * [0.0])

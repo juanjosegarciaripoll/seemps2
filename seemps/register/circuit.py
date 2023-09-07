@@ -182,7 +182,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
 
 
 class TwoQubitGatesLayer(UnitaryCircuit):
-    """Layer of CNOT gates, acting on qubits 0 to N-1, from left to right
+    """Layer of CNOT/CZ gates, acting on qubits 0 to N-1, from left to right
     or right to left, depending on the direction.
 
     Parameters
@@ -192,16 +192,21 @@ class TwoQubitGatesLayer(UnitaryCircuit):
     operator : str | Operator
         A two-qubit gate, either denoted by a string ("CNOT", "CZ")
         or by a 4x4 two-qubit matrix.
+    direction : int | None
+        Direction in which gates are applied. If 'None', direction will
+        be chosen based on the orthogonalitiy center of the state.
     strategy : Strategy
         Truncation strategy (Defaults to `DEFAULT_STRATEGY`)
     """
 
     operator: Operator
+    direction: Optional[int]
 
     def __init__(
         self,
         register_size: int,
         operator: Union[str, Operator],
+        direction: Optional[int] = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         super().__init__(register_size, strategy)
@@ -209,6 +214,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         if O.shape != (4, 4):
             raise Exception("Not a valid two-qubit operator")
         self.operator = O
+        self.direction = direction
 
     def apply_inplace(
         self, state: MPS, parameters: Optional[Vector] = None
@@ -222,7 +228,10 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         op = self.operator
         center = state.center
         strategy = self.strategy
-        if center < L // 2:
+        direction = self.direction
+        if direction is None:
+            direction = +1 if (center < L // 2) else -1
+        if direction >= 0:
             if center > 1:
                 state.recenter(1)
             for j in range(L - 1):
@@ -333,7 +342,11 @@ class VQECircuit(ParameterizedLayeredCircuit):
                     strategy=strategy,
                 )
                 if (layer % 2 == 0)
-                else TwoQubitGatesLayer(register_size, operator="CNOT")
+                else TwoQubitGatesLayer(
+                    register_size,
+                    operator="CNOT",
+                    direction=+1 if (layer % 4) == 1 else -1,
+                )
                 for layer in range(2 * layers)
             ],
             default_parameters.reshape(-1),
