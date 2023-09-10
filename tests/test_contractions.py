@@ -6,9 +6,27 @@ def investigate_mpo_contraction():
     A = np.random.randn(30, 2, 2, 30)
     A /= np.linalg.norm(A)
     B = np.random.randn(10, 2, 13)
+    try:
+        from ncon import ncon
+    except:
+        pass
+    path_info = []
+    try:
+        from opt_einsum import contract, contract_expression
+
+        path_info = contract_expression("aijb,cjd->acibd", A.shape, B.shape)
+    except:
+        pass
 
     def method1():
         return np.einsum("aijb,cjd->acibd", A, B).reshape(30 * 10, 2, 30 * 13)
+
+    def reorder_output(C):
+        a, i, j, b = A.shape
+        c, j, d = B.shape
+        return (
+            C.reshape(c, a, i, d, b).transpose(1, 0, 2, 4, 3).reshape(a * c, i, b * d)
+        )
 
     path = np.einsum_path("aijb,cjd->acibd", A, B, optimize="optimal")[0]
 
@@ -61,33 +79,54 @@ def investigate_mpo_contraction():
             B.transpose(0, 2, 1).reshape(c, 1, 1, d, j), A.reshape(1, a, i, j, b)
         ).reshape(c * a, i, d * b)
 
+    def method6():
+        a, i, j, b = A.shape
+        c, j, d = B.shape
+        #
+        # np.einsum("aijb,cjd->acibd")
+        #
+        return ncon((A, B), ((-1, -3, 1, -4), (-2, 1, -5))).reshape(c * a, i, d * b)
+
+    def method7():
+        a, i, j, b = A.shape
+        c, j, d = B.shape
+        return contract("aijb,cjd->acibd", A, B).reshape(a * c, i, b * d)
+
+    def method8():
+        a, i, j, b = A.shape
+        c, j, d = B.shape
+        return path_info(A, B).reshape(a * c, i, b * d)
+
+    all_methods = [
+        (method1, "einsum"),
+        (method2, "einsum path"),
+        (method3, "tensordot"),
+        (method4, "matmul order1"),
+        (method5, "matmul order2"),
+        (method6, "ncon"),
+        (method7, "opt-einsum"),
+        (method8, "opt-einsum path"),
+    ]
+
     repeats = 1000
-    t = timeit.timeit(method1, number=repeats)
-    t = timeit.timeit(method1, number=repeats)
     print("\n----------\nTensor contractions for MPO * MPS")
-    print(f"Method1 {t/repeats}s")
-
-    t = timeit.timeit(method2, number=repeats)
-    t = timeit.timeit(method2, number=repeats)
-    print(f"Method2 {t/repeats}s")
-
-    t = timeit.timeit(method3, number=repeats)
-    t = timeit.timeit(method3, number=repeats)
-    print(f"Method3 {t/repeats}s")
-
-    t = timeit.timeit(method4, number=repeats)
-    t = timeit.timeit(method4, number=repeats)
-    print(f"Method4 {t/repeats}s")
-
-    t = timeit.timeit(method5, number=repeats)
-    t = timeit.timeit(method5, number=repeats)
-    print(f"Method5 {t/repeats}s (<- library choice)")
-
-    for i, m in enumerate([method2, method3, method4]):
-        err = np.linalg.norm(method1() - m())
-        print(f"Method{i+2} error = {err}")
-    aux2 = np.einsum("cjd,aijb->caidb", B, A).reshape(10 * 30, 2, 13 * 30)
-    print(f"Method5 error = {np.linalg.norm(aux2 - method5())}")
+    for i, (method, name) in enumerate(all_methods):
+        n = i + 1
+        try:
+            t = timeit.timeit(method, number=repeats)
+            t = timeit.timeit(method, number=repeats)
+        except Exception as e:
+            print(e)
+            continue
+        extra = ""
+        output = method()
+        if n == 5:
+            extra += " (<- library_choice)"
+            output = reorder_output(output)
+        if i > 0:
+            err = np.linalg.norm(method1() - output)
+            extra = f" error={err:1.2g}" + extra
+        print(f"Method{n} {name}:\n time={t/repeats:5f}s" + extra)
 
 
 class TestMPOTensorFold(TestCase):
