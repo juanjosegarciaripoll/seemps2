@@ -4,6 +4,7 @@ from .test_mps import *
 from .test_sample_states import *
 from .test_canonical import *
 from .test_expectation import *
+from .test_mpo_expectation import *
 from .test_hamiltonians import *
 from .test_register import *
 from .test_circuits import *

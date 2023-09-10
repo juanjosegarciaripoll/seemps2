@@ -88,14 +88,38 @@ def begin_mpo_environment() -> MPOEnvironment:
     return np.ones((1, 1, 1), dtype=np.float64)
 
 
-update_mpo_environment = opt_einsum.contract_expression(
+_update_left_mpo_environment = opt_einsum.contract_expression(
     "acb,ajd,cjie,bif->def", (30, 31, 32), (30, 2, 33), (31, 2, 2, 34), (32, 2, 35)
 )
+
+
+def update_left_mpo_environment(
+    rho: MPOEnvironment, A: Tensor3, O: Tensor4, B: Tensor3
+) -> MPOEnvironment:
+    # output = opt_einsum.contract("acb,ajd,cjie,bif->def", rho, A, O, B)
+    return _update_left_mpo_environment(rho, A, O, B)
+    print(rho.shape, A.shape, O.shape, B.shape, "->", output.shape)
+    return output
+
+
+_update_right_mpo_environment = opt_einsum.contract_expression(
+    "def,ajd,cjie,bif->acb", (30, 31, 32), (33, 2, 30), (34, 2, 2, 31), (35, 2, 32)
+)
+
+
+def update_right_mpo_environment(
+    rho: MPOEnvironment, A: Tensor3, O: Tensor4, B: Tensor3
+) -> MPOEnvironment:
+    # output = opt_einsum.contract("def,ajd,cjie,bif->acb", rho, A, O, B)
+    return _update_right_mpo_environment(rho, A, O, B)
+    print(rho.shape, A.shape, O.shape, B.shape, "->", output.shape)
+    return output
 
 
 def end_mpo_environment(ρ: MPOEnvironment) -> Weight:
     """Extract the scalar product from the last environment."""
     return ρ[0, 0, 0]
+
 
 def join_mpo_environments(left: MPOEnvironment, right: MPOEnvironment) -> Weight:
     return np.dot(left.reshape(-1), right.reshape(-1))

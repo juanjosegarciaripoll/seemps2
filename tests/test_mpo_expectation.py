@@ -25,3 +25,24 @@ class TestMPOExpectation(TestCase):
         psi = random_mps(2, 1, rng=self.rng)
         with self.assertRaises(Exception):
             H.expectation(psi + psi)
+
+    def test_mpo_expected_with_left_orthogonal_state(self):
+        H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
+        state = CanonicalMPS(random_mps(2, 10, truncate=True, rng=self.rng), center=0)
+        O = H.tomatrix()
+        v = state.to_vector()
+        self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
+
+    def test_mpo_expected_with_right_orthogonal_state(self):
+        H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
+        state = CanonicalMPS(random_mps(2, 10, truncate=True, rng=self.rng), center=9)
+        O = H.tomatrix()
+        v = state.to_vector()
+        self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
+
+    def test_mpo_expected_with_middle_orthogonal_state(self):
+        H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
+        state = CanonicalMPS(random_mps(2, 10, truncate=True, rng=self.rng), center=4)
+        O = H.tomatrix()
+        v = state.to_vector()
+        self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))

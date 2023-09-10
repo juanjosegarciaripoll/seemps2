@@ -223,12 +223,12 @@ class MPO(array.TensorArray):
             raise Exception("MPS required")
         left = right = begin_mpo_environment()
         operators = self._data
-        for i in range(0, center + 1):
+        for i in range(0, center):
             A = state[i]
-            left = update_mpo_environment(left, A.conj(), operators[i], A)
-        for i in range(self.size - 1, center, -1):
+            left = update_left_mpo_environment(left, A.conj(), operators[i], A)
+        for i in range(self.size - 1, center - 1, -1):
             A = state[i]
-            right = update_mpo_environment(right, A.conj(), operators[i], A)
+            right = update_right_mpo_environment(right, A.conj(), operators[i], A)
         return join_mpo_environments(left, right)
 
 
