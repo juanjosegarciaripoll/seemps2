@@ -1,5 +1,6 @@
 import numpy as np
 from ..typing import *
+import opt_einsum
 
 
 def begin_environment(χ: int = 1) -> Environment:
@@ -81,3 +82,20 @@ def scprod(bra: MPSLike, ket: MPSLike) -> Weight:
     for Ai, Bi in zip(bra, ket):
         ρ = update_left_environment(Ai, Bi, ρ)
     return end_environment(ρ)
+
+
+def begin_mpo_environment() -> MPOEnvironment:
+    return np.ones((1, 1, 1), dtype=np.float64)
+
+
+update_mpo_environment = opt_einsum.contract_expression(
+    "acb,ajd,cjie,bif->def", (30, 31, 32), (30, 2, 33), (31, 2, 2, 34), (32, 2, 35)
+)
+
+
+def end_mpo_environment(ρ: MPOEnvironment) -> Weight:
+    """Extract the scalar product from the last environment."""
+    return ρ[0, 0, 0]
+
+def join_mpo_environments(left: MPOEnvironment, right: MPOEnvironment) -> Weight:
+    return np.dot(left.reshape(-1), right.reshape(-1))

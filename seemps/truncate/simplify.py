@@ -10,7 +10,7 @@ from ..state import (
 )
 from ..tools import log
 from ..state._contractions import _contract_last_and_first
-from ..expectation import (
+from ..state.environments import (
     begin_environment,
     update_right_environment,
     update_left_environment,

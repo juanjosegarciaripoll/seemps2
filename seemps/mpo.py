@@ -2,7 +2,8 @@ from __future__ import annotations
 import numpy as np
 from .typing import *
 import copy
-from .state import MPS, MPSSum, array, DEFAULT_STRATEGY, Strategy, Weight
+from .state import array, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY, Strategy, Weight
+from .state.environments import *
 from . import truncate
 from .tools import log, InvalidOperation
 
@@ -198,6 +199,37 @@ class MPO(array.TensorArray):
             else:
                 D = A.shape[-1]
         return MPO(data, strategy=self.strategy)
+
+    def expectation(self, state: MPS) -> Weight:
+        """Expectation value of MPO on an MPS state.
+
+        Parameters
+        ----------
+        state : MPS
+            The state :math:`\\psi` on which the expectation value
+            is computed.
+
+        Returns
+        -------
+        float | complex
+            :math:`\\langle\\psi\\vert{O}\\vert\\psi\\rangle` where `O`
+            is the matrix-product operator.
+        """
+        if isinstance(state, CanonicalMPS):
+            center = state.center
+        elif isinstance(state, MPS):
+            center = self.size - 1
+        else:
+            raise Exception("MPS required")
+        left = right = begin_mpo_environment()
+        operators = self._data
+        for i in range(0, center + 1):
+            A = state[i]
+            left = update_mpo_environment(left, A.conj(), operators[i], A)
+        for i in range(self.size - 1, center, -1):
+            A = state[i]
+            right = update_mpo_environment(right, A.conj(), operators[i], A)
+        return join_mpo_environments(left, right)
 
 
 class MPOList(object):

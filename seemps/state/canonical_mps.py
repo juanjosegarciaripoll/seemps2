@@ -5,7 +5,7 @@ from .mps import MPS
 from . import schmidt
 from .core import DEFAULT_STRATEGY, Strategy
 from ._contractions import _contract_last_and_first
-from .. import expectation
+from . import environments
 
 
 # TODO: Replace einsum by a more efficient form
@@ -154,17 +154,17 @@ class CanonicalMPS(MPS):
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
         start = min(site, self.center)
-        ρ = expectation.begin_environment(self[start].shape[0])
+        ρ = environments.begin_environment(self[start].shape[0])
         for A in self._data[start:site]:
-            ρ = expectation.update_left_environment(A, A, ρ)
+            ρ = environments.update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
         start = max(site, self.center)
-        ρ = expectation.begin_environment(self[start].shape[-1])
+        ρ = environments.begin_environment(self[start].shape[-1])
         for A in self._data[start:site:-1]:
-            ρ = expectation.update_right_environment(A, A, ρ)
+            ρ = environments.update_right_environment(A, A, ρ)
         return ρ
 
     def entanglement_entropy(self, site: Optional[int] = None) -> Real:

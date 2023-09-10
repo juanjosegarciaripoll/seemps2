@@ -1,6 +1,7 @@
 from .typing import *
 from .state.environments import *
 from .state.mps import MPS
+from .mpo import MPO
 from .state.environments import scprod
 
 
@@ -86,7 +87,13 @@ def product_expectation(state: MPSLike, operator_list: list[Operator]) -> Weight
     float | complex
         Expectation value.
     """
+    # TODO: Choose contraction order based on whether the state is
+    # in a given canonical order or another
     rho = begin_environment()
     for Ai, opi in zip(state, operator_list):
         rho = update_left_environment(Ai.conj(), Ai, rho, operator=opi)
     return end_environment(rho)
+
+
+def mpo_expectation(state: MPSLike, operator: MPO) -> Weight:
+    return operator.expectation(state)
