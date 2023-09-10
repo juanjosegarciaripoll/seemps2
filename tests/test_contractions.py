@@ -35,7 +35,9 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
     try:
         from opt_einsum import contract, contract_expression
 
-        path_info = contract_expression("aijb,cjd->acibd", A.shape, B.shape)
+        path_info = contract_expression(
+            "aijb,cjd->acibd", A.shape, B.shape, optimize="optimal"
+        )
     except:
         pass
 
@@ -140,7 +142,7 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
 
 class TestMPOTensorFold(TestCase):
     def test_contract_A_B(self):
-        # investigate_mpo_contraction()
+        investigate_mpo_contraction()
 
         A = self.rng.normal(size=(30, 2, 2, 30))
         B = self.rng.normal(size=(10, 2, 13))
@@ -169,7 +171,7 @@ def investigate_unitary_contraction(rng=np.random.default_rng(seed=0x2377312)):
         from opt_einsum import contract, contract_expression
 
         path_info = contract_expression(
-            "ijk,klm,nrjl -> inrm", A.shape, B.shape, U.shape
+            "ijk,klm,nrjl -> inrm", A.shape, B.shape, U.shape, optimize="optimal"
         )
     except:
         pass
