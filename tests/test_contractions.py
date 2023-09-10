@@ -140,7 +140,7 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
 
 class TestMPOTensorFold(TestCase):
     def test_contract_A_B(self):
-        investigate_mpo_contraction()
+        # investigate_mpo_contraction()
 
         A = self.rng.normal(size=(30, 2, 2, 30))
         B = self.rng.normal(size=(10, 2, 13))
@@ -153,9 +153,10 @@ class TestMPOTensorFold(TestCase):
 
 
 def investigate_unitary_contraction(rng=np.random.default_rng(seed=0x2377312)):
-    A = rng.normal(size=(10, 2, 13))
+    D = 40
+    A = rng.normal(size=(D, 2, D + 1))
     A /= np.linalg.norm(A)
-    B = rng.normal(size=(13, 2, 10))
+    B = rng.normal(size=(D + 1, 2, D))
     B /= np.linalg.norm(B)
     U = rng.normal(size=(2, 2, 2, 2))
     U2 = U.reshape(4, 4)
@@ -202,6 +203,9 @@ def investigate_unitary_contraction(rng=np.random.default_rng(seed=0x2377312)):
     def method6():
         return path_info(A, B, U)
 
+    def method7():
+        return ncon((A, B, U), ((-1, 2, 1), (1, 3, -4), (-2, -3, 2, 3)))
+
     print("---------------\nUnitary evolution contraction")
     bench_all(
         [
@@ -211,8 +215,9 @@ def investigate_unitary_contraction(rng=np.random.default_rng(seed=0x2377312)):
             (method4, "matmul (library choice)", None),
             (method5, "opt-einsum", None),
             (method6, "opt-einsum path", None),
+            (method7, "ncon", None),
         ],
-        repeats=10000,
+        repeats=1000,
     )
 
 
