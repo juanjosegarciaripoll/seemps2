@@ -68,6 +68,7 @@ stored in the state for contraction and simplification.
     ~seemps.MPOList.apply
     ~seemps.MPO.__matmul__
     ~seemps.MPOList.__matmul__
+    ~seemps.MPO.expectation
 
 .. highlight:: python
 
@@ -82,3 +83,12 @@ random MPS::
 The same can be done in a slightly more controlled way, as in::
 
     >>> Fmps = mpo.apply(mps, strategy=seemps.Strategy(tolerance=1e-9))
+
+Note that there are dedicated functions to compute expectation values of
+matrix product operators. Thus instead of using the slow contraction::
+
+    >>> scprod(mps, mpo @ mps)
+
+you should instead use the specialized algorithms::
+
+    >>> mpo.expectation(mps)
