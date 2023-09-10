@@ -1,11 +1,32 @@
+from typing import Any, Callable
 from .tools import *
 import timeit
 
 
-def investigate_mpo_contraction():
-    A = np.random.randn(30, 2, 2, 30)
+def bench_all(all_methods: list[tuple[Callable, str, Any]], repeats=1000):
+    method1 = all_methods[0][0]
+    for i, (method, name, reorder_output) in enumerate(all_methods):
+        n = i + 1
+        try:
+            t = timeit.timeit(method, number=repeats)
+            t = timeit.timeit(method, number=repeats)
+        except Exception as e:
+            print(e)
+            continue
+        extra = ""
+        if i > 0:
+            output = method()
+            if reorder_output is not None:
+                output = reorder_output(output)
+            err = np.linalg.norm(method1() - output)
+            extra = f" error={err:1.2g}"
+        print(f"Method{n} {name}:\n time={t/repeats:5f}s" + extra)
+
+
+def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
+    A = rng.normal(size=(30, 2, 2, 30))
     A /= np.linalg.norm(A)
-    B = np.random.randn(10, 2, 13)
+    B = rng.normal(size=(10, 2, 13))
     try:
         from ncon import ncon
     except:
@@ -19,7 +40,9 @@ def investigate_mpo_contraction():
         pass
 
     def method1():
-        return np.einsum("aijb,cjd->acibd", A, B).reshape(30 * 10, 2, 30 * 13)
+        a, i, j, b = A.shape
+        c, j, d = B.shape
+        return np.einsum("aijb,cjd->acibd", A, B).reshape(a * c, i, b * d)
 
     def reorder_output(C):
         a, i, j, b = A.shape
@@ -31,8 +54,10 @@ def investigate_mpo_contraction():
     path = np.einsum_path("aijb,cjd->acibd", A, B, optimize="optimal")[0]
 
     def method2():
+        a, i, j, b = A.shape
+        c, j, d = B.shape
         return np.einsum("aijb,cjd->acibd", A, B, optimize=path).reshape(
-            30 * 10, 2, 30 * 13
+            a * c, i, b * d
         )
 
     def method3():
@@ -97,36 +122,20 @@ def investigate_mpo_contraction():
         c, j, d = B.shape
         return path_info(A, B).reshape(a * c, i, b * d)
 
-    all_methods = [
-        (method1, "einsum"),
-        (method2, "einsum path"),
-        (method3, "tensordot"),
-        (method4, "matmul order1"),
-        (method5, "matmul order2"),
-        (method6, "ncon"),
-        (method7, "opt-einsum"),
-        (method8, "opt-einsum path"),
-    ]
-
-    repeats = 1000
     print("\n----------\nTensor contractions for MPO * MPS")
-    for i, (method, name) in enumerate(all_methods):
-        n = i + 1
-        try:
-            t = timeit.timeit(method, number=repeats)
-            t = timeit.timeit(method, number=repeats)
-        except Exception as e:
-            print(e)
-            continue
-        extra = ""
-        output = method()
-        if n == 5:
-            extra += " (<- library_choice)"
-            output = reorder_output(output)
-        if i > 0:
-            err = np.linalg.norm(method1() - output)
-            extra = f" error={err:1.2g}" + extra
-        print(f"Method{n} {name}:\n time={t/repeats:5f}s" + extra)
+    bench_all(
+        [
+            (method1, "einsum", None),
+            (method2, "einsum path", None),
+            (method3, "tensordot", None),
+            (method4, "matmul order1", None),
+            (method5, "matmul order2 (library choice)", reorder_output),
+            (method6, "ncon", None),
+            (method7, "opt-einsum", None),
+            (method8, "opt-einsum path", None),
+        ],
+        repeats=1000,
+    )
 
 
 class TestMPOTensorFold(TestCase):
@@ -143,13 +152,26 @@ class TestMPOTensorFold(TestCase):
         self.assertSimilar(exact_contraction, fast_contraction)
 
 
-def investigate_unitary_contraction():
-    A = np.random.randn(10, 2, 13)
+def investigate_unitary_contraction(rng=np.random.default_rng(seed=0x2377312)):
+    A = rng.normal(size=(10, 2, 13))
     A /= np.linalg.norm(A)
-    B = np.random.randn(13, 2, 10)
+    B = rng.normal(size=(13, 2, 10))
     B /= np.linalg.norm(B)
-    U = np.random.randn(2, 2, 2, 2)
+    U = rng.normal(size=(2, 2, 2, 2))
     U2 = U.reshape(4, 4)
+    try:
+        from ncon import ncon
+    except:
+        pass
+    path_info = []
+    try:
+        from opt_einsum import contract, contract_expression
+
+        path_info = contract_expression(
+            "ijk,klm,nrjl -> inrm", A.shape, B.shape, U.shape
+        )
+    except:
+        pass
 
     def method1():
         return np.einsum("ijk,klm,nrjl -> inrm", A, B, U)
@@ -174,28 +196,24 @@ def investigate_unitary_contraction():
             U2, np.matmul(A.reshape(-1, b), B.reshape(b, -1)).reshape(a, -1, c)
         ).reshape(a, d, e, c)
 
-    repeats = 10000
-    t = timeit.timeit(method1, number=repeats)
-    t = timeit.timeit(method1, number=repeats)
-    print("\n----------\nTensor contractions for unitary evolution")
-    print(f"Method1 {t/repeats}s")
+    def method5():
+        return contract("ijk,klm,nrjl -> inrm", A, B, U)
 
-    t = timeit.timeit(method2, number=repeats)
-    t = timeit.timeit(method2, number=repeats)
-    print(f"Method2 {t/repeats}s")
+    def method6():
+        return path_info(A, B, U)
 
-    t = timeit.timeit(method3, number=repeats)
-    t = timeit.timeit(method3, number=repeats)
-    print(f"Method3 {t/repeats}s")
-
-    U2 = U.reshape(4, 4)
-    t = timeit.timeit(method4, number=repeats)
-    t = timeit.timeit(method4, number=repeats)
-    print(f"Method4 {t/repeats}s (<- library choice)")
-
-    for i, m in enumerate([method2, method3, method4]):
-        err = np.linalg.norm(method1() - m())
-        print(f"Method{i+2} error = {err}")
+    print("---------------\nUnitary evolution contraction")
+    bench_all(
+        [
+            (method1, "einsum", None),
+            (method2, "einsum path", None),
+            (method3, "tensordot", None),
+            (method4, "matmul (library choice)", None),
+            (method5, "opt-einsum", None),
+            (method6, "opt-einsum path", None),
+        ],
+        repeats=10000,
+    )
 
 
 class TestTwoSiteEvolutionFold(TestCase):
