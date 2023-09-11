@@ -7,27 +7,26 @@ from ..mpo import MPOList, MPO
 def qubo_mpo(
     J: Optional[Operator] = None, h: Optional[Vector] = None, **kwdargs
 ) -> MPO:
-    """Return the MPO associated to a QUBO operator
-         $\\sum_i J_{ij} s_i s_j + \\sum_i h_i s_i$
-    defined by the interaction 'J' and the field 'h'.
+    """Return the MPO associated to a QUBO operator.
+
+    The operator is defined according to the mathematical notation
+    :math:`\\sum_i J_{ij} s_i s_j + \\sum_i h_i s_i`,
+    with the matrix of interactions 'J' and the vector of local
+    fields 'h'. At least one of these must be provided.
 
     Parameters
     ----------
-    J : Optional[Operator] :
-        (Default value = None)
+    J : Optional[Operator]
+        Matrix of Ising coupling between qubits (Default value = None)
     h : Optional[Vector] :
-        (Default value = None)
+        Vector of local magnetic fields (Default value = None)
     **kwdargs :
-
-    J: Optional[Operator] :
-         (Default value = None)
-    h: Optional[Vector] :
-         (Default value = None)
+        Other arguments accepted by :class:`MPO`
 
     Returns
     -------
-
-
+    MPO
+        Matrix-product operator implementing this Hamiltonian
     """
     if J is None:
         #
@@ -74,31 +73,29 @@ def qubo_exponential_mpo(
     **kwdargs
 ) -> Union[MPO, MPOList]:
     """Return the MPO associated to the exponential $\\exp(\\beta H)$ of
-    the QUBO operator
-         $H = \\sum_i J_{ij} s_i s_j + \\sum_i h_i s_i$
-    defined by the interaction 'J' and the field 'h'.
+    a QUBO operator.
+
+    The QUBO operator is defined as a sum of
+    longitudinal couplings and magnetic fields
+    :math:`H = \\sum_i J_{ij} s_i s_j + \\sum_i h_i s_i`
+    described by the interaction matrix `J` and the vector field `h`.
+    At least one of these must be provided.
 
     Parameters
     ----------
-    J : Optional[Operator] :
-        (Default value = None)
+    J : Optional[Operator]
+        Matrix of Ising coupling between qubits (Default value = None)
     h : Optional[Vector] :
-        (Default value = None)
+        Vector of local magnetic fields (Default value = None)
     beta : float :
-        (Default value = -1.0)
+        Exponential prefactor (Default value = -1.0)
     **kwdargs :
-
-    J: Optional[Operator] :
-         (Default value = None)
-    h: Optional[Vector] :
-         (Default value = None)
-    beta: float :
-         (Default value = -1.0)
+        Other arguments accepted by :class:`MPO`
 
     Returns
     -------
-
-
+    MPOList | MPO
+        MPO or set of them to implement the exponential of an Ising interaction.
     """
     if J is None:
         #
