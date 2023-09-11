@@ -200,35 +200,49 @@ class MPO(array.TensorArray):
                 D = A.shape[-1]
         return MPO(data, strategy=self.strategy)
 
-    def expectation(self, state: MPS) -> Weight:
-        """Expectation value of MPO on an MPS state.
+    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+        """Expectation value of MPO on one or two MPS states.
+
+        If one state is given, this state is interpreted as :math:`\\psi`
+        and this function computes :math:`\\langle{\\psi|O\\psi}\\rangle`
+        If two states are given, the first one is the bra :math:`\\psi`,
+        the second one is the ket :math:`\\phi`, and this computes
+        :math:`\\langle\\psi|O|\\phi\\rangle`.
 
         Parameters
         ----------
-        state : MPS
+        bra : MPS
             The state :math:`\\psi` on which the expectation value
             is computed.
+        ket : Optional[MPS]
+            The ket component of the expectation value. Defaults to `bra`.
 
         Returns
         -------
         float | complex
-            :math:`\\langle\\psi\\vert{O}\\vert\\psi\\rangle` where `O`
+            :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
             is the matrix-product operator.
         """
-        if isinstance(state, CanonicalMPS):
-            center = state.center
-        elif isinstance(state, MPS):
+        if isinstance(bra, CanonicalMPS):
+            center = bra.center
+        elif isinstance(bra, MPS):
             center = self.size - 1
         else:
+            raise Exception("MPS required")
+        if ket is None:
+            ket = bra
+        elif not isinstance(ket, MPS):
             raise Exception("MPS required")
         left = right = begin_mpo_environment()
         operators = self._data
         for i in range(0, center):
-            A = state[i]
-            left = update_left_mpo_environment(left, A.conj(), operators[i], A)
+            left = update_left_mpo_environment(
+                left, bra[i].conj(), operators[i], ket[i]
+            )
         for i in range(self.size - 1, center - 1, -1):
-            A = state[i]
-            right = update_right_mpo_environment(right, A.conj(), operators[i], A)
+            right = update_right_mpo_environment(
+                right, bra[i].conj(), operators[i], ket[i]
+            )
         return join_mpo_environments(left, right)
 
 

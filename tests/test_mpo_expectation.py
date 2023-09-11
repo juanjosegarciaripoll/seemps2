@@ -46,3 +46,12 @@ class TestMPOExpectation(TestCase):
         O = H.tomatrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
+
+    def test_mpo_expected_bra_and_ket_order(self):
+        H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
+        bra = random_mps(2, 10, complex=True, rng=self.rng)
+        ket = random_mps(2, 10, complex=True, rng=self.rng)
+        O = H.tomatrix()
+        vbra = bra.to_vector()
+        vket = ket.to_vector()
+        self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
