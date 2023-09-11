@@ -38,7 +38,7 @@ same state from the file.
     with h5py.File("data.hdf5", "r") as file
         seemps.hdf5.read_mps(file, "state")
 
-This is a summary of all the functions provided by :module:`seemps.hdf5`.
+This is a summary of all the functions provided by :py:mod:`seemps.hdf5`.
 
 .. autosummary::
    :toctree: generated/
