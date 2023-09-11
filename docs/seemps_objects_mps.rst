@@ -1,6 +1,6 @@
 .. currentmodule:: seemps
 
-.. _mps_classes:
+.. _mps_class:
 
 ************************************
 Matrix-product states (:class:`MPS`)
