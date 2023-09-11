@@ -2,6 +2,7 @@ from .test_tools import *
 from .test_contractions import *
 from .test_mps import *
 from .test_sample_states import *
+from .test_random_mps import *
 from .test_canonical import *
 from .test_expectation import *
 from .test_mpo_expectation import *

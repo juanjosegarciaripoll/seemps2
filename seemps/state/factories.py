@@ -134,6 +134,7 @@ def random_mps(
     N: int,
     D: int = 1,
     truncate: bool = True,
+    complex: bool = False,
     rng: Optional[np.random.Generator] = None,
 ) -> MPS:
     """Create a random state with `N` elements of dimension `d` and bond
@@ -149,6 +150,8 @@ def random_mps(
         The maximum bond dimension
     truncate : bool, default = True
         Do not reach `D` for tensors that do not require it.
+    complex : bool, default = False
+        If true, return states with complex wavefunctions.
     rng : np.random.Generator, default = np.random.default_rng()
         Random number generator used to create the state. Provide a seeded
         generator to ensure reproducibility
@@ -170,7 +173,10 @@ def random_mps(
             DR = D
         else:
             DR = np.min([DR * d, D, d ** (N - i - 1)])
-        mps[i] = rng.normal(size=(DL, d, DR))
+        T = rng.normal(size=(DL, d, DR))
+        if complex:
+            T = T + 1j * rng.normal(size=T.shape)
+        mps[i] = T
     return MPS(mps)
 
 
