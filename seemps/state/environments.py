@@ -1,6 +1,5 @@
 import numpy as np
 from ..typing import *
-import opt_einsum
 
 
 def begin_environment(χ: int = 1) -> Environment:
@@ -88,32 +87,30 @@ def begin_mpo_environment() -> MPOEnvironment:
     return np.ones((1, 1, 1), dtype=np.float64)
 
 
-_update_left_mpo_environment = opt_einsum.contract_expression(
-    "acb,ajd,cjie,bif->def", (30, 31, 32), (30, 2, 33), (31, 2, 2, 34), (32, 2, 35)
-)
-
-
 def update_left_mpo_environment(
     rho: MPOEnvironment, A: Tensor3, O: Tensor4, B: Tensor3
 ) -> MPOEnvironment:
     # output = opt_einsum.contract("acb,ajd,cjie,bif->def", rho, A, O, B)
-    return _update_left_mpo_environment(rho, A, O, B)
-    print(rho.shape, A.shape, O.shape, B.shape, "->", output.shape)
-    return output
-
-
-_update_right_mpo_environment = opt_einsum.contract_expression(
-    "def,ajd,cjie,bif->acb", (30, 31, 32), (33, 2, 30), (34, 2, 2, 31), (35, 2, 32)
-)
+    # bif,acb->ifac
+    aux = np.tensordot(B, rho, (0, 2))
+    # ifac,cjie->faje
+    aux = np.tensordot(aux, O, ([0, 3], [2, 0]))
+    # faje,ajd-> def
+    aux = np.tensordot(aux, A, ((1, 2), (0, 1))).transpose(2, 1, 0)
+    return aux
 
 
 def update_right_mpo_environment(
     rho: MPOEnvironment, A: Tensor3, O: Tensor4, B: Tensor3
 ) -> MPOEnvironment:
     # output = opt_einsum.contract("def,ajd,cjie,bif->acb", rho, A, O, B)
-    return _update_right_mpo_environment(rho, A, O, B)
-    print(rho.shape, A.shape, O.shape, B.shape, "->", output.shape)
-    return output
+    # ajd,def->ajef
+    aux = np.tensordot(A, rho, (2, 0))
+    # ajef,cjie->afci
+    aux = np.tensordot(aux, O, ((1, 2), (1, 3)))
+    # afci,bif->acb
+    aux = np.tensordot(aux, B, ((1, 3), (2, 1)))
+    return aux
 
 
 def end_mpo_environment(ρ: MPOEnvironment) -> Weight:
