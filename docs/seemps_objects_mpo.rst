@@ -53,8 +53,20 @@ set of qubits, the :py:meth:`~seemps.MPO.extend` function allows you to do it.
 Application
 ===========
 
-Matrix-product operators can be applied onto matrix-product states, producing
-new states. We offer two functions for this. The first one is the
+One of the advantages of matrix-product operators is that they can be efficiently
+applied to matrix-product states, preserving the matrix-product form, and with
+a cost that is linear in the system size. This is illustrated by the graph
+below, sketching the contraction of an MPO (first row, 4-dimensional tensors)
+with an MPS (lower row, 3-legged tensors).
+
+.. image:: pictures/mpo-mps-contraction.drawio.svg
+    :width: 400
+
+The drawback of this contraction is that it results in potentially larger tensors.
+Indeed, in the example above, a trivial contraction will create an MPS with
+tensors of size :math:`dD\times d\times dD`.
+
+We offer two functions to apply MPO's onto MPS'. The first one is the
 :py:meth:`seemps.MPO.apply`, which offers a lot of control on the contraction
 and later simplification of the MPS (see
 :doc:`simplification algorithm <seemps_algorithms>`). The other alternative

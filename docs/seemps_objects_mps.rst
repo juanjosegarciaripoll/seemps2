@@ -18,10 +18,18 @@ would look as follows
     \prod_{n=1}^N A_{\alpha_n, i_n, \alpha_{n+1}}
     |i_1,i_2,\ldots, i_N\rangle
 
+.. image:: pictures/mps-state.drawio.svg
+  :width: 400
+  :align: center
+
 Here, the :math:`i_n` are indices labelling the quantum states of the respective
 subsystems, while the :math:`\alpha_n` are integer indices connecting
 (correlating) neigboring quantum systems. The former are usually labeled the
 "physical" indices, while the latter are declared "virtual" indices.
+
+.. image:: pictures/mps-tensor.drawio.svg
+  :width: 200
+  :align: center
 
 In SeeMPS, matrix-product states are represented by the class :class:`MPS`. The
 instances of this class keep a sequence (list) of these three-legged tensors,
@@ -69,10 +77,25 @@ Matrix product states can be combined with each other and transformed:
 Observables
 ===========
 
-It is possible to extract expectation values from matrix-product states in a
-very efficient way, thanks to their simple tensor structure. The following
-functions provide access to single- and two-body expectation values in a
-convenient way.
+The interest of MPS lays in its simple algebraic structure, which not only
+involves a subexponential number of parameters, but also enables some operations
+with a polynomial cost. One such operation is the computation of expected values
+of local operators such as
+
+.. math::
+    \langle\psi|O_1 O_2 \cdots O_N|\psi\rangle
+
+.. image:: pictures/mps-expectation.drawio.svg
+    :width: 400
+    :align: center
+
+As sketched above, the expectation value is recovered from the contraction of
+a quasi-1D structure, with a contraction cost :math:`O(N D^4)` that is linear
+in the number of components, and polynomial on the bond dimension `D` and the
+physical dimension `d` of each tensor.
+
+The following functions provide access to single- and two-body expectation
+values in a convenient way.
 
 .. autosummary::
     :toctree: generated/
