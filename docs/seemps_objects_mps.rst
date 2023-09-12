@@ -85,14 +85,14 @@ of local operators such as
 .. math::
     \langle\psi|O_1 O_2 \cdots O_N|\psi\rangle
 
-.. image:: pictures/mps-expectation.drawio.svg
-    :width: 400
-    :align: center
-
-As sketched above, the expectation value is recovered from the contraction of
+As sketched below, the expectation value is recovered from the contraction of
 a quasi-1D structure, with a contraction cost :math:`O(N D^4)` that is linear
 in the number of components, and polynomial on the bond dimension `D` and the
 physical dimension `d` of each tensor.
+
+.. image:: pictures/mps-expectation.drawio.svg
+    :width: 400
+    :align: center
 
 The following functions provide access to single- and two-body expectation
 values in a convenient way.
