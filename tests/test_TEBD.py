@@ -1,5 +1,3 @@
-import scipy.sparse as sp
-from scipy.sparse.linalg import expm_multiply
 from seemps.state import CanonicalMPS, DEFAULT_STRATEGY, product_state, NO_TRUNCATION
 from seemps.tools import *
 from .tools import *

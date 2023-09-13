@@ -1,7 +1,7 @@
 import numpy as np
 from .timing import bench_all
-import opt_einsum
-import ncon
+import opt_einsum  # type: ignore
+import ncon  # type: ignore
 
 
 def mpo_left_environment(rng=np.random.default_rng(seed=0x1322312)):

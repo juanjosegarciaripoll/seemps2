@@ -1,6 +1,5 @@
-from typing import Union, Any
-import unittest
-import h5py
+from typing import Any
+import h5py  # type: ignore
 import seemps
 from .tools import *
 import os

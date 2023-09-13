@@ -95,5 +95,5 @@ def product_expectation(state: MPSLike, operator_list: list[Operator]) -> Weight
     return end_environment(rho)
 
 
-def mpo_expectation(state: MPSLike, operator: MPO) -> Weight:
+def mpo_expectation(state: MPS, operator: MPO) -> Weight:
     return operator.expectation(state)

@@ -11,12 +11,12 @@ def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x23773
     U = rng.normal(size=(2, 2, 2, 2))
     U2 = U.reshape(4, 4)
     try:
-        from ncon import ncon
+        from ncon import ncon  # type: ignore
     except:
         pass
     path_info = []
     try:
-        from opt_einsum import contract, contract_expression
+        from opt_einsum import contract, contract_expression  # type: ignore
 
         path_info = contract_expression(
             "ijk,klm,nrjl -> inrm", A.shape, B.shape, U.shape, optimize="optimal"

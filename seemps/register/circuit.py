@@ -279,7 +279,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         parameters_size = 0
-        segments = []
+        segments: list[tuple[UnitaryCircuit, int, int]] = []
         for circuit in layers:
             if isinstance(circuit, ParameterizedCircuit):
                 l = circuit.parameters_size
@@ -297,7 +297,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
             parameters = self.parameters
         for circuit, start, end in self.layers:
             state = circuit.apply_inplace(state, parameters[start:end])
-        return state
+        return state  # type: ignore
 
 
 class VQECircuit(ParameterizedLayeredCircuit):
@@ -324,12 +324,12 @@ class VQECircuit(ParameterizedLayeredCircuit):
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         if default_parameters is not None:
-            default_parameters = np.array(default_parameters).reshape(-1, register_size)
+            parameters_array = np.reshape(default_parameters, (-1, register_size))
 
         def get_default_parameters(layer: int):
             if default_parameters is None:
                 return None
-            return default_parameters[layer // 2, :]
+            return parameters_array[layer // 2, :]
 
         super().__init__(
             register_size,
@@ -349,6 +349,6 @@ class VQECircuit(ParameterizedLayeredCircuit):
                 )
                 for layer in range(2 * layers)
             ],
-            default_parameters.reshape(-1),
+            default_parameters,
             strategy,
         )

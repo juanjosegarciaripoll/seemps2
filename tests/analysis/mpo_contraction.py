@@ -1,24 +1,17 @@
 import numpy as np
 from .timing import bench_all
+from ncon import ncon  # type: ignore
+from opt_einsum import contract, contract_expression  # type: ignore
 
 
 def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
     A = rng.normal(size=(30, 2, 2, 30))
     A /= np.linalg.norm(A)
     B = rng.normal(size=(10, 2, 13))
-    try:
-        from ncon import ncon
-    except:
-        pass
     path_info = []
-    try:
-        from opt_einsum import contract, contract_expression
-
-        path_info = contract_expression(
-            "aijb,cjd->acibd", A.shape, B.shape, optimize="optimal"
-        )
-    except:
-        pass
+    path_info = contract_expression(
+        "aijb,cjd->acibd", A.shape, B.shape, optimize="optimal"
+    )
 
     def method1():
         a, i, j, b = A.shape
