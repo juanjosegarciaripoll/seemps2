@@ -122,7 +122,3 @@ def mpo_right_environment(rng=np.random.default_rng(seed=0x1322312)):
         ],
         repeats=1000,
     )
-
-
-if __name__ == "__main__":
-    investigate_mpo_mps_contraction()
