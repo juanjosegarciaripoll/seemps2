@@ -4,6 +4,8 @@ from math import sqrt
 from .tools import σx, σy, σz
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod
+from .mpo import MPO
+from .state import schmidt, core, DEFAULT_STRATEGY, Strategy
 
 
 class NNHamiltonian(object):
@@ -21,7 +23,10 @@ class NNHamiltonian(object):
     """
 
     size: int
+    """Number of quantum systems in this Hamiltonian."""
+
     constant: bool
+    """True if the Hamiltonian does not depend on time."""
 
     def __init__(self, size: int):
         #
@@ -80,6 +85,70 @@ class NNHamiltonian(object):
             dleft *= self.dimension(i)
 
         return H
+
+    def to_mpo(self, t: float = 0.0, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
+        """Compute the matrix-product operator for this Hamiltonian at time `t`.
+
+        Parameters
+        ----------
+        t : float, default = 0.0
+            Time at which the Hamiltonian is evaluated.
+        strategy : Strategy
+            Truncation strategy for MPO tensors (defaults to DEFAULT_STRATEGY)
+
+        Returns
+        -------
+        MPO
+            Matrix-product operator.
+        """
+        tensors = [
+            np.zeros((2, di, di, 2))
+            for i in range(self.size)
+            for di in [self.dimension(i)]
+        ]
+        for i in range(self.size - 1):
+            Hij = np.asarray(self.interaction_term(i, t))
+            di = self.dimension(i)
+            dj = self.dimension(i + 1)
+            Hij = (
+                Hij.reshape(di, dj, di, dj)
+                .transpose(0, 2, 1, 3)
+                .reshape(di * di, dj * dj)
+            )
+            U, s, V = schmidt.svd(
+                Hij,
+                full_matrices=False,
+                overwrite_a=True,
+                check_finite=False,
+                lapack_driver=schmidt.SVD_LAPACK_DRIVER,
+            )
+            s, _ = core.truncate_vector(s, strategy)
+            ds = s.size
+            s = np.sqrt(s)
+            #
+            # Extend the dimension of the tensor to include the
+            # new interaction
+            A = tensors[i]
+            a, j, k, b = A.shape
+            B = np.zeros((a, j, k, b + ds), dtype=U.dtype)
+            B[:, :, :, :b] = A
+            B[0, :, :, 2:] = (U[:, :ds] * s).reshape(di, di, ds)
+            B[1, :, :, 1] = np.eye(j)
+            B[0, :, :, 0] = np.eye(j)
+            tensors[i] = B
+            #
+            # Similar operation for the next tensor
+            A = tensors[i + 1]
+            a, j, k, b = A.shape
+            B = np.zeros((a + ds, j, k, b), dtype=V.dtype)
+            B[:a, :, :, :] = A
+            B[2:, :, :, 1] = (s.reshape(ds, 1) * V[:ds, :]).reshape(ds, dj, dj)
+            B[1, :, :, 1] = np.eye(j)
+            B[0, :, :, 0] = np.eye(j)
+            tensors[i + 1] = B
+        tensors[0] = tensors[0][[0], :, :, :]
+        tensors[-1] = tensors[-1][:, :, :, [1]]
+        return MPO(tensors)
 
 
 class ConstantNNHamiltonian(NNHamiltonian):

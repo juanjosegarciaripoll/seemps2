@@ -1,7 +1,7 @@
 import scipy.sparse as sp  # type: ignore
 from .tools import *
 from seemps.tools import σx, σy, σz
-from seemps.hamiltonians import ConstantNNHamiltonian
+from seemps.hamiltonians import ConstantNNHamiltonian, HeisenbergHamiltonian
 
 i2 = sp.eye(2)
 
@@ -55,3 +55,14 @@ class TestHamiltonians(TestCase):
         M2 = H2.tomatrix()
         A2 = sp.kron(i2, -2.5 * σy) + sp.kron(σz, σz) + sp.kron(3.5 * σx, i2)
         self.assertSimilar(M2, A2)
+
+    def test_hamiltonian_to_mpo(self):
+        """Check conversion to MPO is accurate by comparing matrices."""
+        H2 = HeisenbergHamiltonian(2)
+        self.assertSimilar(H2.tomatrix().toarray(), H2.to_mpo().tomatrix())
+
+        H3 = HeisenbergHamiltonian(3)
+        self.assertSimilar(H3.tomatrix().toarray(), H3.to_mpo().tomatrix())
+
+        H4 = HeisenbergHamiltonian(4)
+        self.assertSimilar(H4.tomatrix().toarray(), H4.to_mpo().tomatrix())
