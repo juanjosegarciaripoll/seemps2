@@ -28,7 +28,9 @@ def guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
         a, d, b = A.shape
         if DL < a or DR < b:
             # Extend with zeros to accommodate new contribution
-            sumA = sumA.reshape(max(DL, a), d, max(DR, b))
+            newA = np.zeros((max(DR, a), d, max(DR, b)), dtype=sumA.dtype)
+            newA[:DL, :, :DR] = sumA
+            sumA = newA
         dt = type(A[0, 0, 0] + sumA[0, 0, 0])
         if sumA.dtype != dt:
             sumA = sumA.astype(dt)

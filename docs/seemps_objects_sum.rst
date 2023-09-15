@@ -42,7 +42,7 @@ Conversions
 
 An :class:`MPSSum` can be approximated by a matrix-product state through an
 algorithm known as "simplification", explained in
-:doc:`the algorithms section <seemps_algorithms>`. It can also be converted
+:doc:`the algorithms section <algorithms/mps_simplification>`. It can also be converted
 to standard wavefunctions.
 
 .. autosummary::

@@ -39,7 +39,7 @@ Creation
 ========
 
 Many of the algorithms described in other parts of this documentation
-(e.g., :doc:`the algorithms section <seemps_algorithms>`) produce MPS in
+(e.g., :doc:`the algorithms section <index>`) produce MPS in
 canonical form. Alternatively, we can create a :class:`~seemps.state.CanonicalMPS`
 object from a :class:`~seemps.state.MPS` by a process known as orthogonalization,
 specifying both the center for the canonical form, as well as the truncation

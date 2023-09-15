@@ -69,7 +69,7 @@ tensors of size :math:`dD\times d\times dD`.
 We offer two functions to apply MPO's onto MPS'. The first one is the
 :py:meth:`seemps.MPO.apply`, which offers a lot of control on the contraction
 and later simplification of the MPS (see
-:doc:`simplification algorithm <seemps_algorithms>`). The other alternative
+:doc:`simplification algorithm <algorithms/mps_simplification>`). The other alternative
 is the matrix multiplication operator `@`, which relies on the strategy
 stored in the state for contraction and simplification.
 

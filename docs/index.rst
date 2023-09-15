@@ -12,7 +12,7 @@ Welcome to SeeMPS's documentation!
 
    getting_started
    seemps_objects
-   seemps_algorithms
+   algorithms/index
    seemps_register
    seemps_hdf5
    seemps_tools
