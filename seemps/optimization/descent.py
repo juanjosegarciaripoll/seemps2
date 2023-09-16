@@ -25,8 +25,8 @@ class OptimizeResults:
     state: MPS
     energy: float
     message: str
-    trajectory: Optional[Vector] = None
-    variances: Optional[Vector] = None
+    trajectory: Optional[VectorLike] = None
+    variances: Optional[VectorLike] = None
 
 
 def gradient_descent(
@@ -59,8 +59,8 @@ def gradient_descent(
         Results from the optimization. See :class:`OptimizeResults`.
     """
 
-    def energy_and_variance(state: MPS) -> tuple[MPS, float, float]:
-        true_E = H.expectation(state)
+    def energy_and_variance(state: MPS) -> tuple[MPS, float, float, float]:
+        true_E = H.expectation(state).real
         H_state = H.apply(state, strategy=strategy)
         avg_H2 = scprod(H_state, H_state).real
         variance = avg_H2 - scprod(state, H_state).real ** 2
@@ -85,7 +85,7 @@ def gradient_descent(
         | <ψ|H*H|ψ>  <ψ|H*H*H|ψ> | | b |     | <ψ|H|ψ>  <ψ|H*H|ψ> |
     
     """
-    
+
     for step in range(maxiter):
         state = CanonicalMPS(state, normalize=True)
         H_state, E, variance, avg_H2 = energy_and_variance(state)
@@ -107,9 +107,8 @@ def gradient_descent(
         # TODO: Replace this formula with the formula that keeps the
         # normalization of the state (2nd. order gradient descent from the
         # manuscript)
-        state = state + Δβ * (H_state - E * state)
         # TODO: Use directly `combine`
-        state = state.toMPS(strategy=strategy)
+        state = (state + Δβ * (H_state - E * state)).toMPS
         # TODO: Implement stop criteria based on gradient size Δβ
         # It must take into account the norm of the displacement, H_state
         # which was already calculated

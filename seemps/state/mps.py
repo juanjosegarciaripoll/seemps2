@@ -529,7 +529,6 @@ class MPSSum:
         MPS
             Quantum state approximating this sum.
         """
-        from ..truncate.combine import combine
 
         if strategy is None:
             strategy = self.strategy
@@ -550,3 +549,6 @@ class MPSSum:
             [state.conj() for state in self.states],
             self.strategy,
         )
+
+
+from ..truncate.combine import combine
