@@ -1,14 +1,15 @@
+from __future__ import annotations
 import numpy as np
 from ..typing import *
-from ..state.core import MAX_BOND_DIMENSION
+from ..tools import log
 from ..state import (
     DEFAULT_TOLERANCE,
     Truncation,
     Strategy,
+    MAX_BOND_DIMENSION,
     MPS,
     CanonicalMPS,
 )
-from ..tools import log
 from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
     begin_environment,

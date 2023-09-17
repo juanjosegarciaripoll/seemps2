@@ -18,4 +18,5 @@ from .core import (
     DEFAULT_STRATEGY,
     DEFAULT_TOLERANCE,
     NO_TRUNCATION,
+    MAX_BOND_DIMENSION,
 )

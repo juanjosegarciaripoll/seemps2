@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.state import MPS, MPSSum
+from seemps.state import MPS, MPSSum, NO_TRUNCATION
 from .fixture_mps_states import MPSStatesFixture
 
 
@@ -49,3 +49,26 @@ class TestMPSSum(MPSStatesFixture):
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B])
         self.assertTrue(np.all((0.5 * A.to_vector() - B.to_vector()) == C.to_vector()))
+
+    def test_mpssum_join_produces_right_size_tensors(self):
+        A = MPS(self.product_state.copy())
+        B = MPS(self.product_state.copy())
+        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(canonical=False)
+        for i, A in enumerate(C):
+            if i > 0:
+                self.assertEqual(A.shape[0], 2)
+            if i < C.size - 1:
+                self.assertEqual(A.shape[2], 2)
+            self.assertEqual(A.shape[1], 2)
+
+    def test_mpssum_join_produces_sum(self):
+        A = MPS(self.product_state.copy())
+        B = MPS(self.product_state.copy())
+        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(canonical=False)
+        self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
+
+    def test_mpssum_join_produces_canonical_form_sum(self):
+        A = MPS(self.product_state.copy())
+        B = MPS(self.product_state.copy())
+        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(strategy=NO_TRUNCATION)
+        self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
