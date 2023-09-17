@@ -54,17 +54,25 @@ a contraction of 3-legged tensors:
     A^{(2)}_{\alpha_2i_2\alpha_3}\cdots A^{(N)}_{\alpha_Ni_N1}
 
 In SeeMPS, this iterative procedure is performed in very different parts of the
-code. For the user, this algorithm is offered through the class method
-:func:`~seemps.state.MPS.from_vector`, which transforms the wavefunction of
-a composite quantum system into an :class:`MPS`. Naturally, because we are
+code. For the user, this algorithm is offered through the class methods
+:func:`~seemps.state.MPS.from_tensor`, which transforms an N-legged tensor
+into a matrix-product state with N components.
+
+Take for instance the following example, which creates an unnormalized random
+state of 8 qubits, and then uses this decomposition to create a
+matrix-product state::
+
+    >>> from seemps import MPS
+    >>> import numpy as np
+    >>> state = np.random.randn(2,2,2,2,2,2,2,2)
+    >>> mps = MPS.from_vector(state)
+
+Alternatively, the same effect can be obtained from the wavefunction of
+a composite quantum system represented as a vector. Naturally, because we are
 inputting a vector, this function takes as an argument a list with the
 dimensions of the quantum subsystems.
-
-Take for instance the following example, which creates a random state of 8
-qubits, and then uses this decomposition to create a matrix-product state::
 
     >>> from seemps import MPS
     >>> import numpy as np
     >>> state = np.random.randn(2**8)
-    >>> state /= np.linalg.norm(state)
     >>> mps = MPS.from_vector(state, [2]*8)

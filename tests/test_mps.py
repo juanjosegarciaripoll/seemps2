@@ -57,7 +57,17 @@ class TestMPS(MPSStatesFixture):
         self.assertTrue(
             all(a.shape == b.shape for a, b in zip(A, self.inhomogeneous_state))
         )
-        self.assertTrue(similar(A.to_vector(), self.inhomogeneous_state_wavefunction))
+        self.assertSimilar(A.to_vector(), self.inhomogeneous_state_wavefunction)
+
+    def test_from_tensor_recreates_product_states(self):
+        A = MPS.from_tensor(
+            self.inhomogeneous_state_wavefunction.reshape(2, 3, 4),
+            normalize=False,
+        )
+        self.assertTrue(
+            all(a.shape == b.shape for a, b in zip(A, self.inhomogeneous_state))
+        )
+        self.assertSimilar(A.to_vector(), self.inhomogeneous_state_wavefunction)
 
 
 class TestMPSOperations(MPSStatesFixture):

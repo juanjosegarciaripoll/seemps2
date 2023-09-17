@@ -51,6 +51,7 @@ offer some functions to create convenience states
 
     ~seemps.state.MPS
     ~seemps.state.MPS.from_vector
+    ~seemps.state.MPS.from_tensor
     ~seemps.state.AKLT
     ~seemps.state.GHZ
     ~seemps.state.graph

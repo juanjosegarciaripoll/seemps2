@@ -95,6 +95,38 @@ class MPS(array.TensorArray):
         """
         return MPS(vector2mps(ψ, dimensions, strategy, normalize))
 
+    @classmethod
+    def from_tensor(
+        cls,
+        state: np.ndarray,
+        strategy: Strategy = DEFAULT_STRATEGY,
+        normalize: bool = True,
+        **kwdargs,
+    ) -> MPS:
+        """Create a matrix-product state from a tensor that represents a
+        composite quantum system.
+
+        The tensor `state` must have `N>=1` indices, each of them associated
+        to an individual quantum system, in left-to-right order. This function
+        decomposes the tensor into a contraction of `N` three-legged tensors
+        as expected from an MPS.
+
+        Parameters
+        ----------
+        state : np.ndarray
+            Real or complex tensor with `N` legs.
+        strategy : Strategy, default = DEFAULT_STRATEGY
+            Default truncation strategy for algorithms working on this state.
+        normalize : bool, default = True
+            Whether the state is normalized to compensate truncation errors.
+
+        Returns
+        -------
+        MPS
+            A valid matrix-product state approximating this state vector.
+        """
+        return cls.from_vector(state.reshape(-1), state.shape, strategy, normalize)
+
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
         if isinstance(state, MPS):
