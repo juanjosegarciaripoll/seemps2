@@ -15,7 +15,7 @@ class TestHDF5(MPSTestCase):
 
     def test_hdf5_mps_attributes(self):
         with h5py.File(self.filename, "w") as file:
-            seemps.hdf5.write_mps(file, "M", seemps.random_mps(2, 3))
+            seemps.hdf5.write_mps(file, "M", seemps.random_uniform_mps(2, 3))
         with h5py.File(self.filename, "r") as file:
             g = file["M"]
             attrs = g.attrs

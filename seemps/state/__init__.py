@@ -9,6 +9,7 @@ from .factories import (
     AKLT,
     random,
     random_mps,
+    random_uniform_mps,
     gaussian,
 )
 from .canonical_mps import CanonicalMPS

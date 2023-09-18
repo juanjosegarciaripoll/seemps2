@@ -30,7 +30,7 @@ The following is an example evolving a matrix-product state with 20 qubits
 under a spin-1/2 Heisenberg Hamiltonian::
 
    >>> import seemps
-   >>> mps = seemps.random_mps(2, 20)
+   >>> mps = seemps.random_uniform_mps(2, 20)
    >>> H = seemps.hamiltonians.HeisenbergHamiltonian(20)
    >>> dt = 0.1
    >>> U = seemps.Trotter2ndOrder(H, dt)

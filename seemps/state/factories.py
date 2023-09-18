@@ -129,7 +129,7 @@ def AKLT(n: int) -> MPS:
     return MPS(data)
 
 
-def random_mps(
+def random_uniform_mps(
     d: int,
     N: int,
     D: int = 1,
@@ -161,13 +161,46 @@ def random_mps(
     MPS
         A random matrix-product state.
     """
+    return random_mps([d] * N, D, truncate, complex, rng)
+
+
+def random_mps(
+    dimensions: list[int],
+    D: int = 1,
+    truncate: bool = True,
+    complex: bool = False,
+    rng: Optional[np.random.Generator] = None,
+) -> MPS:
+    """Create a random state with `N` elements of dimension `d` and bond
+    dimension `D`.
+
+    Parameters
+    ----------
+    dimensions : list[int]
+        List of physical dimensions of each quantum system
+    D : int, default = 1
+        The maximum bond dimension
+    truncate : bool, default = True
+        Do not reach `D` for tensors that do not require it.
+    complex : bool, default = False
+        If true, return states with complex wavefunctions.
+    rng : np.random.Generator, default = np.random.default_rng()
+        Random number generator used to create the state. Provide a seeded
+        generator to ensure reproducibility
+
+    Returns
+    -------
+    MPS
+        A random matrix-product state.
+    """
+    N = len(dimensions)
     mps: list[np.ndarray] = [np.ndarray(())] * N
     if rng is None:
         rng = np.random.default_rng()
     DR = 1
     if N > 60:
         truncate = False
-    for i in range(N):
+    for i, d in enumerate(dimensions):
         DL = DR
         if not truncate and i != N - 1:
             DR = D
@@ -181,11 +214,11 @@ def random_mps(
 
 
 def random(*args, **kwdargs) -> MPS:
-    """Deprecated version of :func:`random_mps`."""
+    """Deprecated version of :func:`random_uniform_mps`."""
     warnings.warn(
         "method norm2 is deprecated, use norm_squared", category=DeprecationWarning
     )
-    return random_mps(*args, **kwdargs)
+    return random_uniform_mps(*args, **kwdargs)
 
 
 def gaussian(n: int, x0: float, w0: float, k0: float) -> MPS:

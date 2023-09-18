@@ -84,8 +84,8 @@ class TestExpectation(TestCase):
                     )
                     self.assertAlmostEqual(desired / nrm2, ϕ.expectation1(O1, n) / nrm2)
 
-        run_over_random_mps(expected1_ok)
-        run_over_random_mps(lambda ϕ: expected1_ok(ϕ, canonical=True))
+        run_over_random_uniform_mps(expected1_ok)
+        run_over_random_uniform_mps(lambda ϕ: expected1_ok(ϕ, canonical=True))
 
     def test_expected1_density(self):
         def random_wavefunction(n):
@@ -138,5 +138,5 @@ class TestExpectation(TestCase):
                     desired / nrm2, ϕ.expectation2(O1, O2, n - 1) / nrm2
                 )
 
-        run_over_random_mps(expected2_ok)
-        run_over_random_mps(lambda ϕ: expected2_ok(ϕ, canonical=True))
+        run_over_random_uniform_mps(expected2_ok)
+        run_over_random_uniform_mps(lambda ϕ: expected2_ok(ϕ, canonical=True))

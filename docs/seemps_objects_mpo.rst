@@ -88,7 +88,7 @@ As an example, consider the application of a quantum Fourier transform onto a
 random MPS::
 
     >>> import seemps
-    >>> mps = seemps.random_mps(2, 10)
+    >>> mps = seemps.random_uniform_mps(2, 10)
     >>> mpo = seemps.qft.qft_mpo(10)
     >>> Fmps = mpo @ mps
 

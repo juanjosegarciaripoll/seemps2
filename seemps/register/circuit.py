@@ -118,7 +118,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
 
     Examples
     --------
-    >>> state = random_mps(2, 3)
+    >>> state = random_uniform_mps(2, 3)
     >>> U = LocalRotationsLayer(register_size=state.size, operator="Sz")
     >>> Ustate = U @ state
     """

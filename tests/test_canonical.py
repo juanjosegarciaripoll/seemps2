@@ -27,8 +27,8 @@ class TestCanonicalForm(TestCase):
                 _update_in_canonical_form_left(ξ, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], -1))
 
-        run_over_random_mps(ok)
-        run_over_random_mps(lambda ψ: ok(ψ, normalization=True))
+        run_over_random_uniform_mps(ok)
+        run_over_random_uniform_mps(lambda ψ: ok(ψ, normalization=True))
 
     def test_canonicalize(self):
         #
@@ -52,7 +52,7 @@ class TestCanonicalForm(TestCase):
                 #
                 self.assertSimilar(ξ.to_vector(), Ψ.to_vector())
 
-        run_over_random_mps(ok)
+        run_over_random_uniform_mps(ok)
 
     def test_canonical_mps(self):
         #
@@ -94,7 +94,7 @@ class TestCanonicalForm(TestCase):
                 for i in range(Ψ.size):
                     self.assertTrue(similar(ξ[i], χ[i]))
 
-        run_over_random_mps(ok)
+        run_over_random_uniform_mps(ok)
 
     def test_environments(self):
         #
@@ -109,7 +109,7 @@ class TestCanonicalForm(TestCase):
                 self.assertTrue(almostIdentity(Lenv))
                 self.assertTrue(almostIdentity(Renv))
 
-        run_over_random_mps(ok)
+        run_over_random_uniform_mps(ok)
 
     def test_canonical_mps_normalization(self):
         #
@@ -125,7 +125,7 @@ class TestCanonicalForm(TestCase):
                     similar(ξ1.to_vector() / np.sqrt(ξ1.norm_squared()), ξ2.to_vector())
                 )
 
-        run_over_random_mps(ok)
+        run_over_random_uniform_mps(ok)
 
     def test_canonical_mps_copy(self):
         #
@@ -141,4 +141,4 @@ class TestCanonicalForm(TestCase):
                 for i in range(ξ.size):
                     self.assertTrue(np.all(np.equal(ξ[i], ψ[i])))
 
-        run_over_random_mps(ok)
+        run_over_random_uniform_mps(ok)

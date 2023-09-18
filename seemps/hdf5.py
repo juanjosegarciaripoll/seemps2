@@ -50,7 +50,7 @@ def write_mps(parent: Union[h5py.File, h5py.Group], name: str, M: MPS) -> None:
     --------
     >>> import h5py
     >>> import seemps.state, seemps.hdf5
-    >>> mps = seemps.state.random_mps(2, 10)
+    >>> mps = seemps.state.random_uniform_mps(2, 10)
     >>> file = h5py.File("data.hdf5", "w")
     >>> seemps.hdf5.write_mps(file, "state", mps)
     >>> file.close()
@@ -80,7 +80,7 @@ def read_mps(parent: Union[h5py.File, h5py.Group], name: str) -> MPS:
     --------
     >>> import h5py
     >>> import seemps.state, seemps.hdf5
-    >>> mps = seemps.state.random_mps(2, 10)
+    >>> mps = seemps.state.random_uniform_mps(2, 10)
     >>> file = h5py.File("data.hdf5", "r")
     >>> mps = seemps.hdf5.read_mps(file, "state")
     >>> mps.physical_dimensions()

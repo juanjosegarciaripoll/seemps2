@@ -56,7 +56,7 @@ offer some functions to create convenience states
     ~seemps.state.GHZ
     ~seemps.state.graph
     ~seemps.state.product_state
-    ~seemps.state.random_mps
+    ~seemps.state.random_uniform_mps
     ~seemps.state.W
 
 .. _mps_operations:

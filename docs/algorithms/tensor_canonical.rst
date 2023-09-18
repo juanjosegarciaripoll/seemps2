@@ -46,8 +46,8 @@ from the state to compute the norm, because the other tensors create an
 orthogonormal environment basis:
 
     >>> import numpy as np
-    >>> from seemps import random_mps, CanonicalMPS
-    >>> state = CanonicalMPS(random_mps(2, 10), center=0)
+    >>> from seemps import random_uniform_mps, CanonicalMPS
+    >>> state = CanonicalMPS(random_uniform_mps(2, 10), center=0)
     >>> print(f"State norm: {np.linalg.norm(state[0])}")
     >>> state.recenter(-1)
     >>> print(f"State norm: {np.linalg.norm(state[-1])}")

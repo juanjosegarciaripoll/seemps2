@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sp  # type: ignore
-from seemps.state import MPS, CanonicalMPS, random_mps
+from seemps.state import MPS, CanonicalMPS, random_uniform_mps
 import seemps.state
 import unittest
 
@@ -38,11 +38,11 @@ class TestCase(unittest.TestCase):
         if not almostIdentity(A, **kwdargs):
             raise self.failureException(f"Object not close to identity:\nA={A}")
 
-    def random_mps(
+    def random_uniform_mps(
         self, d: int, size: int, truncate: bool = False, **kwdargs
     ) -> CanonicalMPS:
         return CanonicalMPS(
-            random_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
+            random_uniform_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
         )
 
 
@@ -95,7 +95,7 @@ def contain_similar_tensors(A, B):
     return all(similar(a, b) for a, b in zip(A, B))
 
 
-def run_over_random_mps(function, d=2, N=10, D=10, repeats=10):
+def run_over_random_uniform_mps(function, d=2, N=10, D=10, repeats=10):
     for nqubits in range(1, N + 1):
         for _ in range(repeats):
             function(seemps.state.random(d, N, D))

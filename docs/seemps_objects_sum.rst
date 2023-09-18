@@ -15,7 +15,7 @@ track of the operations in a :class:`~seemps.state.MPSSum` structure.
 
 For instance, you could combine two MPS states as follows
 
-    >>> mps1 = random_mps(2, 10)
+    >>> mps1 = random_uniform_mps(2, 10)
     >>> mps2 = product_state([1.0, 0.0], 10)
     >>> mps3 = 0.5 * mps1 - 0.3 * mps2
     >>> print(mps3)
