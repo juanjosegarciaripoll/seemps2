@@ -46,4 +46,4 @@ This algorithm is implemented by the function :func:`~seemps.optimization.gradie
 .. autosummary::
    :toctree: ../generated/
 
-   ~seemps.optimization.descent.gradient_descent
+   ~seemps.optimization.gradient_descent

@@ -9,4 +9,5 @@ Index of algorithms
    tensor_split
    mps_simplification
    gradient_descent
+   dmrg
    tebd_evolution

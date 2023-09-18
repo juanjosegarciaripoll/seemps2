@@ -11,8 +11,8 @@ from ..mpo import MPO
 from ..typing import Optional, Vector, Tensor4
 from .descent import OptimizeResults
 from ..tools import log
-import scipy.sparse.linalg
-from opt_einsum import contract
+import scipy.sparse.linalg  # type: ignore
+from opt_einsum import contract  # type: ignore
 
 
 class QuadraticForm:
@@ -69,7 +69,7 @@ class QuadraticForm:
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
         )
 
-    def diagonalize(self, i: int) -> Tensor4:
+    def diagonalize(self, i: int) -> tuple[float, Tensor4]:
         Op = self.two_site_Hamiltonian(i)
         v = _contract_last_and_first(self.state[i], self.state[i + 1])
         eval, evec = scipy.sparse.linalg.eigsh(Op, 1, which="SA", v0=v.reshape(-1))
@@ -99,7 +99,31 @@ def dmrg(
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
     maxiter: int = 20,
-) -> None:
+) -> OptimizeResults:
+    """Compute the ground state of a Hamiltonian represented as MPO using the
+    two-site DMRG algorithm.
+
+    Parameters
+    ----------
+    H : MPO
+        The Hermitian operator that is to be diagonalized.
+    guess : Optional[MPS]
+        An initial guess for the ground state.
+    strategy : Strategy
+        Truncation strategy to keep bond dimensions in check. Defaults to
+        `DEFAULT_STRATEGY`, which is very strict.
+    tol : float
+        Tolerance in the energy to detect convergence of the algorithm.
+    maxiter : int
+        Maximum number of steps of the DMRG. Each step is a sweep that runs
+        over every pair of neighboring sites. Defaults to 20.
+
+    Returns
+    -------
+    OptimizeResults
+        The result from the algorithm in an :class:`~seemps.optimize.OptimizeResults`
+        object.
+    """
     if guess is None:
         guess = random_mps(H.dimensions(), D=2)
 
@@ -140,5 +164,5 @@ def dmrg(
         oldE = newE
     guess = CanonicalMPS(QF.state, center=0, normalize=True)
     return OptimizeResults(
-        state=guess, energy=H.expectation(guess), message=msg, trajectory=energies
+        state=guess, energy=H.expectation(guess).real, message=msg, trajectory=energies
     )
