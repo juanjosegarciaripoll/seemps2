@@ -313,7 +313,10 @@ class HeisenbergHamiltonian(ConstantTIHamiltonian):
         Number of spins on which this Hamiltonian operates.
     """
 
-    def __init__(self, size: int):
-        return super().__init__(
-            size, 0.25 * (sp.kron(σx, σx) + sp.kron(σy, σy) + sp.kron(σz, σz)).real
-        )
+    def __init__(self, size: int, field: Optional[Vector] = None):
+        Hint = 0.25 * (sp.kron(σx, σx) + sp.kron(σy, σy) + sp.kron(σz, σz)).real
+        if field is None:
+            Hlocal = None
+        else:
+            Hlocal = field[0] * σx + field[1] * σy + field[2] * σz
+        return super().__init__(size, interaction=Hint, local_term=Hlocal)
