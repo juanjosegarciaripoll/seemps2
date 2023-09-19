@@ -40,14 +40,13 @@ def sample_mps(mps: MPSLike, size: int = 1, rng: Generator = default_rng()) -> N
     output = np.empty((size, L), dtype=int)
     for state in output:
         if mps.center == L - 1:
-            state = np.empty(L, dtype=int)
             i = 0
             for n, A in enumerate(reversed(mps)):
                 A = A[:, :, i]
                 p = np.cumsum(np.abs(A.reshape(-1)) ** 2)
                 z = np.searchsorted(p, p[-1] * rng.random())
-                i = z % A.shape[0]
-                state[n] = z // A.shape[1]
+                i = z // A.shape[1]
+                state[n] = z % A.shape[1]
         else:
             if mps.center != 0:
                 mps = CanonicalMPS(mps, center=0)
