@@ -118,7 +118,7 @@ def dmrg(
         Tolerance in the energy to detect convergence of the algorithm.
     maxiter : int
         Maximum number of steps of the DMRG. Each step is a sweep that runs
-        over every pair of neighboring sites. Defaults to 20.
+        over every pair of neighborin sites. Defaults to 20.
 
     Returns
     -------
