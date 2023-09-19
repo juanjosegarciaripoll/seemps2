@@ -21,3 +21,4 @@ from .core import (
     NO_TRUNCATION,
     MAX_BOND_DIMENSION,
 )
+from .sampling import sample_mps
