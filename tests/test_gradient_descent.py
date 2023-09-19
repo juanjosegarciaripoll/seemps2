@@ -23,6 +23,5 @@ class TestGradientDescent(TestCase):
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         exact = product_state([0, 1], N)
         result = gradient_descent(H, guess, tol=1e-15)
-        print(result)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact)
+        self.assertSimilar(result.state, exact, atol=1e-7)

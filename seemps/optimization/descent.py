@@ -4,6 +4,7 @@ from ..expectation import scprod
 from ..mpo import MPO
 from ..typing import *
 from dataclasses import dataclass
+from ..tools import log
 
 
 @dataclass
@@ -89,7 +90,7 @@ def gradient_descent(
     for step in range(maxiter):
         state = CanonicalMPS(state, normalize=True)
         H_state, E, variance, avg_H2 = energy_and_variance(state)
-        print(f"step = {step:5d}, energy = {E}, variance = {variance}")
+        log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
@@ -108,7 +109,7 @@ def gradient_descent(
         # normalization of the state (2nd. order gradient descent from the
         # manuscript)
         # TODO: Use directly `combine`
-        state = (state + Δβ * (H_state - E * state)).toMPS
+        state = (state + Δβ * (H_state - E * state)).toMPS()
         # TODO: Implement stop criteria based on gradient size Δβ
         # It must take into account the norm of the displacement, H_state
         # which was already calculated
