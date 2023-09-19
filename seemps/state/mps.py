@@ -58,8 +58,28 @@ class MPS(array.TensorArray):
         return list(a.shape[1] for a in self._data)
 
     def bond_dimensions(self) -> list[int]:
-        """List of bond dimensions for the matrix product state."""
-        return list(a.shape[0] for a in self._data[:-1]) + [self._data[-1].shape[-1]]
+        """List of bond dimensions for the matrix product state.
+
+        Returns a list or vector of `N+1` integers, for an MPS of size `N`.
+        The integers `1` to `N-1` are the bond dimensions between the respective
+        pairs of tensors. The first and last index are `1`, as it corresponds
+        to a matrix product state with open boundary conditions.
+
+        Returns
+        -------
+        list[int]
+            List of virtual bond dimensions between MPS tensors, including the
+            boundary ones.
+
+        Examples
+        --------
+        >>> A = np.ones(1,2,3)
+        >>> B = np.ones(3,2,1)
+        >>> mps = MPS([A, B])
+        >>> mps.bond_dimensions()
+        [1, 3, 1]
+        """
+        return list(a.shape[0] for a in self._data) + [self._data[-1].shape[-1]]
 
     def to_vector(self) -> Vector:
         """Convert this MPS to a state vector."""

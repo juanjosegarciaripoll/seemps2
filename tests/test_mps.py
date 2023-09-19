@@ -69,6 +69,12 @@ class TestMPS(MPSStatesFixture):
         )
         self.assertSimilar(A.to_vector(), self.inhomogeneous_state_wavefunction)
 
+    def test_mps_bond_dimensions_returns_first_dimension(self):
+        shapes = [(1, 2, 2), (2, 2, 3), (3, 2, 1), (1, 2, 2), (2, 2, 1)]
+        mps = MPS([np.ones(shape) for shape in shapes])
+        self.assertEqual(len(mps.bond_dimensions()), mps.size + 1)
+        self.assertEqual(mps.bond_dimensions(), [1, 2, 3, 1, 2, 1])
+
 
 class TestMPSOperations(MPSStatesFixture):
     def test_norm2_is_deprecated(self):
