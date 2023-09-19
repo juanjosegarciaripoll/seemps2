@@ -157,3 +157,13 @@ class TestExpectation(TestCase):
         self.assertAlmostEqual(
             state.expectation2(σz, σx, 2, 1), state.expectation2(σx, σz, 1, 2)
         )
+
+    def test_expectation2_over_separate_sites(self):
+        state = random_uniform_mps(2, 3)
+        σz = np.array([[1, 0], [0, -1]])
+        σx = np.array([[0, 1], [1, 0]])
+        v = state.to_vector()
+        self.assertAlmostEqual(
+            state.expectation2(σz, σx, 0, 2),
+            np.vdot(v, np.kron(σz, np.kron(np.eye(2), σx)) @ v),
+        )

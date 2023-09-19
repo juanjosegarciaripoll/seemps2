@@ -368,11 +368,9 @@ class MPS(array.TensorArray):
         ----------
         L : int
             The new size of the MPS. Must be strictly larger than `self.size`.
-
         sites : Iterable[int], optional
-            Sequence of integers describing the sites that are new in the
-            range `[0,L)`. All other sites are filled in order with the content
-            from this MPS.
+            Sequence of integers describing the sites that occupied by the
+            tensors in this state.
         dimensions : Union[int, list[int]], default = 2
             Dimension of the added sites. It can be the same integer or a list
             of integers with the same length as `sites`.
@@ -388,29 +386,32 @@ class MPS(array.TensorArray):
         >>> mps = seemps.state.random(2, 10)
         >>> mps.physical_dimensions()
         [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
-        >>> mps = mps.extend(12, [1, 3], 3)
+        >>> mps = mps.extend(12, [0, 2, 4, 5, 6, 7, 8, 9, 10, 11], 3)
         >>> mps.physical_dimensions()
-        [3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3]
+        [2, 3, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2]
         """
-        assert L >= self.size
         if isinstance(dimensions, int):
-            final_dimensions = [dimensions] * L
+            final_dimensions = [dimensions] * max(L - self.size, 0)
         else:
             final_dimensions = dimensions.copy()
+            print(len(dimensions), L, self.size)
+            assert len(dimensions) == L - self.size
         if sites is None:
             sites = range(self.size)
+        assert L >= self.size
+        assert len(sites) == self.size
 
         data: list[np.ndarray] = [np.ndarray(())] * L
         for ndx, A in zip(sites, self):
             data[ndx] = A
-            final_dimensions[ndx] = A.shape[1]
         D = 1
+        k = 0
         for i, A in enumerate(data):
             if A.ndim == 0:
-                d = final_dimensions[i]
-                A = np.zeros((D, d, D))
+                A = np.zeros((D, final_dimensions[k], D))
                 A[:, 0, :] = np.eye(D)
                 data[i] = A
+                k += 1
             else:
                 D = A.shape[-1]
         return MPS(data, strategy=self.strategy)
@@ -427,13 +428,13 @@ class MPS(array.TensorArray):
 
         Parameters
         ----------
-            other : MPS
-                Another quantum state.
+        other : MPS
+            Another quantum state.
 
         Returns
         -------
-            MPS
-                The state that results from the `self .* other`
+        MPS
+            The state that results from the `self .* other`
         """
 
         def combine(A, B):

@@ -157,9 +157,38 @@ class TestMPSOperations(MPSStatesFixture):
 
     def test_multiplying_two_mps_produces_product_wavefunction(self):
         A = MPS(self.inhomogeneous_state)
-        C = A * A
-        self.assertSimilar(A.to_vector() * A.to_vector(), C.to_vector())
+        self.assertSimilar(A.to_vector() * A.to_vector(), (A * A).to_vector())
+        self.assertSimilar(
+            A.to_vector() * A.to_vector(), A.wavefunction_product(A).to_vector()
+        )
+        with self.assertRaises(Exception):
+            A.wavefunction_product([2])
 
     def test_mps_complex_conjugate(self):
         A = MPS(self.inhomogeneous_state)
         self.assertSimilar(A.to_vector().conj(), A.conj().to_vector())
+
+    def test_mps_extend(self):
+        mps = random_uniform_mps(2, 5, D=5, truncate=False)
+        new_mps = mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=3)
+        self.assertTrue(mps[0] is new_mps[0])
+        self.assertEqual(new_mps[1].shape, (5, 3, 5))
+        self.assertTrue(mps[1] is new_mps[2])
+        self.assertEqual(new_mps[3].shape, (5, 3, 5))
+        self.assertTrue(mps[2] is new_mps[4])
+        self.assertTrue(mps[3] is new_mps[5])
+        self.assertTrue(mps[4] is new_mps[6])
+
+    def test_mps_extend_accepts_dimensions_list_with_proper_size(self):
+        mps = random_uniform_mps(2, 5, D=5, truncate=False)
+        new_mps = mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=[5, 4])
+        self.assertEqual(new_mps.physical_dimensions(), [2, 5, 2, 4, 2, 2, 2])
+        with self.assertRaises(Exception):
+            mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=[5])
+        with self.assertRaises(Exception):
+            mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=[5, 6, 8])
+
+    def test_mps_extend_cannot_shrink_mps(self):
+        mps = random_uniform_mps(2, 5, D=5, truncate=False)
+        with self.assertRaises(Exception):
+            mps.extend(3)
