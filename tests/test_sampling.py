@@ -42,3 +42,8 @@ class TestSampling(TestCase):
         mps = CanonicalMPS(product_state([0.0, 1.0], 10), center=-1)
         instances = sample_mps(mps, size=100, rng=self.rng)
         self.assertTrue(np.all(instances == 1))
+
+    def test_sample_mps_product_state_all_ones_random_center(self):
+        mps = CanonicalMPS(product_state([0.0, 1.0], 10), center=4)
+        instances = sample_mps(mps, size=100, rng=self.rng)
+        self.assertTrue(np.all(instances == 1))
