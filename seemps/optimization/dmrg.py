@@ -175,5 +175,9 @@ def dmrg(
         oldE = newE
     guess = CanonicalMPS(QF.state, center=0, normalize=True)
     return OptimizeResults(
-        state=guess, energy=H.expectation(guess).real, message=msg, trajectory=energies
+        state=guess,
+        energy=H.expectation(guess).real,
+        converged=converged,
+        message=msg,
+        trajectory=energies,
     )

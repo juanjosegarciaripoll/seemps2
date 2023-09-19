@@ -17,6 +17,12 @@ class OptimizeResults:
         The estimate for the ground state.
     energy : float
         Estimate for the ground state energy.
+    converged : bool
+        True if the algorithm has found an approximate minimum, according
+        to the given tolerances.
+    message : str
+        Message explaining why the algorithm stoped, both when it converged,
+        and when it did not.
     trajectory : Optional[Vector]
         Vector of computed energies in the optimization trajectory.
     variances : Optional[Vector]
@@ -25,6 +31,7 @@ class OptimizeResults:
 
     state: MPS
     energy: float
+    converged: bool
     message: str
     trajectory: Optional[VectorLike] = None
     variances: Optional[VectorLike] = None
@@ -86,7 +93,8 @@ def gradient_descent(
         | <ψ|H*H|ψ>  <ψ|H*H*H|ψ> | | b |     | <ψ|H|ψ>  <ψ|H*H|ψ> |
     
     """
-
+    converged = False
+    message = f"Maximum number of iterations {maxiter} reached"
     for step in range(maxiter):
         state = CanonicalMPS(state, normalize=True)
         H_state, E, variance, avg_H2 = energy_and_variance(state)
@@ -97,9 +105,11 @@ def gradient_descent(
             best_energy, best_vector, best_variance = E, state, variance
         if np.abs(E - last_E) < tol:
             message = f"Energy converged within tolerance {tol}"
+            converged = True
             break
         if variance < tol_variance:
             message = f"Stationary state reached within tolerance {tol_variance}"
+            converged = True
             break
         last_E = E
         avg_H3 = H.expectation(H_state).real
@@ -121,5 +131,10 @@ def gradient_descent(
     energies.append(E)
     variances.append(variance)
     return OptimizeResults(
-        state=state, energy=E, message=message, trajectory=energies, variances=variances
+        state=state,
+        energy=E,
+        converged=converged,
+        message=message,
+        trajectory=energies,
+        variances=variances,
     )
