@@ -142,7 +142,7 @@ class TestExpectation(TestCase):
         run_over_random_uniform_mps(lambda ϕ: expected2_ok(ϕ, canonical=True))
 
     def test_expectation2_with_same_site_is_product(self):
-        state = random_uniform_mps(2, 10)
+        state = random_uniform_mps(2, 10, rng=self.rng)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         self.assertAlmostEqual(state.expectation2(σz, σz, 1, 1), state.norm_squared())
@@ -151,7 +151,7 @@ class TestExpectation(TestCase):
         )
 
     def test_expectation2_sorts_site_indices(self):
-        state = random_uniform_mps(2, 10)
+        state = random_uniform_mps(2, 10, rng=self.rng)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         self.assertAlmostEqual(
@@ -159,7 +159,7 @@ class TestExpectation(TestCase):
         )
 
     def test_expectation2_over_separate_sites(self):
-        state = random_uniform_mps(2, 3)
+        state = random_uniform_mps(2, 3, rng=self.rng)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         v = state.to_vector()
@@ -167,3 +167,19 @@ class TestExpectation(TestCase):
             state.expectation2(σz, σx, 0, 2),
             np.vdot(v, np.kron(σz, np.kron(np.eye(2), σx)) @ v),
         )
+
+    def test_product_expectation(self):
+        state = random_uniform_mps(2, 3, rng=self.rng)
+        σz = np.array([[1, 0], [0, -1]])
+        σx = np.array([[0, 1], [1, 0]])
+        v = state.to_vector()
+        exact_value = np.vdot(v, np.kron(σz, np.kron(σz, σz @ σx)) @ v)
+        self.assertAlmostEqual(
+            product_expectation(state, [σz, σx, σz @ σx]), exact_value
+        )
+
+    def test_product_expectation_checks_sizes(self):
+        state = random_uniform_mps(2, 3, rng=self.rng)
+        σz = np.array([[1, 0], [0, -1]])
+        with self.assertRaises(Exception):
+            product_expectation(state, [σz] * 4)

@@ -1,9 +1,15 @@
-from seemps.hamiltonians import ConstantTIHamiltonian
+from seemps.expectation import mpo_expectation
 from seemps import MPO, σx, σy
 from .tools import *
 
 
 class TestMPOExpectation(TestCase):
+    def test_mpo_expectation_is_alias_for_mpo_expected(self):
+        """Ensure expectation of a single local operator works."""
+        H = MPO([σx.reshape(1, 2, 2, 1)])
+        psi = random_uniform_mps(2, 1, rng=self.rng)
+        self.assertAlmostEqual(H.expectation(psi), mpo_expectation(psi, H))
+
     def test_mpo_expected_local_one_site(self):
         """Ensure expectation of a single local operator works."""
         H = MPO([σx.reshape(1, 2, 2, 1)])
