@@ -23,43 +23,55 @@ class TestHDF5(MPSTestCase):
             self.assertEqual(attrs["type"], "MPS")
             self.assertEqual(attrs["version"], 1)
 
-    def test_can_write_complex_mps_to_hdf5(self):
+    def test_can_read_and_write_complex_mps_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
-        aux = seemps.state.random(2, 3, 2)
-        for i in range(len(aux)):
-            aux[i] = aux[i] * 1j
+        state = seemps.state.random(2, 3, 2)
+        for i in range(len(state)):
+            state[i] = state[i] * 1j
         with h5py.File(self.filename, "w") as file:
-            seemps.hdf5.write_mps(file, "M", aux)
+            seemps.hdf5.write_mps(file, "M", state)
 
         hdf5_data = seemps.hdf5.read_full_hdf5_as_paths(self.filename)
         self.assertEqual(len(hdf5_data), 4)
         self.assertEqual(hdf5_data["/M/length"], 3)
-        self.assertSimilar(hdf5_data["/M/MPS[0]"], aux[0])
-        self.assertSimilar(hdf5_data["/M/MPS[1]"], aux[1])
-        self.assertSimilar(hdf5_data["/M/MPS[2]"], aux[2])
-        self.assertEqual(hdf5_data["/M/MPS[0]"].dtype, aux[0].dtype)
-        self.assertEqual(hdf5_data["/M/MPS[1]"].dtype, aux[1].dtype)
-        self.assertEqual(hdf5_data["/M/MPS[2]"].dtype, aux[2].dtype)
+        self.assertSimilar(hdf5_data["/M/MPS[0]"], state[0])
+        self.assertSimilar(hdf5_data["/M/MPS[1]"], state[1])
+        self.assertSimilar(hdf5_data["/M/MPS[2]"], state[2])
+        self.assertEqual(hdf5_data["/M/MPS[0]"].dtype, state[0].dtype)
+        self.assertEqual(hdf5_data["/M/MPS[1]"].dtype, state[1].dtype)
+        self.assertEqual(hdf5_data["/M/MPS[2]"].dtype, state[2].dtype)
 
-    def test_can_write_real_mps_to_hdf5(self):
+        with h5py.File(self.filename, "r") as file:
+            copy = seemps.hdf5.read_mps(file, "M")
+            self.assertEqual(state.size, copy.size)
+            self.assertTrue(all(np.all(A == B) for A, B in zip(state, copy)))
+            self.assertTrue(all(A.dtype == B.dtype for A, B in zip(state, copy)))
+
+    def test_can_read_and_write_real_mps_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
-        aux = seemps.state.random(2, 3, 3)
+        state = seemps.state.random(2, 3, 3)
         with h5py.File(self.filename, "w") as file:
-            seemps.hdf5.write_mps(file, "M", aux)
+            seemps.hdf5.write_mps(file, "M", state)
 
         hdf5_data = seemps.hdf5.read_full_hdf5_as_paths(self.filename)
         self.assertEqual(len(hdf5_data), 4)
         self.assertEqual(hdf5_data["/M/length"], 3)
-        self.assertSimilar(hdf5_data["/M/MPS[0]"], aux[0])
-        self.assertSimilar(hdf5_data["/M/MPS[1]"], aux[1])
-        self.assertSimilar(hdf5_data["/M/MPS[2]"], aux[2])
-        self.assertEqual(hdf5_data["/M/MPS[0]"].dtype, aux[0].dtype)
-        self.assertEqual(hdf5_data["/M/MPS[1]"].dtype, aux[1].dtype)
-        self.assertEqual(hdf5_data["/M/MPS[2]"].dtype, aux[2].dtype)
+        self.assertSimilar(hdf5_data["/M/MPS[0]"], state[0])
+        self.assertSimilar(hdf5_data["/M/MPS[1]"], state[1])
+        self.assertSimilar(hdf5_data["/M/MPS[2]"], state[2])
+        self.assertEqual(hdf5_data["/M/MPS[0]"].dtype, state[0].dtype)
+        self.assertEqual(hdf5_data["/M/MPS[1]"].dtype, state[1].dtype)
+        self.assertEqual(hdf5_data["/M/MPS[2]"].dtype, state[2].dtype)
+
+        with h5py.File(self.filename, "r") as file:
+            copy = seemps.hdf5.read_mps(file, "M")
+            self.assertEqual(state.size, copy.size)
+            self.assertTrue(all(np.all(A == B) for A, B in zip(state, copy)))
+            self.assertTrue(all(A.dtype == B.dtype for A, B in zip(state, copy)))
 
     def test_can_extend_hdf5(self):
         """Test that a single MPS can be appended to an HDF5 file"""
-        self.test_can_write_real_mps_to_hdf5()
+        self.test_can_read_and_write_real_mps_to_hdf5()
         aux = seemps.state.random(2, 4)
         with h5py.File(self.filename, "r+") as file:
             seemps.hdf5.write_mps(file, "X", aux)
@@ -82,9 +94,9 @@ class TestHDF5(MPSTestCase):
             self.assertEqual(attrs["type"], "MPO")
             self.assertEqual(attrs["version"], 1)
 
-    def test_can_write_complex_mpo_to_hdf5(self):
+    def test_can_read_and_write_complex_mpo_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
-        aux = seemps.MPO(
+        mpo = seemps.MPO(
             [
                 self.rng.normal(size=(10 if i > 0 else 1, 2, 10 if i < 2 else 1))
                 * (1.2 + 0.5j)
@@ -92,35 +104,47 @@ class TestHDF5(MPSTestCase):
             ]
         )
         with h5py.File(self.filename, "w") as file:
-            seemps.hdf5.write_mpo(file, "M", aux)
+            seemps.hdf5.write_mpo(file, "M", mpo)
 
         hdf5_data = seemps.hdf5.read_full_hdf5_as_paths(self.filename)
         self.assertEqual(len(hdf5_data), 4)
         self.assertEqual(hdf5_data["/M/length"], 3)
-        self.assertSimilar(hdf5_data["/M/MPO[0]"], aux[0])
-        self.assertSimilar(hdf5_data["/M/MPO[1]"], aux[1])
-        self.assertSimilar(hdf5_data["/M/MPO[2]"], aux[2])
-        self.assertEqual(hdf5_data["/M/MPO[0]"].dtype, aux[0].dtype)
-        self.assertEqual(hdf5_data["/M/MPO[1]"].dtype, aux[1].dtype)
-        self.assertEqual(hdf5_data["/M/MPO[2]"].dtype, aux[2].dtype)
+        self.assertSimilar(hdf5_data["/M/MPO[0]"], mpo[0])
+        self.assertSimilar(hdf5_data["/M/MPO[1]"], mpo[1])
+        self.assertSimilar(hdf5_data["/M/MPO[2]"], mpo[2])
+        self.assertEqual(hdf5_data["/M/MPO[0]"].dtype, mpo[0].dtype)
+        self.assertEqual(hdf5_data["/M/MPO[1]"].dtype, mpo[1].dtype)
+        self.assertEqual(hdf5_data["/M/MPO[2]"].dtype, mpo[2].dtype)
+
+        with h5py.File(self.filename, "r") as file:
+            copy = seemps.hdf5.read_mpo(file, "M")
+            self.assertEqual(mpo.size, copy.size)
+            self.assertTrue(all(np.all(A == B) for A, B in zip(mpo, copy)))
+            self.assertTrue(all(A.dtype == B.dtype for A, B in zip(mpo, copy)))
 
     def test_can_write_real_mpo_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
-        aux = seemps.MPO(
+        mpo = seemps.MPO(
             [
                 self.rng.normal(size=(10 if i > 0 else 1, 2, 10 if i < 2 else 1))
                 for i in range(3)
             ]
         )
         with h5py.File(self.filename, "w") as file:
-            seemps.hdf5.write_mpo(file, "M", aux)
+            seemps.hdf5.write_mpo(file, "M", mpo)
 
         hdf5_data = seemps.hdf5.read_full_hdf5_as_paths(self.filename)
         self.assertEqual(len(hdf5_data), 4)
         self.assertEqual(hdf5_data["/M/length"], 3)
-        self.assertSimilar(hdf5_data["/M/MPO[0]"], aux[0])
-        self.assertSimilar(hdf5_data["/M/MPO[1]"], aux[1])
-        self.assertSimilar(hdf5_data["/M/MPO[2]"], aux[2])
-        self.assertEqual(hdf5_data["/M/MPO[0]"].dtype, aux[0].dtype)
-        self.assertEqual(hdf5_data["/M/MPO[1]"].dtype, aux[1].dtype)
-        self.assertEqual(hdf5_data["/M/MPO[2]"].dtype, aux[2].dtype)
+        self.assertSimilar(hdf5_data["/M/MPO[0]"], mpo[0])
+        self.assertSimilar(hdf5_data["/M/MPO[1]"], mpo[1])
+        self.assertSimilar(hdf5_data["/M/MPO[2]"], mpo[2])
+        self.assertEqual(hdf5_data["/M/MPO[0]"].dtype, mpo[0].dtype)
+        self.assertEqual(hdf5_data["/M/MPO[1]"].dtype, mpo[1].dtype)
+        self.assertEqual(hdf5_data["/M/MPO[2]"].dtype, mpo[2].dtype)
+
+        with h5py.File(self.filename, "r") as file:
+            copy = seemps.hdf5.read_mpo(file, "M")
+            self.assertEqual(mpo.size, copy.size)
+            self.assertTrue(all(np.all(A == B) for A, B in zip(mpo, copy)))
+            self.assertTrue(all(A.dtype == B.dtype for A, B in zip(mpo, copy)))
