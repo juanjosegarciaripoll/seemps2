@@ -52,6 +52,20 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(D.weights, [0.5, -1])
         self.assertEqual(D.states, [A, C])
 
+    def test_subtraction_mps_and_mpssum(self):
+        A = self.make_simple_sum()
+        B = MPSSum(weights=[0.5], states=[A])
+        C = MPS(self.inhomogeneous_state.copy())
+        D = C - B
+        self.assertEqual(D.weights, [1, -0.5])
+        self.assertEqual(D.states, [C, A])
+
+    def test_subtraction_mpssum_and_mpsum(self):
+        A = self.make_simple_sum()
+        D = A - A
+        self.assertEqual(D.weights, [1, 2, -1, -2])
+        self.assertEqual(D.states, A.states + A.states)
+
     def test_mpssum_to_vector(self):
         A = MPS(self.product_state.copy())
         B = MPS(self.product_state.copy())

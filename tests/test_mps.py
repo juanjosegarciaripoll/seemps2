@@ -163,6 +163,8 @@ class TestMPSOperations(MPSStatesFixture):
         )
         with self.assertRaises(Exception):
             A.wavefunction_product([2])
+        with self.assertRaises(Exception):
+            random_uniform_mps(2, 3) * random_uniform_mps(3, 3)
 
     def test_mps_complex_conjugate(self):
         A = MPS(self.inhomogeneous_state)

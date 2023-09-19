@@ -394,7 +394,6 @@ class MPS(array.TensorArray):
             final_dimensions = [dimensions] * max(L - self.size, 0)
         else:
             final_dimensions = dimensions.copy()
-            print(len(dimensions), L, self.size)
             assert len(dimensions) == L - self.size
         if sites is None:
             sites = range(self.size)
