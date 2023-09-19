@@ -8,7 +8,8 @@ from ..state.environments import (
 )
 from ..state._contractions import _contract_last_and_first
 from ..mpo import MPO
-from ..typing import Optional, Vector, Tensor4
+from ..hamiltonians import NNHamiltonian
+from ..typing import Optional, Vector, Tensor4, Union
 from .descent import OptimizeResults
 from ..tools import log
 import scipy.sparse.linalg  # type: ignore
@@ -95,7 +96,7 @@ class QuadraticForm:
 
 def dmrg(
     H: MPO,
-    guess: Optional[MPS] = None,
+    guess: Optional[Union[MPS, NNHamiltonian]] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
     maxiter: int = 20,
@@ -105,8 +106,9 @@ def dmrg(
 
     Parameters
     ----------
-    H : MPO
-        The Hermitian operator that is to be diagonalized.
+    H : MPO | NNHamiltonian
+        The Hermitian operator that is to be diagonalized. It may be also a
+        nearest-neighbor Hamiltonian that is implicitly converted to MPO.
     guess : Optional[MPS]
         An initial guess for the ground state.
     strategy : Strategy
@@ -123,7 +125,16 @@ def dmrg(
     OptimizeResults
         The result from the algorithm in an :class:`~seemps.optimize.OptimizeResults`
         object.
+
+    Examples
+    --------
+    >>> from seemps.hamiltonians import HeisenbergHamiltonian
+    >>> from seemps.optimization import dmrg
+    >>> H = HeisenbergHamiltonian(10)
+    >>> result = dmrg(H)
     """
+    if isinstance(H, NNHamiltonian):
+        H = H.to_mpo()
     if guess is None:
         guess = random_mps(H.dimensions(), D=2)
 
