@@ -140,3 +140,20 @@ class TestExpectation(TestCase):
 
         run_over_random_uniform_mps(expected2_ok)
         run_over_random_uniform_mps(lambda ϕ: expected2_ok(ϕ, canonical=True))
+
+    def test_expectation2_with_same_site_is_product(self):
+        state = random_uniform_mps(2, 10)
+        σz = np.array([[1, 0], [0, -1]])
+        σx = np.array([[0, 1], [1, 0]])
+        self.assertAlmostEqual(state.expectation2(σz, σz, 1, 1), state.norm_squared())
+        self.assertAlmostEqual(
+            state.expectation2(σz, σx, 1, 1), state.expectation1(σz @ σx, 1)
+        )
+
+    def test_expectation2_sorts_site_indices(self):
+        state = random_uniform_mps(2, 10)
+        σz = np.array([[1, 0], [0, -1]])
+        σx = np.array([[0, 1], [1, 0]])
+        self.assertAlmostEqual(
+            state.expectation2(σz, σx, 2, 1), state.expectation2(σx, σz, 1, 2)
+        )

@@ -253,6 +253,7 @@ class MPS(array.TensorArray):
             return self.expectation1(Opi @ Opj, i)
         elif j < i:
             i, j = j, i
+            Opi, Opj = Opj, Opi
         OQL = self.left_environment(i)
         for ndx in range(i, j + 1):
             A = self[ndx]
