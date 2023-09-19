@@ -163,39 +163,40 @@ class MPO(array.TensorArray):
         Parameters
         ----------
         L : int
-            The new size of the MPO. Must be strictly larger than `self.size`.
+            The new size of the MPS. Must be strictly larger than `self.size`.
         sites : Iterable[int], optional
-            Sequence of integers describing the sites that are new in the
-            range `[0,L)`. All other sites are filled in order with the content
-            from this MPS.
+            Sequence of integers describing the sites that occupied by the
+            tensors in this state.
         dimensions : Union[int, list[int]], default = 2
             Dimension of the added sites. It can be the same integer or a list
             of integers with the same length as `sites`.
-
 
         Returns
         -------
         MPO
             Extended MPO.
         """
-        assert L >= self.size
-        if isinstance(dimensions, list):
-            final_dimensions = dimensions
+        if isinstance(dimensions, int):
+            final_dimensions = [dimensions] * max(L - self.size, 0)
         else:
-            final_dimensions = [dimensions] * L
+            final_dimensions = dimensions.copy()
+            assert len(dimensions) == L - self.size
         if sites is None:
             sites = range(self.size)
+        assert L >= self.size
+        assert len(sites) == self.size
 
         data: list[np.ndarray] = [np.ndarray(())] * L
         for ndx, A in zip(sites, self):
             data[ndx] = A
-            final_dimensions[ndx] = A.shape[2]
         D = 1
+        k = 0
         for i, A in enumerate(data):
             if A.ndim == 0:
-                d = final_dimensions[i]
+                d = final_dimensions[k]
                 A = np.eye(D).reshape(D, 1, 1, D) * np.eye(d).reshape(1, d, d, 1)
                 data[i] = A
+                k = k + 1
             else:
                 D = A.shape[-1]
         return MPO(data, strategy=self.strategy)
@@ -272,13 +273,13 @@ class MPOList(object):
 
     def __mul__(self, n: Weight) -> MPOList:
         """Multiply an MPO by a scalar `n` as in `n * self`."""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             return MPOList([n * self.mpos[0]] + self.mpos[1:], self.strategy)
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPOList:
         """Multiply an MPO by a scalar `n` as in `self * n`."""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             return MPOList([n * self.mpos[0]] + self.mpos[1:], self.strategy)
         raise InvalidOperation("*", n, self)
 
@@ -287,7 +288,7 @@ class MPOList(object):
         """Convert this MPO to a dense or sparse matrix."""
         A = self.mpos[0].tomatrix()
         for mpo in self.mpos[1:]:
-            A = A @ mpo.tomatrix()
+            A = mpo.tomatrix() @ A
         return A
 
     # TODO: Describe how `strategy` and simplify act as compared to

@@ -22,7 +22,11 @@ class TestMPOExpectation(TestCase):
         """Ensure expectation of a single local operator works."""
         H = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         with self.assertRaises(Exception):
-            O = H.expectation([np.zeros(1, 2, 1)] * 3)
+            O = H.expectation([np.zeros((1, 2, 1))] * 3)
+        with self.assertRaises(Exception):
+            O = H.expectation(
+                random_uniform_mps(2, 3, rng=self.rng), [np.zeros((1, 2, 1))] * 3
+            )
 
     def test_mpo_expected_operator_order(self):
         """Ensure expectation of a two different local operators are done in order."""
