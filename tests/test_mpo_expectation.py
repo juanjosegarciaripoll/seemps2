@@ -18,6 +18,12 @@ class TestMPOExpectation(TestCase):
         v = psi.to_vector()
         self.assertAlmostEqual(H.expectation(psi), np.vdot(v, O @ v))
 
+    def test_mpo_expected_only_accepts_mps(self):
+        """Ensure expectation of a single local operator works."""
+        H = MPO([σx.reshape(1, 2, 2, 1)] * 3)
+        with self.assertRaises(Exception):
+            O = H.expectation([np.zeros(1, 2, 1)] * 3)
+
     def test_mpo_expected_operator_order(self):
         """Ensure expectation of a two different local operators are done in order."""
         H = MPO([σx.reshape(1, 2, 2, 1), σy.reshape(1, 2, 2, 1)])

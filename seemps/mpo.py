@@ -58,7 +58,7 @@ class MPO(array.TensorArray):
     # TODO: The deep copy also copies the tensors. This should be improved.
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `n * self`"""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             mpo_mult = copy.deepcopy(self)
             mpo_mult._data[0] = n * mpo_mult._data[0]
             return mpo_mult
@@ -66,7 +66,7 @@ class MPO(array.TensorArray):
 
     def __rmul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `self * self`"""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             mpo_mult = copy.deepcopy(self)
             mpo_mult._data[0] = n * mpo_mult._data[0]
             return mpo_mult
