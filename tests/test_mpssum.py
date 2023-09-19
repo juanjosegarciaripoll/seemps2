@@ -16,6 +16,14 @@ class TestMPSSum(MPSStatesFixture):
         self.assertTrue(C.weights == [1, 2])
         self.assertTrue(C.states == [A, B])
 
+    def test_simple_subtractions(self):
+        A = MPS(self.product_state.copy())
+        B = MPS(self.product_state.copy())
+        C = A - B
+        self.assertIsInstance(C, MPSSum)
+        self.assertTrue(C.weights == [1, -1])
+        self.assertTrue(C.states == [A, B])
+
     def test_scalar_multiplication_only_changes_weights(self):
         A = self.make_simple_sum()
         B = A * 0.5

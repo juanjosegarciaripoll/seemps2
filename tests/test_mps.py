@@ -121,9 +121,9 @@ class TestMPSOperations(MPSStatesFixture):
     def test_subtracting_mps_and_non_mps_raises_error(self):
         A = MPS(self.inhomogeneous_state)
         with self.assertRaises(TypeError):
-            A = A + 2.0
+            A = A - 2.0
         with self.assertRaises(TypeError):
-            A = 2.0 + A
+            A = 2.0 - A
 
     def test_scaling_mps_creates_new_object(self):
         A = MPS(self.inhomogeneous_state)
@@ -137,6 +137,10 @@ class TestMPSOperations(MPSStatesFixture):
             A = A * np.array([1.0])
         with self.assertRaises(TypeError):
             A = A * np.zeros((3, 3))
+        with self.assertRaises(TypeError):
+            A = np.array([1.0]) * A
+        with self.assertRaises(TypeError):
+            A = np.zeros((3, 3)) * A
 
     def test_scaled_mps_produces_scaled_wavefunction(self):
         factor = 1.0 + 3.0j
