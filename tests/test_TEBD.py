@@ -107,6 +107,26 @@ class TestPairwiseUnitaries(EvolutionTestCase):
         self.assertSimilar(mps_from_right, pairwiseU.apply(CanonicalMPS(mps, center=6)))
 
 
+class TestTrotter(EvolutionTestCase):
+    def test_trotter_abstract_methods_signal_error(self):
+        with self.assertRaises(Exception):
+            U = Trotter()
+        from unittest.mock import patch
+
+        p = patch.multiple(Trotter, __abstractmethods__=set())
+        p.start()
+        mps = self.random_initial_state(2)
+        U = Trotter()
+        p.stop()
+        print(Trotter.__abstractmethods__)
+        with self.assertRaises(Exception):
+            U.apply(mps)
+        with self.assertRaises(Exception):
+            U.apply_inplace(mps)
+        with self.assertRaises(Exception):
+            U @ mps
+
+
 class TestTrotter2nd(EvolutionTestCase):
     def test_trotter_2nd_order_two_sites(self):
         dt = 0.33
@@ -114,6 +134,18 @@ class TestTrotter2nd(EvolutionTestCase):
         U12 = scipy.linalg.expm(-1j * dt * self.Heisenberg2)
         mps = self.random_initial_state(2)
         self.assertSimilar(trotterU.apply(mps).to_vector(), U12 @ mps.to_vector())
+
+    def test_trotter_2nd_matmul_is_equivalent_to_apply(self):
+        trotterU = Trotter2ndOrder(HeisenbergHamiltonian(2), 0.33)
+        mps = self.random_initial_state(2)
+        self.assertSimilar(trotterU.apply(mps), trotterU @ mps)
+
+    def test_trotter_2nd_apply_in_place_tries_to_reuse_mps(self):
+        trotterU = Trotter2ndOrder(HeisenbergHamiltonian(2), 0.33)
+        a = CanonicalMPS(self.random_initial_state(2))
+        b = MPS(a.copy())
+        self.assertTrue(trotterU.apply_inplace(a) is a)
+        self.assertTrue(trotterU.apply(b) is not b)
 
     def test_trotter_2nd_order_three_sites(self):
         dt = 0.33
@@ -148,6 +180,18 @@ class TestTrotter3rd(EvolutionTestCase):
         U12 = scipy.linalg.expm(-1j * dt * self.Heisenberg2)
         mps = self.random_initial_state(2)
         self.assertSimilar(trotterU.apply(mps).to_vector(), U12 @ mps.to_vector())
+
+    def test_trotter_3rd_matmul_is_equivalent_to_apply(self):
+        trotterU = Trotter3rdOrder(HeisenbergHamiltonian(2), 0.33)
+        mps = self.random_initial_state(2)
+        self.assertSimilar(trotterU.apply(mps), trotterU @ mps)
+
+    def test_trotter_3rd_apply_in_place_tries_to_reuse_mps(self):
+        trotterU = Trotter3rdOrder(HeisenbergHamiltonian(2), 0.33)
+        a = CanonicalMPS(self.random_initial_state(2))
+        b = MPS(a.copy())
+        self.assertTrue(trotterU.apply_inplace(a) is a)
+        self.assertTrue(trotterU.apply(b) is not b)
 
     def test_trotter_3rd_order_three_sites(self):
         dt = 0.33

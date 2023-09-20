@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 import numpy as np
 from .typing import Unitary, Tensor3, Tensor4, Union
 import scipy.linalg  # type: ignore
@@ -90,12 +90,14 @@ class PairwiseUnitaries:
         return state
 
 
-class Trotter:
+class Trotter(ABC):
     """Abstract class representing a Trotter TEBD algorithm."""
 
     @abstractmethod
     def apply(self, state: MPS) -> CanonicalMPS:
-        """Apply this unitary onto an MPS `state`
+        """Apply this unitary onto an MPS `state`.
+
+        This abstract method must be redefined by any children class.
 
         Parameters
         ----------
@@ -107,11 +109,13 @@ class Trotter:
         CanonicalMPS
             A fresh new MPS wih the state evolved by one time step.
         """
-        pass
+        raise Exception("Called abstract method Trotter.apply")
 
     @abstractmethod
     def apply_inplace(self, state: MPS) -> CanonicalMPS:
         """Apply this unitary onto an MPS `state`, modifying it.
+
+        This abstract method must be redefined by any children class.
 
         Parameters
         ----------
@@ -121,9 +125,9 @@ class Trotter:
         Returns
         -------
         CanonicalMPS
-            The same `state` object.
+            The same `state` object, whenever possible.
         """
-        pass
+        raise Exception("Called abstract method Trotter.apply")
 
     def __matmul__(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
         return self.apply(state)
@@ -159,10 +163,35 @@ class Trotter2ndOrder(Trotter):
         self.U = PairwiseUnitaries(H, 0.5 * dt, strategy)
 
     def apply(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+        """Apply a Trotter 2nd order unitary approximation onto an MPS `state`.
+
+        Parameters
+        ----------
+        state : MPS
+            The state to be evolved.
+
+        Returns
+        -------
+        CanonicalMPS
+            A fresh new MPS wih the state evolved by one time step.
+        """
         state = self.U.apply(state)
         return self.U.apply_inplace(state)
 
     def apply_inplace(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+        """Apply a Trotter 2nd order unitary approximation onto an MPS `state`.
+
+        Parameters
+        ----------
+        state : MPS
+            The state to be evolved.
+
+        Returns
+        -------
+        CanonicalMPS
+            The same `state` object modified by the unitary, if it was a
+            :class:`CanonicalMPS` Otherwise a fresh new state evolved.
+        """
         state = self.U.apply_inplace(state)
         return self.U.apply_inplace(state)
 
@@ -202,11 +231,36 @@ class Trotter3rdOrder(Trotter):
         self.U = PairwiseUnitaries(H, 0.25 * dt, strategy)
 
     def apply(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+        """Apply a Trotter 2nd order unitary approximation onto an MPS `state`.
+
+        Parameters
+        ----------
+        state : MPS
+            The state to be evolved.
+
+        Returns
+        -------
+        CanonicalMPS
+            A fresh new MPS wih the state evolved by one time step.
+        """
         state = self.U.apply(state)
         state = self.Umid.apply_inplace(state)
         return self.U.apply_inplace(state)
 
     def apply_inplace(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+        """Apply a Trotter 3rd order unitary approximation onto an MPS `state`.
+
+        Parameters
+        ----------
+        state : MPS
+            The state to be evolved.
+
+        Returns
+        -------
+        CanonicalMPS
+            The same `state` object modified by the unitary, if it was a
+            :class:`CanonicalMPS` Otherwise a fresh new state evolved.
+        """
         state = self.U.apply_inplace(state)
         state = self.Umid.apply_inplace(state)
         return self.U.apply_inplace(state)
