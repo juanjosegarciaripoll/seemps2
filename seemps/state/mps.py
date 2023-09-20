@@ -169,7 +169,7 @@ class MPS(array.TensorArray):
 
     def __mul__(self, n: Weight) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             mps_mult = copy.deepcopy(self)
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
@@ -180,7 +180,7 @@ class MPS(array.TensorArray):
 
     def __rmul__(self, n: Weight) -> MPS:
         """Compute `self * n`, where `n` is a scalar."""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             mps_mult = copy.deepcopy(self)
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
