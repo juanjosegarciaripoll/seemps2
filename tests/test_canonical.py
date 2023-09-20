@@ -2,6 +2,8 @@ from .tools import *
 from seemps.state import (
     DEFAULT_STRATEGY,
     CanonicalMPS,
+    product_state,
+    random_uniform_mps,
 )
 from seemps.state.canonical_mps import (
     _update_in_canonical_form_left,
@@ -142,3 +144,23 @@ class TestCanonicalForm(TestCase):
                     self.assertTrue(np.all(np.equal(ξ[i], ψ[i])))
 
         run_over_random_uniform_mps(ok)
+
+    def test_canonical_complains_if_center_out_of_bounds(self):
+        mps = random_uniform_mps(2, 10, rng=self.rng)
+        state = CanonicalMPS(mps)
+        with self.assertRaises(Exception):
+            CanonicalMPS(mps, center=10)
+        with self.assertRaises(Exception):
+            CanonicalMPS(mps, center=-11)
+
+    def test_canonical_entanglement_entropy(self):
+        mps = CanonicalMPS(product_state([1.0, 0.0], 10), center=0)
+        self.assertAlmostEqual(mps.entanglement_entropy(), 0.0)
+        self.assertAlmostEqual(mps.entanglement_entropy(0), 0.0)
+        self.assertAlmostEqual(mps.entanglement_entropy(-1), 0.0)
+
+    def test_canonical_from_vector(self):
+        state = self.rng.normal(size=2**8)
+        state /= np.linalg.norm(state)
+        mps = CanonicalMPS.from_vector(state, [2] * 8)
+        self.assertSimilar(state, mps.to_vector())
