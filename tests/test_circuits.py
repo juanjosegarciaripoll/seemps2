@@ -1,7 +1,10 @@
 import numpy as np
+
+from seemps.state.mps import MPS
 from .tools import TestCase
 from seemps import random_uniform_mps, CanonicalMPS
 from seemps.register.circuit import (
+    ParameterizedCircuit,
     LocalRotationsLayer,
     TwoQubitGatesLayer,
     VQECircuit,
@@ -21,6 +24,34 @@ class TestKnownOperators(TestCase):
         with self.assertRaises(Exception):
             interpret_operator("CUp")
 
+    def test_interpret_operator_only_accepts_strings_or_matrices(self):
+        interpret_operator("Sz")
+        interpret_operator(np.eye(2))
+        with self.assertRaises(Exception):
+            interpret_operator(1)
+        with self.assertRaises(Exception):
+            interpret_operator(np.zeros((3, 1)))
+        with self.assertRaises(Exception):
+            interpret_operator(np.zeros((3,)))
+
+
+class TestParameterizedCircuits(TestCase):
+    def test_parameterized_circuit_requires_parameters_size_or_default(self):
+        with self.assertRaises(Exception):
+            ParameterizedCircuit(10)
+
+        c = ParameterizedCircuit(10, default_parameters=[0.2, 0.2])
+        self.assertEqual(c.register_size, 10)
+        self.assertEqual(c.parameters_size, 2)
+        self.assertSimilar(c.parameters, np.array([0.2, 0.2]))
+        self.assertIsInstance(c.parameters, np.ndarray)
+
+        c = ParameterizedCircuit(10, parameters_size=2)
+        self.assertEqual(c.register_size, 10)
+        self.assertEqual(c.parameters_size, 2)
+        self.assertSimilar(c.parameters, np.zeros(2))
+        self.assertIsInstance(c.parameters, np.ndarray)
+
 
 class TestLocalGateCircuits(TestCase):
     Sx = interpret_operator("Sx")
@@ -36,6 +67,27 @@ class TestLocalGateCircuits(TestCase):
             LocalRotationsLayer(
                 3, "Sz", same_parameter=True, default_parameters=[0.0] * 3
             )
+
+    def test_local_gates_requires_qubit_operators(self):
+        with self.assertRaises(Exception):
+            LocalRotationsLayer(3, "CNOT")
+
+    def test_local_gates_apply_in_place_only_modifies_canonical_mps(self):
+        a = self.random_uniform_mps(2, 1, truncate=True, normalize=True)
+        U = LocalRotationsLayer(1, "Sx", default_parameters=[0.35])
+        b = U.apply_inplace(a)
+        self.assertTrue(a is b)
+        a = MPS(a)
+        b = U.apply_inplace(a)
+        self.assertFalse(b is a)
+
+    def test_local_gates_matmul_works(self):
+        a = self.random_uniform_mps(2, 1, truncate=True, normalize=True)
+        U = LocalRotationsLayer(1, "Sx", default_parameters=[0.35])
+        b = a.copy()
+        c = U.apply_inplace(a)
+        d = U @ b
+        self.assertSimilar(c, d)
 
     def test_local_sx_gate_one_qubit(self):
         a = self.random_uniform_mps(2, 1, truncate=True, normalize=True)
@@ -104,6 +156,49 @@ class TestLocalGateCircuits(TestCase):
 class TestEntanglingLayerCircuit(TestCase):
     CNOT = interpret_operator("CNOT")
     CZ = interpret_operator("CZ")
+
+    def test_entangling_layer_rejects_operators_not_acting_on_two_qubits(self):
+        with self.assertRaises(Exception):
+            TwoQubitGatesLayer(2, "Sx")
+
+    def test_entangling_layer_apply_in_place_only_modifies_canonical_mps(self):
+        a = self.random_uniform_mps(2, 2, truncate=True, normalize=True)
+        U = TwoQubitGatesLayer(2, "CNOT")
+        b = U.apply_inplace(a)
+        self.assertTrue(a is b)
+        a = MPS(a)
+        b = U.apply_inplace(a)
+        self.assertFalse(b is a)
+
+    def test_local_gates_matmul_works(self):
+        a = self.random_uniform_mps(2, 2, truncate=True, normalize=True)
+        U = TwoQubitGatesLayer(2, "CNOT")
+        b = a.copy()
+        c = U.apply_inplace(a)
+        d = U @ b
+        self.assertSimilar(c, d)
+
+    def test_entangling_layer_apply_works_with_other_centers(self):
+        a = self.random_uniform_mps(2, 3, truncate=True, normalize=True)
+        U = TwoQubitGatesLayer(3, "CNOT", direction=1)
+        b = U.apply(CanonicalMPS(a, center=1))
+        c = U.apply(CanonicalMPS(a, center=2))
+        d = U.apply(CanonicalMPS(a, center=0))
+        self.assertSimilar(b, c)
+        self.assertSimilar(b, d)
+
+        U = TwoQubitGatesLayer(3, "CNOT", direction=-1)
+        b = U.apply(CanonicalMPS(a, center=1))
+        c = U.apply(CanonicalMPS(a, center=2))
+        d = U.apply(CanonicalMPS(a, center=0))
+        self.assertSimilar(b, c)
+        self.assertSimilar(b, d)
+
+    def test_entangling_layer_apply_rejects_parameters(self):
+        a = self.random_uniform_mps(2, 2, truncate=True, normalize=True)
+        U = TwoQubitGatesLayer(2, "CNOT")
+        with self.assertRaises(Exception):
+            U.apply_inplace(a, np.zeros(2))
 
     def test_single_cnot_circuit(self):
         a = self.random_uniform_mps(2, 2, truncate=True, normalize=True)

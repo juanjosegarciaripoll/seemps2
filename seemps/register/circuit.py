@@ -40,7 +40,7 @@ def interpret_operator(op: Union[str, Operator]) -> Operator:
             raise Exception(f"Unknown qubit operator '{op}'")
         if isinstance(O, str):
             return interpret_operator(O)
-    elif not isinstance(op, np.ndarray):
+    elif not isinstance(op, np.ndarray) or op.ndim != 2 or op.shape[0] != op.shape[1]:
         raise Exception(f"Invalid qubit operator of type '{type(op)}")
     else:
         O = op
@@ -92,6 +92,8 @@ class ParameterizedCircuit(UnitaryCircuit):
                     "In ParameterizedUnitaries, either parameter_size or default_parameters must be provided"
                 )
             default_parameters = np.zeros(parameters_size)
+        elif parameters_size is None:
+            parameters_size = len(default_parameters)
         elif parameters_size != len(default_parameters):
             raise IndexError(
                 f"'default_parameters' length {len(default_parameters)} does not match size 'parameters_size' {parameters_size}"
