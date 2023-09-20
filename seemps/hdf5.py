@@ -87,15 +87,18 @@ def read_mps(parent: Union[h5py.File, h5py.Group], name: str) -> MPS:
     [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
     >>> file.close()
     """
-    g = parent[name]
-    if g.attrs["type"] == "MPS" and g.attrs["version"] == 1:
-        N = g["length"][()]
-        # rlim = g["rlim"][()]
-        # llim = g["llim"][()]
-        v = [g[f"MPS[{i}]"][()] for i in range(N)]
-    else:
-        raise Exception(f"Unable to read MPS from HDF5 group {parent}")
-    return MPS(v)
+    if name in parent:
+        g = parent[name]
+        if (
+            isinstance(g, h5py.Group)
+            and g.attrs["type"] == "MPS"
+            and g.attrs["version"] == 1
+        ):
+            N = g["length"][()]
+            # rlim = g["rlim"][()]
+            # llim = g["llim"][()]
+            return MPS([g[f"MPS[{i}]"][()] for i in range(N)])
+    raise Exception(f"Unable to read MPS from HDF5 group {parent}")
 
 
 # TODO: Add functions to read and write strategies
@@ -132,12 +135,15 @@ def read_mpo(parent: Union[h5py.File, h5py.Group], name: str) -> MPO:
     M : MPO
         The quantum state to save.
     """
-    g = parent[name]
-    if g.attrs["type"] == "MPO" and g.attrs["version"] == 1:
-        N = g["length"][()]
-        # rlim = g["rlim"][()]
-        # llim = g["llim"][()]
-        v = [g[f"MPO[{i}]"][()] for i in range(N)]
-    else:
-        raise Exception(f"Unable to read MPO from HDF5 group {parent}")
-    return MPO(v)
+    if name in parent:
+        g = parent[name]
+        if (
+            isinstance(g, h5py.Group)
+            and g.attrs["type"] == "MPO"
+            and g.attrs["version"] == 1
+        ):
+            N = g["length"][()]
+            # rlim = g["rlim"][()]
+            # llim = g["llim"][()]
+            return MPO([g[f"MPO[{i}]"][()] for i in range(N)])
+    raise Exception(f"Unable to read MPO from HDF5 group {parent}")

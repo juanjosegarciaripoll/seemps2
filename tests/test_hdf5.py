@@ -23,6 +23,17 @@ class TestHDF5(MPSTestCase):
             self.assertEqual(attrs["type"], "MPS")
             self.assertEqual(attrs["version"], 1)
 
+    def test_hdf5_read_whole_file(self):
+        with h5py.File(self.filename, "w") as file:
+            file.create_dataset("A", data=1)
+            file.create_dataset("B", data=2)
+            file.create_group("C")
+            file["C"].create_dataset("D", data=3)
+        a = seemps.hdf5.read_full_hdf5_as_paths(self.filename)
+        self.assertEqual(a, {"/A": 1, "/B": 2, "/C/D": 3})
+        a = seemps.hdf5.read_full_hdf5(self.filename)
+        self.assertEqual(a, {"A": 1, "B": 2, "C": {"D": 3, "_attrs": []}, "_attrs": []})
+
     def test_can_read_and_write_complex_mps_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
         state = seemps.state.random(2, 3, 2)
@@ -47,8 +58,18 @@ class TestHDF5(MPSTestCase):
             self.assertTrue(all(np.all(A == B) for A, B in zip(state, copy)))
             self.assertTrue(all(A.dtype == B.dtype for A, B in zip(state, copy)))
 
-    def test_can_read_and_write_real_mps_to_hdf5(self):
+    def test_hdf5_read_mps_signals_errors_for_incorrect_data(self):
         """Test that a single MPS can be written to an HDF5 file"""
+        with h5py.File(self.filename, "w") as file:
+            file.create_dataset("A", data=2)
+            file.create_group("B").create_dataset("C", data=3)
+        with h5py.File(self.filename, "r") as file:
+            with self.assertRaises(Exception):
+                seemps.hdf5.read_mps(file, "A")
+            with self.assertRaises(Exception):
+                seemps.hdf5.read_mps(file, "B")
+
+    def test_can_read_and_write_real_mps_to_hdf5(self):
         state = seemps.state.random(2, 3, 3)
         with h5py.File(self.filename, "w") as file:
             seemps.hdf5.write_mps(file, "M", state)
@@ -93,6 +114,17 @@ class TestHDF5(MPSTestCase):
             self.assertEqual(len(attrs), 2)
             self.assertEqual(attrs["type"], "MPO")
             self.assertEqual(attrs["version"], 1)
+
+    def test_hdf5_read_mpo_signals_errors_for_incorrect_data(self):
+        """Test that a single MPS can be written to an HDF5 file"""
+        with h5py.File(self.filename, "w") as file:
+            file.create_dataset("A", data=2)
+            file.create_group("B").create_dataset("C", data=3)
+        with h5py.File(self.filename, "r") as file:
+            with self.assertRaises(Exception):
+                seemps.hdf5.read_mpo(file, "/A")
+            with self.assertRaises(Exception):
+                seemps.hdf5.read_mpo(file, "/B")
 
     def test_can_read_and_write_complex_mpo_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
