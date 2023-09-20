@@ -80,13 +80,13 @@ class MPSSum:
 
     def __mul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `n * self` for scalar `n`."""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             return MPSSum([n * w for w in self.weights], self.states, self.strategy)
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `self * n` for scalar `n`."""
-        if isinstance(n, (float, complex)):
+        if isinstance(n, (int, float, complex)):
             return MPSSum([n * w for w in self.weights], self.states, self.strategy)
         raise InvalidOperation("*", n, self)
 
