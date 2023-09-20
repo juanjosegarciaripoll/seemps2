@@ -13,12 +13,12 @@ from abc import abstractmethod
 id2 = np.eye(2)
 
 known_operators = {
-    "Sx": σx / 2.0,
-    "Sy": σy / 2.0,
-    "Sz": σz / 2.0,
-    "σx": σx,
-    "σy": σy,
-    "σz": σz,
+    "SX": σx / 2.0,
+    "SY": σy / 2.0,
+    "SZ": σz / 2.0,
+    "σX": σx,
+    "σY": σy,
+    "σZ": σz,
     "CNOT": np.array(
         [
             [1.0, 0.0, 0.0, 0.0],
@@ -27,6 +27,7 @@ known_operators = {
             [0.0, 0.0, 1.0, 0.0],
         ]
     ),
+    "CX": "CNOT",
     "CZ": np.diag([1.0, 1.0, 1.0, -1.0]),
 }
 
@@ -34,9 +35,11 @@ known_operators = {
 def interpret_operator(op: Union[str, Operator]) -> Operator:
     O: Operator
     if isinstance(op, str):
-        O = known_operators.get(op, None)
+        O = known_operators.get(op.upper(), None)
         if O is None:
             raise Exception(f"Unknown qubit operator '{op}'")
+        if isinstance(O, str):
+            return interpret_operator(O)
     elif not isinstance(op, np.ndarray):
         raise Exception(f"Invalid qubit operator of type '{type(op)}")
     else:

@@ -10,6 +10,18 @@ from seemps.register.circuit import (
 from scipy.linalg import expm  # type: ignore
 
 
+class TestKnownOperators(TestCase):
+    def test_interpret_operator_is_case_insensitive(self):
+        self.assertSimilar(interpret_operator("Sx"), interpret_operator("SX"))
+
+    def test_interpret_operator_accepts_aliases(self):
+        self.assertSimilar(interpret_operator("CX"), interpret_operator("CNOT"))
+
+    def test_interpret_operator_signals_unknown_operators(self):
+        with self.assertRaises(Exception):
+            interpret_operator("CUp")
+
+
 class TestLocalGateCircuits(TestCase):
     Sx = interpret_operator("Sx")
     Sy = interpret_operator("Sy")
