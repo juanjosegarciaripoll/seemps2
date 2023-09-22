@@ -121,7 +121,7 @@ class MPSSum:
 
         if strategy is None:
             strategy = self.strategy
-        ψ, _ = combine(
+        return combine(
             self.weights,
             self.states,
             maxsweeps=strategy.get_max_sweeps(),
@@ -129,7 +129,6 @@ class MPSSum:
             normalize=strategy.get_normalize_flag() if normalize is None else normalize,
             max_bond_dimension=strategy.get_max_bond_dimension(),
         )
-        return ψ
 
     def _joined_tensors(self, i: int, L: int) -> Tensor3:
         """Join the tensors from all MPS into bigger tensors."""
