@@ -10,7 +10,7 @@ class TestMPOTensorFold(TestCase):
         exact_contraction = np.einsum("cjd,aijb->caidb", B, A).reshape(
             30 * 10, 2, 30 * 13
         )
-        fast_contraction = seemps.mpo._mpo_multiply_tensor(A, B)
+        fast_contraction = seemps.operators.mpo._mpo_multiply_tensor(A, B)
         self.assertSimilar(exact_contraction, fast_contraction)
 
 
