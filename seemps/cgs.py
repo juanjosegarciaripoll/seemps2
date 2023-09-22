@@ -41,9 +41,7 @@ def cgs(
     r = b
     if guess is not None:
         x: MPS = guess
-        r, _ = combine(
-            [1.0, -1.0], [b, A.apply(x)], tolerance=tolerance, normalize=False
-        )
+        r = combine([1.0, -1.0], [b, A.apply(x)], tolerance=tolerance, normalize=False)
     p = r
     ρ = scprod(r, r).real
     log(f"CGS algorithm for {maxiter} iterations")
@@ -51,14 +49,14 @@ def cgs(
         Ap = A.apply(p)
         α = ρ / scprod(p, Ap).real
         if i > 0 or guess is not None:
-            x, _ = combine([1, α], [x, p], tolerance=tolerance, normalize=False)
+            x = combine([1, α], [x, p], tolerance=tolerance, normalize=False)
         else:
-            x, _ = combine([α], [p], tolerance=tolerance, normalize=False)
-        r, _ = combine([1, -1], [b, A.apply(x)], tolerance=tolerance, normalize=False)
+            x = combine([α], [p], tolerance=tolerance, normalize=False)
+        r = combine([1, -1], [b, A.apply(x)], tolerance=tolerance, normalize=False)
         ρ, ρold = scprod(r, r).real, ρ
         if ρ < tolerance * normb:
             log("Breaking on convergence")
             break
-        p, _ = combine([1.0, ρ / ρold], [r, p], tolerance=tolerance, normalize=False)
+        p = combine([1.0, ρ / ρold], [r, p], tolerance=tolerance, normalize=False)
         log(f"Iteration {i:5}: |r|={ρ:5g}")
     return x, abs(ρ)

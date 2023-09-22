@@ -7,7 +7,7 @@ from seemps.mpo import MPO
 from seemps.tools import σx
 from .tools import *
 from seemps.tools import DEBUG
-import scipy.sparse.linalg
+import scipy.sparse.linalg  # type: ignore
 
 
 class TestQuadraticForm(TestCase):
@@ -95,7 +95,7 @@ class TestDMRG(TestCase):
         self.assertAlmostEqual(v[0] ** 2 + v[3] ** 2, 1.0)
         self.assertAlmostEqual(v[1] ** 2 + v[2] ** 2, 0.0)
 
-    def test_dmrg_on_Ising_two_sites(self):
+    def test_dmrg_on_Ising_three_sites(self):
         """Check we can compute ground state of Sz * Sz on two sites"""
         H = ConstantTIHamiltonian(size=3, interaction=-np.kron(self.Sz, self.Sz))
         Hmpo = H.to_mpo()

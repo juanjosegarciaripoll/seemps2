@@ -141,21 +141,18 @@ class MPO(array.TensorArray):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         assert self.size == state.size
-        log(f"Total error before applying MPO {state.error()}")
-        err = 0.0
         state = MPS(
             [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
             error=state.error(),
         )
         if simplify:
-            state, err, _ = truncate.simplify(
+            state = truncate.simplify(
                 state,
                 maxsweeps=strategy.get_max_sweeps(),
                 tolerance=strategy.get_tolerance(),
                 normalize=strategy.get_normalize_flag(),
                 max_bond_dimension=strategy.get_max_bond_dimension(),
             )
-        log(f"Total error after applying MPO {state.error()}, incremented by {err}")
         return state
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> MPS:
@@ -361,16 +358,14 @@ class MPOList(object):
         for mpo in self.mpos:
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
-        err = 0.0
         if simplify:
-            state, err, _ = truncate.simplify(
+            state = truncate.simplify(
                 state,
                 maxsweeps=strategy.get_max_sweeps(),
                 tolerance=strategy.get_tolerance(),
                 normalize=strategy.get_normalize_flag(),
                 max_bond_dimension=strategy.get_max_bond_dimension(),
             )
-        log(f"Total error after applying MPOList {state.error()}, incremented by {err}")
         return state
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> MPS:
