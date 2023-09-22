@@ -1,2 +1,2 @@
-from .mpo import MPO
+from .mpo import MPO, MPOList
 from .mposum import MPOSum
