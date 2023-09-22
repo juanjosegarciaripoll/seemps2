@@ -86,10 +86,7 @@ class MPOSum(object):
         return MPOSum(
             mpos=self.mpos,
             weights=[n * weight for weight in self.weights],
-            maxsweeps=self.maxsweeps,
-            tolerance=self.tolerance,
-            normalize=self.normalize,
-            max_bond_dimension=self.max_bond_dimension,
+            strategy=self.strategy
         )
 
     def tomatrix(self) -> Operator:
