@@ -95,8 +95,8 @@ class QuadraticForm:
 
 
 def dmrg(
-    H: MPO,
-    guess: Optional[Union[MPS, NNHamiltonian]] = None,
+    H: Union[MPO, NNHamiltonian],
+    guess: Optional[MPS] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
     maxiter: int = 20,
