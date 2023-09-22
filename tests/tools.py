@@ -22,10 +22,14 @@ class TestCase(unittest.TestCase):
             A = A.todense()
         elif isinstance(A, MPS):
             A = A.to_vector()
+        else:
+            A = np.asarray(A)
         if sp.issparse(B):
             B = B.todense()
         elif isinstance(B, MPS):
             B = B.to_vector()
+        else:
+            B = np.asarray(B)
         if A.ndim != B.ndim or A.shape != B.shape:
             error = ""
         elif np.all(np.isclose(A, B, **kwdargs)):
