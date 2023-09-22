@@ -359,7 +359,7 @@ class MPS(array.TensorArray):
     def extend(
         self,
         L: int,
-        sites: Optional[Iterable[int]] = None,
+        sites: Optional[Sequence[int]] = None,
         dimensions: Union[int, list[int]] = 2,
     ):
         """Enlarge an MPS so that it lives in a Hilbert space with `L` sites.
