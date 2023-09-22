@@ -54,9 +54,9 @@ def gradient_descent(
     H : MPO
         Hamiltonian in MPO form.
     tol_variance : float
-        Energy variance target (defaults to 1e-15)
+        Energy variance target (defaults to 1e-14)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-15).
+        Energy variation that indicates termination (defaults to 1e-13).
     strategy : Optional[Strategy]
         Truncation strategy when applying MPO. Defaults to `None`, thereby
         using whatever strategy the MPO has defined.
