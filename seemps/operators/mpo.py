@@ -396,10 +396,10 @@ class MPOList(object):
                 return A
             B = join(*args)
             a, d, d, b = A.shape
-            c, d, d, d = B.shape
+            c, d, d, e = B.shape
             # TODO: Remove dependency on opt_einsum
             return opt_einsum.contract("aijb,cjkd->acikbd", A, B).reshape(
-                a * c, d, d, b * d
+                a * c, d, d, b * e
             )
 
         return join(*[mpo[i] for mpo in self.mpos])
