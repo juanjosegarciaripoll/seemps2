@@ -73,3 +73,19 @@ class TestMPOSum(TestCase):
             ((self.mpoA + self.mpoB) @ state).to_vector(),
             self.mpoA.apply(state).to_vector() + self.mpoB.apply(state).to_vector(),
         )
+
+    def test_mposum_join_real_mpos(self):
+        state = random_uniform_mps(2, self.mpoA.size, D=10)
+
+        mposum = self.mpoA + self.mpoB
+        newstate = mposum @ state
+        newstate_join = mposum.join() @ state
+        self.assertSimilar(newstate.to_vector(), newstate_join.to_vector())
+    
+    def test_mposum_join_complex_mpos(self):
+        state = random_uniform_mps(2, self.mpoA.size, D=10, complex=True)
+
+        mposum = self.mpoA + self.mpoB
+        newstate = mposum @ state
+        newstate_join = mposum.join() @ state
+        self.assertSimilar(newstate.to_vector(), newstate_join.to_vector())
