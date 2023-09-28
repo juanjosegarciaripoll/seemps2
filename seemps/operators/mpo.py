@@ -279,9 +279,12 @@ class MPOList(object):
 
     mpos: list[MPO]
     strategy: Strategy
+    size: int
 
-    def __init__(self, mpos: list[MPO], strategy: Strategy = DEFAULT_STRATEGY):
-        self.mpos = mpos
+    def __init__(self, mpos: Sequence[MPO], strategy: Strategy = DEFAULT_STRATEGY):
+        assert len(mpos) > 1
+        self.mpos = mpos = list(mpos)
+        self.size = mpos[0].size
         self.strategy = strategy
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:

@@ -3,7 +3,6 @@ import numpy as np
 from .mpo import MPO, MPOList
 from ..state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
 from ..typing import *
-from numbers import Number
 
 
 class MPOSum(object):
@@ -21,6 +20,7 @@ class MPOSum(object):
 
     mpos: list[Union[MPO, MPOList]]
     weights: list[Weight]
+    size: int
 
     __array_priority__ = 10000
 
@@ -30,7 +30,9 @@ class MPOSum(object):
         weights: Optional[list[Weight]] = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
-        self.mpos = list(mpos)
+        self.mpos = mpos = list(mpos)
+        assert len(mpos) >= 1
+        self.size = self.mpos[0].size
         self.weights = [1.0] * len(self.mpos) if weights is None else list(weights)
         self.strategy = strategy
 
@@ -86,7 +88,7 @@ class MPOSum(object):
         return MPOSum(
             mpos=self.mpos,
             weights=[n * weight for weight in self.weights],
-            strategy=self.strategy
+            strategy=self.strategy,
         )
 
     def tomatrix(self) -> Operator:
@@ -144,9 +146,9 @@ class MPOSum(object):
     def _joined_tensors(self, i: int, mpos: list[MPO]) -> Tensor4:
         """Join the tensors from all MPOs into bigger tensors."""
         As: list[Tensor4] = [mpo[i] for mpo in mpos]
-        L = len(mpos)
+        L = self.size
         if i == 0:
-            return np.concatenate([w * A for w, A in zip(self.weights, As)], axis=2)
+            return np.concatenate([w * A for w, A in zip(self.weights, As)], axis=-1)
         if i == L - 1:
             return np.concatenate(As, axis=0)
 
@@ -158,8 +160,8 @@ class MPOSum(object):
             a, d, d, b = A.shape
             DL += a
             DR += b
-            w += A[0, 0, 0]
-        B = np.zeros((DL, d, DR), dtype=type(w))
+            w += A[0, 0, 0, 0]
+        B = np.zeros((DL, d, d, DR), dtype=type(w))
         DL = 0
         DR = 0
         for A in As:
@@ -180,6 +182,6 @@ class MPOSum(object):
         """
         mpos = [m.join() if isinstance(m, MPOList) else m for m in self.mpos]
         return MPO(
-            [self._joined_tensors(i, mpos) for i in range(len(mpos))],
+            [self._joined_tensors(i, mpos) for i in range(self.size)],
             strategy=self.strategy if strategy is None else strategy,
         )

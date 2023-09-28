@@ -19,6 +19,7 @@ class TestMPOList(TestCase):
         state = random_uniform_mps(2, 3, rng=self.rng)
         self.assertSimilar(UV.apply(state), V.apply(U.apply(state)))
         self.assertSimilar(UV @ state, V.apply(U.apply(state)))
+        self.assertEqual(UV.size, U.size)
 
     def test_mpo_apply_can_simplify(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
