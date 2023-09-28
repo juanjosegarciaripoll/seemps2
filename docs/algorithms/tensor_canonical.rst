@@ -34,7 +34,7 @@ we can ignore the environment and use
 Interestingly, the canonical form can be constructed with respect to any site,
 not just the first or the last one. In SeeMPS, the :py:class:`CanonicalMPS`
 class is responsible for creating and maintaining these canonical forms, as
-explained :doc:`in this manual <../seemps_objets_canonical.rst>`. It is also
+explained :doc:`in this manual <../seemps_objects_canonical>`. It is also
 possible to move the center of a canonical form using the
 :func:`~seemps.state.CanonicalMPS.recenter` method.
 
