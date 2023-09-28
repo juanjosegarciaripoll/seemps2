@@ -397,8 +397,11 @@ class MPOList(object):
             B = join(*args)
             a, d, d, b = A.shape
             c, d, d, e = B.shape
+            # A, B, args[1],... are the tensors of the MPO to
+            # join. They are applied to the MPS in this order, hence the
+            # particular position of elements in opt_einsum
             # TODO: Remove dependency on opt_einsum
-            return opt_einsum.contract("aijb,cjkd->acikbd", A, B).reshape(
+            return opt_einsum.contract("aijb,cjkd->acikbd", B, A).reshape(
                 a * c, d, d, b * e
             )
 

@@ -81,3 +81,17 @@ class TestMPOList(TestCase):
         ex_V = V.extend(4, dimensions=[3])
         ex_UV = UV.extend(4, dimensions=[3])
         self.assertSimilar(ex_UV.tomatrix(), ex_V.tomatrix() @ ex_U.tomatrix())
+
+    def test_mpolist_join_real_mpos(self):
+        U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
+        V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
+        UV = MPOList([U, V], NO_TRUNCATION)
+        UV_join = UV.join()
+        self.assertSimilar(UV.tomatrix(), UV_join.tomatrix())
+
+    def test_mpolist_join_complex_mpos(self):
+        U = MPO([σy.reshape(1, 2, 2, 1)] * 3)
+        V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
+        UV = MPOList([U, V], NO_TRUNCATION)
+        UV_join = UV.join()
+        self.assertSimilar(UV.tomatrix(), UV_join.tomatrix())
