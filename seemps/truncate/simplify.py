@@ -1,17 +1,12 @@
 from __future__ import annotations
+
 import numpy as np
-from ..typing import *
-from ..tools import log
-from ..state import (
-    DEFAULT_TOLERANCE,
-    Truncation,
-    Strategy,
-    MAX_BOND_DIMENSION,
-    MPS,
-    MPSSum,
-    CanonicalMPS,
-)
+
+from ..state import (DEFAULT_TOLERANCE, MAX_BOND_DIMENSION, MPS, CanonicalMPS,
+                     MPSSum, Strategy, Truncation)
 from ..state.environments import scprod
+from ..tools import log
+from ..typing import *
 from .antilinear import AntilinearForm
 
 
@@ -141,7 +136,7 @@ def guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
         a, d, b = A.shape
         if DL < a or DR < b:
             # Extend with zeros to accommodate new contribution
-            newA = np.zeros((max(DR, a), d, max(DR, b)), dtype=sumA.dtype)
+            newA = np.zeros((max(DL, a), d, max(DR, b)), dtype=sumA.dtype)
             newA[:DL, :, :DR] = sumA
             sumA = newA
         dt = type(A[0, 0, 0] + sumA[0, 0, 0])
