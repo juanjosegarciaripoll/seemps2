@@ -269,10 +269,22 @@ class MPOList(object):
 
     Parameters
     ----------
-    mpos: list[MPO]
-        Operators in this sequence, to be applied from mpos[0] to mpos[-1]
-    strategy: Strategy, optional
+    mpos : list[MPO]
+        Operators in this sequence, to be applied from mpos[0] to mpos[-1]. Must
+        contain at least one operator.
+    strategy : Strategy, optional
         Truncation and simplification strategy, defaults to DEFAULT_STRATEGY
+
+    Attributes
+    ----------
+    mpos : list[MPO]
+        Operators in this sequence, to be applied from mpos[0] to mpos[-1]. Must
+        contain at least one operator.
+    strategy : Strategy
+        Truncation and simplification strategy.
+    size : int
+        Number of quantum subsystems in each MPO. Computed from the supplied
+        MPOs. Not checked for consistency.
     """
 
     __array_priority__ = 10000
