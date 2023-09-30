@@ -30,14 +30,14 @@ cdef class Strategy:
                  normalize: bool = False,
                  simplify: bool = False,
                  max_sweeps: int = 16):
-        if method < 0 or method > 3:
-            raise AssertionError("Invalid method argument passed to Strategy")
-        self.method = method
         if tolerance < 0 or tolerance >= 1.0:
             raise AssertionError("Invalid tolerance argument passed to Strategy")
         if tolerance == 0 and method > 0:
             method = 3
         self.tolerance = tolerance
+        if method < 0 or method > 3:
+            raise AssertionError("Invalid method argument passed to Strategy")
+        self.method = method
         if max_bond_dimension is None:
             self.max_bond_dimension = INT_MAX
         elif max_bond_dimension <= 0:

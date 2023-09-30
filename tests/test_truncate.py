@@ -5,7 +5,7 @@ from .tools import *
 class TestStrategy(TestCase):
     def test_strategy_no_truncation(self):
         s = np.array([1.0, 0.2, 0.01, 0.005, 0.0005])
-        strategy = Strategy(method=Truncation.DO_NOT_TRUNCATE, tolerance=1.0)
+        strategy = Strategy(method=Truncation.DO_NOT_TRUNCATE)
         news, err = truncate_vector(s, strategy)
         self.assertEqual(err, 0.0)
         self.assertEqualTensors(news, s)
