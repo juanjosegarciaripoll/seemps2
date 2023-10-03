@@ -80,8 +80,6 @@ def gradient_descent(
     best_energy = np.Inf
     best_variance = np.Inf
     best_vector = state
-    message = "Maximum number of iterations reached"
-
     """
     The algorithm aims to find the optimal linear combination
         ψ' = a * ψ + b * H * ψ
