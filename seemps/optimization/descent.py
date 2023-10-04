@@ -49,14 +49,16 @@ def gradient_descent(
 
     Parameters
     ----------
-    ψ : MPS
-        Initial guess of the ground state.
     H : MPO
         Hamiltonian in MPO form.
-    tol_variance : float
-        Energy variance target (defaults to 1e-14)
+    state : MPS
+        Initial guess of the ground state.
+    maxiter : int
+        Maximum number of iterations (defaults to 1000).
     tol : float
         Energy variation that indicates termination (defaults to 1e-13).
+    tol_variance : float
+        Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
         Truncation strategy when applying MPO. Defaults to `None`, thereby
         using whatever strategy the MPO has defined.
@@ -80,8 +82,6 @@ def gradient_descent(
     best_energy = np.Inf
     best_variance = np.Inf
     best_vector = state
-    message = "Maximum number of iterations reached"
-
     """
     The algorithm aims to find the optimal linear combination
         ψ' = a * ψ + b * H * ψ
