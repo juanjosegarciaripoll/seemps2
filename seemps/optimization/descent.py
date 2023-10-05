@@ -72,7 +72,7 @@ def gradient_descent(
 
     def energy_and_variance(state: MPS) -> tuple[MPS, float, float, float]:
         true_E = H.expectation(state).real
-        H_state = H.apply(state, strategy=strategy)
+        H_state = H.apply(state)
         avg_H2 = scprod(H_state, H_state).real
         variance = avg_H2 - scprod(state, H_state).real ** 2
         return H_state, true_E, variance, avg_H2
