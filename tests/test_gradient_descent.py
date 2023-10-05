@@ -39,3 +39,20 @@ class TestGradientDescent(TestCase):
         print(result)
         self.assertTrue(result.converged)
         self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)
+
+    def callback(self):
+        norms = []
+        def callback_func(state:MPS):
+            norms.append(np.sqrt(state.norm_squared()))
+            return None
+        return callback_func, norms
+
+    def test_gradient_descent_with_callback(self):
+        N = 4
+        maxiter = 10
+        H = self.make_local_Sz_mpo(N)
+        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        callback_func, norms = self.callback()
+        result = gradient_descent(H, guess, maxiter=maxiter, tol=1e-15, callback=callback_func)
+        self.assertSimilar(norms, np.ones(len(norms)))
+        self.assertEqual(maxiter, len(norms))
