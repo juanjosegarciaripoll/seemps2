@@ -38,7 +38,6 @@ class OptimizeResults:
     trajectory: Optional[VectorLike] = None
     variances: Optional[VectorLike] = None
 
-
 def gradient_descent(
     H: Union[MPO, MPOList, MPOSum],
     state: MPS,
@@ -46,6 +45,7 @@ def gradient_descent(
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
     strategy: Optional[Strategy] = DEFAULT_STRATEGY,
+    callback: Optional[callable] = None
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -64,6 +64,8 @@ def gradient_descent(
     strategy : Optional[Strategy]
         Truncation strategy when applying MPO. Defaults to `DEFAULT_STRATEGY`, thereby
         using whatever strategy the MPO has defined.
+    callback : Optional[callable]
+        A callable called after each iteration (defaults to None).
 
     Results
     -------
@@ -123,6 +125,8 @@ def gradient_descent(
         state = combine(state.weights, state.states, maxsweeps=strategy.get_max_sweeps(),
                         tolerance=strategy.get_tolerance(), max_bond_dimension=strategy.get_max_bond_dimension(),
                         normalize=True)
+        if callback is not None:
+            callback(state)
         # TODO: Implement stop criteria based on gradient size Δβ
         # It must take into account the norm of the displacement, H_state
         # which was already calculated
