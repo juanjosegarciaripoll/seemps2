@@ -1,10 +1,11 @@
 import numpy as np
 from ..state import CanonicalMPS, MPS, Strategy
 from ..expectation import scprod
-from ..mpo import MPO
+from ..mpo import MPO, MPOList, MPOSum
 from ..typing import *
 from dataclasses import dataclass
 from ..tools import log
+from ..typing import Union
 
 
 @dataclass
@@ -38,7 +39,7 @@ class OptimizeResults:
 
 
 def gradient_descent(
-    H: MPO,
+    H: Union[MPO, MPOList, MPOSum],
     state: MPS,
     maxiter=1000,
     tol: float = 1e-13,
@@ -49,7 +50,7 @@ def gradient_descent(
 
     Parameters
     ----------
-    H : MPO
+    H : Union[MPO, MPOList, MPOSum]
         Hamiltonian in MPO form.
     state : MPS
         Initial guess of the ground state.
