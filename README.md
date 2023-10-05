@@ -37,6 +37,13 @@ The library is developed in a mixture of Python 3 and Cython, with the support
 of Numpy, Scipy and h5py. Installation instructions are provided in
 [the documentation](https://juanjosegarciaripoll.github.io/seemps2).
 
+## TO DO
+
+- Add independent truncation strategy for MPO, MPOList and MPOSum.
+- Add expectation method for MPOList and MPOSum.
+- Unify simplification routines in one simplify function.
+- Add callback function to gradient_descent optimization. 
+
 Version: 1.0
 
 Authors:
