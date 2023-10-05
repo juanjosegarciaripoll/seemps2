@@ -95,8 +95,8 @@ def gradient_descent(
     """
     converged = False
     message = f"Maximum number of iterations {maxiter} reached"
+    state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
-        state = CanonicalMPS(state, normalize=True)
         H_state, E, variance, avg_H2 = energy_and_variance(state)
         log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
@@ -124,7 +124,6 @@ def gradient_descent(
         # It must take into account the norm of the displacement, H_state
         # which was already calculated
 
-    state = CanonicalMPS(state, normalize=True)
     H_state, E, variance, _ = energy_and_variance(state)
     if E > best_energy:
         E, state, variance = best_energy, best_vector, best_variance
