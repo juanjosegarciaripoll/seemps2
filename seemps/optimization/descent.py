@@ -62,8 +62,8 @@ def gradient_descent(
     tol_variance : float
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to `DEFAULT_STRATEGY`, thereby
-        using whatever strategy the MPO has defined.
+        Linear combination of MPS truncation strategy. Defaults to 
+        `DEFAULT_STRATEGY`.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
 
