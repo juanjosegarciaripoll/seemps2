@@ -13,13 +13,20 @@ from .antilinear import AntilinearForm
 # TODO: We have to rationalize all this about directions. The user should
 # not really care about it and we can guess the direction from the canonical
 # form of either the guess or the state.
+
+SIMPLIFICATION_STRATEGY = Strategy(
+        method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
+        tolerance=DEFAULT_TOLERANCE,
+        max_bond_dimension=MAX_BOND_DIMENSION,
+        normalize=True,
+        max_sweeps=4
+    )
+
 def simplify(
-    state: Union[MPS, MPSSum],
-    maxsweeps: int = 4,
-    direction: int = +1,
-    tolerance: float = DEFAULT_TOLERANCE,
-    normalize: bool = True,
-    max_bond_dimension: int = MAX_BOND_DIMENSION,
+    state: Union[MPS, MPSSum], 
+    truncation: Strategy = SIMPLIFICATION_STRATEGY, 
+    direction: int = +1
+    
 ) -> MPS:
     """Simplify an MPS state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
@@ -28,15 +35,10 @@ def simplify(
     ----------
     state : MPS | MPSSum
         State to approximate.
+    truncation : Strategy
+        Truncation strategy. Defaults to `SIMPLIFICATION_STRATEGY`.
     direction : { +1, -1 }
-        Direction of the first sweep
-    maxsweeps : int
-        Maximum number of sweeps to run
-    tolerance : float
-        Relative tolerance when splitting the tensors. Defaults to
-        `DEFAULT_TOLERANCE`
-    max_bond_dimension : int
-        Maximum bond dimension. Defaults to `MAX_BOND_DIMENSION`
+       Initial direction for the sweeping algorithm.
 
     Returns
     -------
@@ -47,22 +49,16 @@ def simplify(
         return combine(
             state.weights,
             state.states,
-            maxsweeps=maxsweeps,
+            truncation=truncation,
             direction=direction,
-            tolerance=tolerance,
-            max_bond_dimension=max_bond_dimension,
-            normalize=normalize,
         )
 
     size = state.size
     start = 0 if direction > 0 else size - 1
-
-    truncation = Strategy(
-        method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
-        tolerance=tolerance,
-        max_bond_dimension=max_bond_dimension,
-        normalize=normalize,
-    )
+    normalize= truncation.get_normalize_flag()
+    maxsweeps = truncation.get_max_sweeps()
+    tolerance = truncation.get_tolerance()
+    max_bond_dimension = truncation.get_max_bond_dimension()
     mps = CanonicalMPS(state, center=start, strategy=truncation)
     if normalize:
         mps.normalize_inplace()
@@ -159,12 +155,9 @@ def guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
 def combine(
     weights: list[Weight],
     states: list[MPS],
-    guess: Optional[MPS] = None,
-    maxsweeps: int = 4,
-    direction: int = +1,
-    tolerance: float = DEFAULT_TOLERANCE,
-    max_bond_dimension: int = MAX_BOND_DIMENSION,
-    normalize: bool = True,
+    guess: Optional[MPS] = None, 
+    truncation: Strategy = SIMPLIFICATION_STRATEGY, 
+    direction: int = +1
 ) -> MPS:
     """Approximate a linear combination of MPS :math:`\\sum_i w_i \\psi_i` by
     another one with a smaller bond dimension, sweeping until convergence is achieved.
@@ -174,17 +167,13 @@ def combine(
     weights : list[Weight]
         Weights of the linear combination :math:`w_i` in list form.
     states : list[MPS]
-        List of states :math:`\\psi_i`
+        List of states :math:`\\psi_i`.
     guess : MPS, optional
-        Initial guess for the iterative algorithm
+        Initial guess for the iterative algorithm.
+    truncation : Strategy
+        Truncation strategy. Defaults to `SIMPLIFICATION_STRATEGY`.
     direction : {+1, -1}
-        Initial direction for the sweeping algorithm
-    maxsweeps : int
-        Maximum number of iterations
-    tolerance :
-        Relative tolerance when splitting the tensors
-    max_bond_dimension :
-        Maximum bond dimension
+        Initial direction for the sweeping algorithm.
 
     Returns
     -------
@@ -197,14 +186,12 @@ def combine(
         np.sqrt(np.abs(weights)) * np.sqrt(state.error())
         for weights, state in zip(weights, states)
     )
-    strategy = Strategy(
-        method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
-        tolerance=tolerance,
-        max_bond_dimension=max_bond_dimension,
-        normalize=normalize,
-    )
+    normalize= truncation.get_normalize_flag()
+    maxsweeps = truncation.get_max_sweeps()
+    tolerance = truncation.get_tolerance()
+    max_bond_dimension = truncation.get_max_bond_dimension()
     start = 0 if direction > 0 else guess.size - 1
-    φ = CanonicalMPS(guess, center=start, strategy=strategy, normalize=normalize)
+    φ = CanonicalMPS(guess, center=start, strategy=truncation, normalize=normalize)
     err = norm_ψsqr = multi_norm_squared(weights, states)
     if norm_ψsqr < tolerance:
         return MPS([np.zeros((1, P.shape[1], 1)) for P in φ])
@@ -222,7 +209,7 @@ def combine(
                     weights * f.tensor2site(direction)
                     for weights, f in zip(weights, forms)
                 )  # type: ignore
-                φ.update_2site_right(tensor, n, strategy)
+                φ.update_2site_right(tensor, n, truncation)
                 for f in forms:
                     f.update(direction)
         else:
@@ -231,7 +218,7 @@ def combine(
                     weights * f.tensor2site(direction)
                     for weights, f in zip(weights, forms)
                 )  # type: ignore
-                φ.update_2site_left(tensor, n, strategy)
+                φ.update_2site_left(tensor, n, truncation)
                 for f in forms:
                     f.update(direction)
             last = 0
