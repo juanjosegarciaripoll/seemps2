@@ -62,6 +62,8 @@ def simplify(
     mps = CanonicalMPS(state, center=start, strategy=truncation)
     if normalize:
         mps.normalize_inplace()
+    if not truncation.get_simplification_method():
+        return mps
     if max_bond_dimension == 0 and tolerance <= 0:
         return mps
 
@@ -192,6 +194,8 @@ def combine(
     max_bond_dimension = truncation.get_max_bond_dimension()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=truncation, normalize=normalize)
+    if not truncation.get_simplification_method():
+        return φ
     err = norm_ψsqr = multi_norm_squared(weights, states)
     if norm_ψsqr < tolerance:
         return MPS([np.zeros((1, P.shape[1], 1)) for P in φ])
