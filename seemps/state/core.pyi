@@ -26,7 +26,7 @@ class Strategy:
     def replace(
         self: Strategy,
         method: Optional[int] = None,
-        simplification_method: int  = 1,
+        simplification_method: Optional[int] = None,
         tolerance: Optional[float] = None,
         max_bond_dimension: Optional[int] = None,
         max_sweeps: Optional[int] = None,

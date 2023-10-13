@@ -61,7 +61,7 @@ cdef class Strategy:
 
     def replace(self,
                  method: Optional[Truncation] = None,
-                 simplification_method: Optional[Truncation] = None,
+                 simplification_method: Optional[Simplification] = None,
                  tolerance: Optional[float] = None,
                  max_bond_dimension: Optional[int] = None,
                  normalize: Optional[bool] = None,
