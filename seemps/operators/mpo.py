@@ -131,7 +131,7 @@ class MPO(array.TensorArray):
         """
         # TODO: Remove implicit conversion of MPSSum to MPS
         if isinstance(b, MPSSum):
-            state: MPS = b.toMPS(strategy=strategy)
+            state: MPS = b.to_MPS(strategy=strategy)
         elif isinstance(b, MPS):
             state = b
         else:
@@ -363,7 +363,7 @@ class MPOList(object):
         """
         state: MPS
         if isinstance(b, MPSSum):
-            state = b.toMPS()
+            state = b.to_MPS()
         else:
             state = b
         if strategy is None:
