@@ -94,8 +94,7 @@ class MPSSum:
         """Return the wavefunction of this quantum state."""
         return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore
 
-    # TODO: Rename toMPS -> to_MPS
-    def toMPS(
+    def to_MPS(
         self, normalize: Optional[bool] = None, strategy: Optional[Strategy] = None
     ) -> MPS:
         """Approximate the linear combination with a new :class:`MPS`.
