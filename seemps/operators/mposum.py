@@ -105,7 +105,7 @@ class MPOSum(object):
         a Matrix Product State 'b'."""
         # TODO: Is this really needed?
         if isinstance(b, MPSSum):
-            b = b.to_MPS()
+            b = b.toMPS()
         output: Union[MPS, MPSSum]
         for i, (w, O) in enumerate(zip(self.weights, self.mpos)):
             Ob = w * O.apply(b, strategy=strategy)

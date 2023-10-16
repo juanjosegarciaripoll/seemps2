@@ -95,7 +95,7 @@ class MPSSum:
         return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore
 
     # TODO: Rename toMPS -> to_MPS
-    def to_MPS(
+    def toMPS(
         self, normalize: Optional[bool] = None, strategy: Optional[Strategy] = None
     ) -> MPS:
         """Approximate the linear combination with a new :class:`MPS`.
