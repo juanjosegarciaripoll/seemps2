@@ -299,7 +299,7 @@ class Cross:
             Y, I_forward, I_backward = self.sweep(Y, I_forward, I_backward)
             self.measure(Y)
         print("Converged!")
-        return mps
+        return mps, self.tracker
 
 
 def _ones(k, m=1):
