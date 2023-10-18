@@ -111,5 +111,6 @@ exportnb.py
 ipynb_output_filter
 
 #
+launch.json
 benchmark*.json
 *.cpp

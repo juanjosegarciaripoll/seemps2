@@ -22,6 +22,8 @@
         "reportUnusedVariable": "warning"
     },
     "python.testing.pytestArgs": [
-        "-n4"
-    ]
+        "tests",
+        "-s"
+    ],
+    "python.envFile": "${workspaceFolder}/.env"
 }
