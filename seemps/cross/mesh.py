@@ -1,94 +1,66 @@
+from abc import ABC, abstractmethod
+from typing import List, Tuple
 import numpy as np
-from typing import List, Tuple, Optional
 from itertools import product
 
 
+class Interval(ABC):
+    def __init__(self, start: float, stop: float, size: int):
+        self.start = start
+        self.stop = stop
+        self.size = size
+
+    @abstractmethod
+    def __getitem__(self, idx: int) -> float:
+        if not (0 <= idx < self.size):
+            raise IndexError("Index out of range")
+
+    def to_vector(self) -> np.ndarray:
+        return np.array([self[idx] for idx in range(self.size)])
+
+
+class RegularClosedInterval(Interval):
+    def __init__(self, start: float, stop: float, size: int):
+        super().__init__(start, stop, size)
+        self.step = (stop - start) / (size - 1)
+
+    def __getitem__(self, idx: int) -> float:
+        super().__getitem__(idx)
+        return idx * self.step + self.start
+
+
+class RegularHalfOpenInterval(Interval):
+    def __init__(self, start: float, stop: float, size: int):
+        super().__init__(start, stop, size)
+        self.step = (stop - start) / size
+
+    def __getitem__(self, idx: int) -> float:
+        super().__getitem__(idx)
+        return idx * self.step + self.start
+
+
+class ChebyshevZerosInterval(Interval):
+    def __init__(self, start: float, stop: float, size: int):
+        super().__init__(start, stop, size)
+
+    def __getitem__(self, idx: int) -> float:
+        super().__getitem__(idx)
+        zero = np.cos(np.pi * (2 * (self.size - idx) - 1) / (2 * self.size))
+        return (self.stop - self.start) * (zero + 1) / 2 + self.start
+
+
 class Mesh:
-    """Mesh class.
+    def __init__(self, intervals: List[Interval]):
+        self.intervals = intervals
+        self.dimension = len(intervals)
 
-    This implements a Mesh object that representes a m-dimensional multivariate domain discretized
-    on a mesh according to some distribution of points, given by the parameter 'mesh_type'.
-
-    Parameters
-    ----------
-    left_endpoints : List[float]
-        A list with m floats [a_i] representing the left endpoints of each dimension.
-    right_endpoints : List[float]
-        A list with m numbers [b_i] representing the right endpoints of each dimension.
-    qubits : List[int]
-        A list with m qubits [n_i] representing the number of qubits, or points (2**n) assigned to
-        each dimension.
-    mesh_type: string, optional
-        A string defining the distribution of points on the mesh.
-        - "o": Regular mesh composed of open intervals [a, b)
-        - "c": Regular mesh composed of closed intervals [a, b]
-        - "z": Irregular mesh composed of Chebyshev zeros in (a, b)
-    """
-
-    def __init__(
-        self,
-        left_endpoints: List[float],
-        right_endpoints: List[float],
-        qubits: List[int],
-        mesh_type: Optional[str] = "o",
-    ):
-        if not (len(left_endpoints) == len(right_endpoints) == len(qubits)):
-            raise ValueError("Non-matching dimensions")
-
-        if mesh_type not in ["o", "c", "z"]:
-            raise ValueError("Invalid mesh type")
-
-        self.left_endpoints = left_endpoints
-        self.right_endpoints = right_endpoints
-        self.qubits = qubits
-        self.points = [2**n for n in self.qubits]
-        self.dimension = len(qubits)
-        self.mesh_type = mesh_type
-        self.intervals = [
-            self.interval(a, b, n, self.mesh_type)
-            for a, b, n in zip(self.left_endpoints, self.right_endpoints, self.qubits)
-        ]
-
-    # TODO: Think how to evaluate mesh points efficiently but without storing the 'basis vectors' in memory,
-    # as they can be exponentially large in some applications
     def __getitem__(self, indices: Tuple[int, ...]):
         if len(indices) != self.dimension:
-            raise ValueError(
-                "Number of indices must match the dimensionality of the mesh."
-            )
-        values = np.array(
+            raise ValueError("Incorrect index size")
+        return np.array(
             [interval[idx] for interval, idx in zip(self.intervals, indices)]
         )
-        return values
 
-    @staticmethod
-    def interval(
-        a: float, b: float, n: int, mesh_type: Optional[str] = "o"
-    ) -> np.ndarray:
-        """Returns an interval of type 'mesh_type' between a and b with n qubits or 2**n points."""
-        N = 2**n
-        if mesh_type == "o":
-            interval = np.array([a + i * (b - a) / N for i in range(N)])
-        elif mesh_type == "c":
-            b += (b - a) / (N - 1)
-            interval = np.array([a + i * (b - a) / N for i in range(N)])
-        elif mesh_type == "z":
-            zeros = np.array(
-                [np.cos(np.pi * (2 * k - 1) / (2 * N)) for k in range(1, N + 1)]
-            )
-            interval = np.flip((b - a) * (zeros + 1) / 2 + a)
-        else:
-            raise ValueError("Invalid mesh_type")
-        return interval
-
-    def get_shape(self) -> Tuple[int, ...]:
-        """Returns the shape of the tensor generated by the mesh."""
-        shape = tuple(2**n for n in self.qubits) + (len(self.qubits),)
-        return shape
-
-    # TODO: Construct to_tensor without referring to the basis vectors in self.intervals
     def to_tensor(self):
-        """Returns the tensor generated by the mesh."""
-        tensor = list(product(*self.intervals))
-        tensor = np.array(tensor).reshape(self.get_shape())
-        return tensor
+        shape = tuple(interval.size for interval in self.intervals) + (self.dimension,)
+        return np.array(list(product(*self.intervals))).reshape(shape)
