@@ -61,6 +61,8 @@ class Mesh:
             [interval[idx] for interval, idx in zip(self.intervals, indices)]
         )
 
+    def shape(self):
+        return tuple(interval.size for interval in self.intervals) + (self.dimension,)
+
     def to_tensor(self):
-        shape = tuple(interval.size for interval in self.intervals) + (self.dimension,)
-        return np.array(list(product(*self.intervals))).reshape(shape)
+        return np.array(list(product(*self.intervals))).reshape(self.shape())

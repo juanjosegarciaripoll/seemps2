@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.cross import Mesh, Cross
+from seemps.cross import RegularHalfOpenInterval, Mesh, Cross, run_cross
 from seemps.state import MPS
 
 from .tools import TestCase
@@ -12,7 +12,8 @@ class TestCross(TestCase):
         b = 1
         n = 5
         func = lambda x: np.exp(-np.sum(x**2))
-        mesh = Mesh([a] * dims, [b] * dims, [n] * dims)
+        intervals = [RegularHalfOpenInterval(a, b, 2**n) for _ in range(dims)]
+        mesh = Mesh(intervals)
         mesh_tensor = mesh.to_tensor()
         func_vector = np.apply_along_axis(func, -1, mesh_tensor).flatten()
         mps = MPS.from_vector(func_vector, [2] * (n * dims), normalize=False)
@@ -21,7 +22,9 @@ class TestCross(TestCase):
     # 1D Gaussian
     def test_cross_1d_from_random(self):
         func, mesh, _, func_vector = self.gaussian_setting(1)
-        mps = Cross(func, mesh).run()
+        cross = Cross(func, mesh)
+        cross, _ = run_cross(cross)
+        mps = cross.mps0
         self.assertSimilar(func_vector, mps.to_vector())
 
     def test_cross_1d_from_mps(self):
