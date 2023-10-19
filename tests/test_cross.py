@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.cross import RegularHalfOpenInterval, Mesh, Cross, run_cross
+from seemps.cross import RegularHalfOpenInterval, Mesh, Cross, cross_interpolation
 from seemps.state import MPS
 
 from .tools import TestCase
@@ -23,7 +23,7 @@ class TestCross(TestCase):
     def test_cross_1d_from_random(self):
         func, mesh, _, func_vector = self.gaussian_setting(1)
         cross = Cross(func, mesh)
-        cross, _ = run_cross(cross)
+        cross, _ = cross_interpolation(cross)
         mps = cross.mps0
         self.assertSimilar(func_vector, mps.to_vector())
 

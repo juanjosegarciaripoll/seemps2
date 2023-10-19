@@ -1,2 +1,2 @@
-from .cross import Cross, run_cross
+from .cross import Cross, cross_interpolation
 from .mesh import *
