@@ -288,7 +288,7 @@ class Cross:
         if self.tracker.sweep == 1:
             self.tracker.mps_prev = deepcopy(self.mps)
             return 1
-        error = abs((self.mps - self.tracker.mps_prev).to_MPS().norm())
+        error = abs((self.mps - self.tracker.mps_prev).toMPS().norm())
         self.tracker.mps_prev = self.mps
         return error
 
