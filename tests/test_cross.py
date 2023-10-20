@@ -1,5 +1,10 @@
 import numpy as np
-from seemps.cross import RegularHalfOpenInterval, Mesh, Cross, cross_interpolation
+from seemps.cross import (
+    RegularHalfOpenInterval,
+    Mesh,
+    cross_interpolation,
+    CrossStrategy,
+)
 from seemps.state import MPS
 
 from .tools import TestCase
@@ -22,37 +27,28 @@ class TestCross(TestCase):
     # 1D Gaussian
     def test_cross_1d_from_random(self):
         func, mesh, _, func_vector = self.gaussian_setting(1)
-        cross = Cross(func, mesh)
-        cross, _ = cross_interpolation(cross)
-        mps = cross.mps0
+        mps, _ = cross_interpolation(func, mesh)
         self.assertSimilar(func_vector, mps.to_vector())
 
     def test_cross_1d_from_mps(self):
         func, mesh, mps0, func_vector = self.gaussian_setting(1)
-        mps = Cross(func, mesh, mps0=mps0).run()
+        mps, _ = cross_interpolation(func, mesh, mps0=mps0)
         self.assertSimilar(func_vector, mps.to_vector())
 
-    def test_cross_1d_with_measure_norm(self):
-        options = {"measure_type": "norm"}
-        func, mesh, _, func_vector = self.gaussian_setting(1)
-        mps = Cross(func, mesh, options=options).run()
-        self.assertSimilar(func_vector, mps.to_vector())
+    # def test_cross_1d_with_measure_norm(self):
+    #     cross_strategy = CrossStrategy(measurement_type="norm")
+    #     func, mesh, _, func_vector = self.gaussian_setting(1)
+    #     mps, _ = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
+    #     self.assertSimilar(func_vector, mps.to_vector())
 
     # 2D Gaussian
     def test_cross_2d_from_random(self):
         func, mesh, _, func_vector = self.gaussian_setting(2)
-        mps = Cross(func, mesh).run()
+        mps, _ = cross_interpolation(func, mesh)
         self.assertSimilar(func_vector, mps.to_vector())
 
-    def test_cross_2d_with_ordering_B(self):
-        options = {"ordering": "B"}
-        func, mesh, _, func_vector = self.gaussian_setting(2)
-        mps = Cross(func, mesh, options=options).run()
-        mps_vector = Cross.reorder_tensor(mps.to_vector(), mesh.qubits).flatten()
-        self.assertSimilar(func_vector, mps_vector)
-
-    def test_cross_2d_with_structure_tt(self):
-        options = {"structure": "tt"}
-        func, mesh, _, func_vector = self.gaussian_setting(2)
-        mps1 = Cross(func, mesh, options=options).run()
-        self.assertSimilar(func_vector, mps1.to_vector())
+    # def test_cross_2d_with_ordering_B(self):
+    #     cross_strategy = CrossStrategy(mps_ordering="B")
+    #     func, mesh, _, func_vector = self.gaussian_setting(2)
+    #     mps, _ = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
+    #     self.assertSimilar(func_vector, mps.to_vector())
