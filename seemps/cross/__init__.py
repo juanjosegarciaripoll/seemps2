@@ -1,2 +1,2 @@
-from .cross import Cross, CrossStrategy, CrossConvergence, cross_interpolation
+from .cross import *
 from .mesh import *

@@ -5,6 +5,12 @@ from itertools import product
 
 
 class Interval(ABC):
+    """Interval Abstract Base Class.
+
+    This abstracts an Interval object, which represents implicitly an
+    interval discretized along N points within two endpoints start and stop.
+    """
+
     def __init__(self, start: float, stop: float, size: int):
         self.start = start
         self.stop = stop
@@ -20,6 +26,8 @@ class Interval(ABC):
 
 
 class RegularClosedInterval(Interval):
+    """Equispaced discretization between [start, stop]."""
+
     def __init__(self, start: float, stop: float, size: int):
         super().__init__(start, stop, size)
         self.step = (stop - start) / (size - 1)
@@ -30,6 +38,8 @@ class RegularClosedInterval(Interval):
 
 
 class RegularHalfOpenInterval(Interval):
+    """Equispaced discretization between [start, stop)."""
+
     def __init__(self, start: float, stop: float, size: int):
         super().__init__(start, stop, size)
         self.step = (stop - start) / size
@@ -40,6 +50,9 @@ class RegularHalfOpenInterval(Interval):
 
 
 class ChebyshevZerosInterval(Interval):
+    """Irregular discretization given by an affine map between the
+    zeros of the N-th Chebyshev polynomial in [-1, 1] to (start, stop)."""
+
     def __init__(self, start: float, stop: float, size: int):
         super().__init__(start, stop, size)
 
@@ -50,6 +63,17 @@ class ChebyshevZerosInterval(Interval):
 
 
 class Mesh:
+    """Multidimensional mesh object.
+
+    This represents a multidimensional mesh which can be understood as the
+    implicit tensor given by the cartesian product of a collection of intervals.
+
+    Parameters
+    ----------
+    intervals : List[Interval]
+        A list of Interval objects representing the discretizations along each dimension.
+    """
+
     def __init__(self, intervals: List[Interval]):
         self.intervals = intervals
         self.dimension = len(intervals)

@@ -12,7 +12,10 @@ def maxvol_sqr(A, k=100, e=1.05):
     ----------
     A : np.ndarray
         A tall matrix of size m x n (m > n) to be optimized.
-    TODO: Document rest of parameters
+    k : int
+        The maximum iterations allowed for the algorithm to converge.
+    e : float
+        The sensitivity of the algorithm (e >= 1).
 
     Output
     ------
@@ -52,7 +55,16 @@ def maxvol_rct(A, k=100, e=1.05, tau=1.10, min_r=0, max_r=1):
     ----------
     A : np.ndarray
         A tall matrix of size m x n (m > n) to be optimized.
-    TODO: Document rest of parameters
+    k : int
+        The maximum iterations allowed for the square maxvol algorithm to converge.
+    e : float
+        The sensitivity of the square maxvol algorithm (e >= 1).
+    tau : float
+        The sensitivity of the rectangular maxvol algorithm (tau >= 1).
+    min_r : int
+        The minimum rank increment (added rows) introduced by the rectangular maxvol algorithm.
+    max_r : int
+        The maximum rank increment (added rows) introduced by the rectangular maxvol algorithm.
 
     Output
     ------
