@@ -9,6 +9,7 @@ from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
                      Weight, array)
 from ..state.environments import *
 from ..tools import InvalidOperation, log
+from ..truncate import combine
 from ..typing import *
 
 
@@ -134,16 +135,16 @@ class MPO(array.TensorArray):
             The result of the contraction.
         """
         # TODO: Remove implicit conversion of MPSSum to MPS
-        if isinstance(b, MPSSum):
-            state: MPS = truncate.combine(weights=b.weights, states=b.states, strategy=strategy)
-        elif isinstance(b, MPS):
-            state = b
-        else:
-            raise TypeError(f"Cannot multiply MPO with {b}")
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
+        if isinstance(b, MPSSum):
+            state: MPS = combine(weights=b.weights, states=b.states, truncation=strategy)
+        elif isinstance(b, MPS):
+            state = b
+        else:
+            raise TypeError(f"Cannot multiply MPO with {b}")
         assert self.size == state.size
         state = MPS(
             [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
@@ -151,7 +152,7 @@ class MPO(array.TensorArray):
         )
         if simplify:
             state = truncate.simplify(
-                state, strategy=strategy
+                state, truncation=strategy
             )
         return state
 
@@ -362,20 +363,20 @@ class MPOList(object):
             The result of the contraction.
         """
         state: MPS
-        if isinstance(b, MPSSum):
-            state: MPS = truncate.combine(weights=b.weights, states=b.states, strategy=strategy)
-        else:
-            state = b
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
+        if isinstance(b, MPSSum):
+            state: MPS = combine(weights=b.weights, states=b.states, truncation=strategy)
+        else:
+            state = b
         for mpo in self.mpos:
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
         if simplify:
             state = truncate.simplify(
-                state, strategy=strategy
+                state, truncation=strategy
             )
         return state
 
