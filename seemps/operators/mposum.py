@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import numpy as np
-from .mpo import MPO, MPOList
-from ..state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
+
+from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
+from .mpo import MPO, MPOList
 
 
 class MPOSum(object):
@@ -99,17 +101,28 @@ class MPOSum(object):
         return A
 
     def apply(
-        self, b: Union[MPS, MPSSum], strategy: Optional[Strategy] = None
+        self, 
+        b: Union[MPS, MPSSum], 
+        strategy: Optional[Strategy] = None, 
+        simplify: Optional[bool] = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication A @ b between an MPOSum 'A' and
         a Matrix Product State 'b'."""
         # TODO: Is this really needed?
         if isinstance(b, MPSSum):
-            b = b.toMPS()
+           state: MPS = truncate.combine(weights=b.weights, states=b.states, strategy=strategy)
+        if strategy is None:
+            strategy = self.strategy
+        if simplify is None:
+            simplify = strategy.get_simplify_flag()
         output: Union[MPS, MPSSum]
         for i, (w, O) in enumerate(zip(self.weights, self.mpos)):
-            Ob = w * O.apply(b, strategy=strategy)
-            output = Ob if i == 0 else output + Ob
+            Ostate = w * O.apply(state, strategy=strategy)
+            output = Ostate if i == 0 else output + Ostate
+        if simplify:
+            output = truncate.simplify(
+                output, strategy=strategy
+            )
         return output
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:

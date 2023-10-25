@@ -1,11 +1,15 @@
 from __future__ import annotations
-import numpy as np
-from ..typing import *
+
 import copy
-from ..state import array, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY, Strategy, Weight
-from ..state.environments import *
-from ..tools import log, InvalidOperation
+
+import numpy as np
 import opt_einsum  # type: ignore
+
+from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
+                     Weight, array)
+from ..state.environments import *
+from ..tools import InvalidOperation, log
+from ..typing import *
 
 
 def _mpo_multiply_tensor(A, B):
@@ -131,7 +135,7 @@ class MPO(array.TensorArray):
         """
         # TODO: Remove implicit conversion of MPSSum to MPS
         if isinstance(b, MPSSum):
-            state: MPS = b.toMPS(strategy=strategy)
+            state: MPS = truncate.combine(weights=b.weights, states=b.states, strategy=strategy)
         elif isinstance(b, MPS):
             state = b
         else:
@@ -147,11 +151,7 @@ class MPO(array.TensorArray):
         )
         if simplify:
             state = truncate.simplify(
-                state,
-                maxsweeps=strategy.get_max_sweeps(),
-                tolerance=strategy.get_tolerance(),
-                normalize=strategy.get_normalize_flag(),
-                max_bond_dimension=strategy.get_max_bond_dimension(),
+                state, strategy=strategy
             )
         return state
 
@@ -363,7 +363,7 @@ class MPOList(object):
         """
         state: MPS
         if isinstance(b, MPSSum):
-            state = b.toMPS()
+            state: MPS = truncate.combine(weights=b.weights, states=b.states, strategy=strategy)
         else:
             state = b
         if strategy is None:
@@ -375,11 +375,7 @@ class MPOList(object):
             state = mpo.apply(state)
         if simplify:
             state = truncate.simplify(
-                state,
-                maxsweeps=strategy.get_max_sweeps(),
-                tolerance=strategy.get_tolerance(),
-                normalize=strategy.get_normalize_flag(),
-                max_bond_dimension=strategy.get_max_bond_dimension(),
+                state, strategy=strategy
             )
         return state
 
@@ -437,5 +433,5 @@ class MPOList(object):
         )
 
 
-from .mposum import MPOSum
 from .. import truncate
+from .mposum import MPOSum
