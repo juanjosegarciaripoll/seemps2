@@ -32,6 +32,7 @@ cdef class Strategy:
                  method: int = Truncation.RELATIVE_SINGULAR_VALUE,
                  simplification_method: int = Simplification.VARIATIONAL,
                  tolerance: float = 1e-8,
+                 simplification_tolerance: float = 1e-8,
                  max_bond_dimension: Optional[int] = INT_MAX,
                  normalize: bool = False,
                  simplify: bool = False,
@@ -41,6 +42,7 @@ cdef class Strategy:
         if tolerance == 0 and method > 0:
             method = 3
         self.tolerance = tolerance
+        self.simplification_tolerance = tolerance
         if method < 0 or method > 3:
             raise AssertionError("Invalid method argument passed to Strategy")
         self.method = method
@@ -63,6 +65,7 @@ cdef class Strategy:
                  method: Optional[Truncation] = None,
                  simplification_method: Optional[Simplification] = None,
                  tolerance: Optional[float] = None,
+                 simplification_tolerance: Optional[float] = None,
                  max_bond_dimension: Optional[int] = None,
                  normalize: Optional[bool] = None,
                  simplify: Optional[bool] = None,
@@ -70,6 +73,7 @@ cdef class Strategy:
         return Strategy(method = self.method if method is None else method,
                         simplification_method = self.simplification_method if simplification_method is None else simplification_method,
                         tolerance = self.tolerance if tolerance is None else tolerance,
+                        simplification_tolerance = self.simplification_tolerance if simplification_tolerance is None else simplification_tolerance,
                         max_bond_dimension = self.max_bond_dimension if max_bond_dimension is None else max_bond_dimension,
                         normalize = self.normalize if normalize is None else normalize,
                         simplify = self.simplify if simplify is None else simplify,
@@ -83,6 +87,9 @@ cdef class Strategy:
 
     def get_tolerance(self) -> float:
         return self.tolerance
+
+    def get_simplification_tolerance(self) -> float:
+        return self.simplification_tolerance
 
     def get_max_bond_dimension(self) -> int:
         return self.max_bond_dimension
@@ -117,7 +124,8 @@ DEFAULT_TOLERANCE = np.finfo(np.float64).eps
 
 DEFAULT_STRATEGY = Strategy(method = Truncation.RELATIVE_NORM_SQUARED_ERROR,
                             simplification_method = Simplification.VARIATIONAL,
-                            tolerance = np.finfo(np.float64).eps,
+                            tolerance = DEFAULT_TOLERANCE,
+                            simplification_tolerance = DEFAULT_TOLERANCE,
                             max_bond_dimension = INT_MAX,
                             normalize = False)
 

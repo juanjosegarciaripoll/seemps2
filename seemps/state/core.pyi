@@ -18,6 +18,7 @@ class Strategy:
         method: int = 1,
         simplification_method: int  = 1,
         tolerance: float = 1e-8,
+        simplification_tolerance: float = 1e-8,
         max_bond_dimension: int = 0x8FFFFFFF,
         max_sweeps: int = 16,
         normalize: bool = False,
@@ -28,6 +29,7 @@ class Strategy:
         method: Optional[int] = None,
         simplification_method: Optional[int] = None,
         tolerance: Optional[float] = None,
+        simplification_tolerance: Optional[float] = None,
         max_bond_dimension: Optional[int] = None,
         max_sweeps: Optional[int] = None,
         normalize: Optional[bool] = None,
@@ -35,6 +37,7 @@ class Strategy:
     ) -> Strategy: ...
     def set_normalization(self: Strategy, normalize: bool) -> Strategy: ...
     def get_tolerance(self) -> float: ...
+    def get_simplification_tolerance(self) -> float: ...
     def get_max_bond_dimension(self) -> int: ...
     def get_max_sweeps(self) -> int: ...
     def get_normalize_flag(self) -> bool: ...
