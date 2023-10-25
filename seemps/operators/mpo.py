@@ -8,6 +8,7 @@ import opt_einsum  # type: ignore
 from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
                      Weight, array)
 from ..state.environments import *
+from ..state.environments import scprod
 from ..tools import InvalidOperation, log
 from ..truncate import combine
 from ..typing import *
@@ -432,6 +433,33 @@ class MPOList(object):
             [self._joined_tensors(i, L) for i in range(L)],
             strategy=self.strategy if strategy is None else strategy,
         )
+    
+    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+        """Expectation value of MPOList on one or two MPS states.
+
+        If one state is given, this state is interpreted as :math:`\\psi`
+        and this function computes :math:`\\langle{\\psi|O\\psi}\\rangle`
+        If two states are given, the first one is the bra :math:`\\psi`,
+        the second one is the ket :math:`\\phi`, and this computes
+        :math:`\\langle\\psi|O|\\phi\\rangle`.
+
+        Parameters
+        ----------
+        bra : MPS
+            The state :math:`\\psi` on which the expectation value
+            is computed.
+        ket : Optional[MPS]
+            The ket component of the expectation value. Defaults to `bra`.
+
+        Returns
+        -------
+        float | complex
+            :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
+            is the matrix-product operator.
+        """
+        if ket is None:
+            ket = bra
+        return scprod(bra, self.apply(ket))
 
 
 from .. import truncate
