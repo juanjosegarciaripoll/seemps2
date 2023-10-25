@@ -72,7 +72,7 @@ def simplify(
     base_error = state.error()
     err = 1.0
     log(
-        f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps} sweeps, with tolerance {tolerance}."
+        f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps} sweeps, with tolerance {simplification_tolerance}."
     )
     for sweep in range(maxsweeps):
         if direction > 0:
@@ -190,7 +190,6 @@ def combine(
     )
     normalize= truncation.get_normalize_flag()
     maxsweeps = truncation.get_max_sweeps()
-    tolerance = truncation.get_tolerance()
     simplification_tolerance = truncation.get_simplification_tolerance()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=truncation, normalize=normalize)
@@ -200,7 +199,7 @@ def combine(
     if norm_ψsqr < simplification_tolerance:
         return MPS([np.zeros((1, P.shape[1], 1)) for P in φ])
     log(
-        f"COMBINE state with |state|={norm_ψsqr**0.5} for {maxsweeps} sweeps with tolerance {strategy.get_tolerance()}.\nWeights: {weights}"
+        f"COMBINE state with |state|={norm_ψsqr**0.5} for {maxsweeps} sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}"
     )
 
     size = φ.size
