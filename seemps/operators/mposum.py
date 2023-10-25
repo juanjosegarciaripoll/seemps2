@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import seemps.truncate
 
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
@@ -109,19 +110,21 @@ class MPOSum(object):
         """Implement multiplication A @ b between an MPOSum 'A' and
         a Matrix Product State 'b'."""
         # TODO: Is this really needed?
-        if isinstance(b, MPSSum):
-           state: MPS = truncate.combine(weights=b.weights, states=b.states, strategy=strategy)
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
+        if isinstance(b, MPSSum):
+           state: MPS = seemps.truncate.simplify.combine(weights=b.weights, states=b.states, truncation=strategy)
+        elif isinstance(b, MPS):
+            state = b
         output: Union[MPS, MPSSum]
         for i, (w, O) in enumerate(zip(self.weights, self.mpos)):
             Ostate = w * O.apply(state, strategy=strategy)
             output = Ostate if i == 0 else output + Ostate
         if simplify:
-            output = truncate.simplify(
-                output, strategy=strategy
+            output = seemps.truncate.simplify(
+                output, truncation=strategy
             )
         return output
 
