@@ -42,7 +42,7 @@ cdef class Strategy:
         if tolerance == 0 and method > 0:
             method = 3
         self.tolerance = tolerance
-        self.simplification_tolerance = tolerance
+        self.simplification_tolerance = simplification_tolerance
         if method < 0 or method > 3:
             raise AssertionError("Invalid method argument passed to Strategy")
         self.method = method
