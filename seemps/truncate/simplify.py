@@ -193,8 +193,6 @@ def combine(
     simplification_tolerance = truncation.get_simplification_tolerance()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=truncation, normalize=normalize)
-    if not truncation.get_simplification_method():
-        return φ
     err = norm_ψsqr = multi_norm_squared(weights, states)
     if norm_ψsqr < simplification_tolerance:
         return MPS([np.zeros((1, P.shape[1], 1)) for P in φ])
