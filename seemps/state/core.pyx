@@ -23,6 +23,7 @@ cdef class Strategy:
     cdef int method
     cdef int simplification_method
     cdef double tolerance
+    cdef double simplification_tolerance
     cdef int max_bond_dimension
     cdef int max_sweeps
     cdef bool normalize
