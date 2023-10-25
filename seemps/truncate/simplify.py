@@ -9,7 +9,6 @@ from ..tools import log
 from ..typing import *
 from .antilinear import AntilinearForm
 
-
 # TODO: We have to rationalize all this about directions. The user should
 # not really care about it and we can guess the direction from the canonical
 # form of either the guess or the state.
@@ -58,13 +57,14 @@ def simplify(
     normalize= truncation.get_normalize_flag()
     maxsweeps = truncation.get_max_sweeps()
     tolerance = truncation.get_tolerance()
+    simplification_tolerance = truncation.get_simplification_tolerance()
     max_bond_dimension = truncation.get_max_bond_dimension()
     mps = CanonicalMPS(state, center=start, strategy=truncation)
     if normalize:
         mps.normalize_inplace()
     if not truncation.get_simplification_method():
         return mps
-    if max_bond_dimension == 0 and tolerance <= 0:
+    if max_bond_dimension == 0 and simplification_tolerance <= 0:
         return mps
 
     form = AntilinearForm(mps, state, center=start)
@@ -102,10 +102,11 @@ def simplify(
         log(
             f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |mps|={norm_mps_sqr**0.5}"
         )
-        if err < tolerance or err > old_err:
+        if err < simplification_tolerance or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
+    print(simplification_tolerance)
     mps._error = 0.0
     mps.update_error(base_error)
     mps.update_error(err)
@@ -191,13 +192,14 @@ def combine(
     normalize= truncation.get_normalize_flag()
     maxsweeps = truncation.get_max_sweeps()
     tolerance = truncation.get_tolerance()
+    simplification_tolerance = truncation.get_simplification_tolerance()
     max_bond_dimension = truncation.get_max_bond_dimension()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=truncation, normalize=normalize)
     if not truncation.get_simplification_method():
         return φ
     err = norm_ψsqr = multi_norm_squared(weights, states)
-    if norm_ψsqr < tolerance:
+    if norm_ψsqr < simplification_tolerance:
         return MPS([np.zeros((1, P.shape[1], 1)) for P in φ])
     log(
         f"COMBINE state with |state|={norm_ψsqr**0.5} for {maxsweeps} sweeps with tolerance {strategy.get_tolerance()}.\nWeights: {weights}"
@@ -240,7 +242,7 @@ def combine(
         old_err = err
         err = 2 * abs(1.0 - scprod_φψ.real / np.sqrt(norm_φsqr * norm_ψsqr))
         log(f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |φ|={norm_φsqr**0.5}")
-        if err < tolerance or err > old_err:
+        if err < simplification_tolerance or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
