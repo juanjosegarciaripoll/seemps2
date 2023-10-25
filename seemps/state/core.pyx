@@ -173,6 +173,7 @@ def truncate_vector(cnp.ndarray[cnp.float64_t, ndim=1] s,
                 i -= 1
                 break
         final_size = min(N - i, strategy.max_bond_dimension)
+        i = max(i, N - strategy.max_bond_dimension - 1)
         max_error = errors[i]
         if final_size < N:
             s = s[:final_size]
