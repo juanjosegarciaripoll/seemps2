@@ -106,7 +106,6 @@ def simplify(
             log("Stopping, as tolerance reached")
             break
         direction = -direction
-    print(simplification_tolerance)
     mps._error = 0.0
     mps.update_error(base_error)
     mps.update_error(err)
@@ -193,7 +192,6 @@ def combine(
     maxsweeps = truncation.get_max_sweeps()
     tolerance = truncation.get_tolerance()
     simplification_tolerance = truncation.get_simplification_tolerance()
-    max_bond_dimension = truncation.get_max_bond_dimension()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=truncation, normalize=normalize)
     if not truncation.get_simplification_method():
