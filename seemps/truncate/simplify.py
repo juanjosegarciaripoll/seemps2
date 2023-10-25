@@ -56,7 +56,6 @@ def simplify(
     start = 0 if direction > 0 else size - 1
     normalize= truncation.get_normalize_flag()
     maxsweeps = truncation.get_max_sweeps()
-    tolerance = truncation.get_tolerance()
     simplification_tolerance = truncation.get_simplification_tolerance()
     max_bond_dimension = truncation.get_max_bond_dimension()
     mps = CanonicalMPS(state, center=start, strategy=truncation)
