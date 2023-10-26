@@ -1,7 +1,7 @@
 import numpy as np
 from seemps.cross import (
     Mesh,
-    Strategy,
+    CrossStrategy,
     cross_interpolation,
     reorder_tensor,
     RegularClosedInterval,
@@ -48,9 +48,9 @@ class TestCross(TestCase):
         self.assertSimilar(func_vector, mps.to_vector())
 
     def test_cross_1d_with_measure_norm(self):
-        strategy = Strategy(error_type="norm")
+        cross_strategy = CrossStrategy(error_type="norm")
         func, mesh, _, func_vector = self.gaussian_setting(1)
-        mps = cross_interpolation(func, mesh, strategy=strategy)
+        mps = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
         self.assertSimilar(func_vector, mps.to_vector())
 
     # FAILS
@@ -67,9 +67,9 @@ class TestCross(TestCase):
         self.assertSimilar(func_vector, mps.to_vector())
 
     def test_cross_2d_with_ordering_B(self):
-        strategy = Strategy(mps_ordering="B")
+        cross_strategy = CrossStrategy(mps_ordering="B")
         func, mesh, _, func_vector = self.gaussian_setting(2)
-        mps = cross_interpolation(func, mesh, strategy=strategy)
+        mps = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
         qubits = [int(np.log2(s)) for s in mesh.shape()[:-1]]
         tensor = reorder_tensor(mps.to_vector(), qubits)
         self.assertSimilar(func_vector, tensor)

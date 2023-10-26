@@ -9,7 +9,7 @@ from ..state import MPS, random_mps
 
 
 @dataclass
-class Strategy:
+class CrossStrategy:
     """Parameters for the Tensor Cross Interpolation algorithm.
 
     Parameters
@@ -66,14 +66,14 @@ class Cross:
     mps : MPS
         An initial MPS with the same size as the mesh to serve as an initial approximation
         for the algorithm. Can be of 'binary' ([2] * dims * n) or 'tt' ([2**n] * dims) structure.
-    strategy : Strategy
+    cross_strategy : CrossStrategy
         An object which contains the algorithm parameters.
     """
 
     func: Callable
     mesh: Mesh
     mps: MPS
-    strategy: Strategy
+    cross_strategy: CrossStrategy
 
     def __post_init__(self):
         shape_mps = tuple(self.mps.physical_dimensions())
@@ -104,7 +104,9 @@ def _initialize(cross: Cross) -> None:
     cross.maxrank = 0
 
     cross_initial = copy(cross)
-    cross_initial.strategy = Strategy(maxvol_rct_minrank=0, maxvol_rct_maxrank=0)
+    cross_initial.cross_strategy = CrossStrategy(
+        maxvol_rct_minrank=0, maxvol_rct_maxrank=0
+    )
 
     # Forward pass
     R = np.ones((1, 1))
@@ -174,18 +176,20 @@ def _skeleton(
     if Q.shape[0] <= Q.shape[1]:
         i_maxvol = np.arange(Q.shape[0], dtype=int)
         Q_maxvol = np.eye(Q.shape[0], dtype=float)
-    elif cross.strategy.maxvol_rct_maxrank == 0:
+    elif cross.cross_strategy.maxvol_rct_maxrank == 0:
         i_maxvol, Q_maxvol = maxvol_sqr(
-            Q, k=cross.strategy.maxvol_sqr_maxiter, e=cross.strategy.maxvol_sqr_tau
+            Q,
+            k=cross.cross_strategy.maxvol_sqr_maxiter,
+            e=cross.cross_strategy.maxvol_sqr_tau,
         )
     else:
         i_maxvol, Q_maxvol = maxvol_rct(
             Q,
-            k=cross.strategy.maxvol_sqr_maxiter,
-            e=cross.strategy.maxvol_sqr_tau,
-            tau=cross.strategy.maxvol_rct_tau,
-            min_r=cross.strategy.maxvol_rct_minrank,
-            max_r=cross.strategy.maxvol_rct_maxrank,
+            k=cross.cross_strategy.maxvol_sqr_maxiter,
+            e=cross.cross_strategy.maxvol_sqr_tau,
+            tau=cross.cross_strategy.maxvol_rct_tau,
+            min_r=cross.cross_strategy.maxvol_rct_minrank,
+            max_r=cross.cross_strategy.maxvol_rct_maxrank,
         )
 
     # Redefine the fiber as the decomposed Q-factor
@@ -246,7 +250,9 @@ def _sample(cross: Cross, j: int) -> np.ndarray:
 def _evaluate(cross: Cross, indices: np.ndarray) -> np.ndarray:
     """Evaluates the function at a tensor of indices."""
     if cross.structure == "binary":
-        indices = _binary2decimal(indices, cross.qubits, cross.strategy.mps_ordering)
+        indices = _binary2decimal(
+            indices, cross.qubits, cross.cross_strategy.mps_ordering
+        )
     return np.array([cross.func(cross.mesh[idx]) for idx in indices])
 
 
@@ -310,9 +316,9 @@ def _error_norm2(cross: Cross) -> float:
 def _converged(cross: Cross) -> bool:
     """Evaluates the convergence of the algorithm as defined by the strategy parameters."""
     return (
-        cross.error < cross.strategy.tol
-        or cross.sweep >= cross.strategy.maxiter
-        or cross.maxrank >= cross.strategy.maxrank
+        cross.error < cross.cross_strategy.tol
+        or cross.sweep >= cross.cross_strategy.maxiter
+        or cross.maxrank >= cross.cross_strategy.maxrank
     )
 
 
@@ -331,7 +337,7 @@ def cross_interpolation(
     func: Callable,
     mesh: Mesh,
     mps: Optional[MPS] = None,
-    strategy: Strategy = Strategy(),
+    cross_strategy: CrossStrategy = CrossStrategy(),
 ) -> MPS:
     """Tensor Cross Interpolation algorithm.
 
@@ -346,7 +352,7 @@ def cross_interpolation(
         A multidimensional discretized mesh on which the function is defined.
     mps : MPS
         An initial MPS with the same dimensions as the mesh to serve as an initial approximation.
-    strategy : Strategy
+    cross_strategy : CrossStrategy
         An object which contains the algorithm parameters.
     """
     if mps is None:
@@ -355,15 +361,15 @@ def cross_interpolation(
         sites = sum([int(np.log2(s)) for s in mesh.shape()[:-1]])
         mps = random_mps([2] * sites, 1, rng=np.random.default_rng(42))
 
-    cross = Cross(func, mesh, mps, strategy)
+    cross = Cross(func, mesh, mps, cross_strategy)
     _initialize(cross)
 
     while not _converged(cross):
         _sweep(cross)
-        if strategy.error_type == "sampling":
+        if cross_strategy.error_type == "sampling":
             error_name = "Sampling error"
             cross.error = _error_sampling(cross)
-        elif strategy.error_type == "norm":
+        elif cross_strategy.error_type == "norm":
             error_name = "Norm error"
             cross.error = _error_norm2(cross)
         else:
