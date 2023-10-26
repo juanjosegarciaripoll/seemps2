@@ -115,7 +115,7 @@ class MPOSum(object):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(b, MPSSum):
-           state: MPS = seemps.truncate.simplify.combine(weights=b.weights, states=b.states, truncation=strategy)
+           state: MPS = seemps.truncate.simplify.combine(weights=b.weights, states=b.states, strategy=strategy)
         elif isinstance(b, MPS):
             state = b
         output: Union[MPS, MPSSum]
@@ -124,7 +124,7 @@ class MPOSum(object):
             output = Ostate if i == 0 else output + Ostate
         if simplify:
             output = seemps.truncate.simplify(
-                output, truncation=strategy
+                output, strategy=strategy
             )
         return output
 

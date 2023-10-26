@@ -153,7 +153,7 @@ class MPO(array.TensorArray):
         )
         if simplify:
             state = truncate.simplify(
-                state, truncation=strategy
+                state, strategy=strategy
             )
         return state
 
@@ -369,7 +369,7 @@ class MPOList(object):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(b, MPSSum):
-            state: MPS = combine(weights=b.weights, states=b.states, truncation=strategy)
+            state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
         else:
             state = b
         for mpo in self.mpos:
@@ -377,7 +377,7 @@ class MPOList(object):
             state = mpo.apply(state)
         if simplify:
             state = truncate.simplify(
-                state, truncation=strategy
+                state, strategy=strategy
             )
         return state
 
