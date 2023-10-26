@@ -1,8 +1,11 @@
+from typing import Tuple
 import numpy as np
 from scipy.linalg import lu, solve_triangular
 
 
-def maxvol_sqr(A, k=100, e=1.05):
+def maxvol_sqr(
+    A: np.ndarray, k: int = 100, e: float = 1.05
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Square maxvol algorithm.
     Given a 'tall matrix' of size m x n (with more rows m than columns n), finds the n rows that
@@ -45,7 +48,14 @@ def maxvol_sqr(A, k=100, e=1.05):
     return I, B
 
 
-def maxvol_rct(A, k=100, e=1.05, tau=1.10, min_r=0, max_r=1):
+def maxvol_rct(
+    A: np.ndarray,
+    k: int = 100,
+    e: float = 1.05,
+    tau: float = 1.10,
+    min_r: int = 0,
+    max_r: int = 1,
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Rectangular maxvol algorithm.
     Given a 'tall matrix' of size m x n (with more rows m than columns n), finds the \tilde{n} > n rows
