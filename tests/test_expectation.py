@@ -1,5 +1,7 @@
-from seemps.state import CanonicalMPS
 from seemps.expectation import *
+from seemps.qft import qft_mpo
+from seemps.state import CanonicalMPS
+
 from .tools import *
 
 
@@ -183,3 +185,23 @@ class TestExpectation(TestCase):
         σz = np.array([[1, 0], [0, -1]])
         with self.assertRaises(Exception):
             product_expectation(state, [σz] * 4)
+
+    def test_mpo_list_expectation(self):
+        H = qft_mpo(10)
+        bra = random_uniform_mps(2, 10, complex=True, rng=self.rng)
+        ket = random_uniform_mps(2, 10, complex=True, rng=self.rng)
+        O = H.tomatrix()
+        vbra = bra.to_vector()
+        vket = ket.to_vector()
+        self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
+    
+    def test_mpo_sum_expectation(self):
+        H1 = MPO([σx.reshape(1, 2, 2, 1)] * 10)
+        H2 = qft_mpo(10)
+        H = H1 + H2
+        bra = random_uniform_mps(2, 10, complex=True, rng=self.rng)
+        ket = random_uniform_mps(2, 10, complex=True, rng=self.rng)
+        O = H.tomatrix()
+        vbra = bra.to_vector()
+        vket = ket.to_vector()
+        self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
