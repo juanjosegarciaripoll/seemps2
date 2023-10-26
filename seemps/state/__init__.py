@@ -16,6 +16,7 @@ from .canonical_mps import CanonicalMPS
 from .core import (
     Strategy,
     Truncation,
+    Simplification,
     DEFAULT_STRATEGY,
     DEFAULT_TOLERANCE,
     NO_TRUNCATION,

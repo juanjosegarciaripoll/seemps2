@@ -15,9 +15,15 @@ class Truncation:
     RELATIVE_NORM_SQUARED_ERROR = 2
     ABSOLUTE_SINGULAR_VALUE = 3
 
+class Simplification:
+    CANONICAL_FORM = 0
+    VARIATIONAL = 1
+
 cdef class Strategy:
     cdef int method
+    cdef int simplification_method
     cdef double tolerance
+    cdef double simplification_tolerance
     cdef int max_bond_dimension
     cdef int max_sweeps
     cdef bool normalize
@@ -25,7 +31,9 @@ cdef class Strategy:
 
     def __init__(self,
                  method: int = Truncation.RELATIVE_SINGULAR_VALUE,
+                 simplification_method: int = Simplification.VARIATIONAL,
                  tolerance: float = 1e-8,
+                 simplification_tolerance: float = 1e-8,
                  max_bond_dimension: Optional[int] = INT_MAX,
                  normalize: bool = False,
                  simplify: bool = False,
@@ -35,9 +43,13 @@ cdef class Strategy:
         if tolerance == 0 and method > 0:
             method = 3
         self.tolerance = tolerance
+        self.simplification_tolerance = simplification_tolerance
         if method < 0 or method > 3:
             raise AssertionError("Invalid method argument passed to Strategy")
         self.method = method
+        if simplification_method < 0 or simplification_method > 1:
+            raise AssertionError("Invalid simplification_method argument passed to Strategy")
+        self.simplification_method = simplification_method
         if max_bond_dimension is None:
             self.max_bond_dimension = INT_MAX
         elif max_bond_dimension <= 0:
@@ -52,13 +64,17 @@ cdef class Strategy:
 
     def replace(self,
                  method: Optional[Truncation] = None,
+                 simplification_method: Optional[Simplification] = None,
                  tolerance: Optional[float] = None,
+                 simplification_tolerance: Optional[float] = None,
                  max_bond_dimension: Optional[int] = None,
                  normalize: Optional[bool] = None,
                  simplify: Optional[bool] = None,
                  max_sweeps: Optional[int] = None):
         return Strategy(method = self.method if method is None else method,
+                        simplification_method = self.simplification_method if simplification_method is None else simplification_method,
                         tolerance = self.tolerance if tolerance is None else tolerance,
+                        simplification_tolerance = self.simplification_tolerance if simplification_tolerance is None else simplification_tolerance,
                         max_bond_dimension = self.max_bond_dimension if max_bond_dimension is None else max_bond_dimension,
                         normalize = self.normalize if normalize is None else normalize,
                         simplify = self.simplify if simplify is None else simplify,
@@ -67,8 +83,14 @@ cdef class Strategy:
     def get_method(self) -> int:
         return self.method
 
+    def get_simplification_method(self) -> int:
+        return self.simplification_method
+
     def get_tolerance(self) -> float:
         return self.tolerance
+
+    def get_simplification_tolerance(self) -> float:
+        return self.simplification_tolerance
 
     def get_max_bond_dimension(self) -> int:
         return self.max_bond_dimension
@@ -91,14 +113,20 @@ cdef class Strategy:
             method="RelativeNorm"
         else:
             method="AbsoluteSVD"
-        return f"Strategy(method={method}, tolerance={self.tolerance}, " \
-               f"max_bond_dimension={self.max_bond_dimension}, normalize={self.normalize}, " \
-               f"simplify={self.simplify}, max_sweeps={self.max_sweeps})"
+        if self.simplification_method == 0:
+            simplification_method="CanonicalForm"
+        elif self.simplification_method == 1:
+            simplification_method="Variational"
+        return f"Strategy(method={method}, simplification_method={simplification_method}, " \
+               f"tolerance={self.tolerance}, max_bond_dimension={self.max_bond_dimension}, " \
+               f"normalize={self.normalize}, simplify={self.simplify}, max_sweeps={self.max_sweeps})"
 
 DEFAULT_TOLERANCE = np.finfo(np.float64).eps
 
 DEFAULT_STRATEGY = Strategy(method = Truncation.RELATIVE_NORM_SQUARED_ERROR,
-                            tolerance = np.finfo(np.float64).eps,
+                            simplification_method = Simplification.VARIATIONAL,
+                            tolerance = DEFAULT_TOLERANCE,
+                            simplification_tolerance = DEFAULT_TOLERANCE,
                             max_bond_dimension = INT_MAX,
                             normalize = False)
 
