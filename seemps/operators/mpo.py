@@ -141,7 +141,7 @@ class MPO(array.TensorArray):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(b, MPSSum):
-            state: MPS = combine(weights=b.weights, states=b.states, truncation=strategy)
+            state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
         elif isinstance(b, MPS):
             state = b
         else:
