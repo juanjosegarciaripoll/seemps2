@@ -1,8 +1,7 @@
-from .typing import *
+from .mpo import MPO
 from .state.environments import *
 from .state.mps import MPS
-from .mpo import MPO
-from .state.environments import scprod
+from .typing import *
 
 
 def expectation1(state: MPS, O: Operator, i: int) -> Weight:

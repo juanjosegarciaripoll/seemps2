@@ -1,14 +1,17 @@
 from __future__ import annotations
+
 import copy
 import math
+import warnings
+
 import numpy as np
-from ..typing import *
+
 from ..tools import InvalidOperation
+from ..typing import *
+from . import array
+from .core import DEFAULT_STRATEGY, Strategy
 from .environments import *
 from .schmidt import vector2mps
-from .core import DEFAULT_STRATEGY, Strategy
-from . import array
-import warnings
 
 
 class MPS(array.TensorArray):
@@ -26,8 +29,6 @@ class MPS(array.TensorArray):
         verified for consistency.
     error : float, default=0.0
         Accumulated truncation error in the previous tensors.
-    strategy : Strategy, default=DEFAULT_STRATEGY
-        Default truncation strategy when operating on this state
     """
 
     _error: float
@@ -43,11 +44,9 @@ class MPS(array.TensorArray):
         self,
         data: Iterable[np.ndarray],
         error: float = 0,
-        strategy: Strategy = DEFAULT_STRATEGY,
     ):
         super(MPS, self).__init__(data)
         self._error = error
-        self.strategy = strategy
 
     def dimension(self) -> int:
         """Hilbert space dimension of this quantum system."""
@@ -150,20 +149,19 @@ class MPS(array.TensorArray):
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
         if isinstance(state, MPS):
-            return MPSSum([1.0, 1.0], [self, state], self.strategy)
+            return MPSSum([1.0, 1.0], [self, state])
         if isinstance(state, MPSSum):
-            return MPSSum([1.0] + state.weights, [self] + state.states, self.strategy)
+            return MPSSum([1.0] + state.weights, [self] + state.states)
         raise InvalidOperation("+", self, state)
 
     def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self - state` as :class:`.MPSSum`"""
         if isinstance(state, MPS):
-            return MPSSum([1, -1], [self, state], self.strategy)
+            return MPSSum([1, -1], [self, state])
         if isinstance(state, MPSSum):
             return MPSSum(
                 [1] + list((-1) * np.asarray(state.weights)),
                 [self] + state.states,
-                self.strategy,
             )
         raise InvalidOperation("-", self, state)
 
@@ -413,7 +411,7 @@ class MPS(array.TensorArray):
                 k += 1
             else:
                 D = A.shape[-1]
-        return MPS(data, strategy=self.strategy)
+        return MPS(data)
 
     def wavefunction_product(self, other: MPS) -> MPS:
         """Elementwise product of the wavefunctions of two quantum states.
