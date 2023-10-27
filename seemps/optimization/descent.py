@@ -8,6 +8,7 @@ from ..tools import log
 from ..typing import Union
 from ..truncate.combine import combine
 
+DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(normalize=True)
 
 @dataclass
 class OptimizeResults:
@@ -44,7 +45,7 @@ def gradient_descent(
     maxiter=1000,
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
-    strategy: Optional[Strategy] = DEFAULT_STRATEGY,
+    strategy: Optional[Strategy] = DESCENT_STRATEGY,
     callback: Optional[callable] = None
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
@@ -63,7 +64,7 @@ def gradient_descent(
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
         Linear combination of MPS truncation strategy. Defaults to 
-        `DEFAULT_STRATEGY`.
+        `DESCENT_STRATEGY`.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
 
@@ -122,9 +123,7 @@ def gradient_descent(
         # normalization of the state (2nd. order gradient descent from the
         # manuscript)
         state = (state + Δβ * (H_state - E * state))
-        state = combine(state.weights, state.states, maxsweeps=strategy.get_max_sweeps(),
-                        tolerance=strategy.get_tolerance(), max_bond_dimension=strategy.get_max_bond_dimension(),
-                        normalize=True)
+        state = combine(state.weights, state.states, strategy=strategy)
         if callback is not None:
             callback(state)
         # TODO: Implement stop criteria based on gradient size Δβ
