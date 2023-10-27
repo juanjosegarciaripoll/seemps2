@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import numpy as np
-from .mpo import MPO, MPOList
-from ..state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
+import seemps.truncate
+
+from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
+from .mpo import MPO, MPOList
 
 
 class MPOSum(object):
@@ -99,17 +102,30 @@ class MPOSum(object):
         return A
 
     def apply(
-        self, b: Union[MPS, MPSSum], strategy: Optional[Strategy] = None
+        self, 
+        b: Union[MPS, MPSSum], 
+        strategy: Optional[Strategy] = None, 
+        simplify: Optional[bool] = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication A @ b between an MPOSum 'A' and
         a Matrix Product State 'b'."""
         # TODO: Is this really needed?
+        if strategy is None:
+            strategy = self.strategy
+        if simplify is None:
+            simplify = strategy.get_simplify_flag()
         if isinstance(b, MPSSum):
-            b = b.toMPS()
+           state: MPS = seemps.truncate.simplify.combine(weights=b.weights, states=b.states, strategy=strategy)
+        elif isinstance(b, MPS):
+            state = b
         output: Union[MPS, MPSSum]
         for i, (w, O) in enumerate(zip(self.weights, self.mpos)):
-            Ob = w * O.apply(b, strategy=strategy)
-            output = Ob if i == 0 else output + Ob
+            Ostate = w * O.apply(state, strategy=strategy)
+            output = Ostate if i == 0 else output + Ostate
+        if simplify:
+            output = seemps.truncate.simplify(
+                output, strategy=strategy
+            )
         return output
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
@@ -185,3 +201,28 @@ class MPOSum(object):
             [self._joined_tensors(i, mpos) for i in range(self.size)],
             strategy=self.strategy if strategy is None else strategy,
         )
+    
+    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+        """Expectation value of MPOList on one or two MPS states.
+
+        If one state is given, this state is interpreted as :math:`\\psi`
+        and this function computes :math:`\\langle{\\psi|O\\psi}\\rangle`
+        If two states are given, the first one is the bra :math:`\\psi`,
+        the second one is the ket :math:`\\phi`, and this computes
+        :math:`\\langle\\psi|O|\\phi\\rangle`.
+
+        Parameters
+        ----------
+        bra : MPS
+            The state :math:`\\psi` on which the expectation value
+            is computed.
+        ket : Optional[MPS]
+            The ket component of the expectation value. Defaults to `bra`.
+
+        Returns
+        -------
+        float | complex
+            :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
+            is the matrix-product operator.
+        """
+        return sum([m.expectation(bra,ket) for m in self.mpos])

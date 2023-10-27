@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import numpy as np
+
 from ..typing import *
-from .mps import MPS
-from . import schmidt
-from .core import DEFAULT_STRATEGY, Strategy
+from . import environments, schmidt
 from ._contractions import _contract_last_and_first
-from . import environments
+from .core import DEFAULT_STRATEGY, Strategy
+from .mps import MPS
 
 
 # TODO: Replace einsum by a more efficient form
@@ -89,10 +90,12 @@ class CanonicalMPS(MPS):
         data: Iterable[Tensor3],
         center: Optional[int] = None,
         normalize: bool = False,
+        strategy: Strategy = DEFAULT_STRATEGY,
         **kwdargs,
     ):
         super().__init__(data, **kwdargs)
         actual_center: int
+        self.strategy = strategy
         if isinstance(data, CanonicalMPS):
             actual_center = self.center = data.center
             self._error = data._error

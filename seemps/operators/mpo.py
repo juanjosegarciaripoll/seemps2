@@ -1,11 +1,17 @@
 from __future__ import annotations
-import numpy as np
-from ..typing import *
+
 import copy
-from ..state import array, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY, Strategy, Weight
-from ..state.environments import *
-from ..tools import log, InvalidOperation
+
+import numpy as np
 import opt_einsum  # type: ignore
+
+from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
+                     Weight, array)
+from ..state.environments import *
+from ..state.environments import scprod
+from ..tools import InvalidOperation, log
+from ..truncate import combine
+from ..typing import *
 
 
 def _mpo_multiply_tensor(A, B):
@@ -130,16 +136,16 @@ class MPO(array.TensorArray):
             The result of the contraction.
         """
         # TODO: Remove implicit conversion of MPSSum to MPS
-        if isinstance(b, MPSSum):
-            state: MPS = b.toMPS(strategy=strategy)
-        elif isinstance(b, MPS):
-            state = b
-        else:
-            raise TypeError(f"Cannot multiply MPO with {b}")
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
+        if isinstance(b, MPSSum):
+            state: MPS = combine(weights=b.weights, states=b.states, truncation=strategy)
+        elif isinstance(b, MPS):
+            state = b
+        else:
+            raise TypeError(f"Cannot multiply MPO with {b}")
         assert self.size == state.size
         state = MPS(
             [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
@@ -147,11 +153,7 @@ class MPO(array.TensorArray):
         )
         if simplify:
             state = truncate.simplify(
-                state,
-                maxsweeps=strategy.get_max_sweeps(),
-                tolerance=strategy.get_tolerance(),
-                normalize=strategy.get_normalize_flag(),
-                max_bond_dimension=strategy.get_max_bond_dimension(),
+                state, strategy=strategy
             )
         return state
 
@@ -362,24 +364,20 @@ class MPOList(object):
             The result of the contraction.
         """
         state: MPS
-        if isinstance(b, MPSSum):
-            state = b.toMPS()
-        else:
-            state = b
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
+        if isinstance(b, MPSSum):
+            state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
+        else:
+            state = b
         for mpo in self.mpos:
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
         if simplify:
             state = truncate.simplify(
-                state,
-                maxsweeps=strategy.get_max_sweeps(),
-                tolerance=strategy.get_tolerance(),
-                normalize=strategy.get_normalize_flag(),
-                max_bond_dimension=strategy.get_max_bond_dimension(),
+                state, strategy=strategy
             )
         return state
 
@@ -435,7 +433,34 @@ class MPOList(object):
             [self._joined_tensors(i, L) for i in range(L)],
             strategy=self.strategy if strategy is None else strategy,
         )
+    
+    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+        """Expectation value of MPOList on one or two MPS states.
+
+        If one state is given, this state is interpreted as :math:`\\psi`
+        and this function computes :math:`\\langle{\\psi|O\\psi}\\rangle`
+        If two states are given, the first one is the bra :math:`\\psi`,
+        the second one is the ket :math:`\\phi`, and this computes
+        :math:`\\langle\\psi|O|\\phi\\rangle`.
+
+        Parameters
+        ----------
+        bra : MPS
+            The state :math:`\\psi` on which the expectation value
+            is computed.
+        ket : Optional[MPS]
+            The ket component of the expectation value. Defaults to `bra`.
+
+        Returns
+        -------
+        float | complex
+            :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
+            is the matrix-product operator.
+        """
+        if ket is None:
+            ket = bra
+        return scprod(bra, self.apply(ket))
 
 
-from .mposum import MPOSum
 from .. import truncate
+from .mposum import MPOSum

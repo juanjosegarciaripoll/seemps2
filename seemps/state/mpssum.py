@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import numpy as np
-from ..typing import *
+
 from ..tools import InvalidOperation
+from ..typing import *
+from .core import DEFAULT_STRATEGY, Strategy
 from .environments import *
 from .schmidt import vector2mps
-from .core import DEFAULT_STRATEGY, Strategy
 
 
 class MPSSum:
@@ -23,9 +25,6 @@ class MPSSum:
         Real or complex numbers representing the weights of the linear combination.
     states : list[MPS]
         List of matrix product states weighted.
-    strategy : Strategy, default = DEFAULT_STRATEGY
-        Truncation strategy for later operations, or when converting this sum
-        to a real MPS.
     """
 
     weights: list[Weight]
@@ -42,13 +41,11 @@ class MPSSum:
         self,
         weights: list[Weight],
         states: list[MPS],
-        strategy: Strategy = DEFAULT_STRATEGY,
     ):
         assert len(states) == len(weights)
         assert len(states) > 0
         self.weights = weights
         self.states = states
-        self.strategy = strategy
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""
@@ -56,79 +53,40 @@ class MPSSum:
             return MPSSum(
                 self.weights + [1.0],
                 self.states + [state],
-                self.strategy,
             )
         elif isinstance(state, MPSSum):
             return MPSSum(
                 self.weights + state.weights,
                 self.states + state.states,
-                self.strategy,
             )
         raise InvalidOperation("+", self, state)
 
     def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Subtract `self - state`, incorporating it to the lists."""
         if isinstance(state, MPS):
-            return MPSSum(self.weights + [-1], self.states + [state], self.strategy)
+            return MPSSum(self.weights + [-1], self.states + [state])
         if isinstance(state, MPSSum):
             return MPSSum(
                 self.weights + [-w for w in state.weights],
                 self.states + state.states,
-                self.strategy,
             )
         raise InvalidOperation("-", self, state)
 
     def __mul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `n * self` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self.weights], self.states, self.strategy)
+            return MPSSum([n * w for w in self.weights], self.states)
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `self * n` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self.weights], self.states, self.strategy)
+            return MPSSum([n * w for w in self.weights], self.states)
         raise InvalidOperation("*", n, self)
 
     def to_vector(self) -> Vector:
         """Return the wavefunction of this quantum state."""
         return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore
-
-    # TODO: Rename toMPS -> to_MPS
-    def toMPS(
-        self, normalize: Optional[bool] = None, strategy: Optional[Strategy] = None
-    ) -> MPS:
-        """Approximate the linear combination with a new :class:`MPS`.
-
-        This routine applies the :func:`~seemps.truncate.simplify` algorithm with
-        the given truncation strategy, optionally normalizing the state. The
-        result is a new :class:`MPS` with some approximation error.
-
-        Parameters
-        ----------
-        normalize : bool, default = None
-            Normalize the state after performing the approximation.
-        strategy : Strategy
-            Parameters for the simplificaiton and truncation algorithms.
-            Defaults to `self.strategy`.
-
-        Returns
-        -------
-        MPS
-            Quantum state approximating this sum.
-        """
-        from ..truncate.combine import combine
-
-        if strategy is None:
-            strategy = self.strategy
-        return combine(
-            self.weights,
-            self.states,
-            maxsweeps=strategy.get_max_sweeps(),
-            tolerance=strategy.get_tolerance(),
-            normalize=strategy.get_normalize_flag() if normalize is None else normalize,
-            max_bond_dimension=strategy.get_max_bond_dimension(),
-        )
 
     def _joined_tensors(self, i: int, L: int) -> Tensor3:
         """Join the tensors from all MPS into bigger tensors."""
@@ -202,5 +160,5 @@ class MPSSum:
         )
 
 
-from .mps import MPS
 from .canonical_mps import CanonicalMPS
+from .mps import MPS
