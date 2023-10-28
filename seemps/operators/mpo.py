@@ -16,7 +16,7 @@ from ..typing import *
 
 def _mpo_multiply_tensor(A, B):
     # Implements
-    # np.einsum("cjd,aijb->caidb", A, B)
+    # np.einsum("cjd,aijb->caidb", B, A)
     #
     # Matmul takes two arguments
     #     B(c, 1, 1, d, j)
