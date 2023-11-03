@@ -1,11 +1,11 @@
 import copy
 
 import numpy as np
-from seemps.qft import qft_mpo
-from seemps.state import CanonicalMPS
+from ..qft import qft_mpo
+from ..state import CanonicalMPS
 
-from analysis.finite_differences import mpo_combined
-from analysis.space import *
+from .finite_differences import mpo_combined
+from .space import *
 
 
 def fourier_interpolation_1D(f, M, axis=0):

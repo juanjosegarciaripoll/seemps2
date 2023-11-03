@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.operators import MPO
+from ..operators import MPO
 
 
 def mpo_combined(n, a, b, c, closed = True, **kwdargs):
