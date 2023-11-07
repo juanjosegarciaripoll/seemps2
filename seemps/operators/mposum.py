@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from seemps.truncate.simplify import simplify, combine
+from seemps.truncate.simplify import combine
 
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
@@ -123,7 +123,7 @@ class MPOSum(object):
             Ostate = w * O.apply(state, strategy=strategy)
             output = Ostate if i == 0 else output + Ostate
         if simplify:
-            output = simplify(
+            output = truncate.simplify(
                 output, strategy=strategy
             )
         return output
