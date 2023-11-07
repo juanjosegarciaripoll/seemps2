@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-import seemps.truncate
+from ..truncate import combine
 
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
@@ -115,7 +115,7 @@ class MPOSum(object):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(b, MPSSum):
-           state: MPS = seemps.truncate.simplify.combine(weights=b.weights, states=b.states, strategy=strategy)
+           state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
         elif isinstance(b, MPS):
             state = b
         output: Union[MPS, MPSSum]
@@ -123,7 +123,7 @@ class MPOSum(object):
             Ostate = w * O.apply(state, strategy=strategy)
             output = Ostate if i == 0 else output + Ostate
         if simplify:
-            output = seemps.truncate.simplify(
+            output = truncate.simplify(
                 output, strategy=strategy
             )
         return output
