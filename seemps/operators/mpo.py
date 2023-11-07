@@ -10,7 +10,7 @@ from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
 from ..state.environments import *
 from ..state.environments import scprod
 from ..tools import InvalidOperation, log
-import ..truncate.simplify import combine
+from ..truncate import combine
 from ..typing import *
 
 

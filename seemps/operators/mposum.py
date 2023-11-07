@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from seemps.truncate.simplify import combine
+from ..truncate import combine
 
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
