@@ -10,7 +10,7 @@ from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
 from ..state.environments import *
 from ..state.environments import scprod
 from ..tools import InvalidOperation, log
-from ..truncate import combine
+from ..truncate.simplify import simplify, combine
 from ..typing import *
 
 
@@ -152,7 +152,7 @@ class MPO(array.TensorArray):
             error=state.error(),
         )
         if simplify:
-            state = truncate.simplify(
+            state = simplify(
                 state, strategy=strategy
             )
         return state
@@ -376,7 +376,7 @@ class MPOList(object):
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
         if simplify:
-            state = truncate.simplify(
+            state = simplify(
                 state, strategy=strategy
             )
         return state
