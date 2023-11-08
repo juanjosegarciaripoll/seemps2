@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import numpy as np
-from ..truncate import combine
-
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from ..typing import *
 from .mpo import MPO, MPOList
+from ..truncate import combine
+from .. import truncate
+
 
 
 class MPOSum(object):

@@ -79,6 +79,17 @@ class TestMPOSum(TestCase):
             self.mpoA.apply(state).to_vector() + self.mpoB.apply(state).to_vector(),
         )
 
+    def test_mposum_apply_can_simplify(self):
+        state = random_uniform_mps(2, self.mpoA.size, D=10)
+
+        mposum = self.mpoA + self.mpoB
+        newstate = mposum.apply(state)
+        self.assertIsInstance(newstate, MPSSum)
+        self.assertSimilar(
+            (self.mpoA + self.mpoB).apply(state, simplify=True).to_vector(),
+            (self.mpoA + self.mpoB).tomatrix() @ state.to_vector(),
+        )
+
     def test_mposum_application_works_on_mpssum(self):
         mposum = self.mpoA + self.mpoB
         state = random_uniform_mps(2, 3, rng=self.rng)
