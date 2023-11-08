@@ -129,12 +129,12 @@ def gradient_descent(
         # TODO: Implement stop criteria based on gradient size Δβ
         # It must take into account the norm of the displacement, H_state
         # which was already calculated
-
-    H_state, E, variance, _ = energy_and_variance(state)
-    if E > best_energy:
-        E, state, variance = best_energy, best_vector, best_variance
-    energies.append(E)
-    variances.append(variance)
+    if not converged:
+        H_state, E, variance, _ = energy_and_variance(state)
+        if E > best_energy:
+            E, state, variance = best_energy, best_vector, best_variance
+        energies.append(E)
+        variances.append(variance)
     return OptimizeResults(
         state=state,
         energy=E,
