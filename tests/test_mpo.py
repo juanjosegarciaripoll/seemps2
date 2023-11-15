@@ -1,6 +1,8 @@
 import numpy as np
+from seemps import MPO, random_uniform_mps, σx
+from seemps.state.core import Strategy
+
 from .tools import *
-from seemps import MPO, σx, random_uniform_mps
 
 
 class TestMPO(TestCase):
@@ -32,6 +34,11 @@ class TestMPO(TestCase):
             mpo.apply(mps, simplify=True).to_vector(),
             (mpo.tomatrix() @ mps.to_vector()),
         )
+
+    def test_mpo_set_strategy(self):
+        new_strategy = Strategy(tolerance=1e-10)
+        mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5).set_strategy(new_strategy)
+        self.assertTrue(new_strategy, mpo.strategy)
 
     def test_mpo_apply_works_on_mpssum(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)

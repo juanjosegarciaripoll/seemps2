@@ -1,8 +1,10 @@
 import numpy as np
-from .tools import TestCase, similar
-from seemps import MPSSum, MPO, MPOList, random_uniform_mps
+from seemps import MPO, MPOList, MPSSum, random_uniform_mps
 from seemps.operators import MPOSum
-from seemps.tools import σx, σz, σy
+from seemps.state.core import Strategy
+from seemps.tools import σx, σy, σz
+
+from .tools import TestCase, similar
 
 
 class TestMPOSum(TestCase):
@@ -89,6 +91,11 @@ class TestMPOSum(TestCase):
             (self.mpoA + self.mpoB).apply(state, simplify=True).to_vector(),
             (self.mpoA + self.mpoB).tomatrix() @ state.to_vector(),
         )
+
+    def test_mpo_set_strategy(self):
+        new_strategy = Strategy(tolerance=1e-10)
+        mposum = (self.mpoA + self.mpoB).set_strategy(new_strategy)
+        self.assertTrue(new_strategy, mposum.strategy)
 
     def test_mposum_application_works_on_mpssum(self):
         mposum = self.mpoA + self.mpoB

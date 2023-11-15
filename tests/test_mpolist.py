@@ -1,6 +1,8 @@
 import numpy as np
+from seemps import MPO, NO_TRUNCATION, MPOList, random_uniform_mps, σx, σy, σz
+from seemps.state.core import Strategy
+
 from .tools import TestCase
-from seemps import MPO, MPOList, σx, σz, σy, random_uniform_mps, NO_TRUNCATION
 
 
 class TestMPOList(TestCase):
@@ -30,6 +32,13 @@ class TestMPOList(TestCase):
             UV.apply(mps, simplify=True).to_vector(),
             (UV.tomatrix() @ mps.to_vector()),
         )
+
+    def test_mpo_set_strategy(self):
+        new_strategy = Strategy(tolerance=1e-10)
+        U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
+        V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
+        UV = MPOList([U, V], NO_TRUNCATION).set_strategy(new_strategy)
+        self.assertTrue(new_strategy, UV.strategy)
 
     def test_mpolist_application_works_on_mpssum(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
