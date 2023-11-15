@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import numpy as np
+
+from .. import truncate
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
+from ..truncate import combine
 from ..typing import *
 from .mpo import MPO, MPOList
-from ..truncate import combine
-from .. import truncate
-
 
 
 class MPOSum(object):
@@ -101,6 +101,14 @@ class MPOSum(object):
         for i, mpo in enumerate(self.mpos[1:]):
             A = A + self.weights[i + 1] * mpo.tomatrix()
         return A
+    
+    def set_strategy(self, strategy, strategy_components=None) -> MPOList:
+        """Return MPOSum with the given strategy."""
+        if strategy_components is not None:
+            mpos = [mpo.set_strategy(strategy_components) for mpo in self.mpos]
+        else:
+            mpos = self.mpos
+        return MPOSum(mpos=mpos, weights=self.weights, strategy=strategy)
 
     def apply(
         self, 

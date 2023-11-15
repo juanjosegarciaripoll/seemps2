@@ -110,6 +110,10 @@ class MPO(array.TensorArray):
             D *= i
             out = out.reshape(D, D, b)
         return out[:, :, 0]
+    
+    def set_strategy(self, strategy) -> MPO:
+        """Return MPO with the given strategy."""
+        return MPO(data=self._data, strategy=strategy)
 
     def apply(
         self,
@@ -336,6 +340,14 @@ class MPOList(object):
         for mpo in self.mpos[1:]:
             A = mpo.tomatrix() @ A
         return A
+    
+    def set_strategy(self, strategy, strategy_components=None) -> MPOList:
+        """Return MPOList with the given strategy."""
+        if strategy_components is not None:
+            mpos = [mpo.set_strategy(strategy_components) for mpo in self.mpos]
+        else:
+            mpos = self.mpos
+        return MPOList(mpos=mpos, strategy=strategy)
 
     # TODO: Describe how `strategy` and simplify act as compared to
     # the values provided by individual operators.
