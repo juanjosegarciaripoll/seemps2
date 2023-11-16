@@ -102,7 +102,7 @@ class MPOSum(object):
             A = A + self.weights[i + 1] * mpo.tomatrix()
         return A
     
-    def set_strategy(self, strategy, strategy_components=None) -> MPOList:
+    def set_strategy(self, strategy, strategy_components=None) -> MPOSum:
         """Return MPOSum with the given strategy."""
         if strategy_components is not None:
             mpos = [mpo.set_strategy(strategy_components) for mpo in self.mpos]

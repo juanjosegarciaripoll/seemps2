@@ -51,21 +51,16 @@ def simplify(
             strategy=strategy,
             direction=direction,
         )
-
+    normalize= strategy.get_normalize_flag()
     size = state.size
     start = 0 if direction > 0 else size - 1
-    normalize= strategy.get_normalize_flag()
-    maxsweeps = strategy.get_max_sweeps()
-    simplification_tolerance = strategy.get_simplification_tolerance()
-    max_bond_dimension = strategy.get_max_bond_dimension()
     mps = CanonicalMPS(state, center=start, strategy=strategy)
     if normalize:
         mps.normalize_inplace()
     if not strategy.get_simplification_method():
         return mps
-    if max_bond_dimension == 0 and simplification_tolerance <= 0:
-        return mps
-
+    simplification_tolerance = strategy.get_simplification_tolerance()
+    maxsweeps = strategy.get_max_sweeps()
     form = AntilinearForm(mps, state, center=start)
     norm_state_sqr = scprod(state, state).real
     base_error = state.error()
@@ -124,7 +119,7 @@ def multi_norm_squared(weights: list[Weight], states: list[MPS]) -> float:
     return c
 
 
-def guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
+def crappy_guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
     """Make an educated guess that ensures convergence of the :func:`combine`
     algorithm."""
 
@@ -148,6 +143,39 @@ def guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
         for i, (A, sumA) in enumerate(zip(state, guess)):
             guess[i] = combine_tensors(A if i > 0 else A * weights[n], sumA)
     return guess
+
+def guess_combine_state(weights: list, states: list[MPS]) -> MPS:
+    """Make an educated guess that ensures convergence of the :func:`combine`
+    algorithm."""
+    def combine_tensors(A,sumA,idx):
+        DL, d, DR = sumA.shape
+        a, d, b = A.shape
+        if idx == 0:
+            new_A = np.zeros((d,DR+b))
+            for d_i in range(d):
+                new_A[d_i,:] = np.concatenate((sumA.reshape(d,DR)[d_i,:],A.reshape(d,b)[d_i,:]))
+            new_A = new_A.reshape(1,d,DR+b)
+        elif idx == -1:
+            new_A = np.zeros((DL+a,d))
+            for d_i in range(d):
+                new_A[:,d_i] = np.concatenate((sumA.reshape(DL,d)[:,d_i],A.reshape(a,d)[:,d_i]))
+            new_A = new_A.reshape(DL+a,d,1)
+        else:
+            new_A = np.zeros((DL+a,d,DR+b))
+            for d_i in range(d):
+                new_A[:,d_i,:] = scipy.linalg.block_diag(sumA[:,d_i,:], A[:,d_i,:])
+        return new_A
+    guess = []
+    size = states[0].size
+    for i in range(size):  
+        sumA = states[0][i] * weights[0] if i == 0 else states[0][i]
+        if i == size -1:
+            i = -1
+        for n, state in enumerate(states[1:]):
+            A = state[i]
+            sumA = combine_tensors(A * weights[n+1] if i == 0 else A, sumA, i)
+        guess.append(sumA)
+    return MPS(guess)
 
 
 # TODO: We have to rationalize all this about directions. The user should
@@ -182,23 +210,24 @@ def combine(
         Approximation to the linear combination in canonical form
     """
     if guess is None:
-        guess = guess_combine_state(weights, states)
+        guess = crappy_guess_combine_state(weights, states)
+    normalize= strategy.get_normalize_flag()
+    start = 0 if direction > 0 else guess.size - 1
+    φ = CanonicalMPS(guess, center=start, strategy=strategy)
+    if normalize:
+        φ.normalize_inplace()
+    if not strategy.get_simplification_method():
+        return φ
+    simplification_tolerance = strategy.get_simplification_tolerance()
+    err = norm_ψsqr = multi_norm_squared(weights, states)
     base_error = sum(
         np.sqrt(np.abs(weights)) * np.sqrt(state.error())
         for weights, state in zip(weights, states)
     )
-    normalize= strategy.get_normalize_flag()
     maxsweeps = strategy.get_max_sweeps()
-    simplification_tolerance = strategy.get_simplification_tolerance()
-    start = 0 if direction > 0 else guess.size - 1
-    φ = CanonicalMPS(guess, center=start, strategy=strategy, normalize=normalize)
-    err = norm_ψsqr = multi_norm_squared(weights, states)
-    if norm_ψsqr < simplification_tolerance:
-        return MPS([np.zeros((1, P.shape[1], 1)) for P in φ])
     log(
         f"COMBINE state with |state|={norm_ψsqr**0.5} for {maxsweeps} sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}"
     )
-
     size = φ.size
     forms = [AntilinearForm(φ, state, center=start) for state in states]
     tensor: Tensor4

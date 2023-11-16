@@ -1,14 +1,15 @@
+from dataclasses import dataclass
+
 import numpy as np
-from ..state import CanonicalMPS, MPS, Strategy, DEFAULT_STRATEGY
+
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
-from ..typing import *
-from dataclasses import dataclass
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..tools import log
+from ..truncate.simplify import simplify
+from ..typing import *
 from ..typing import Union
-from ..truncate.combine import combine
 
-DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(normalize=True)
 
 @dataclass
 class OptimizeResults:
@@ -44,9 +45,10 @@ def gradient_descent(
     state: MPS,
     maxiter=1000,
     tol: float = 1e-13,
+    k_mean=10,
     tol_variance: float = 1e-14,
-    strategy: Optional[Strategy] = DESCENT_STRATEGY,
-    callback: Optional[callable] = None
+    strategy: Optional[Strategy] = DEFAULT_STRATEGY,
+    callback: Optional[callable] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -59,12 +61,15 @@ def gradient_descent(
     maxiter : int
         Maximum number of iterations (defaults to 1000).
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
         Linear combination of MPS truncation strategy. Defaults to 
-        `DESCENT_STRATEGY`.
+        `DEFAULT_STRATEGY`.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
 
@@ -80,6 +85,7 @@ def gradient_descent(
         avg_H2 = scprod(H_state, H_state).real
         variance = avg_H2 - scprod(state, H_state).real ** 2
         return H_state, true_E, variance, avg_H2
+    normalization_strategy = strategy.replace(normalize=True)
     energies = []
     variances = []
     last_E = np.Inf
@@ -102,12 +108,19 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, best_variance = E, state, variance
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -122,8 +135,7 @@ def gradient_descent(
         # TODO: Replace this formula with the formula that keeps the
         # normalization of the state (2nd. order gradient descent from the
         # manuscript)
-        state = (state + Δβ * (H_state - E * state))
-        state = combine(state.weights, state.states, strategy=strategy)
+        state = simplify(state + Δβ * (H_state - E * state), strategy=normalization_strategy)
         if callback is not None:
             callback(state)
         # TODO: Implement stop criteria based on gradient size Δβ

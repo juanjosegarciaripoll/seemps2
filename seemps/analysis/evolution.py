@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from typing import Union
 
 import numpy as np
+
 from ..expectation import scprod
+from ..optimization.descent import DEFAULT_STRATEGY
 from ..state import MPS, CanonicalMPS
+from ..truncate.simplify import simplify
 from ..typing import *
-from ..optimization.descent import DESCENT_STRATEGY
-from ..truncate.combine import combine
 
 
 @dataclass
@@ -41,8 +42,8 @@ class EvolutionResults:
     Δβ: Union[float, VectorLike] = None
     β: Optional[VectorLike] = None
 
-def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-          strategy=DESCENT_STRATEGY, callback=None):
+def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
+          strategy=DEFAULT_STRATEGY, callback=None):
     """Euler method for arrays.
 
     Parameters
@@ -56,9 +57,12 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
+        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
@@ -68,6 +72,7 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     EvolutionResults
         Results from the evolution. See :class:`EvolutionResults`.
     """
+    normalization_strategy = strategy.replace(normalize=True)
     energies = []
     last_E = np.Inf
     best_energy = np.Inf
@@ -78,16 +83,22 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
         last_E = E
-        state = (state - Δβ * H_state)
-        state = combine(state.weights, state.states, strategy=strategy)
+        state = simplify(state - Δβ * H_state, strategy=normalization_strategy)
         if callback is not None:
             callback(state)
     if not converged:
@@ -108,7 +119,7 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     )
 
 def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                   strategy=DESCENT_STRATEGY, callback=None):
+                   k_mean=10, strategy=DEFAULT_STRATEGY, callback=None):
     """Improved Euler method for arrays.
 
     Parameters
@@ -122,9 +133,12 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY.
+        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
 
@@ -133,6 +147,7 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     EvolutionResults
         Results from the evolution. See :class:`EvolutionResults`.
     """
+    normalization_strategy = strategy.replace(normalize=True)
     energies = []
     last_E = np.Inf
     best_energy = np.Inf
@@ -143,18 +158,24 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
         last_E = E
-        k = 2 * state - Δβ * H_state
+        k = simplify(2 * state - Δβ * H_state, strategy=strategy)
         Hk = H.apply(k)
-        state = (state - 0.5 * Δβ * Hk)
-        state = combine(state.weights, state.states, strategy=strategy)
+        state = simplify(state - 0.5 * Δβ * Hk, strategy=normalization_strategy)
         if callback is not None:
             callback(state)
     if not converged:
@@ -175,7 +196,7 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     )
 
 def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                strategy=DESCENT_STRATEGY, callback=None):
+                k_mean=10, strategy=DEFAULT_STRATEGY, callback=None):
     """Runge-Kutta method for arrays.
 
     Parameters
@@ -189,9 +210,12 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
+        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
@@ -201,6 +225,7 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     EvolutionResults
         Results from the evolution. See :class:`EvolutionResults`.
     """
+    normalization_strategy = strategy.replace(normalize=True)
     energies = []
     last_E = np.Inf
     best_energy = np.Inf
@@ -211,22 +236,28 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
         last_E = E
-        state2 = state - 0.5 * Δβ * H_state
+        state2 = simplify(0.5 * Δβ * H_state, strategy=strategy)
         H_state2 = H.apply(state2)
-        state3 = state - 0.5 * Δβ * H_state2
+        state3 = simplify(state - 0.5 * Δβ * H_state2, strategy=strategy)
         H_state3 = H.apply(state3)
-        state4 = state - Δβ * H_state3
+        state4 = simplify(state - Δβ * H_state3, strategy=strategy)
         H_state4 = H.apply(state4)
-        state = (state - Δβ / 6 * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4))
-        state = combine(state.weights, state.states, strategy=strategy)
+        state = simplify(state - Δβ / 6 * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4), strategy=strategy)
         if callback is not None:
             callback(state)
     if not converged:
@@ -246,8 +277,8 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             β=β
     )
 
-def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                         tol_rk: float = 1e-8, strategy=DESCENT_STRATEGY, callback=None):
+def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
+                         tol_rk: float = 1e-8, strategy=DEFAULT_STRATEGY, callback=None):
     """Runge-Kutta method for arrays.
 
     Parameters
@@ -261,11 +292,14 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     tol_rk : float
         Energy variation that indicates termination (defaults to 1e-8).
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
+        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
@@ -275,6 +309,7 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     EvolutionResults
         Results from the evolution. See :class:`EvolutionResults`.
     """
+    normalization_strategy = strategy.replace(normalize=True)
     energies = []
     Δβs = []
     last_E = np.Inf
@@ -287,47 +322,46 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     while i < maxiter:
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         k1 = -1 * H_state
-        state2 = state + 0.25 * Δβ * k1
+        state2 = simplify(state + 0.25 * Δβ * k1, strategy=strategy)
         k2 = -1 * H.apply(state2)
-        state3 = state + (3 / 32) * Δβ * k1 + (9 / 32) * Δβ * k2
+        state3 = simplify(state + (3 / 32) * Δβ * k1 + (9 / 32) * Δβ * k2, strategy=strategy)
         k3 = -1 * H.apply(state3)
-        state4 = (
+        state4 =  simplify(
             state
             + (1932 / 2197) * Δβ * k1
             - (7200 / 2197) * Δβ * k2
-            + (7296 / 2197) * Δβ * k3
-        )
+            + (7296 / 2197) * Δβ * k3, strategy=strategy)
         k4 = -1 * H.apply(state4)
-        state5 = (
+        state5 = simplify(
             state
             + (439 / 216) * Δβ * k1
             - 8 * Δβ * k2
             + (3680 / 513) * Δβ * k3
-            - (845 / 4104) * Δβ * k4
-        )
+            - (845 / 4104) * Δβ * k4, strategy=strategy)
         k5 = -1 * H.apply(state5)
-        state6 = (
+        state6 = simplify(
             state
             - (8 / 27) * Δβ * k1
             + 2 * Δβ * k2
             - (3544 / 2565) * Δβ * k3
             + (1859 / 4104) * Δβ * k4
-            - (11 / 40) * Δβ * k5
-        )
+            - (11 / 40) * Δβ * k5, strategy=strategy)
         k6 = -1 * H.apply(state6)
-        state_ord5 = (state + Δβ * (
+        state_ord5 = simplify(state + Δβ * (
             (16 / 135) * k1
             + (6656 / 12825) * k3
             + (28561 / 56430) * k4
             - (9 / 50) * k5
             + (2 / 55) * k6
-        ))
-        state_ord5 = combine(state_ord5.weights, state_ord5.states, strategy=strategy)
-        state_ord4 = (state + Δβ * (
+        ), strategy=normalization_strategy)
+        state_ord4 = simplify(state + Δβ * (
             (25 / 216) * k1 + (1408 / 2565) * k3 + (2197 / 4104) * k4 - (1 / 5) * k5
-        ))
-        state_ord4 = combine(state_ord4.weights, state_ord4.states, strategy=strategy)
+        ), strategy=normalization_strategy)
         δ = np.sqrt(
             abs(
                 scprod(state_ord5, state_ord5)
@@ -342,7 +376,10 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             energies.append(E)
             if E < best_energy:
                 best_energy, best_vector = E, state
-            if np.abs(E - last_E) < tol:
+            if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
                 message = f"Energy converged within tolerance {tol}"
                 converged = True
                 break
@@ -356,7 +393,10 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             energies.append(E)
             if E < best_energy:
                 best_energy, best_vector = E, state
-            if np.abs(E - last_E) < tol:
+            if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
                 message = f"Energy converged within tolerance {tol}"
                 converged = True
                 break
