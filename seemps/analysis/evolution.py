@@ -42,7 +42,7 @@ class EvolutionResults:
     Δβ: Union[float, VectorLike] = None
     β: Optional[VectorLike] = None
 
-def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
+def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
           strategy=DESCENT_STRATEGY, callback=None):
     """Euler method for arrays.
 
@@ -57,7 +57,10 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     strategy : Optional[Strategy]
         Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
@@ -86,7 +89,10 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -113,7 +119,7 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     )
 
 def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                   strategy=DESCENT_STRATEGY, callback=None):
+                   k_mean=10, strategy=DESCENT_STRATEGY, callback=None):
     """Improved Euler method for arrays.
 
     Parameters
@@ -127,7 +133,10 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     strategy : Optional[Strategy]
         Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY.
     callback : Optional[callable]
@@ -155,7 +164,10 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -184,7 +196,7 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     )
 
 def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                strategy=DESCENT_STRATEGY, callback=None):
+                k_mean=10, strategy=DESCENT_STRATEGY, callback=None):
     """Runge-Kutta method for arrays.
 
     Parameters
@@ -198,7 +210,10 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     strategy : Optional[Strategy]
         Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
@@ -227,7 +242,10 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -259,7 +277,7 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             β=β
     )
 
-def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
+def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
                          tol_rk: float = 1e-8, strategy=DESCENT_STRATEGY, callback=None):
     """Runge-Kutta method for arrays.
 
@@ -274,7 +292,10 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     tol_rk : float
         Energy variation that indicates termination (defaults to 1e-8).
     strategy : Optional[Strategy]
@@ -359,10 +380,13 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             energies.append(E)
             if E < best_energy:
                 best_energy, best_vector = E, state
-            if np.abs(E - last_E) < tol:
-                message = f"Energy converged within tolerance {tol}"
-                converged = True
-                break
+            if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
+            message = f"Energy converged within tolerance {tol}"
+            converged = True
+            break
             state = state_ord5
             if callback is not None:
                 callback(state)
@@ -373,10 +397,13 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             energies.append(E)
             if E < best_energy:
                 best_energy, best_vector = E, state
-            if np.abs(E - last_E) < tol:
-                message = f"Energy converged within tolerance {tol}"
-                converged = True
-                break
+            if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
+            message = f"Energy converged within tolerance {tol}"
+            converged = True
+            break
             state = state_ord5
             if callback is not None:
                 callback(state)

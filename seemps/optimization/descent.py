@@ -46,9 +46,10 @@ def gradient_descent(
     state: MPS,
     maxiter=1000,
     tol: float = 1e-13,
+    k_mean=10,
     tol_variance: float = 1e-14,
     strategy: Optional[Strategy] = DESCENT_STRATEGY,
-    callback: Optional[callable] = None
+    callback: Optional[callable] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -61,7 +62,10 @@ def gradient_descent(
     maxiter : int
         Maximum number of iterations (defaults to 1000).
     tol : float
-        Energy variation that indicates termination (defaults to 1e-13).
+        Energy variation with respect to the k_mean moving average that 
+        indicates termination (defaults to 1e-13).
+    k_mean: int
+        Number of elements for the moving average.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
@@ -113,7 +117,10 @@ def gradient_descent(
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, best_variance = E, state, variance
-        if np.abs(E - last_E) < tol:
+        if (
+            len(energies) > k_mean
+            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
