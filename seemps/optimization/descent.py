@@ -6,11 +6,10 @@ from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..tools import log
-from ..truncate.combine import combine
+from ..truncate.simplify import simplify
 from ..typing import *
 from ..typing import Union
 
-DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(normalize=True)
 
 @dataclass
 class OptimizeResults:
@@ -48,7 +47,7 @@ def gradient_descent(
     tol: float = 1e-13,
     k_mean=10,
     tol_variance: float = 1e-14,
-    strategy: Optional[Strategy] = DESCENT_STRATEGY,
+    strategy: Optional[Strategy] = DEFAULT_STRATEGY,
     callback: Optional[callable] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
@@ -70,7 +69,7 @@ def gradient_descent(
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
         Linear combination of MPS truncation strategy. Defaults to 
-        `DESCENT_STRATEGY`.
+        `DEFAULT_STRATEGY`.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
 
@@ -86,6 +85,7 @@ def gradient_descent(
         avg_H2 = scprod(H_state, H_state).real
         variance = avg_H2 - scprod(state, H_state).real ** 2
         return H_state, true_E, variance, avg_H2
+    normalization_strategy = strategy.replace(normalize=True)
     energies = []
     variances = []
     last_E = np.Inf
@@ -135,8 +135,7 @@ def gradient_descent(
         # TODO: Replace this formula with the formula that keeps the
         # normalization of the state (2nd. order gradient descent from the
         # manuscript)
-        state = (state + Δβ * (H_state - E * state))
-        state = combine(state.weights, state.states, strategy=strategy)
+        state = simplify(state + Δβ * (H_state - E * state), strategy=normalization_strategy)
         if callback is not None:
             callback(state)
         # TODO: Implement stop criteria based on gradient size Δβ
