@@ -380,9 +380,9 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
             len(energies) > k_mean
             and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
         ):
-            message = f"Energy converged within tolerance {tol}"
-            converged = True
-            break
+                message = f"Energy converged within tolerance {tol}"
+                converged = True
+                break
             state = state_ord5
             if callback is not None:
                 callback(state)
@@ -397,9 +397,9 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
             len(energies) > k_mean
             and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
         ):
-            message = f"Energy converged within tolerance {tol}"
-            converged = True
-            break
+                message = f"Energy converged within tolerance {tol}"
+                converged = True
+                break
             state = state_ord5
             if callback is not None:
                 callback(state)
