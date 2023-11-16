@@ -1,12 +1,14 @@
+from dataclasses import dataclass
+
 import numpy as np
-from ..state import CanonicalMPS, MPS, Strategy, DEFAULT_STRATEGY
+
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
-from ..typing import *
-from dataclasses import dataclass
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..tools import log
-from ..typing import Union
 from ..truncate.combine import combine
+from ..typing import *
+from ..typing import Union
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(normalize=True)
 
@@ -102,6 +104,10 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)

@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from typing import Union
 
 import numpy as np
+
 from ..expectation import scprod
-from ..state import MPS, CanonicalMPS
-from ..typing import *
 from ..optimization.descent import DESCENT_STRATEGY
+from ..state import MPS, CanonicalMPS
 from ..truncate.combine import combine
+from ..typing import *
 
 
 @dataclass
@@ -78,6 +79,10 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
@@ -143,6 +148,10 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
@@ -211,6 +220,10 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
@@ -287,6 +300,10 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     while i < maxiter:
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if E > last_E:
+            message = f"Energy converged within stability region"
+            converged = True
+            break
         k1 = -1 * H_state
         state2 = state + 0.25 * Δβ * k1
         k2 = -1 * H.apply(state2)
