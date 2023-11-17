@@ -42,8 +42,17 @@ class EvolutionResults:
     Δβ: Union[float, VectorLike] = None
     β: Optional[VectorLike] = None
 
-def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
-          strategy=DEFAULT_STRATEGY, callback=None):
+
+def euler(
+    H,
+    state,
+    Δβ=0.01,
+    maxiter=1000,
+    tol: float = 1e-13,
+    k_mean=10,
+    strategy=DEFAULT_STRATEGY,
+    callback=None,
+):
     """Euler method for arrays.
 
     Parameters
@@ -57,7 +66,7 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation with respect to the k_mean moving average that 
+        Energy variation with respect to the k_mean moving average that
         indicates termination (defaults to 1e-13).
     k_mean: int
         Number of elements for the moving average.
@@ -109,17 +118,26 @@ def euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
             best_energy, best_vector = E, state
     β = Δβ * np.arange(maxiter + 1)
     return EvolutionResults(
-            state=best_vector,
-            energy=best_energy,
-            converged=converged,
-            message=message,
-            trajectory=energies,
-            Δβ=Δβ,
-            β=β
+        state=best_vector,
+        energy=best_energy,
+        converged=converged,
+        message=message,
+        trajectory=energies,
+        Δβ=Δβ,
+        β=β,
     )
 
-def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                   k_mean=10, strategy=DEFAULT_STRATEGY, callback=None):
+
+def improved_euler(
+    H,
+    state,
+    Δβ=0.01,
+    maxiter=1000,
+    tol: float = 1e-13,
+    k_mean=10,
+    strategy=DEFAULT_STRATEGY,
+    callback=None,
+):
     """Improved Euler method for arrays.
 
     Parameters
@@ -133,7 +151,7 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation with respect to the k_mean moving average that 
+        Energy variation with respect to the k_mean moving average that
         indicates termination (defaults to 1e-13).
     k_mean: int
         Number of elements for the moving average.
@@ -186,17 +204,26 @@ def improved_euler(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             best_energy, best_vector = E, state
     β = Δβ * np.arange(maxiter + 1)
     return EvolutionResults(
-            state=best_vector,
-            energy=best_energy,
-            converged=converged,
-            message=message,
-            trajectory=energies,
-            Δβ=Δβ,
-            β=β
+        state=best_vector,
+        energy=best_energy,
+        converged=converged,
+        message=message,
+        trajectory=energies,
+        Δβ=Δβ,
+        β=β,
     )
 
-def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
-                k_mean=10, strategy=DEFAULT_STRATEGY, callback=None):
+
+def runge_kutta(
+    H,
+    state,
+    Δβ=0.01,
+    maxiter=1000,
+    tol: float = 1e-13,
+    k_mean=10,
+    strategy=DEFAULT_STRATEGY,
+    callback=None,
+):
     """Runge-Kutta method for arrays.
 
     Parameters
@@ -210,7 +237,7 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation with respect to the k_mean moving average that 
+        Energy variation with respect to the k_mean moving average that
         indicates termination (defaults to 1e-13).
     k_mean: int
         Number of elements for the moving average.
@@ -257,7 +284,10 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
         H_state3 = H.apply(state3)
         state4 = simplify(state - Δβ * H_state3, strategy=strategy)
         H_state4 = H.apply(state4)
-        state = simplify(state - Δβ / 6 * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4), strategy=strategy)
+        state = simplify(
+            state - Δβ / 6 * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
+            strategy=normalization_strategy,
+        )
         if callback is not None:
             callback(state)
     if not converged:
@@ -268,17 +298,27 @@ def runge_kutta(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13,
             best_energy, best_vector = E, state
     β = Δβ * np.arange(maxiter + 1)
     return EvolutionResults(
-            state=best_vector,
-            energy=best_energy,
-            converged=converged,
-            message=message,
-            trajectory=energies,
-            Δβ=Δβ,
-            β=β
+        state=best_vector,
+        energy=best_energy,
+        converged=converged,
+        message=message,
+        trajectory=energies,
+        Δβ=Δβ,
+        β=β,
     )
 
-def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, k_mean=10,
-                         tol_rk: float = 1e-8, strategy=DEFAULT_STRATEGY, callback=None):
+
+def runge_kutta_fehlberg(
+    H,
+    state,
+    Δβ=0.01,
+    maxiter=1000,
+    tol: float = 1e-13,
+    k_mean=10,
+    tol_rk: float = 1e-8,
+    strategy=DEFAULT_STRATEGY,
+    callback=None,
+):
     """Runge-Kutta method for arrays.
 
     Parameters
@@ -292,7 +332,7 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
     maxiter : int
         Maximum number of iterations (defaults to 1000)
     tol : float
-        Energy variation with respect to the k_mean moving average that 
+        Energy variation with respect to the k_mean moving average that
         indicates termination (defaults to 1e-13).
     k_mean: int
         Number of elements for the moving average.
@@ -329,20 +369,26 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
         k1 = -1 * H_state
         state2 = simplify(state + 0.25 * Δβ * k1, strategy=strategy)
         k2 = -1 * H.apply(state2)
-        state3 = simplify(state + (3 / 32) * Δβ * k1 + (9 / 32) * Δβ * k2, strategy=strategy)
+        state3 = simplify(
+            state + (3 / 32) * Δβ * k1 + (9 / 32) * Δβ * k2, strategy=strategy
+        )
         k3 = -1 * H.apply(state3)
-        state4 =  simplify(
+        state4 = simplify(
             state
             + (1932 / 2197) * Δβ * k1
             - (7200 / 2197) * Δβ * k2
-            + (7296 / 2197) * Δβ * k3, strategy=strategy)
+            + (7296 / 2197) * Δβ * k3,
+            strategy=strategy,
+        )
         k4 = -1 * H.apply(state4)
         state5 = simplify(
             state
             + (439 / 216) * Δβ * k1
             - 8 * Δβ * k2
             + (3680 / 513) * Δβ * k3
-            - (845 / 4104) * Δβ * k4, strategy=strategy)
+            - (845 / 4104) * Δβ * k4,
+            strategy=strategy,
+        )
         k5 = -1 * H.apply(state5)
         state6 = simplify(
             state
@@ -350,18 +396,30 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
             + 2 * Δβ * k2
             - (3544 / 2565) * Δβ * k3
             + (1859 / 4104) * Δβ * k4
-            - (11 / 40) * Δβ * k5, strategy=strategy)
+            - (11 / 40) * Δβ * k5,
+            strategy=strategy,
+        )
         k6 = -1 * H.apply(state6)
-        state_ord5 = simplify(state + Δβ * (
-            (16 / 135) * k1
-            + (6656 / 12825) * k3
-            + (28561 / 56430) * k4
-            - (9 / 50) * k5
-            + (2 / 55) * k6
-        ), strategy=normalization_strategy)
-        state_ord4 = simplify(state + Δβ * (
-            (25 / 216) * k1 + (1408 / 2565) * k3 + (2197 / 4104) * k4 - (1 / 5) * k5
-        ), strategy=normalization_strategy)
+        state_ord5 = simplify(
+            state
+            + Δβ
+            * (
+                (16 / 135) * k1
+                + (6656 / 12825) * k3
+                + (28561 / 56430) * k4
+                - (9 / 50) * k5
+                + (2 / 55) * k6
+            ),
+            strategy=normalization_strategy,
+        )
+        state_ord4 = simplify(
+            state
+            + Δβ
+            * (
+                (25 / 216) * k1 + (1408 / 2565) * k3 + (2197 / 4104) * k4 - (1 / 5) * k5
+            ),
+            strategy=normalization_strategy,
+        )
         δ = np.sqrt(
             abs(
                 scprod(state_ord5, state_ord5)
@@ -377,9 +435,9 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
             if E < best_energy:
                 best_energy, best_vector = E, state
             if (
-            len(energies) > k_mean
-            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
-        ):
+                len(energies) > k_mean
+                and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+            ):
                 message = f"Energy converged within tolerance {tol}"
                 converged = True
                 break
@@ -394,9 +452,9 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
             if E < best_energy:
                 best_energy, best_vector = E, state
             if (
-            len(energies) > k_mean
-            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
-        ):
+                len(energies) > k_mean
+                and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
+            ):
                 message = f"Energy converged within tolerance {tol}"
                 converged = True
                 break
@@ -418,11 +476,11 @@ def runge_kutta_fehlberg(H, state, Δβ=0.01, maxiter=1000, tol: float = 1e-13, 
         β_i += Δβ_i
         β.append(β_i)
     return EvolutionResults(
-            state=best_vector,
-            energy=best_energy,
-            converged=converged,
-            message=message,
-            trajectory=energies,
-            Δβ=Δβs,
-            β=β
+        state=best_vector,
+        energy=best_energy,
+        converged=converged,
+        message=message,
+        trajectory=energies,
+        Δβ=Δβs,
+        β=β,
     )
