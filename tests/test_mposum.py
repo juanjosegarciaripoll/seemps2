@@ -1,10 +1,13 @@
 import numpy as np
 from seemps import MPO, MPOList, MPSSum, random_uniform_mps
 from seemps.operators import MPOSum
-from seemps.state.core import Strategy
+from seemps.state import MPSSum
+from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 from seemps.tools import σx, σy, σz
 
 from .tools import TestCase, similar
+
+TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
 class TestMPOSum(TestCase):
@@ -88,7 +91,9 @@ class TestMPOSum(TestCase):
         newstate = mposum.apply(state)
         self.assertIsInstance(newstate, MPSSum)
         self.assertSimilar(
-            (self.mpoA + self.mpoB).apply(state, simplify=True).to_vector(),
+            (self.mpoA + self.mpoB)
+            .apply(state, simplify=True, strategy=TEST_STRATEGY)
+            .to_vector(),
             (self.mpoA + self.mpoB).tomatrix() @ state.to_vector(),
         )
 
@@ -100,8 +105,12 @@ class TestMPOSum(TestCase):
     def test_mposum_application_works_on_mpssum(self):
         mposum = self.mpoA + self.mpoB
         state = random_uniform_mps(2, 3, rng=self.rng)
-        self.assertSimilar(mposum.apply(state + state), self.mpoA.apply(self.mpoB.apply(2.0 * state)))
-        self.assertSimilar(mposum @ (state + state), self.mpoA.apply(self.mpoB.apply(2.0 * state)))
+        self.assertSimilar(
+            mposum.apply(state + state), self.mpoA.apply(self.mpoB.apply(2.0 * state))
+        )
+        self.assertSimilar(
+            mposum @ (state + state), self.mpoA.apply(self.mpoB.apply(2.0 * state))
+        )
 
     def test_mposum_join_real_mpos(self):
         state = random_uniform_mps(2, self.mpoA.size, D=10)

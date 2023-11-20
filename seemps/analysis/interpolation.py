@@ -1,15 +1,15 @@
 import copy
 
 import numpy as np
+
 from ..qft import qft_mpo
 from ..state import CanonicalMPS
-
 from .finite_differences import mpo_combined
 from .space import *
 
 
 def fourier_interpolation_1D(f, M, axis=0):
-    """Obtain the Fourier interpolated array over the given 
+    """Obtain the Fourier interpolated array over the given
     axis with a new number of points M.
 
     Parameters
@@ -39,8 +39,8 @@ def fourier_interpolation_1D(f, M, axis=0):
 
 
 def fourier_interpolation(f, new_dims):
-    """ Fourier interpolation on an n-dimensional array.
-    
+    """Fourier interpolation on an n-dimensional array.
+
     Parameters
     ----------
     f : numpy.ndarray
@@ -48,7 +48,7 @@ def fourier_interpolation(f, new_dims):
     new_dims : list[int]
         List of integers with the new dimensions for each axis
         of the array.
-    
+
     Returns
     -------
     numpy.ndarray
@@ -60,7 +60,7 @@ def fourier_interpolation(f, new_dims):
 
 
 def twoscomplement(L, **kwdargs):
-    """ Two's complement operation."""
+    """Two's complement operation."""
     A0 = np.zeros((1, 2, 2, 2))
     A0[0, 0, 0, 0] = 1.0
     A0[0, 1, 1, 1] = 1.0
@@ -74,7 +74,7 @@ def twoscomplement(L, **kwdargs):
 
 
 def fourier_interpolation_mps_1D(ψ0mps, M0, Mf, space, dim, **kwargs):
-    """Obtain the Fourier interpolated MPS over the chosen dimension 
+    """Obtain the Fourier interpolated MPS over the chosen dimension
     with a new number of sites Mf.
 
     Parameters
@@ -120,14 +120,14 @@ def fourier_interpolation_mps_1D(ψ0mps, M0, Mf, space, dim, **kwargs):
     )
     U2c = new_space.extend(mpo_flip(twoscomplement(Mf, **kwargs)), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
-    ψfmps = ψfmps * (1 / np.sqrt(ψfmps.norm2()))
+    ψfmps = ψfmps * (1 / np.sqrt(ψfmps.norm_squared()))
 
     return ψfmps, new_space
 
 
 def fourier_interpolation_mps(ψmps, old_sites, new_sites, space, **kwargs):
-    """ Fourier interpolation on an MPS.
-    
+    """Fourier interpolation on an MPS.
+
     Parameters
     ----------
     ψmps : MPS
@@ -140,13 +140,13 @@ def fourier_interpolation_mps(ψmps, old_sites, new_sites, space, **kwargs):
         Space object of the defined ψmps.
     **kwargs :
         Arguments accepted by :class:`MPO`
-    
+
     Returns
     -------
     MPS
         Interpolated multidimensional function MPS.
-    
-    """   
+
+    """
     space = copy.copy(space)
     for i, sites in enumerate(new_sites):
         ψmps, space = fourier_interpolation_mps_1D(
@@ -154,15 +154,16 @@ def fourier_interpolation_mps(ψmps, old_sites, new_sites, space, **kwargs):
         )
     return ψmps
 
+
 def interpolate_first_axis(f):
-    """ Finite differences interpolation of the first axis of a multidimensional
+    """Finite differences interpolation of the first axis of a multidimensional
     array.
-    
+
     Parameters
     ----------
     f : numpy.ndarray
         Discretized multidimensional function array.
-        
+
     Returns
     -------
     numpy.ndarray
@@ -178,14 +179,14 @@ def interpolate_first_axis(f):
 
 
 def finite_differences_interpolation_2D(f):
-    """ Finite differences interpolation of the first axis of a multidimensional
+    """Finite differences interpolation of the first axis of a multidimensional
     array.
-    
+
     Parameters
     ----------
     f : numpy.ndarray
         Interpolated function with double of points.
-        
+
     Returns
     -------
     numpy.ndarray
@@ -195,6 +196,7 @@ def finite_differences_interpolation_2D(f):
     f = np.transpose(f, [1, 0])
     f = interpolate_first_axis(f)
     return np.transpose(f, [1, 0])
+
 
 def finite_differences_interpolation_mps_1D(ψ0mps, space, dim=0, **kwargs):
     """Finite differences interpolation of dimension dim of an MPS representing
@@ -210,7 +212,7 @@ def finite_differences_interpolation_mps_1D(ψ0mps, space, dim=0, **kwargs):
         Dimension to perform the interpolation.
     **kwargs :
         Other arguments accepted by :class:`MPO`
-        
+
     Returns
     -------
     MPS
@@ -230,7 +232,9 @@ def finite_differences_interpolation_mps_1D(ψ0mps, space, dim=0, **kwargs):
     new_size = ψ0mps.size + 1
     derivative_mps = derivative_mps.extend(L=new_size, sites=sum(idx_old_sites, []))
     derivative_mps = (
-        new_space.extend(mpo_combined(len(new_space.sites[dim]), 0, 1, 0, **kwargs), dim)
+        new_space.extend(
+            mpo_combined(len(new_space.sites[dim]), 0, 1, 0, **kwargs), dim
+        )
         @ derivative_mps
     )
     new_ψ0mps = ψ0mps.extend(L=new_size, sites=sum(idx_old_sites, []))
@@ -250,7 +254,7 @@ def finite_differences_interpolation_mps(ψmps, space, **kwargs):
         Space on which the function is defined.
     **kwargs :
         Other arguments accepted by :class:`MPO`
-        
+
     Returns
     -------
     MPS

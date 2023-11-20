@@ -1,8 +1,9 @@
+import unittest
+
 import numpy as np
 import scipy.sparse as sp  # type: ignore
-from seemps.state import MPS, CanonicalMPS, random_uniform_mps
 import seemps.state
-import unittest
+from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps
 
 
 class TestCase(unittest.TestCase):
@@ -20,7 +21,7 @@ class TestCase(unittest.TestCase):
     def assertSimilar(self, A, B, **kwdargs) -> None:
         if sp.issparse(A):
             A = A.todense()
-        elif isinstance(A, MPS):
+        elif isinstance(A, MPS) or isinstance(A, MPSSum):
             A = A.to_vector()
         else:
             A = np.asarray(A)
