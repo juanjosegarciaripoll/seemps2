@@ -101,7 +101,7 @@ class MPOSum(object):
         for i, mpo in enumerate(self.mpos[1:]):
             A = A + self.weights[i + 1] * mpo.tomatrix()
         return A
-    
+
     def set_strategy(self, strategy, strategy_components=None) -> MPOSum:
         """Return MPOSum with the given strategy."""
         if strategy_components is not None:
@@ -111,9 +111,9 @@ class MPOSum(object):
         return MPOSum(mpos=mpos, weights=self.weights, strategy=strategy)
 
     def apply(
-        self, 
-        b: Union[MPS, MPSSum], 
-        strategy: Optional[Strategy] = None, 
+        self,
+        b: Union[MPS, MPSSum],
+        strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication A @ b between an MPOSum 'A' and
@@ -124,7 +124,7 @@ class MPOSum(object):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(b, MPSSum):
-           state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
+            state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
         elif isinstance(b, MPS):
             state = b
         output: Union[MPS, MPSSum]
@@ -132,9 +132,7 @@ class MPOSum(object):
             Ostate = w * O.apply(state, strategy=strategy)
             output = Ostate if i == 0 else output + Ostate
         if simplify:
-            output = truncate.simplify(
-                output, strategy=strategy
-            )
+            output = truncate.simplify(output, strategy=strategy)
         return output
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
@@ -210,7 +208,7 @@ class MPOSum(object):
             [self._joined_tensors(i, mpos) for i in range(self.size)],
             strategy=self.strategy if strategy is None else strategy,
         )
-    
+
     def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
         """Expectation value of MPOList on one or two MPS states.
 
@@ -234,4 +232,4 @@ class MPOSum(object):
             :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
             is the matrix-product operator.
         """
-        return sum([m.expectation(bra,ket) for m in self.mpos])
+        return sum([m.expectation(bra, ket) for m in self.mpos])
