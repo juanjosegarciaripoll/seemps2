@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 
 from ..expectation import scprod
-from ..optimization.descent import DEFAULT_STRATEGY
+from ..optimization.descent import DESCENT_STRATEGY
 from ..state import MPS, CanonicalMPS
 from ..truncate.simplify import simplify
 from ..typing import *
@@ -50,7 +50,7 @@ def euler(
     maxiter=1000,
     tol: float = 1e-13,
     k_mean=10,
-    strategy=DEFAULT_STRATEGY,
+    strategy=DESCENT_STRATEGY,
     callback=None,
 ):
     """Euler method for arrays.
@@ -71,7 +71,7 @@ def euler(
     k_mean: int
         Number of elements for the moving average.
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY, thereby
+        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
@@ -135,7 +135,7 @@ def improved_euler(
     maxiter=1000,
     tol: float = 1e-13,
     k_mean=10,
-    strategy=DEFAULT_STRATEGY,
+    strategy=DESCENT_STRATEGY,
     callback=None,
 ):
     """Improved Euler method for arrays.
@@ -156,7 +156,7 @@ def improved_euler(
     k_mean: int
         Number of elements for the moving average.
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY.
+        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
 
@@ -221,7 +221,7 @@ def runge_kutta(
     maxiter=1000,
     tol: float = 1e-13,
     k_mean=10,
-    strategy=DEFAULT_STRATEGY,
+    strategy=DESCENT_STRATEGY,
     callback=None,
 ):
     """Runge-Kutta method for arrays.
@@ -242,7 +242,7 @@ def runge_kutta(
     k_mean: int
         Number of elements for the moving average.
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY, thereby
+        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
@@ -316,7 +316,7 @@ def runge_kutta_fehlberg(
     tol: float = 1e-13,
     k_mean=10,
     tol_rk: float = 1e-8,
-    strategy=DEFAULT_STRATEGY,
+    strategy=DESCENT_STRATEGY,
     callback=None,
 ):
     """Runge-Kutta method for arrays.
@@ -339,7 +339,7 @@ def runge_kutta_fehlberg(
     tol_rk : float
         Energy variation that indicates termination (defaults to 1e-8).
     strategy : Optional[Strategy]
-        Truncation strategy when applying MPO. Defaults to DEFAULT_STRATEGY, thereby
+        Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
     callback : Optional[callable]
         A callable called after each iteration (defaults to None).
