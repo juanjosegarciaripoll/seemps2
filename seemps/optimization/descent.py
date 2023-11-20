@@ -112,10 +112,6 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
-        if E > last_E:
-            message = f"Energy converged within stability region"
-            converged = True
-            break
         log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
@@ -130,7 +126,6 @@ def gradient_descent(
             message = f"Stationary state reached within tolerance {tol_variance}"
             converged = True
             break
-        last_E = E
         avg_H3 = H.expectation(H_state).real
         avg_3 = (avg_H3 - 3 * E * avg_H2 + 2 * E**3).real
         Δβ = (avg_3 - np.sqrt(avg_3**2 + 4 * variance**3)) / (2 * variance**2)
