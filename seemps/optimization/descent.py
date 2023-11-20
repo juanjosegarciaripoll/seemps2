@@ -4,8 +4,7 @@ import numpy as np
 
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
-from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification,
-                     Strategy)
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification, Strategy
 from ..tools import log
 from ..truncate.simplify import simplify
 from ..typing import *
@@ -93,7 +92,7 @@ def gradient_descent(
     normalization_strategy = strategy.replace(normalize=True)
     energies = []
     variances = []
-    last_E = np.Inf
+    last_E_mean = np.Inf
     best_energy = np.Inf
     best_variance = np.Inf
     best_vector = state
@@ -113,19 +112,13 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
-        if E > last_E:
-            message = f"Energy converged within stability region"
-            converged = True
-            break
         log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, best_variance = E, state, variance
-        if (
-            len(energies) > k_mean
-            and np.abs(E - np.mean(energies[(-k_mean - 1) : -1])) < tol
-        ):
+        E_mean = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])
+        if E_mean - last_E_mean >= abs(tol):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -133,7 +126,6 @@ def gradient_descent(
             message = f"Stationary state reached within tolerance {tol_variance}"
             converged = True
             break
-        last_E = E
         avg_H3 = H.expectation(H_state).real
         avg_3 = (avg_H3 - 3 * E * avg_H2 + 2 * E**3).real
         Δβ = (avg_3 - np.sqrt(avg_3**2 + 4 * variance**3)) / (2 * variance**2)
@@ -143,6 +135,7 @@ def gradient_descent(
         state = simplify(
             state + Δβ * (H_state - E * state), strategy=normalization_strategy
         )
+        last_E_mean = E_mean
         if callback is not None:
             callback(state)
         # TODO: Implement stop criteria based on gradient size Δβ
@@ -150,13 +143,13 @@ def gradient_descent(
         # which was already calculated
     if not converged:
         H_state, E, variance, _ = energy_and_variance(state)
-        if E > best_energy:
-            E, state, variance = best_energy, best_vector, best_variance
+        if E < best_energy:
+            best_energy, best_vector, best_variance = E, state, variance
         energies.append(E)
         variances.append(variance)
     return OptimizeResults(
-        state=state,
-        energy=E,
+        state=best_vector,
+        energy=best_energy,
         converged=converged,
         message=message,
         trajectory=energies,
