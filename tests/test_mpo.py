@@ -1,8 +1,11 @@
 import numpy as np
 from seemps import MPO, random_uniform_mps, σx
-from seemps.state.core import Strategy
+from seemps.state import MPSSum
+from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 
 from .tools import *
+
+TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
 class TestMPO(TestCase):
@@ -31,7 +34,7 @@ class TestMPO(TestCase):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         mps = random_uniform_mps(2, mpo.size, D=2)
         self.assertSimilar(
-            mpo.apply(mps, simplify=True).to_vector(),
+            mpo.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
             (mpo.tomatrix() @ mps.to_vector()),
         )
 
@@ -43,8 +46,9 @@ class TestMPO(TestCase):
     def test_mpo_apply_works_on_mpssum(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         mps = random_uniform_mps(2, mpo.size, D=2)
+        self.assertIsInstance(mpo.apply(mps + mps, simplify=False), MPSSum)
         self.assertSimilar(
-            mpo.apply(mps + mps, simplify=True).to_vector(),
+            mpo.apply(mps + mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
             2 * (mpo.tomatrix() @ mps.to_vector()),
         )
 

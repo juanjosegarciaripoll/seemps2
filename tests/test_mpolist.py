@@ -1,8 +1,11 @@
 import numpy as np
 from seemps import MPO, NO_TRUNCATION, MPOList, random_uniform_mps, σx, σy, σz
-from seemps.state.core import Strategy
+from seemps.state import MPSSum
+from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 
 from .tools import TestCase
+
+TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
 class TestMPOList(TestCase):
@@ -29,7 +32,7 @@ class TestMPOList(TestCase):
         UV = MPOList([U, V], NO_TRUNCATION)
         mps = random_uniform_mps(2, 3, D=2)
         self.assertSimilar(
-            UV.apply(mps, simplify=True).to_vector(),
+            UV.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
             (UV.tomatrix() @ mps.to_vector()),
         )
 
@@ -45,6 +48,7 @@ class TestMPOList(TestCase):
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
         state = random_uniform_mps(2, 3, rng=self.rng)
+        self.assertIsInstance(UV.apply(state + state, simplify=False), MPSSum)
         self.assertSimilar(UV.apply(state + state), V.apply(U.apply(2.0 * state)))
         self.assertSimilar(UV @ (state + state), V.apply(U.apply(2.0 * state)))
 

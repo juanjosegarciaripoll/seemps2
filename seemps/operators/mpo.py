@@ -116,16 +116,16 @@ class MPO(array.TensorArray):
 
     def apply(
         self,
-        b: Union[MPS, MPSSum],
+        state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
     ) -> MPS:
-        """Implement multiplication `A @ b` between a matrix-product operator
-        `A` and a matrix-product state `b`.
+        """Implement multiplication `A @ state` between a matrix-product operator
+        `A` and a matrix-product state `state`.
 
         Parameters
         ----------
-        b : MPS | MPSSum
+        state : MPS | MPSSum
             Transformed state.
         strategy : Strategy, optional
             Truncation strategy, defaults to DEFAULT_STRATEGY
@@ -143,17 +143,23 @@ class MPO(array.TensorArray):
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
-        if isinstance(b, MPSSum):
-            state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
-        elif isinstance(b, MPS):
-            state = b
+        if isinstance(state, MPSSum):
+            for i, (w, mps) in enumerate(zip(state.weights, state.states)):
+                Ostate = w * MPS(
+                    [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, mps._data)],
+                    error=mps.error(),
+                )
+                state = Ostate if i == 0 else state + Ostate
+            assert self.size == state.states[0].size
+        elif isinstance(state, MPS):
+            state = MPS(
+                [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
+                error=state.error(),
+            )
+            assert self.size == state.size
         else:
-            raise TypeError(f"Cannot multiply MPO with {b}")
-        assert self.size == state.size
-        state = MPS(
-            [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
-            error=state.error(),
-        )
+            raise TypeError(f"Cannot multiply MPO with {state}")
+
         if simplify:
             state = truncate.simplify(state, strategy=strategy)
         return state
@@ -350,16 +356,16 @@ class MPOList(object):
     # the values provided by individual operators.
     def apply(
         self,
-        b: Union[MPS, MPSSum],
+        state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
     ) -> MPS:
-        """Implement multiplication `A @ b` between a matrix-product operator
-        `A` and a matrix-product state `b`.
+        """Implement multiplication `A @ state` between a matrix-product operator
+        `A` and a matrix-product state `state`.
 
         Parameters
         ----------
-        b : MPS | MPSSum
+        state : MPS | MPSSum
             Transformed state.
         strategy : Strategy, optional
             Truncation strategy, defaults to DEFAULT_STRATEGY
@@ -372,15 +378,11 @@ class MPOList(object):
         CanonicalMPS
             The result of the contraction.
         """
-        state: MPS
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
-        if isinstance(b, MPSSum):
-            state: MPS = combine(weights=b.weights, states=b.states, strategy=strategy)
-        else:
-            state = b
+
         for mpo in self.mpos:
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
