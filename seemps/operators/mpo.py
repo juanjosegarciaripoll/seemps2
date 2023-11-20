@@ -5,8 +5,7 @@ import copy
 import numpy as np
 import opt_einsum  # type: ignore
 
-from ..state import (DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy,
-                     Weight, array)
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, Weight, array
 from ..state.environments import *
 from ..state.environments import scprod
 from ..tools import InvalidOperation, log
@@ -110,7 +109,7 @@ class MPO(array.TensorArray):
             D *= i
             out = out.reshape(D, D, b)
         return out[:, :, 0]
-    
+
     def set_strategy(self, strategy) -> MPO:
         """Return MPO with the given strategy."""
         return MPO(data=self._data, strategy=strategy)
@@ -156,9 +155,7 @@ class MPO(array.TensorArray):
             error=state.error(),
         )
         if simplify:
-            state = truncate.simplify(
-                state, strategy=strategy
-            )
+            state = truncate.simplify(state, strategy=strategy)
         return state
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> MPS:
@@ -340,7 +337,7 @@ class MPOList(object):
         for mpo in self.mpos[1:]:
             A = mpo.tomatrix() @ A
         return A
-    
+
     def set_strategy(self, strategy, strategy_components=None) -> MPOList:
         """Return MPOList with the given strategy."""
         if strategy_components is not None:
@@ -388,9 +385,7 @@ class MPOList(object):
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
         if simplify:
-            state = truncate.simplify(
-                state, strategy=strategy
-            )
+            state = truncate.simplify(state, strategy=strategy)
         return state
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> MPS:
@@ -445,7 +440,7 @@ class MPOList(object):
             [self._joined_tensors(i, L) for i in range(L)],
             strategy=self.strategy if strategy is None else strategy,
         )
-    
+
     def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
         """Expectation value of MPOList on one or two MPS states.
 

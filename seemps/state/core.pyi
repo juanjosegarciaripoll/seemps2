@@ -16,7 +16,6 @@ class Strategy:
     def __init__(
         self: Strategy,
         method: int = 1,
-        simplification_method: int  = 1,
         tolerance: float = 1e-8,
         simplification_tolerance: float = 1e-8,
         max_bond_dimension: int = 0x8FFFFFFF,
@@ -27,7 +26,6 @@ class Strategy:
     def replace(
         self: Strategy,
         method: Optional[int] = None,
-        simplification_method: Optional[int] = None,
         tolerance: Optional[float] = None,
         simplification_tolerance: Optional[float] = None,
         max_bond_dimension: Optional[int] = None,
@@ -42,7 +40,6 @@ class Strategy:
     def get_max_sweeps(self) -> int: ...
     def get_normalize_flag(self) -> bool: ...
     def get_simplify_flag(self) -> bool: ...
-    def get_simplification_method(self) -> int: ...
     def __str__(self) -> str: ...
 
 DEFAULT_TOLERANCE: float

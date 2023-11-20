@@ -2,8 +2,16 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..state import (DEFAULT_TOLERANCE, MAX_BOND_DIMENSION, MPS, CanonicalMPS,
-                     MPSSum, Strategy, Truncation)
+from ..state import (
+    DEFAULT_TOLERANCE,
+    MAX_BOND_DIMENSION,
+    MPS,
+    CanonicalMPS,
+    MPSSum,
+    Simplification,
+    Strategy,
+    Truncation,
+)
 from ..state.environments import scprod
 from ..tools import log
 from ..typing import *
@@ -14,18 +22,19 @@ from .antilinear import AntilinearForm
 # form of either the guess or the state.
 
 SIMPLIFICATION_STRATEGY = Strategy(
-        method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
-        tolerance=DEFAULT_TOLERANCE,
-        max_bond_dimension=MAX_BOND_DIMENSION,
-        normalize=True,
-        max_sweeps=4
-    )
+    method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
+    tolerance=DEFAULT_TOLERANCE,
+    max_bond_dimension=MAX_BOND_DIMENSION,
+    normalize=True,
+    max_sweeps=4,
+    simplify=Simplification.VARIATIONAL,
+)
+
 
 def simplify(
-    state: Union[MPS, MPSSum], 
-    strategy: Strategy = SIMPLIFICATION_STRATEGY, 
-    direction: int = +1
-    
+    state: Union[MPS, MPSSum],
+    strategy: Strategy = SIMPLIFICATION_STRATEGY,
+    direction: int = +1,
 ) -> MPS:
     """Simplify an MPS state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
@@ -51,13 +60,13 @@ def simplify(
             strategy=strategy,
             direction=direction,
         )
-    normalize= strategy.get_normalize_flag()
+    normalize = strategy.get_normalize_flag()
     size = state.size
     start = 0 if direction > 0 else size - 1
     mps = CanonicalMPS(state, center=start, strategy=strategy)
     if normalize:
         mps.normalize_inplace()
-    if not strategy.get_simplification_method():
+    if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return mps
     simplification_tolerance = strategy.get_simplification_tolerance()
     maxsweeps = strategy.get_max_sweeps()
@@ -144,36 +153,45 @@ def crappy_guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
             guess[i] = combine_tensors(A if i > 0 else A * weights[n], sumA)
     return guess
 
+
 def guess_combine_state(weights: list, states: list[MPS]) -> MPS:
     """Make an educated guess that ensures convergence of the :func:`combine`
     algorithm."""
-    def combine_tensors(A,sumA,idx):
+
+    def combine_tensors(A, sumA, idx):
         DL, d, DR = sumA.shape
         a, d, b = A.shape
         if idx == 0:
-            new_A = np.zeros((d,DR+b))
+            new_A = np.zeros((d, DR + b))
             for d_i in range(d):
-                new_A[d_i,:] = np.concatenate((sumA.reshape(d,DR)[d_i,:],A.reshape(d,b)[d_i,:]))
-            new_A = new_A.reshape(1,d,DR+b)
+                new_A[d_i, :] = np.concatenate(
+                    (sumA.reshape(d, DR)[d_i, :], A.reshape(d, b)[d_i, :])
+                )
+            new_A = new_A.reshape(1, d, DR + b)
         elif idx == -1:
-            new_A = np.zeros((DL+a,d))
+            new_A = np.zeros((DL + a, d))
             for d_i in range(d):
-                new_A[:,d_i] = np.concatenate((sumA.reshape(DL,d)[:,d_i],A.reshape(a,d)[:,d_i]))
-            new_A = new_A.reshape(DL+a,d,1)
+                new_A[:, d_i] = np.concatenate(
+                    (sumA.reshape(DL, d)[:, d_i], A.reshape(a, d)[:, d_i])
+                )
+            new_A = new_A.reshape(DL + a, d, 1)
         else:
-            new_A = np.zeros((DL+a,d,DR+b))
+            new_A = np.zeros((DL + a, d, DR + b))
             for d_i in range(d):
-                new_A[:,d_i,:] = scipy.linalg.block_diag(sumA[:,d_i,:], A[:,d_i,:])
+                new_A[:, d_i, :] = scipy.linalg.block_diag(
+                    sumA[:, d_i, :], A[:, d_i, :]
+                )
         return new_A
+
     guess = []
     size = states[0].size
-    for i in range(size):  
+    for i in range(size):
         sumA = states[0][i] * weights[0] if i == 0 else states[0][i]
-        if i == size -1:
+        if i == size - 1:
             i = -1
         for n, state in enumerate(states[1:]):
             A = state[i]
-            sumA = combine_tensors(A * weights[n+1] if i == 0 else A, sumA, i)
+            sumA = combine_tensors(A * weights[n + 1] if i == 0 else A, sumA, i)
         guess.append(sumA)
     return MPS(guess)
 
@@ -184,9 +202,9 @@ def guess_combine_state(weights: list, states: list[MPS]) -> MPS:
 def combine(
     weights: list[Weight],
     states: list[MPS],
-    guess: Optional[MPS] = None, 
-    strategy: Strategy = SIMPLIFICATION_STRATEGY, 
-    direction: int = +1
+    guess: Optional[MPS] = None,
+    strategy: Strategy = SIMPLIFICATION_STRATEGY,
+    direction: int = +1,
 ) -> MPS:
     """Approximate a linear combination of MPS :math:`\\sum_i w_i \\psi_i` by
     another one with a smaller bond dimension, sweeping until convergence is achieved.
@@ -211,12 +229,12 @@ def combine(
     """
     if guess is None:
         guess = crappy_guess_combine_state(weights, states)
-    normalize= strategy.get_normalize_flag()
+    normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=strategy)
     if normalize:
         φ.normalize_inplace()
-    if not strategy.get_simplification_method():
+    if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return φ
     simplification_tolerance = strategy.get_simplification_tolerance()
     err = norm_ψsqr = multi_norm_squared(weights, states)
