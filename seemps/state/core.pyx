@@ -123,13 +123,13 @@ cdef class Strategy:
 DEFAULT_TOLERANCE = np.finfo(np.float64).eps
 
 DEFAULT_STRATEGY = Strategy(method = Truncation.RELATIVE_NORM_SQUARED_ERROR,
-                            simplify = Simplification.VARIATIONAL,
+                            simplify = Simplification.DO_NOT_SIMPLIFY,
                             tolerance = DEFAULT_TOLERANCE,
                             simplification_tolerance = DEFAULT_TOLERANCE,
                             max_bond_dimension = INT_MAX,
                             normalize = False)
 
-NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = Truncation.DO_NOT_TRUNCATE)
+NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = Truncation.DO_NOT_TRUNCATE, simplify = Simplification.DO_NOT_SIMPLIFY)
 
 cdef cnp.float64_t[::1] errors_buffer = np.zeros(1024, dtype=np.float64)
 
