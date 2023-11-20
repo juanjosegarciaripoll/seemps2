@@ -230,7 +230,10 @@ def combine(
         Approximation to the linear combination in canonical form
     """
     if guess is None:
-        guess = crappy_guess_combine_state(weights, states)
+        if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
+            guess = guess_combine_state(weights, states)
+        elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
+            guess = crappy_guess_combine_state(weights, states)
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=strategy)
