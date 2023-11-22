@@ -71,6 +71,8 @@ def simplify(
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return mps
     simplification_tolerance = strategy.get_simplification_tolerance()
+    if abs(norm_φsqr) < simplification_tolerance:
+        return φ
     maxsweeps = strategy.get_max_sweeps()
     form = AntilinearForm(mps, state, center=start)
     norm_state_sqr = scprod(state, state).real
@@ -107,7 +109,7 @@ def simplify(
         log(
             f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |mps|={norm_mps_sqr**0.5}"
         )
-        if err < simplification_tolerance or err > old_err:
+        if err < simplification_tolerance:  # or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
@@ -241,6 +243,7 @@ def combine(
         φ.normalize_inplace()
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return φ
+
     simplification_tolerance = strategy.get_simplification_tolerance()
     err = norm_ψsqr = multi_norm_squared(weights, states)
     base_error = sum(
@@ -288,7 +291,7 @@ def combine(
         old_err = err
         err = 2 * abs(1.0 - scprod_φψ.real / np.sqrt(norm_φsqr * norm_ψsqr))
         log(f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |φ|={norm_φsqr**0.5}")
-        if err < simplification_tolerance or err > old_err:
+        if err < simplification_tolerance:  # or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
