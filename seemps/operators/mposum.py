@@ -125,7 +125,7 @@ class MPOSum(object):
             simplify = strategy.get_simplify_flag()
         output: Union[MPS, MPSSum]
         for i, (w, O) in enumerate(zip(self.weights, self.mpos)):
-            Ostate = w * O.apply(state, strategy=strategy)
+            Ostate = w * O.apply(state)
             output = Ostate if i == 0 else output + Ostate
         if simplify:
             output = truncate.simplify(output, strategy=strategy)
