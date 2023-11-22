@@ -71,11 +71,11 @@ def simplify(
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return mps
     simplification_tolerance = strategy.get_simplification_tolerance()
-    if abs(norm_φsqr) < simplification_tolerance:
-        return φ
+    norm_state_sqr = scprod(state, state).real
+    if abs(norm_state_sqr) < simplification_tolerance:
+        return mps
     maxsweeps = strategy.get_max_sweeps()
     form = AntilinearForm(mps, state, center=start)
-    norm_state_sqr = scprod(state, state).real
     base_error = state.error()
     err = 1.0
     log(
