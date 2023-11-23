@@ -77,7 +77,7 @@ def simplify(
     maxsweeps = strategy.get_max_sweeps()
     form = AntilinearForm(mps, state, center=start)
     base_error = state.error()
-    err = 1.0
+    err = 2.0
     log(
         f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps} sweeps, with tolerance {simplification_tolerance}."
     )
@@ -109,7 +109,7 @@ def simplify(
         log(
             f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |mps|={norm_mps_sqr**0.5}"
         )
-        if err < simplification_tolerance:  # or err > old_err:
+        if err < simplification_tolerance or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
@@ -245,7 +245,7 @@ def combine(
         return φ
 
     simplification_tolerance = strategy.get_simplification_tolerance()
-    err = norm_ψsqr = multi_norm_squared(weights, states)
+    norm_ψsqr = multi_norm_squared(weights, states)
     base_error = sum(
         np.sqrt(np.abs(weights)) * np.sqrt(state.error())
         for weights, state in zip(weights, states)
@@ -257,6 +257,7 @@ def combine(
     size = φ.size
     forms = [AntilinearForm(φ, state, center=start) for state in states]
     tensor: Tensor4
+    err = 2.0
     for sweep in range(maxsweeps):
         if direction > 0:
             for n in range(0, size - 1):
@@ -291,7 +292,7 @@ def combine(
         old_err = err
         err = 2 * abs(1.0 - scprod_φψ.real / np.sqrt(norm_φsqr * norm_ψsqr))
         log(f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |φ|={norm_φsqr**0.5}")
-        if err < simplification_tolerance:  # or err > old_err:
+        if err < simplification_tolerance or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
