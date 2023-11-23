@@ -246,6 +246,13 @@ def combine(
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_ψsqr = multi_norm_squared(weights, states)
+    if abs(norm_ψsqr) < simplification_tolerance:
+        if strategy.get_simplification_method() == Simplification.VARIATIONAL:
+            guess = guess_combine_state(weights, states)
+            φ = CanonicalMPS(guess, center=start, strategy=strategy)
+            if normalize:
+                φ.normalize_inplace()
+        return φ
     base_error = sum(
         np.sqrt(np.abs(weights)) * np.sqrt(state.error())
         for weights, state in zip(weights, states)
