@@ -198,7 +198,7 @@ def runge_kutta(
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        state2 = simplify(0.5 * Δβ * H_state, strategy=strategy)
+        state2 = simplify(state - 0.5 * Δβ * H_state, strategy=strategy)
         H_state2 = H.apply(state2)
         state3 = simplify(state - 0.5 * Δβ * H_state2, strategy=strategy)
         H_state3 = H.apply(state3)
