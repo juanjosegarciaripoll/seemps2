@@ -94,7 +94,6 @@ def gradient_descent(
     variances = []
     last_E_mean = np.Inf
     best_energy = np.Inf
-    best_variance = np.Inf
     best_vector = state
     """
     The algorithm aims to find the optimal linear combination

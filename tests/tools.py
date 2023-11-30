@@ -39,6 +39,25 @@ class TestCase(unittest.TestCase):
             error = f"\nmax(|A-B|)={np.max(np.abs(A - B))}"
         raise self.failureException(f"Objects are not similar:\nA={A}\nB={B}" + error)
 
+    def assertSimilarStates(self, A, B, **kwdargs) -> None:
+        if isinstance(A, (MPS, MPSSum)):
+            A = A.to_vector()
+        else:
+            A = np.asarray(A)
+        if isinstance(B, (MPS, MPSSum)):
+            B = B.to_vector()
+        else:
+            B = np.asarray(B)
+        if len(A) != len(B):
+            error = ""
+        else:
+            u = np.vdot(A, B)
+            v = np.linalg.norm(A) * np.linalg.norm(B)
+            if np.isclose(np.abs(u), v, **kwdargs):
+                return
+            error = f"\nmax(|A-B|)={np.max(np.abs(A - B))}"
+        raise self.failureException(f"Objects are not similar:\nA={A}\nB={B}" + error)
+
     def assertAlmostIdentity(self, A, **kwdargs) -> None:
         if not almostIdentity(A, **kwdargs):
             raise self.failureException(f"Object not close to identity:\nA={A}")

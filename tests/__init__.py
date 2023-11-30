@@ -1,3 +1,4 @@
+# TODO: Split tests in directories, as we do with library components
 from .test_tools import *
 from .test_contractions import *
 from .test_strategy import *
@@ -11,6 +12,7 @@ from .test_mpo import *
 from .test_mpolist import *
 from .test_mpo_expectation import *
 from .test_hamiltonians import *
+from .test_arnoldi import *
 from .test_gradient_descent import *
 from .test_quadratic_form import *
 from .test_register import *
