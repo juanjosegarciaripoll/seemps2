@@ -87,10 +87,10 @@ def arnoldi_eigh(
     arnoldi.add_vector(v0)
     v = operator @ v0
     best_energy = arnoldi.H[0, 0].real
-    best_variance = abs(scprod(v, v)) - best_energy * best_energy
+    variance = abs(scprod(v, v)) - best_energy * best_energy
     best_vector = v0
     energies: list[float] = [best_energy]
-    variances: list[float] = [best_variance]
+    variances: list[float] = [variance]
     last_eigenvalue = variance = np.Inf
     message = f"Exceeded maximum number of steps {maxiter}"
     converged = True
@@ -121,7 +121,7 @@ def arnoldi_eigh(
         energy = arnoldi.H[0, 0].real
         energies.append(energy)
         if energy < best_energy:
-            best_energy, best_vector, best_variance = energy, arnoldi.V[0], variance
+            best_energy, best_vector = energy, arnoldi.V[0]
 
     if converged:
         best_energy = operator.expectation(best_vector, best_vector).real
