@@ -98,6 +98,10 @@ class MPO(array.TensorArray):
         """Return the physical dimensions of the MPO."""
         return [A.shape[1] for A in self._data]
 
+    def bond_dimensions(self) -> list[int]:
+        """Return the bond dimensions of the MPO."""
+        return [A.shape[-1] for A in self._data][:-1]
+
     # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""
