@@ -71,11 +71,13 @@ def simplify(
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return mps
     simplification_tolerance = strategy.get_simplification_tolerance()
+    norm_state_sqr = scprod(state, state).real
+    if abs(norm_state_sqr) < simplification_tolerance:
+        return mps
     maxsweeps = strategy.get_max_sweeps()
     form = AntilinearForm(mps, state, center=start)
-    norm_state_sqr = scprod(state, state).real
     base_error = state.error()
-    err = 1.0
+    err = 2.0
     log(
         f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps} sweeps, with tolerance {simplification_tolerance}."
     )
@@ -241,8 +243,16 @@ def combine(
         φ.normalize_inplace()
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         return φ
+
     simplification_tolerance = strategy.get_simplification_tolerance()
-    err = norm_ψsqr = multi_norm_squared(weights, states)
+    norm_ψsqr = multi_norm_squared(weights, states)
+    if abs(norm_ψsqr) < simplification_tolerance:
+        if strategy.get_simplification_method() == Simplification.VARIATIONAL:
+            guess = guess_combine_state(weights, states)
+            φ = CanonicalMPS(guess, center=start, strategy=strategy)
+            if normalize:
+                φ.normalize_inplace()
+        return φ
     base_error = sum(
         np.sqrt(np.abs(weights)) * np.sqrt(state.error())
         for weights, state in zip(weights, states)
@@ -254,6 +264,7 @@ def combine(
     size = φ.size
     forms = [AntilinearForm(φ, state, center=start) for state in states]
     tensor: Tensor4
+    err = 2.0
     for sweep in range(maxsweeps):
         if direction > 0:
             for n in range(0, size - 1):
