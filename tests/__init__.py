@@ -1,3 +1,14 @@
+<<<<<<< HEAD
+=======
+# TODO: Split tests in directories, as we do with library components
+from .test_tools import *
+from .test_contractions import *
+from .test_strategy import *
+from .test_mps import *
+from .test_sample_states import *
+from .test_sampling import *
+from .test_random_mps import *
+>>>>>>> 8ff17e2e69da4d588216e064d5b62d0c529d0cb6
 from .test_canonical import *
 from .test_circuits import *
 from .test_combine import *
@@ -13,11 +24,17 @@ from .test_interpolation import *
 from .test_linear_form import *
 from .test_mpo import *
 from .test_mpo_expectation import *
+<<<<<<< HEAD
 from .test_mpolist import *
 from .test_mposum import *
 from .test_mps import *
 from .test_mpssum import *
 from .test_qft import *
+=======
+from .test_hamiltonians import *
+from .test_arnoldi import *
+from .test_gradient_descent import *
+>>>>>>> 8ff17e2e69da4d588216e064d5b62d0c529d0cb6
 from .test_quadratic_form import *
 from .test_random_mps import *
 from .test_register import *
