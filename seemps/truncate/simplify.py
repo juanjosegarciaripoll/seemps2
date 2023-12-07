@@ -66,10 +66,13 @@ def simplify(
     size = state.size
     start = 0 if direction > 0 else size - 1
     mps = CanonicalMPS(state, center=start, strategy=strategy)
+    if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
+        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        if normalize:
+            mps.normalize_inplace()
+        return mps
     if normalize:
         mps.normalize_inplace()
-    if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        return mps
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_state_sqr = scprod(state, state).real
     if abs(norm_state_sqr) < simplification_tolerance:
@@ -239,10 +242,12 @@ def combine(
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else guess.size - 1
     φ = CanonicalMPS(guess, center=start, strategy=strategy)
+    if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
+        φ = CanonicalMPS(φ, center=-1 - start, strategy=strategy)
+        if normalize:
+            φ.normalize_inplace()
     if normalize:
         φ.normalize_inplace()
-    if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        return φ
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_ψsqr = multi_norm_squared(weights, states)

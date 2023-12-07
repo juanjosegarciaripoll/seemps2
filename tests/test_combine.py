@@ -1,8 +1,8 @@
 import numpy as np
 from seemps.state import (
     DEFAULT_STRATEGY,
-    NO_TRUNCATION,
     Simplification,
+    Truncation,
     random_uniform_mps,
 )
 from seemps.truncate.simplify import combine, guess_combine_state
@@ -13,6 +13,9 @@ from .tools import *
 class TestCombine(TestCase):
     def test_no_truncation(self):
         d = 2
+        strategy = DEFAULT_STRATEGY.replace(
+            method=Truncation.DO_NOT_TRUNCATE, simplify=Simplification.VARIATIONAL
+        )
         for n in range(3, 9):
             ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
@@ -21,13 +24,19 @@ class TestCombine(TestCase):
             a1 = np.random.randn()
             a2 = np.random.randn()
             ψ = a1 * ψ1.to_vector() + a2 * ψ2.to_vector()
-            φ = combine(weights=[a1, a2], states=[ψ1, ψ2], strategy=NO_TRUNCATION)
+            φ = combine(
+                weights=[a1, a2],
+                states=[ψ1, ψ2],
+                strategy=strategy,
+            )
             self.assertSimilar(ψ, φ.to_vector())
 
     def test_tolerance(self):
         d = 2
         tolerance = 1e-10
-        strategy = DEFAULT_STRATEGY.replace(simplification_tolerance=tolerance)
+        strategy = DEFAULT_STRATEGY.replace(
+            simplify=Simplification.VARIATIONAL, simplification_tolerance=tolerance
+        )
         for n in range(3, 15):
             ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
@@ -46,7 +55,9 @@ class TestCombine(TestCase):
         d = 2
         n = 14
         for D in range(2, 15):
-            strategy = DEFAULT_STRATEGY.replace(max_bond_dimension=D)
+            strategy = DEFAULT_STRATEGY.replace(
+                simplify=Simplification.VARIATIONAL, max_bond_dimension=D
+            )
             ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
             ψ2 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
