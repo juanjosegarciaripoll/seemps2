@@ -115,7 +115,7 @@ def gradient_descent(
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
-            best_energy, best_vector, best_variance = E, state, variance
+            best_energy, best_vector, _ = E, state, variance
         E_mean = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])
         if E_mean - last_E_mean >= abs(tol):
             message = f"Energy converged within tolerance {tol}"
@@ -132,7 +132,7 @@ def gradient_descent(
         # normalization of the state (2nd. order gradient descent from the
         # manuscript)
         state = simplify(
-            state + Δβ * (H_state - E * state), strategy=normalization_strategy
+            (1 - Δβ * E) * state + Δβ * H_state, strategy=normalization_strategy
         )
         last_E_mean = E_mean
         if callback is not None:
@@ -143,7 +143,7 @@ def gradient_descent(
     if not converged:
         H_state, E, variance, _ = energy_and_variance(state)
         if E < best_energy:
-            best_energy, best_vector, best_variance = E, state, variance
+            best_energy, best_vector, _ = E, state, variance
         energies.append(E)
         variances.append(variance)
     return OptimizeResults(

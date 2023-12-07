@@ -100,6 +100,7 @@ def dmrg(
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
     maxiter: int = 20,
+    callback: Optional[callable] = None,
 ) -> OptimizeResults:
     """Compute the ground state of a Hamiltonian represented as MPO using the
     two-site DMRG algorithm.
@@ -119,6 +120,8 @@ def dmrg(
     maxiter : int
         Maximum number of steps of the DMRG. Each step is a sweep that runs
         over every pair of neighborin sites. Defaults to 20.
+    callback : Optional[callable]
+        A callable called after each iteration (defaults to None).
 
     Returns
     -------
@@ -146,6 +149,8 @@ def dmrg(
     else:
         direction = -1
         QF = QuadraticForm(H, guess, start=H.size - 2)
+    best_energy = np.Inf
+    best_vector = guess
     oldE = np.inf
     energies = []
     converged = False
@@ -165,15 +170,26 @@ def dmrg(
         log(
             f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
         )
-        if (oldE - newE) <= tol:
+        energies.append(newE)
+        if newE < best_energy:
+            best_energy, best_vector = newE, QF.state
+        if newE - oldE >= abs(tol):  # This criteria makes it stop
             msg = "Energy change below tolerance"
             log(msg)
             converged = True
             break
-        energies.append(newE)
         direction = -direction
         oldE = newE
-    guess = CanonicalMPS(QF.state, center=0, normalize=True)
+        if callback is not None:
+            callback(QF.state)
+    if not converged:
+        guess = CanonicalMPS(QF.state, center=0, normalize=True)
+        newE = H.expectation(guess).real
+        times.append(time.perf_counter())
+        energies.append(newE)
+        if newE < best_energy:
+            best_energy, best_vector = newE, QF.state
+        best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
     return OptimizeResults(
         state=guess,
         energy=H.expectation(guess).real,
