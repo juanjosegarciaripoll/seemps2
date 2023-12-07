@@ -185,14 +185,13 @@ def dmrg(
     if not converged:
         guess = CanonicalMPS(QF.state, center=0, normalize=True)
         newE = H.expectation(guess).real
-        times.append(time.perf_counter())
         energies.append(newE)
         if newE < best_energy:
             best_energy, best_vector = newE, QF.state
         best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
     return OptimizeResults(
-        state=guess,
-        energy=H.expectation(guess).real,
+        state=best_vector,
+        energy=best_energy,
         converged=converged,
         message=msg,
         trajectory=energies,
