@@ -1,11 +1,14 @@
-from dataclasses import dataclass
-import numpy as np
 from copy import copy, deepcopy
+from dataclasses import dataclass
 from typing import Callable, List, Optional, Tuple
-from .maxvol import maxvol_sqr, maxvol_rct
-from .mesh import Mesh
-from ..tools import log
+
+import numpy as np
+
 from ..state import MPS, random_mps
+from ..tools import log
+from ..truncate import simplify
+from .maxvol import maxvol_rct, maxvol_sqr
+from .mesh import Mesh
 
 
 @dataclass
@@ -308,7 +311,7 @@ def _error_norm2(cross: Cross) -> float:
     if cross.sweep == 1:
         cross.mps_prev = deepcopy(cross.mps)
         return 1
-    error = abs((cross.mps - cross.mps_prev).toMPS().norm())
+    error = abs(simplify(cross.mps - cross.mps_prev).norm())
     cross.mps_prev = cross.mps
     return error
 

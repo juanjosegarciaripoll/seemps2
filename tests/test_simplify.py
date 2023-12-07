@@ -1,10 +1,8 @@
-import numpy as np
 from seemps.expectation import scprod
 from seemps.state import (
     DEFAULT_STRATEGY,
-    MPS,
-    NO_TRUNCATION,
     Simplification,
+    Truncation,
     random_uniform_mps,
 )
 from seemps.truncate import simplify
@@ -15,16 +13,21 @@ from .tools import *
 class TestSimplify(TestCase):
     def test_no_truncation(self):
         d = 2
+        strategy = DEFAULT_STRATEGY.replace(
+            method=Truncation.DO_NOT_TRUNCATE, simplify=Simplification.VARIATIONAL
+        )
         for n in range(3, 9):
             ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
-            φ = simplify(ψ, strategy=NO_TRUNCATION)
+            φ = simplify(ψ, strategy=strategy)
             self.assertSimilar(ψ.to_vector(), φ.to_vector())
 
     def test_tolerance(self):
         d = 2
         tolerance = 1e-10
-        strategy = DEFAULT_STRATEGY.replace(simplification_tolerance=tolerance)
+        strategy = DEFAULT_STRATEGY.replace(
+            simplify=Simplification.VARIATIONAL, simplification_tolerance=tolerance
+        )
         for n in range(3, 15):
             ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
@@ -36,7 +39,9 @@ class TestSimplify(TestCase):
         d = 2
         n = 14
         for D in range(2, 15):
-            strategy = DEFAULT_STRATEGY.replace(max_bond_dimension=D)
+            strategy = DEFAULT_STRATEGY.replace(
+                simplify=Simplification.VARIATIONAL, max_bond_dimension=D
+            )
             ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             φ = simplify(ψ, strategy=strategy)

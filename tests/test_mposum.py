@@ -1,11 +1,11 @@
-import numpy as np
 from seemps import MPO, MPOList, MPSSum, random_uniform_mps
 from seemps.operators import MPOSum
 from seemps.state import MPSSum
 from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 from seemps.tools import σx, σy, σz
+from seemps.truncate import simplify
 
-from .tools import TestCase, similar
+from .tools import TestCase
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -104,13 +104,13 @@ class TestMPOSum(TestCase):
 
     def test_mposum_application_works_on_mpssum(self):
         mposum = self.mpoA + self.mpoB
-        state = random_uniform_mps(2, 3, rng=self.rng)
-        self.assertSimilar(
-            mposum.apply(state + state), self.mpoA.apply(self.mpoB.apply(2.0 * state))
+        state = random_uniform_mps(2, self.mpoA.size, D=10)
+        combined_state = simplify(
+            self.mpoA.apply(2 * state) + self.mpoB.apply(2 * state),
+            strategy=DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL),
         )
-        self.assertSimilar(
-            mposum @ (state + state), self.mpoA.apply(self.mpoB.apply(2.0 * state))
-        )
+        self.assertSimilar(mposum.apply(state + state), combined_state)
+        self.assertSimilar(mposum @ (state + state), combined_state)
 
     def test_mposum_join_real_mpos(self):
         state = random_uniform_mps(2, self.mpoA.size, D=10)
