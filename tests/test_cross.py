@@ -1,13 +1,11 @@
 import numpy as np
-from seemps.cross import (
+from seemps.analysis import (
     Mesh,
-    CrossStrategy,
-    cross_interpolation,
-    reorder_tensor,
     RegularClosedInterval,
     RegularHalfOpenInterval,
     ChebyshevZerosInterval,
 )
+from seemps.cross import CrossStrategy, cross_interpolation, reorder_tensor
 from seemps.state import MPS
 
 from .tools import TestCase
