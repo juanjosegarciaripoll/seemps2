@@ -1,14 +1,12 @@
-from copy import copy, deepcopy
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Tuple
-
 import numpy as np
-
-from ..state import MPS, random_mps
+from copy import copy
+from typing import Callable, List, Optional, Tuple
+from .maxvol import maxvol_sqr, maxvol_rct
+from ..analysis.mesh import Mesh
 from ..tools import log
+from ..state import MPS, random_mps
 from ..truncate import simplify
-from .maxvol import maxvol_rct, maxvol_sqr
-from .mesh import Mesh
 
 
 @dataclass
@@ -175,25 +173,23 @@ def _skeleton(
     # Perform QR factorization
     Q, R = np.linalg.qr(fiber)
 
+    k = cross.cross_strategy.maxvol_sqr_maxiter
+    e = cross.cross_strategy.maxvol_sqr_tau
+    tau = cross.cross_strategy.maxvol_rct_tau
+    min_r = cross.cross_strategy.maxvol_rct_minrank
+    max_r = cross.cross_strategy.maxvol_rct_maxrank
+    if max(cross.mps.bond_dimensions()) >= cross.cross_strategy.maxrank:
+        min_r = 0
+        max_r = 0
+
     # Perform maxvol decomposition on the Q-factor
     if Q.shape[0] <= Q.shape[1]:
         i_maxvol = np.arange(Q.shape[0], dtype=int)
         Q_maxvol = np.eye(Q.shape[0], dtype=float)
     elif cross.cross_strategy.maxvol_rct_maxrank == 0:
-        i_maxvol, Q_maxvol = maxvol_sqr(
-            Q,
-            k=cross.cross_strategy.maxvol_sqr_maxiter,
-            e=cross.cross_strategy.maxvol_sqr_tau,
-        )
+        i_maxvol, Q_maxvol = maxvol_sqr(Q, k, e)
     else:
-        i_maxvol, Q_maxvol = maxvol_rct(
-            Q,
-            k=cross.cross_strategy.maxvol_sqr_maxiter,
-            e=cross.cross_strategy.maxvol_sqr_tau,
-            tau=cross.cross_strategy.maxvol_rct_tau,
-            min_r=cross.cross_strategy.maxvol_rct_minrank,
-            max_r=cross.cross_strategy.maxvol_rct_maxrank,
-        )
+        i_maxvol, Q_maxvol = maxvol_rct(Q, k, e, tau, min_r, max_r)
 
     # Redefine the fiber as the decomposed Q-factor
     i_physical = cross.I_physical[j]
@@ -256,7 +252,7 @@ def _evaluate(cross: Cross, indices: np.ndarray) -> np.ndarray:
         indices = _binary2decimal(
             indices, cross.qubits, cross.cross_strategy.mps_ordering
         )
-    return np.array([cross.func(cross.mesh[idx]) for idx in indices])
+    return np.array([cross.func(cross.mesh[idx]) for idx in indices]).flatten()
 
 
 # TODO: Clean and optimize
@@ -309,8 +305,8 @@ def _error_norm2(cross: Cross) -> float:
     """Returns the algorithm error given by evaluating the norm of its difference with respect to
     the previous sweep."""
     if cross.sweep == 1:
-        cross.mps_prev = deepcopy(cross.mps)
-        return 1
+        cross.mps_prev = cross.mps
+        return np.Inf
     error = abs(simplify(cross.mps - cross.mps_prev).norm())
     cross.mps_prev = cross.mps
     return error
@@ -321,7 +317,6 @@ def _converged(cross: Cross) -> bool:
     return (
         cross.error < cross.cross_strategy.tol
         or cross.sweep >= cross.cross_strategy.maxiter
-        or cross.maxrank >= cross.cross_strategy.maxrank
     )
 
 
