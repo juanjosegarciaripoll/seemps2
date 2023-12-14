@@ -146,6 +146,10 @@ class MPS(array.TensorArray):
         """
         return cls.from_vector(state.reshape(-1), state.shape, strategy, normalize)
 
+    def copy(self):
+        """Return a copy of the MPS."""
+        return copy.copy(self)
+
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
         if isinstance(state, MPS):
@@ -168,7 +172,7 @@ class MPS(array.TensorArray):
     def __mul__(self, n: Weight) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
         if isinstance(n, (int, float, complex)):
-            mps_mult = copy.deepcopy(self)
+            mps_mult = self.copy()
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
             return mps_mult
@@ -179,7 +183,7 @@ class MPS(array.TensorArray):
     def __rmul__(self, n: Weight) -> MPS:
         """Compute `self * n`, where `n` is a scalar."""
         if isinstance(n, (int, float, complex)):
-            mps_mult = copy.deepcopy(self)
+            mps_mult = self.copy()
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
             return mps_mult
