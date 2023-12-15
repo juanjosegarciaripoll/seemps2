@@ -146,13 +146,14 @@ def crappy_guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
             # Extend with zeros to accommodate new contribution
             newA = np.zeros((max(DL, a), d, max(DR, b)), dtype=sumA.dtype)
             newA[:DL, :, :DR] = sumA
-            sumA = newA
+        else:
+            newA = sumA.copy()
         dt = type(A[0, 0, 0] + sumA[0, 0, 0])
         if sumA.dtype != dt:
-            sumA = sumA.astype(dt)
+            newA = sumA.astype(dt)
         else:
-            sumA[:a, :, :b] += A
-        return sumA
+            newA[:a, :, :b] += A
+        return newA
 
     guess: MPS = weights[0] * states[0]
     for n, state in enumerate(states[1:]):
