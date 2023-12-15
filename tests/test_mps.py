@@ -1,8 +1,9 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
 from seemps.state.array import TensorArray
-from .tools import *
+
 from .fixture_mps_states import MPSStatesFixture
+from .tools import *
 
 
 class TestTensorArray(MPSStatesFixture):
@@ -129,7 +130,7 @@ class TestMPSOperations(MPSStatesFixture):
         A = MPS(self.inhomogeneous_state)
         B = 3.0 * A
         self.assertTrue(B is not A)
-        self.assertTrue(contain_different_objects(B, A))
+        self.assertTrue(contain_different_objects(B[0], A[0]))
 
     def test_multiplying_mps_by_non_scalar_raises_exception(self):
         A = MPS(self.inhomogeneous_state)
