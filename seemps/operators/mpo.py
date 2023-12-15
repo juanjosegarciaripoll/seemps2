@@ -60,6 +60,10 @@ class MPO(array.TensorArray):
         assert data[0].shape[0] == data[-1].shape[-1] == 1
         self.strategy = strategy
 
+    def copy(self):
+        """Return a copy of the MPO."""
+        return copy.copy(self)
+
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
         if isinstance(A, (MPO, MPOList)):
@@ -80,7 +84,7 @@ class MPO(array.TensorArray):
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `n * self`"""
         if isinstance(n, (int, float, complex)):
-            mpo_mult = copy.deepcopy(self)
+            mpo_mult = self.copy()
             mpo_mult._data[0] = n * mpo_mult._data[0]
             return mpo_mult
         raise InvalidOperation("*", self, n)
@@ -88,7 +92,7 @@ class MPO(array.TensorArray):
     def __rmul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `self * self`"""
         if isinstance(n, (int, float, complex)):
-            mpo_mult = copy.deepcopy(self)
+            mpo_mult = self.copy()
             mpo_mult._data[0] = n * mpo_mult._data[0]
             return mpo_mult
         raise InvalidOperation("*", n, self)

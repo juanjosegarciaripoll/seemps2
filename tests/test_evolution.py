@@ -133,7 +133,7 @@ class TestRungeKuttaFehlberg(TestCase):
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         exact = product_state([0, 1], N)
-        result = runge_kutta_fehlberg(H, guess, Δβ=0.1, tol_rk=1e-7)
+        result = runge_kutta_fehlberg(H, guess, Δβ=0.01, tol_rk=1e-7)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
         self.assertSimilar(result.state, exact, atol=1e-7)
 
