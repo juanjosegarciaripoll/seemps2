@@ -9,6 +9,18 @@ class TestMPSSum(MPSStatesFixture):
         B = MPS(self.product_state.copy())
         return MPSSum(weights=[1, 2], states=[A, B])
 
+    def test_mpssum_init_does_not_copy_data(self):
+        A = self.make_simple_sum()
+        B = MPSSum(A.weights, A.states)
+        self.assertTrue(B.weights is A.weights)
+        self.assertTrue(B.states is A.states)
+
+    def test_mpssum_copy_is_shallow(self):
+        A = self.make_simple_sum()
+        B = A.copy()
+        self.assertTrue(B.weights is not A.weights)
+        self.assertTrue(B.states is not A.states)
+
     def test_simple_sums(self):
         A = MPS(self.product_state.copy())
         B = MPS(self.product_state.copy())

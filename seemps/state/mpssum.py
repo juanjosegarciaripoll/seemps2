@@ -42,10 +42,21 @@ class MPSSum:
         weights: list[Weight],
         states: list[MPS],
     ):
+        # TODO: This is not consistent with MPS, MPO and MPOSum
+        # which copy their input lists. We should decide whether we
+        # want to copy or not.
         assert len(states) == len(weights)
         assert len(states) > 0
         self.weights = weights
         self.states = states
+
+    def copy(self) -> MPSSum:
+        """Return a shallow copy of the MPS sum and its data. Does not copy
+        the states, only the list that stores them."""
+        return MPSSum(self.weights.copy(), self.states.copy())
+
+    def __copy__(self) -> MPSSum:
+        return self.copy()
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""

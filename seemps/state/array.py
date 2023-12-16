@@ -24,7 +24,7 @@ class TensorArray(Sequence[NDArray]):
     size: int
 
     def __init__(self, data: Iterable[NDArray]):
-        self._data = list(A for A in data)
+        self._data = list(data)
         self.size = len(self._data)
 
     @overload
@@ -50,18 +50,8 @@ class TensorArray(Sequence[NDArray]):
         self._data[k] = value
         return value
 
-    def __copy__(self: _T) -> _T:
-        #
-        # Return a copy of the MPS with a fresh new array.
-        #
-        return type(self)(self._data)
-
     def __iter__(self) -> Iterator[NDArray]:
         return self._data.__iter__()
 
     def __len__(self) -> int:
         return self.size
-
-    def copy(self: _T) -> _T:
-        """Shallow-copy this object and its list of tensors."""
-        return self.__copy__()

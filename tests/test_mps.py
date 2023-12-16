@@ -8,38 +8,28 @@ from .tools import *
 
 class TestTensorArray(MPSStatesFixture):
     def test_initial_data_is_copied(self):
-        data = self.product_state.copy()
+        data = [np.zeros((1,2,1))] * 10
         A = TensorArray(data)
+        self.assertFalse(A._data is data)
         A[::] = self.other_tensor
         self.assertTrue(contain_different_objects(A, data))
-
-    def test_copy_creates_independent_object(self):
-        A = TensorArray(self.product_state.copy())
-        B = A.copy()
-        A[::] = self.other_tensor
-        self.assertTrue(contain_different_objects(A, B))
-
-    def test_copy_references_same_tensors(self):
-        A = TensorArray(self.product_state)
-        self.assertTrue(contain_same_objects(A, self.product_state))
 
 
 class TestMPS(MPSStatesFixture):
     def test_initial_data_is_copied(self):
-        data = self.product_state.copy()
+        data = [np.zeros((1,2,1))]*10
         A = MPS(data)
-        A[::] = self.other_tensor
-        self.assertTrue(contain_different_objects(A, data))
+        self.assertFalse(A._data is data)
+        self.assertEqual(A._data, data)
 
-    def test_copy_creates_independent_object(self):
-        A = MPS(self.product_state.copy())
+    def test_copy_is_shallow(self):
+        A = MPS(self.product_state.copy(), 0.1)
         B = A.copy()
+        self.assertTrue(A._data is not B._data)
+        self.assertEqual(A._error, B._error)
+        self.assertTrue(contain_same_objects(A._data, B._data))
         A[::] = self.other_tensor
         self.assertTrue(contain_different_objects(A, B))
-
-    def test_copy_references_same_tensors(self):
-        A = MPS(self.product_state)
-        self.assertTrue(contain_same_objects(A, self.product_state))
 
     def test_total_dimension_is_product_of_physical_dimensions(self):
         A = MPS(self.inhomogeneous_state)

@@ -37,8 +37,11 @@ class MPOSum(object):
         self.mpos = mpos = list(mpos)
         assert len(mpos) >= 1
         self.size = self.mpos[0].size
-        self.weights = [1.0] * len(self.mpos) if weights is None else list(weights)
+        self.weights = [1.0] * len(mpos) if weights is None else list(weights)
         self.strategy = strategy
+
+    def copy(self) -> MPOSum:
+        return MPOSum(self.mpos, self.weights, self.strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]):
         """Add an MPO or an MPOSum from the MPOSum."""

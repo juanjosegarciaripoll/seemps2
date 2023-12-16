@@ -56,13 +56,14 @@ class MPO(array.TensorArray):
     __array_priority__ = 10000
 
     def __init__(self, data: list[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
-        super(MPO, self).__init__(data)
+        super().__init__(data)
         assert data[0].shape[0] == data[-1].shape[-1] == 1
         self.strategy = strategy
 
-    def copy(self):
-        """Return a copy of the MPO."""
-        return copy.copy(self)
+    def copy(self) -> MPO:
+        """Return a shallow copy of the MPO, without duplicating the tensors."""
+        # We use the fact that TensorArray duplicates the list
+        return MPO(self._data, self.strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
@@ -315,6 +316,10 @@ class MPOList(object):
         self.mpos = mpos = list(mpos)
         self.size = mpos[0].size
         self.strategy = strategy
+
+    def copy(self) -> MPOList:
+        """Shallow copy of the MPOList, without copying the MPOs themselves."""
+        return MPOList(self.mpos.copy(), self.strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""

@@ -3,7 +3,7 @@ from seemps import MPO, NO_TRUNCATION, MPOList, random_uniform_mps, σx, σy, σ
 from seemps.state import MPSSum
 from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 
-from .tools import TestCase
+from .tools import TestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -12,10 +12,25 @@ class TestMPOList(TestCase):
     def test_mpolist_construction(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
-        UV = MPOList([U, V], NO_TRUNCATION)
+        mpos = [U, V]
+        UV = MPOList(mpos, NO_TRUNCATION)
         self.assertIsInstance(UV, MPOList)
-        self.assertEqual(UV.mpos, [U, V])
+        self.assertTrue(UV.mpos is not mpos)
+        self.assertTrue(contain_same_objects(UV.mpos, mpos))
         self.assertEqual(UV.strategy, NO_TRUNCATION)
+
+    def test_mpolist_copy_is_shallow(self):
+        U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
+        V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
+        mpos = [U, V]
+        UV = MPOList(mpos, Strategy())
+        UV_copy = UV.copy()
+        self.assertIsInstance(UV_copy, MPOList)
+        self.assertTrue(UV.mpos is not UV_copy.mpos)
+        self.assertTrue(contain_same_objects(UV.mpos, UV_copy.mpos))
+        self.assertEqual(UV.mpos, UV_copy.mpos)
+        self.assertEqual(UV.size, UV_copy.size)
+        self.assertTrue(UV.strategy is UV_copy.strategy)
 
     def test_mpolist_application_without_errors(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)

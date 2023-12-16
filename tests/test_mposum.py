@@ -5,7 +5,7 @@ from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 from seemps.tools import σx, σy, σz
 from seemps.truncate import simplify
 
-from .tools import TestCase
+from .tools import TestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -20,6 +20,22 @@ class TestMPOSum(TestCase):
     def assertIdenticalLists(self, a: list, b: list):
         if not all(A is B for A, B in zip(a, b)):
             raise AssertionError("Different lists:\na = {a}\nb = {b}")
+
+    def test_mposum_init_copies_data(self):
+        mpos = [self.mpoA, self.mpoB]
+        weights = [1.0, 2.0]
+        mposum = MPOSum(mpos, weights)
+        self.assertTrue(mposum.mpos is not mpos)
+        self.assertTrue(mposum.weights is not weights)
+
+    def test_mposum_copy_is_shallow(self):
+        A = MPOSum([self.mpoA, self.mpoB], [1.0, 2.0], Strategy())
+        B = A.copy()
+        self.assertTrue(A.mpos is not B.mpos)
+        self.assertTrue(contain_same_objects(A.mpos, B.mpos))
+        self.assertTrue(A.weights is not B.weights)
+        self.assertTrue(contain_same_objects(A.weights, B.weights))
+        self.assertTrue(A.strategy is B.strategy)
 
     def test_mposum_simple(self):
         mposum = MPOSum([self.mpoA, self.mpoB])

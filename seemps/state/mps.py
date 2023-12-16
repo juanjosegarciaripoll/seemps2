@@ -45,8 +45,13 @@ class MPS(array.TensorArray):
         data: Iterable[np.ndarray],
         error: float = 0,
     ):
-        super(MPS, self).__init__(data)
+        super().__init__(data)
         self._error = error
+
+    def copy(self) -> MPS:
+        """Return a shallow copy of the MPS, without duplicating the tensors."""
+        # We use the fact that TensorArray duplicates the list
+        return MPS(self._data, self._error)
 
     def dimension(self) -> int:
         """Hilbert space dimension of this quantum system."""
@@ -145,10 +150,6 @@ class MPS(array.TensorArray):
             A valid matrix-product state approximating this state vector.
         """
         return cls.from_vector(state.reshape(-1), state.shape, strategy, normalize)
-
-    def copy(self):
-        """Return a copy of the MPS."""
-        return copy.copy(self)
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
