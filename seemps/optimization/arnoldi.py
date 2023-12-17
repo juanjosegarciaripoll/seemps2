@@ -35,7 +35,10 @@ class MPSArnoldiRepresentation:
         # We no longer should need this. Restart takes care of creating
         # a simplified vector, and the user is responsible for letting
         # the MPO do something sensible.
-        # v = simplify(v, strategy=self.strategy)
+        if isinstance(v, CanonicalMPS):
+            v.normalize_inplace()
+        else:
+            v = simplify(v, strategy=self.strategy)
         new_H = np.pad(self.H + 0.0, ((0, 1), (0, 1)))
         new_N = np.pad(self.N + 0.0, ((0, 1), (0, 1)))
         n = [scprod(vi, v) for vi in self.V]
