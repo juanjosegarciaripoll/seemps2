@@ -46,7 +46,7 @@ def simplify(
     strategy : Strategy
         Truncation strategy. Defaults to `SIMPLIFICATION_STRATEGY`.
     direction : { +1, -1 }
-       Initial direction for the sweeping algorithm.
+        Initial direction for the sweeping algorithm.
 
     Returns
     -------
@@ -62,19 +62,23 @@ def simplify(
             strategy=strategy,
             direction=direction,
         )
+    #
+    # Prepare initial guess
     normalize = strategy.get_normalize_flag()
     size = state.size
     start = 0 if direction > 0 else size - 1
     mps = CanonicalMPS(state, center=start, strategy=strategy)
+
+    # If we only do canonical forms, not variational optimization, a second
+    # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if normalize:
             mps.normalize_inplace()
         return mps
+
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_state_sqr = scprod(state, state).real
-    if abs(norm_state_sqr) < simplification_tolerance:
-        return mps
     form = AntilinearForm(mps, state, center=start)
     err = 2.0
     if DEBUG:
@@ -82,8 +86,7 @@ def simplify(
             f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps}"
             f"sweeps, with tolerance {simplification_tolerance}."
         )
-    # TODO: ensure at least one pass through loop
-    for sweep in range(strategy.get_max_sweeps()):
+    for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
                 mps.update_2site_right(form.tensor2site(direction), n, strategy)
@@ -128,7 +131,7 @@ def multi_norm_squared(weights: list[Weight], states: list[MPS]) -> float:
         for j in range(i):
             c += 2 * (wi.conjugate() * weights[j] * scprod(states[i], states[j])).real
         c += np.abs(wi) ** 2 * scprod(states[i], states[i]).real
-    return c
+    return abs(c)
 
 
 def crappy_guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
@@ -231,6 +234,8 @@ def combine(
     CanonicalMPS
         Approximation to the linear combination in canonical form
     """
+    #
+    # Prepare initial guess
     if guess is None:
         if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
             guess = guess_combine_state(weights, states)
@@ -238,74 +243,75 @@ def combine(
             guess = crappy_guess_combine_state(weights, states)
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else guess.size - 1
-    φ = CanonicalMPS(guess, center=start, strategy=strategy)
+    mps = CanonicalMPS(guess, center=start, strategy=strategy)
+
+    # If we only do canonical forms, not variational optimization, a second
+    # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        φ = CanonicalMPS(φ, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if normalize:
-            φ.normalize_inplace()
-    if normalize:
-        φ.normalize_inplace()
+            mps.normalize_inplace()
+        return mps
 
     simplification_tolerance = strategy.get_simplification_tolerance()
-    norm_ψsqr = multi_norm_squared(weights, states)
-    if abs(norm_ψsqr) < simplification_tolerance:
-        if strategy.get_simplification_method() == Simplification.VARIATIONAL:
-            guess = guess_combine_state(weights, states)
-            φ = CanonicalMPS(guess, center=start, strategy=strategy)
-            if normalize:
-                φ.normalize_inplace()
-        return φ
-    base_error = sum(
-        np.sqrt(np.abs(weights)) * np.sqrt(state.error())
-        for weights, state in zip(weights, states)
-    )
-    maxsweeps = strategy.get_max_sweeps()
-    log(
-        f"COMBINE state with |state|={norm_ψsqr**0.5} for {maxsweeps} sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}"
-    )
-    size = φ.size
-    forms = [AntilinearForm(φ, state, center=start) for state in states]
-    tensor: Tensor4
+    norm_state_sqr = multi_norm_squared(weights, states)
+    if DEBUG:
+        log(
+            f"COMBINE state with |state|={norm_state_sqr**0.5} for {maxsweeps} "
+            f"sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}"
+        )
+    size = mps.size
+    forms = [AntilinearForm(mps, state, center=start) for state in states]
     err = 2.0
-    for sweep in range(maxsweeps):
+    for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
-                tensor = sum(
-                    weights * f.tensor2site(direction)
-                    for weights, f in zip(weights, forms)
-                )  # type: ignore
-                φ.update_2site_right(tensor, n, strategy)
+                mps.update_2site_right(
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),
+                    n,
+                    strategy,
+                )
                 for f in forms:
                     f.update_right()
+            last_tensor = mps[size - 1]
         else:
             for n in reversed(range(0, size - 1)):
-                tensor = sum(
-                    weights * f.tensor2site(direction)
-                    for weights, f in zip(weights, forms)
-                )  # type: ignore
-                φ.update_2site_left(tensor, n, strategy)
+                mps.update_2site_left(
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),
+                    n,
+                    strategy,
+                )
                 for f in forms:
                     f.update_left()
-            last = 0
+            last_tensor = mps[0]
         #
         # We estimate the error
         #
-        last = φ.center
-        B = φ[last]
-        norm_φsqr = np.vdot(B, B).real
-        if normalize:
-            φ[last] = B / norm_φsqr
-            norm_φsqr = 1.0
-        C = sum(weights * f.tensor1site() for weights, f in zip(weights, forms))
-        scprod_φψ = np.vdot(B, C)
+        norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
+        mps_state_scprod = np.vdot(
+            last_tensor,
+            sum(w * f.tensor1site() for w, f in zip(weights, forms)),
+        )
         old_err = err
-        err = 2 * abs(1.0 - scprod_φψ.real / np.sqrt(norm_φsqr * norm_ψsqr))
-        log(f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |φ|={norm_φsqr**0.5}")
+        err = 2 * abs(
+            1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
+        )
+        if DEBUG:
+            log(
+                f"sweep={sweep}, rel.err.={err}, old err.={old_err}, "
+                f"|mps|={norm_mps_sqr**0.5}"
+            )
         if err < simplification_tolerance or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
-    φ._error = 0.0
-    φ.update_error(base_error**2)
-    φ.update_error(err)
-    return φ
+    mps._error = 0.0
+    base_error = sum(
+        np.abs(weights) * np.sqrt(state.error())
+        for weights, state in zip(weights, states)
+    )
+    mps.update_error(base_error**2)
+    mps.update_error(err)
+    if normalize:
+        last_tensor /= norm_mps_sqr
+    return mps
