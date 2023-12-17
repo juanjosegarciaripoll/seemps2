@@ -152,7 +152,7 @@ class CanonicalMPS(MPS):
     def norm_squared(self) -> float:
         """Norm-2 squared :math:`\\Vert{\psi}\\Vert^2` of this MPS."""
         A = self._data[self.center]
-        return np.vdot(A, A)
+        return np.vdot(A, A).real
 
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
