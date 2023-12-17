@@ -13,7 +13,7 @@ from ..state import (
     Truncation,
 )
 from ..state.environments import scprod
-from ..tools import log
+from ..tools import log, DEBUG
 from ..typing import *
 from .antilinear import AntilinearForm
 
@@ -71,56 +71,52 @@ def simplify(
         if normalize:
             mps.normalize_inplace()
         return mps
-    if normalize:
-        mps.normalize_inplace()
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_state_sqr = scprod(state, state).real
     if abs(norm_state_sqr) < simplification_tolerance:
         return mps
-    maxsweeps = strategy.get_max_sweeps()
     form = AntilinearForm(mps, state, center=start)
-    base_error = state.error()
     err = 2.0
-    log(
-        f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps} sweeps, with tolerance {simplification_tolerance}."
-    )
-    for sweep in range(maxsweeps):
+    if DEBUG:
+        log(
+            f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps}"
+            f"sweeps, with tolerance {simplification_tolerance}."
+        )
+    # TODO: ensure at least one pass through loop
+    for sweep in range(strategy.get_max_sweeps()):
         if direction > 0:
             for n in range(0, size - 1):
                 mps.update_2site_right(form.tensor2site(direction), n, strategy)
-                form.update(direction)
-            last = size - 1
+                form.update_right()
+            last_tensor = mps[size - 1]
         else:
             for n in reversed(range(0, size - 1)):
                 mps.update_2site_left(form.tensor2site(direction), n, strategy)
-                form.update(direction)
-            last = 0
+                form.update_left()
+            last_tensor = mps[0]
         #
         # We estimate the error
         #
-        last = mps.center
-        B = mps[last]
-        norm_mps_sqr = np.vdot(B, B).real
-        if normalize:
-            mps[last] = B = B / norm_mps_sqr
-            norm_mps_sqr = 1.0
-        mps_state_scprod = np.vdot(B, form.tensor1site())
+        norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
+        mps_state_scprod = np.vdot(last_tensor, form.tensor1site())
         old_err = err
         err = 2 * abs(
             1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
         )
-        log(
-            f"sweep={sweep}, rel.err.={err}, old err.={old_err}, |mps|={norm_mps_sqr**0.5}"
-        )
+        if DEBUG:
+            log(
+                f"sweep={sweep}, rel.err.={err}, old err.={old_err}, "
+                f"|mps|={norm_mps_sqr**0.5}"
+            )
         if err < simplification_tolerance or err > old_err:
             log("Stopping, as tolerance reached")
             break
         direction = -direction
     mps._error = 0.0
-    mps.update_error(base_error)
+    mps.update_error(state.error())
     mps.update_error(err)
-    # TODO: Inconsistency between simplify() and combine(). Only the former
-    # returns a direction.
+    if normalize:
+        last_tensor /= norm_mps_sqr
     return mps
 
 
@@ -280,7 +276,7 @@ def combine(
                 )  # type: ignore
                 φ.update_2site_right(tensor, n, strategy)
                 for f in forms:
-                    f.update(direction)
+                    f.update_right()
         else:
             for n in reversed(range(0, size - 1)):
                 tensor = sum(
@@ -289,7 +285,7 @@ def combine(
                 )  # type: ignore
                 φ.update_2site_left(tensor, n, strategy)
                 for f in forms:
-                    f.update(direction)
+                    f.update_left()
             last = 0
         #
         # We estimate the error

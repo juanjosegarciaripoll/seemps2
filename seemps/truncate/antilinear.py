@@ -99,18 +99,37 @@ class AntilinearForm:
         ----------
         direction : { +1 , -1 }
         """
-        prev = self.center
         if direction > 0:
-            nxt = prev + 1
-            if nxt < self.size:
-                self.L[nxt] = update_left_environment(
-                    self.bra[prev], self.ket[prev], self.L[prev]
-                )
-                self.center = nxt
+            self.update_right()
         else:
-            nxt = prev - 1
-            if nxt >= 0:
-                self.R[nxt] = update_right_environment(
-                    self.bra[prev], self.ket[prev], self.R[prev]
-                )
-                self.center = nxt
+            self.update_left()
+
+    def update_right(self) -> None:
+        """Notify that the `bra` state has been changed, and that we move to
+        `self.center + 1`.
+
+        We have updated 'mps' (the bra), which is now centered on a different point.
+        We have to recompute the environments.
+        """
+        prev = self.center
+        nxt = prev + 1
+        assert nxt < self.size
+        self.L[nxt] = update_left_environment(
+            self.bra[prev], self.ket[prev], self.L[prev]
+        )
+        self.center = nxt
+
+    def update_left(self) -> None:
+        """Notify that the `bra` state has been changed, and that we move to
+        `self.center - 1`.
+
+        We have updated 'mps' (the bra), which is now centered on a different point.
+        We have to recompute the environments.
+        """
+        prev = self.center
+        nxt = prev - 1
+        assert nxt >= 0
+        self.R[nxt] = update_right_environment(
+            self.bra[prev], self.ket[prev], self.R[prev]
+        )
+        self.center = nxt
