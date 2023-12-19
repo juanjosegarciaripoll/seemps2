@@ -46,12 +46,11 @@ def cgs(
     if strategy.get_normalize_flag():
         strategy = strategy.replace(normalize=False)
     if guess is not None:
-        Ax: MPS = A.apply(guess)  # type: ignore
-        r = combine([1.0, -1.0], [b, Ax], strategy=strategy)
+        x: MPS = A.apply(guess)  # type: ignore
+        r = combine([1.0, -1.0], [b, x], strategy=strategy)
     p = r
     ρ = scprod(r, r).real
     log(f"CGS algorithm for {maxiter} iterations")
-    x: MPS
     for i in range(maxiter):
         Ap: MPS = A.apply(p)  # type: ignore
         α = ρ / scprod(p, Ap).real
