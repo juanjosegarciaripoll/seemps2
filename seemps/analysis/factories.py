@@ -123,7 +123,7 @@ def mps_interval(interval: Interval, rescale: bool = False):
     start = interval.start if not rescale else -1
     stop = interval.stop if not rescale else 1
     sites = int(np.log2(interval.size))
-    if isinstance(interval, RegulaHalfOpenInterval):
+    if isinstance(interval, RegularHalfOpenInterval):
         return mps_equispaced(start, stop, sites)
     elif isinstance(interval, RegularClosedInterval):
         stop += (stop - start) / (2**sites - 1)
