@@ -3,18 +3,16 @@ cimport numpy as cnp
 from libc.math cimport sqrt
 from libcpp cimport bool
 from enum import Enum
-# something.pxd
-cdef extern from "limits.h":
-    cdef int INT_MAX
 
-MAX_BOND_DIMENSION = INT_MAX
+MAX_BOND_DIMENSION = 0x7fffffff
+"""Maximum bond dimension for any MPS."""
 
 cdef class Strategy:
     def __init__(self,
                  method: int = RELATIVE_SINGULAR_VALUE,
                  tolerance: float = 1e-8,
                  simplification_tolerance: float = 1e-8,
-                 max_bond_dimension: Optional[int] = INT_MAX,
+                 max_bond_dimension: int = MAX_BOND_DIMENSION,
                  normalize: bool = False,
                  simplify: int = VARIATIONAL,
                  max_sweeps: int = 16):
@@ -27,8 +25,6 @@ cdef class Strategy:
         if method < 0 or method >= TRUNCATION_CODES:
             raise AssertionError("Invalid method argument passed to Strategy")
         self.method = method
-        if max_bond_dimension is None:
-            self.max_bond_dimension = INT_MAX
         elif max_bond_dimension <= 0:
             raise AssertionError("Invalid bond dimension in Strategy")
         else:
@@ -111,7 +107,7 @@ DEFAULT_STRATEGY = Strategy(method = Truncation.RELATIVE_NORM_SQUARED_ERROR,
                             simplify = Simplification.DO_NOT_SIMPLIFY,
                             tolerance = DEFAULT_TOLERANCE,
                             simplification_tolerance = DEFAULT_TOLERANCE,
-                            max_bond_dimension = INT_MAX,
+                            max_bond_dimension = MAX_BOND_DIMENSION,
                             normalize = False)
 
 NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = Truncation.DO_NOT_TRUNCATE, simplify = Simplification.DO_NOT_SIMPLIFY)
