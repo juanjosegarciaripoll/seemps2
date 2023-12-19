@@ -29,7 +29,6 @@ class MPSSum:
 
     weights: list[Weight]
     states: list[MPS]
-    strategy: Strategy
 
     #
     # This class contains all the matrices and vectors that form
@@ -130,7 +129,7 @@ class MPSSum:
         self,
         canonical: bool = True,
         center: Optional[int] = None,
-        strategy: Optional[Strategy] = None,
+        strategy: Strategy = DEFAULT_STRATEGY,
     ):
         """Create an `MPS` or `CanonicalMPS` state by combining all tensors
         from all states in the linear combination.
@@ -141,10 +140,9 @@ class MPSSum:
             Whether to create the state in canonical form. Defaults to `True`.
         center: Optional[int]
             Center for the `CanonicalMPS`, if `canonical` is true.
-        strategy: Strategy
+        strategy: Strategy, default = DEFAULT_STRATEGY
             Parameters for the truncation algorithms used when creating the
             `CanonicalMPS`. Only used if `canonical` is `True`.
-            Defaults to `self.strategy`.
 
         Returns
         -------
@@ -156,8 +154,8 @@ class MPSSum:
         if canonical:
             return CanonicalMPS(
                 data,
-                strategy=self.strategy if strategy is None else strategy,
                 center=center,
+                strategy=strategy,
             )
         else:
             return MPS(data)
@@ -165,9 +163,7 @@ class MPSSum:
     def conj(self) -> MPSSum:
         """Return the complex-conjugate of this quantum state."""
         return MPSSum(
-            [np.conj(w) for w in self.weights],
-            [state.conj() for state in self.states],
-            self.strategy,
+            [np.conj(w) for w in self.weights], [state.conj() for state in self.states]
         )
 
 

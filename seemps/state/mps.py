@@ -10,7 +10,6 @@ from ..tools import InvalidOperation
 from ..typing import *
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
-from .environments import *
 from .schmidt import vector2mps
 
 
@@ -479,3 +478,4 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
 
 
 from .mpssum import MPSSum
+from .environments import *
