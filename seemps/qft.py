@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import pi as π
 from .typing import *
-from .state import MPS
+from .state import MPS, MPSSum
 from .mpo import MPO, MPOList
 
 
@@ -78,7 +78,7 @@ def iqft_mpo(N: int, **kwargs) -> MPOList:
     return qft_mpo(N, +1, **kwargs)
 
 
-def qft(state: MPS, **kwargs) -> MPS:
+def qft(state: Union[MPS, MPSSum], **kwargs) -> Union[MPS, MPSSum]:
     """Apply the quantum Fourier transform onto a quantum register
     of qubits encoded in the matrix-product 'state'.
 
@@ -94,10 +94,10 @@ def qft(state: MPS, **kwargs) -> MPS:
     MPS
         Transformed quantum state after application of operators.
     """
-    return qft_mpo(len(state), sign=-1, **kwargs).apply(state)
+    return qft_mpo(state.size, sign=-1, **kwargs).apply(state)
 
 
-def iqft(state: MPS, **kwargs) -> MPS:
+def iqft(state: Union[MPS, MPSSum], **kwargs) -> Union[MPS, MPSSum]:
     """Apply the inverse quantum Fourier transform onto a quantum register
     of qubits encoded in the matrix-product 'state'.
 
@@ -113,10 +113,10 @@ def iqft(state: MPS, **kwargs) -> MPS:
     MPS
         Transformed quantum state after application of operators.
     """
-    return qft_mpo(len(state), sign=+1, **kwargs).apply(state)
+    return qft_mpo(state.size, sign=+1, **kwargs).apply(state)
 
 
-def qft_flip(state: MPS) -> MPS:
+def qft_flip(state: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform.
 
@@ -130,6 +130,8 @@ def qft_flip(state: MPS) -> MPS:
     MPS
         State with qubits reversed.
     """
+    if isinstance(state, MPSSum):
+        return MPSSum(state.weights, [qft_flip(s) for s in state.states])  # type: ignore
     return MPS(
         [np.moveaxis(A, [0, 1, 2], [2, 1, 0]) for A in reversed(state)],
         error=state.error(),
