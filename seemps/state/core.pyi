@@ -28,13 +28,13 @@ class Strategy:
     ): ...
     def replace(
         self: Strategy,
-        method: Optional[int] = None,
+        method: Optional[Truncation] = None,
         tolerance: Optional[float] = None,
         simplification_tolerance: Optional[float] = None,
         max_bond_dimension: Optional[int] = None,
         max_sweeps: Optional[int] = None,
         normalize: Optional[bool] = None,
-        simplify: Optional[bool] = None,
+        simplify: Optional[Simplification] = None,
     ) -> Strategy: ...
     def set_normalization(self: Strategy, normalize: bool) -> Strategy: ...
     def get_tolerance(self) -> float: ...
