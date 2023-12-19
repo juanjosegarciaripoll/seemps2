@@ -31,7 +31,7 @@ class EvolutionResults:
     state: Union[MPS, np.ndarray]
     energy: float
     trajectory: Optional[VectorLike] = None
-    Δβ: Union[float, VectorLike] = None
+    Δβ: Union[float, VectorLike, None] = None
     β: Optional[VectorLike] = None
 
 
