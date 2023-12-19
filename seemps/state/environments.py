@@ -1,9 +1,10 @@
+from __future__ import annotations
 import numpy as np
 from ..typing import *
 
 
 def begin_environment(χ: int = 1) -> Environment:
-    """Initiate the computation of a left environment from two MPSLike. The bond
+    """Initiate the computation of a left environment from two MPS. The bond
     dimension χ defaults to 1. Other values are used for states in canonical
     form that we know how to open and close."""
     return np.eye(χ, dtype=np.float64)
@@ -59,7 +60,7 @@ def join_environments(ρL: Environment, ρR: Environment) -> Weight:
     return np.dot(ρL.reshape(-1), ρR.T.reshape(-1))
 
 
-def scprod(bra: MPSLike, ket: MPSLike) -> Weight:
+def scprod(bra: MPS, ket: MPS) -> Weight:
     """Compute the scalar product between matrix product states
     :math:`\\langle\\xi|\\psi\\rangle`.
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .mpo import MPO
 from .state.environments import *
 from .state.mps import MPS
@@ -70,13 +71,13 @@ def all_expectation1(state: MPS, O: Union[list[Operator], Operator]) -> Vector:
     return state.all_expectation1(O)
 
 
-def product_expectation(state: MPSLike, operator_list: list[Operator]) -> Weight:
+def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     """Expectation value of a product of local operators
     :math:`\\langle\\psi|O_0 O_1 \cdots O_{N-1}|\\psi\\rangle`.
 
     Parameters
     ----------
-    state : MPSLike
+    state : MPS
         State :math:`\\psi` onto which the expectation values are computed.
     operator_list : list[Operator]
         List of operators, with the same length `len(operator_list) == len(state)`

@@ -5,7 +5,7 @@ from .canonical_mps import CanonicalMPS
 from ..typing import *
 
 
-def sample_mps(mps: MPSLike, size: int = 1, rng: Generator = default_rng()) -> NDArray:
+def sample_mps(mps: MPS, size: int = 1, rng: Generator = default_rng()) -> NDArray:
     """Generate configurations by sampling a matrix-product state.
 
     This function samples quantum states according to the probability
@@ -23,8 +23,8 @@ def sample_mps(mps: MPSLike, size: int = 1, rng: Generator = default_rng()) -> N
 
     Parameters
     ----------
-    mps : MPSLike
-        MPS state or list of tensors that represents one.
+    mps : MPS
+        Normalized matrix product state.
     size : int
         Number of samples to generate, defaults to 1.
 

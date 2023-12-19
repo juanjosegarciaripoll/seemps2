@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
 import scipy.sparse  # type: ignore
@@ -42,6 +43,3 @@ Environment: TypeAlias = NDArray
 
 MPOEnvironment: TypeAlias = NDArray
 """Left or right environment of an MPS-MPO-MPS contraction."""
-
-MPSLike: TypeAlias = Union[Sequence[Tensor3], "MPS"]
-"""Any object coercible to :class:`MPS`."""
