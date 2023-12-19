@@ -24,7 +24,7 @@ class Strategy:
         max_bond_dimension: int = 0x8FFFFFFF,
         max_sweeps: int = 16,
         normalize: bool = False,
-        simplify: Simplificaton = Simplification.VARIATIONAL,
+        simplify: Simplification = Simplification.VARIATIONAL,
     ): ...
     def replace(
         self: Strategy,
