@@ -83,8 +83,8 @@ def simplify(
     err = 2.0
     if DEBUG:
         log(
-            f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for {maxsweeps}"
-            f"sweeps, with tolerance {simplification_tolerance}."
+            f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
+            f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}."
         )
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
@@ -257,7 +257,7 @@ def combine(
     norm_state_sqr = multi_norm_squared(weights, states)
     if DEBUG:
         log(
-            f"COMBINE state with |state|={norm_state_sqr**0.5} for {maxsweeps} "
+            f"COMBINE state with |state|={norm_state_sqr**0.5} for strategy.get_max_sweeps()) "
             f"sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}"
         )
     size = mps.size
