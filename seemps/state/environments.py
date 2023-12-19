@@ -121,3 +121,6 @@ def end_mpo_environment(ρ: MPOEnvironment) -> Weight:
 
 def join_mpo_environments(left: MPOEnvironment, right: MPOEnvironment) -> Weight:
     return np.dot(left.reshape(-1), right.reshape(-1))
+
+
+from .mps import MPS
