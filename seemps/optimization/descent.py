@@ -50,7 +50,7 @@ def gradient_descent(
     tol: float = 1e-13,
     k_mean=10,
     tol_variance: float = 1e-14,
-    strategy: Optional[Strategy] = DESCENT_STRATEGY,
+    strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
@@ -84,17 +84,17 @@ def gradient_descent(
 
     def energy_and_variance(state: MPS) -> tuple[MPS, float, float, float]:
         true_E = H.expectation(state).real
-        H_state = H.apply(state)
+        H_state: MPS = H.apply(state)  # type: ignore
         avg_H2 = scprod(H_state, H_state).real
         variance = avg_H2 - scprod(state, H_state).real ** 2
         return H_state, true_E, variance, avg_H2
 
     normalization_strategy = strategy.replace(normalize=True)
-    energies = []
-    variances = []
-    last_E_mean = np.Inf
-    best_energy = np.Inf
-    best_vector = state
+    energies: list[float] = []
+    variances: list[float] = []
+    last_E_mean: float = np.Inf
+    best_energy: float = np.Inf
+    best_vector: MPS = state
     """
     The algorithm aims to find the optimal linear combination
         ψ' = a * ψ + b * H * ψ
@@ -116,7 +116,7 @@ def gradient_descent(
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
-        E_mean = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])
+        E_mean: float = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])  # type: ignore
         if E_mean - last_E_mean >= abs(tol):
             message = f"Energy converged within tolerance {tol}"
             converged = True
