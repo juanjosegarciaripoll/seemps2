@@ -3,7 +3,12 @@ from typing import List
 
 from ..state import MPS, Strategy
 from ..truncate import simplify
-from .mesh import Interval
+from .mesh import (
+    Interval,
+    RegularClosedInterval,
+    RegularHalfOpenInterval,
+    ChebyshevZerosInterval,
+)
 
 
 def mps_equispaced(start: float, stop: float, sites: int):
@@ -118,15 +123,17 @@ def mps_interval(interval: Interval, rescale: bool = False):
     start = interval.start if not rescale else -1
     stop = interval.stop if not rescale else 1
     sites = int(np.log2(interval.size))
-    if interval.type == "open":
+    if isinstance(interval, RegulaHalfOpenInterval):
         return mps_equispaced(start, stop, sites)
-    elif interval.type == "closed":
+    elif isinstance(interval, RegularClosedInterval):
         stop += (stop - start) / (2**sites - 1)
         return mps_equispaced(start, stop, sites)
-    elif interval.type == "zeros":
+    elif isinstance(interval, ChebyshevZerosInterval):
         start_mapped = np.pi / (2 ** (sites + 1))
         stop_mapped = np.pi + start_mapped
         return -1.0 * mps_cosine(start_mapped, stop_mapped, sites)
+    else:
+        raise ValueError(f"Unsupported interval type {type(interval)}")
 
 
 def mps_tensor_product(mps_list: List[MPS]) -> MPS:

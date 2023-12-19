@@ -29,7 +29,6 @@ class RegularClosedInterval(Interval):
 
     def __init__(self, start: float, stop: float, size: int):
         super().__init__(start, stop, size)
-        self.type = "closed"
         self.step = (stop - start) / (size - 1)
 
     def __getitem__(self, idx: int) -> float:
@@ -43,7 +42,6 @@ class RegularHalfOpenInterval(Interval):
 
     def __init__(self, start: float, stop: float, size: int):
         super().__init__(start, stop, size)
-        self.type = "open"
         self.step = (stop - start) / size
 
     def __getitem__(self, idx: int) -> float:
@@ -57,7 +55,6 @@ class ChebyshevZerosInterval(Interval):
     zeros of the N-th Chebyshev polynomial in [-1, 1] to (start, stop)."""
 
     def __init__(self, start: float, stop: float, size: int):
-        self.type = "zeros"
         super().__init__(start, stop, size)
 
     def __getitem__(self, idx: int) -> float:
