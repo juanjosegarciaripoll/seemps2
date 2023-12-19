@@ -2,30 +2,40 @@ import numpy as np
 cimport numpy as cnp
 from libc.math cimport sqrt
 from libcpp cimport bool
-from enum import Enum
 
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
 
+class Truncation:
+    DO_NOT_TRUNCATE = TRUNCATION_DO_NOT_TRUNCATE
+    RELATIVE_SINGULAR_VALUE = TRUNCATION_RELATIVE_SINGULAR_VALUE
+    RELATIVE_NORM_SQUARED_ERROR = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR
+    ABSOLUTE_SINGULAR_VALUE = TRUNCATION_ABSOLUTE_SINGULAR_VALUE
+
+class Simplification:
+    DO_NOT_SIMPLIFY = SIMPLIFICATION_DO_NOT_SIMPLIFY
+    CANONICAL_FORM = SIMPLIFICATION_CANONICAL_FORM
+    VARIATIONAL = SIMPLIFICATION_VARIATIONAL
+
 cdef class Strategy:
     def __init__(self,
-                 method: int = RELATIVE_SINGULAR_VALUE,
+                 method: int = TRUNCATION_RELATIVE_SINGULAR_VALUE,
                  tolerance: float = 1e-8,
                  simplification_tolerance: float = 1e-8,
                  max_bond_dimension: int = MAX_BOND_DIMENSION,
                  normalize: bool = False,
-                 simplify: int = VARIATIONAL,
+                 simplify: int = SIMPLIFICATION_VARIATIONAL,
                  max_sweeps: int = 16):
         if tolerance < 0 or tolerance >= 1.0:
             raise AssertionError("Invalid tolerance argument passed to Strategy")
-        if tolerance == 0 and method != DO_NOT_TRUNCATE:
-            method = ABSOLUTE_SINGULAR_VALUE
+        if tolerance == 0 and method != TRUNCATION_DO_NOT_TRUNCATE:
+            method = TRUNCATION_ABSOLUTE_SINGULAR_VALUE
         self.tolerance = tolerance
         self.simplification_tolerance = simplification_tolerance
-        if method < 0 or method >= TRUNCATION_CODES:
+        if method < 0 or method > TRUNCATION_LAST_CODE:
             raise AssertionError("Invalid method argument passed to Strategy")
         self.method = method
-        elif max_bond_dimension <= 0:
+        if max_bond_dimension <= 0 or max_bond_dimension > MAX_BOND_DIMENSION:
             raise AssertionError("Invalid bond dimension in Strategy")
         else:
             self.max_bond_dimension = max_bond_dimension
@@ -79,21 +89,21 @@ cdef class Strategy:
         return False if self.simplify == 0 else True
 
     def __str__(self) -> str:
-        if self.method == DO_NOT_TRUNCATE:
+        if self.method == TRUNCATION_DO_NOT_TRUNCATE:
             method="None"
-        elif self.method == RELATIVE_SINGULAR_VALUE:
+        elif self.method == TRUNCATION_RELATIVE_SINGULAR_VALUE:
             method="RelativeSVD"
-        elif self.method == RELATIVE_NORM_SQUARED_ERROR:
+        elif self.method == TRUNCATION_RELATIVE_NORM_SQUARED_ERROR:
             method="RelativeNorm"
-        elif self.method == ABSOLUTE_SINGULAR_VALUE:
+        elif self.method == TRUNCATION_ABSOLUTE_SINGULAR_VALUE:
             method="AbsoluteSVD"
         else:
             raise ValueError("Invalid truncation method found in Strategy")
-        if self.simplify == 0:
+        if self.simplify == SIMPLIFICATION_DO_NOT_SIMPLIFY:
             simplification_method="None"
-        elif self.simplify == 1:
+        elif self.simplify == SIMPLIFICATION_CANONICAL_FORM:
             simplification_method="CanonicalForm"
-        elif self.simplification_method == 2:
+        elif self.simplification_method == SIMPLIFICATION_VARIATIONAL:
             simplification_method="Variational"
         else:
             raise ValueError("Invalid simplification method found in Strategy")
@@ -103,14 +113,15 @@ cdef class Strategy:
 
 DEFAULT_TOLERANCE = np.finfo(np.float64).eps
 
-DEFAULT_STRATEGY = Strategy(method = Truncation.RELATIVE_NORM_SQUARED_ERROR,
-                            simplify = Simplification.DO_NOT_SIMPLIFY,
+DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
+                            simplify = SIMPLIFICATION_DO_NOT_SIMPLIFY,
                             tolerance = DEFAULT_TOLERANCE,
                             simplification_tolerance = DEFAULT_TOLERANCE,
                             max_bond_dimension = MAX_BOND_DIMENSION,
                             normalize = False)
 
-NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = Truncation.DO_NOT_TRUNCATE, simplify = Simplification.DO_NOT_SIMPLIFY)
+NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = TRUNCATION_DO_NOT_TRUNCATE,
+                                         simplify = SIMPLIFICATION_DO_NOT_SIMPLIFY)
 
 cdef cnp.float64_t[::1] errors_buffer = np.zeros(1024, dtype=np.float64)
 
@@ -130,9 +141,9 @@ def truncate_vector(cnp.ndarray[cnp.float64_t, ndim=1] s,
         cnp.float64_t *errors = get_errors_buffer(N)
         cnp.float64_t *data
 
-    if strategy.method == DO_NOT_TRUNCATE:
+    if strategy.method == TRUNCATION_DO_NOT_TRUNCATE:
         max_error = 0.0
-    elif strategy.method == RELATIVE_NORM_SQUARED_ERROR:
+    elif strategy.method == TRUNCATION_RELATIVE_NORM_SQUARED_ERROR:
         #
         # Compute the cumulative sum of the reduced density matrix eigen values
         # in reversed order. Thus errors[i] is the error we make when we drop
@@ -164,7 +175,7 @@ def truncate_vector(cnp.ndarray[cnp.float64_t, ndim=1] s,
                 data[i] /= new_norm
     else:
         data = &s[0]
-        if strategy.method == RELATIVE_SINGULAR_VALUE:
+        if strategy.method == TRUNCATION_RELATIVE_SINGULAR_VALUE:
             max_error = strategy.tolerance * data[0]
         else: # ABSOLUTE_SINGULAR_VALUE
             max_error = strategy.tolerance
