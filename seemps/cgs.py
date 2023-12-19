@@ -1,6 +1,6 @@
-from .typing import Optional
+from typing import Optional, Union
 from .expectation import scprod
-from .state import MPS, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
+from .state import MPS, MPSSum, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
 from .mpo import MPO
 from .truncate.combine import combine
 from .tools import log
@@ -46,19 +46,21 @@ def cgs(
     if strategy.get_normalize_flag():
         strategy = strategy.replace(normalize=False)
     if guess is not None:
-        x: MPS = guess
-        r = combine([1.0, -1.0], [b, A.apply(x)], strategy=strategy)
+        Ax: MPS = A.apply(guess)  # type: ignore
+        r = combine([1.0, -1.0], [b, Ax], strategy=strategy)
     p = r
     ρ = scprod(r, r).real
     log(f"CGS algorithm for {maxiter} iterations")
+    x: MPS
     for i in range(maxiter):
-        Ap = A.apply(p)
+        Ap: MPS = A.apply(p)  # type: ignore
         α = ρ / scprod(p, Ap).real
         if i > 0 or guess is not None:
             x = combine([1, α], [x, p], strategy=strategy)
         else:
             x = combine([α], [p], strategy=strategy)
-        r = combine([1, -1], [b, A.apply(x)], strategy=strategy)
+        Ax: MPS = A.apply(guess)  # type: ignore
+        r = combine([1, -1], [b, Ax], strategy=strategy)
         ρ, ρold = scprod(r, r).real, ρ
         if ρ < tolerance * normb:
             log("Breaking on convergence")
