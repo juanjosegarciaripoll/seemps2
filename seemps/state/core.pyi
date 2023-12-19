@@ -1,27 +1,30 @@
 from ..typing import Optional, Vector
+from enum import Enum
 
 MAX_BOND_DIMENSION: int
 
-class Truncation:
+class Truncation(Enum):
     DO_NOT_TRUNCATE = 0
     RELATIVE_SINGULAR_VALUE = 1
     RELATIVE_NORM_SQUARED_ERROR = 2
     ABSOLUTE_SINGULAR_VALUE = 3
 
-class Simplification:
-    CANONICAL_FORM = 0
-    VARIATIONAL = 1
+class Simplification(Enum):
+    DO_NOT_SIMPLIFY = 0
+    CANONICAL_FORM = 1
+    VARIATIONAL = 2
+    SIMPLIFICATION_LAST_CODE = 2
 
 class Strategy:
     def __init__(
         self: Strategy,
-        method: int = 1,
+        method: Truncation = Truncation.RELATIVE_SINGULAR_VALUE,
         tolerance: float = 1e-8,
         simplification_tolerance: float = 1e-8,
         max_bond_dimension: int = 0x8FFFFFFF,
         max_sweeps: int = 16,
         normalize: bool = False,
-        simplify: bool = False,
+        simplify: Simplificaton = Simplification.VARIATIONAL,
     ): ...
     def replace(
         self: Strategy,
