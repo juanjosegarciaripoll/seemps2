@@ -238,12 +238,14 @@ def combine(
     # Prepare initial guess
     if guess is None:
         if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-            guess = guess_combine_state(weights, states)
+            mps = guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
-            guess = crappy_guess_combine_state(weights, states)
+            mps = crappy_guess_combine_state(weights, states)
+    else:
+        mps = guess
     normalize = strategy.get_normalize_flag()
-    start = 0 if direction > 0 else guess.size - 1
-    mps = CanonicalMPS(guess, center=start, strategy=strategy)
+    start = 0 if direction > 0 else mps.size - 1
+    mps = CanonicalMPS(mps, center=start, strategy=strategy)
 
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
@@ -267,7 +269,7 @@ def combine(
         if direction > 0:
             for n in range(0, size - 1):
                 mps.update_2site_right(
-                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore
                     n,
                     strategy,
                 )
@@ -277,7 +279,7 @@ def combine(
         else:
             for n in reversed(range(0, size - 1)):
                 mps.update_2site_left(
-                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore
                     n,
                     strategy,
                 )
