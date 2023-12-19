@@ -128,7 +128,7 @@ class MPO(array.TensorArray):
         state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
+    ) -> Union[MPS, MPSSum]:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
 
@@ -153,19 +153,19 @@ class MPO(array.TensorArray):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(state, MPSSum):
+            assert self.size == state.size
             for i, (w, mps) in enumerate(zip(state.weights, state.states)):
                 Ostate = w * MPS(
                     [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, mps._data)],
                     error=mps.error(),
                 )
                 state = Ostate if i == 0 else state + Ostate
-            assert self.size == state.states[0].size
         elif isinstance(state, MPS):
+            assert self.size == state.size
             state = MPS(
                 [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
                 error=state.error(),
             )
-            assert self.size == state.size
         else:
             raise TypeError(f"Cannot multiply MPO with {state}")
 
@@ -173,11 +173,9 @@ class MPO(array.TensorArray):
             state = truncate.simplify(state, strategy=strategy)
         return state
 
-    def __matmul__(self, b: Union[MPS, MPSSum]) -> MPS:
+    def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""
-        if isinstance(b, (MPS, MPSSum)):
-            return self.apply(b)
-        raise InvalidOperation("@", self, b)
+        return self.apply(b)
 
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
@@ -372,7 +370,7 @@ class MPOList(object):
         state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
+    ) -> Union[MPS, MPSSum]:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
 
@@ -403,11 +401,9 @@ class MPOList(object):
             state = truncate.simplify(state, strategy=strategy)
         return state
 
-    def __matmul__(self, b: Union[MPS, MPSSum]) -> MPS:
+    def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""
-        if isinstance(b, (MPS, MPSSum)):
-            return self.apply(b)
-        raise InvalidOperation("@", self, b)
+        return self.apply(b)
 
     def extend(
         self, L: int, sites: Optional[list[int]] = None, dimensions: int = 2
@@ -481,7 +477,7 @@ class MPOList(object):
         """
         if ket is None:
             ket = bra
-        return scprod(bra, self.apply(ket))
+        return scprod(bra, self.apply(ket))  # type: ignore
 
 
 from .. import truncate
