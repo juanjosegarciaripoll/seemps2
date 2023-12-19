@@ -9,6 +9,7 @@ from ..state.environments import (
 from ..state._contractions import _contract_last_and_first
 from ..mpo import MPO
 from ..hamiltonians import NNHamiltonian
+from typing import Callable
 from ..typing import Optional, Vector, Tensor4, Union
 from .descent import OptimizeResults
 from ..tools import log
@@ -100,7 +101,7 @@ def dmrg(
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
     maxiter: int = 20,
-    callback: Optional[callable] = None,
+    callback: Optional[Callable] = None,
 ) -> OptimizeResults:
     """Compute the ground state of a Hamiltonian represented as MPO using the
     two-site DMRG algorithm.

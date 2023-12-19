@@ -8,7 +8,7 @@ from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification, Strateg
 from ..tools import log
 from ..truncate.simplify import simplify
 from ..typing import *
-from ..typing import Union
+from typing import Union, Callable
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -51,7 +51,7 @@ def gradient_descent(
     k_mean=10,
     tol_variance: float = 1e-14,
     strategy: Optional[Strategy] = DESCENT_STRATEGY,
-    callback: Optional[callable] = None,
+    callback: Optional[Callable] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -104,7 +104,7 @@ def gradient_descent(
         | <ψ|H|ψ>    <ψ|H*H|ψ>   | | a |     | <ψ|ψ>    <ψ|H|ψ>   |
         |                        | |   | = l |                    |
         | <ψ|H*H|ψ>  <ψ|H*H*H|ψ> | | b |     | <ψ|H|ψ>  <ψ|H*H|ψ> |
-    
+
     """
     converged = False
     message = f"Maximum number of iterations {maxiter} reached"
