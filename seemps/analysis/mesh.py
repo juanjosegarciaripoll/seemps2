@@ -18,8 +18,7 @@ class Interval(ABC):
 
     @abstractmethod
     def __getitem__(self, idx: int) -> float:
-        if not (0 <= idx < self.size):
-            raise IndexError("Index out of range")
+        ...
 
     def to_vector(self) -> np.ndarray:
         return np.array([self[idx] for idx in range(self.size)])
@@ -34,7 +33,8 @@ class RegularClosedInterval(Interval):
         self.step = (stop - start) / (size - 1)
 
     def __getitem__(self, idx: int) -> float:
-        super().__getitem__(idx)
+        if not (0 <= idx < self.size):
+            raise IndexError("Index out of range")
         return idx * self.step + self.start
 
 
@@ -47,7 +47,8 @@ class RegularHalfOpenInterval(Interval):
         self.step = (stop - start) / size
 
     def __getitem__(self, idx: int) -> float:
-        super().__getitem__(idx)
+        if not (0 <= idx < self.size):
+            raise IndexError("Index out of range")
         return idx * self.step + self.start
 
 
@@ -60,7 +61,8 @@ class ChebyshevZerosInterval(Interval):
         super().__init__(start, stop, size)
 
     def __getitem__(self, idx: int) -> float:
-        super().__getitem__(idx)
+        if not (0 <= idx < self.size):
+            raise IndexError("Index out of range")
         zero = np.cos(np.pi * (2 * (self.size - idx) - 1) / (2 * self.size))
         return (self.stop - self.start) * (zero + 1) / 2 + self.start
 
