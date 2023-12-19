@@ -29,6 +29,7 @@ class MPSSum:
 
     weights: list[Weight]
     states: list[MPS]
+    size: int
 
     #
     # This class contains all the matrices and vectors that form
@@ -48,6 +49,7 @@ class MPSSum:
         assert len(states) > 0
         self.weights = weights
         self.states = states
+        self.size = states[0].size
 
     def copy(self) -> MPSSum:
         """Return a shallow copy of the MPS sum and its data. Does not copy
@@ -149,7 +151,7 @@ class MPSSum:
         MPS | CanonicalMPS
             Quantum state approximating this sum.
         """
-        L = self.states[0].size
+        L = self.size
         data = [self._joined_tensors(i, L) for i in range(L)]
         if canonical:
             return CanonicalMPS(
