@@ -1,16 +1,18 @@
 from .typing import Optional
 from .expectation import scprod
-from .state import DEFAULT_TOLERANCE, MPS
+from .state import MPS, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
 from .mpo import MPO
 from .truncate.combine import combine
 from .tools import log
 
 
+# TODO: Write tests for this
 def cgs(
     A: MPO,
     b: MPS,
     guess: Optional[MPS] = None,
     maxiter: int = 100,
+    strategy: Strategy = DEFAULT_STRATEGY,
     tolerance: float = DEFAULT_TOLERANCE,
 ) -> tuple[MPS, float]:
     """Approximate solution of :math:`A \\psi = b`.
@@ -27,8 +29,10 @@ def cgs(
         Right-hand side of the equation
     maxiter : int, default = 100
         Maximum number of iterations
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        Truncation strategy for MPS and MPO operations
     tolerance : float, default = DEFAULT_TOLERANCE
-        Truncation tolerance and error tolerance for the algorithm.
+        Error tolerance for the algorithm.
 
     Results
     -------
@@ -39,9 +43,11 @@ def cgs(
     """
     normb = scprod(b, b).real
     r = b
+    if strategy.get_normalize_flag():
+        strategy = strategy.replace(normalize=False)
     if guess is not None:
         x: MPS = guess
-        r = combine([1.0, -1.0], [b, A.apply(x)], tolerance=tolerance, normalize=False)
+        r = combine([1.0, -1.0], [b, A.apply(x)], strategy=strategy)
     p = r
     ρ = scprod(r, r).real
     log(f"CGS algorithm for {maxiter} iterations")
@@ -49,14 +55,14 @@ def cgs(
         Ap = A.apply(p)
         α = ρ / scprod(p, Ap).real
         if i > 0 or guess is not None:
-            x = combine([1, α], [x, p], tolerance=tolerance, normalize=False)
+            x = combine([1, α], [x, p], strategy=strategy)
         else:
-            x = combine([α], [p], tolerance=tolerance, normalize=False)
-        r = combine([1, -1], [b, A.apply(x)], tolerance=tolerance, normalize=False)
+            x = combine([α], [p], strategy=strategy)
+        r = combine([1, -1], [b, A.apply(x)], strategy=strategy)
         ρ, ρold = scprod(r, r).real, ρ
         if ρ < tolerance * normb:
             log("Breaking on convergence")
             break
-        p = combine([1.0, ρ / ρold], [r, p], tolerance=tolerance, normalize=False)
+        p = combine([1.0, ρ / ρold], [r, p], strategy=strategy)
         log(f"Iteration {i:5}: |r|={ρ:5g}")
     return x, abs(ρ)
