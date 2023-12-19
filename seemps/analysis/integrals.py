@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.fftpack import ifft
+from scipy.fftpack import ifft  # type: ignore
 
 from seemps.state import MPS, Strategy, DEFAULT_TOLERANCE
 

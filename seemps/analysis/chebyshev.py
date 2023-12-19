@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.fft import dct
+from scipy.fft import dct  # type: ignore
 from typing import Callable, Optional
 
 from seemps.state import MPS, Strategy
