@@ -43,5 +43,5 @@ Environment: TypeAlias = NDArray
 MPOEnvironment: TypeAlias = NDArray
 """Left or right environment of an MPS-MPO-MPS contraction."""
 
-MPSLike: TypeAlias = Sequence[Tensor3]
+MPSLike: TypeAlias = Union[Sequence[Tensor3], "MPS"]
 """Any object coercible to :class:`MPS`."""
