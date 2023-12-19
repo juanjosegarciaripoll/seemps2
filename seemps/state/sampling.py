@@ -14,7 +14,7 @@ def sample_mps(mps: MPS, size: int = 1, rng: Generator = default_rng()) -> NDArr
     the computational basis on which the MPS is defined, then
 
     .. math::
-        p(i_1,i_2,\\ldots,i_N) = |\langle{i_1i_2\\ldots i_N}|\psi\rangle|^2
+        p(i_1,i_2,\\ldots,i_N) = |\\langle{i_1i_2\\ldots i_N}|\\psi\rangle|^2
 
     is a multivariate probability distribution for generating configurations of
     the physical variables :math:`i_k` simultaneously. Instead of constructing

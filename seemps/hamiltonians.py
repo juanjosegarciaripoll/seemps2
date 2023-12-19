@@ -256,7 +256,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
             or H12.shape[0] != H12.shape[1]
             or H12.shape[1] != self.dimension(i) * self.dimension(i + 1)
         ):
-            raise Exception(f"Invalid operators supplied to add_interaction_term()")
+            raise Exception("Invalid operators supplied to add_interaction_term()")
         self.interactions[i] = self.interactions[i] + H12
         return self
 

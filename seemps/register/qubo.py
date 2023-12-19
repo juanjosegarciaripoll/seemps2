@@ -1,6 +1,5 @@
 import numpy as np
 from ..typing import *
-from ..state import MPS
 from ..mpo import MPOList, MPO
 
 

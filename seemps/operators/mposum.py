@@ -1,10 +1,7 @@
 from __future__ import annotations
-
 import numpy as np
-
 from .. import truncate
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
-from ..truncate import combine
 from ..typing import *
 from .mpo import MPO, MPOList
 

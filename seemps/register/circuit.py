@@ -1,7 +1,5 @@
 import numpy as np
-
-from seemps.state import MPS, CanonicalMPS
-from seemps.typing import Optional, Vector
+from typing import Optional
 from ..typing import *
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..state._contractions import _contract_nrjl_ijk_klm
@@ -247,7 +245,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
             if center < L - 2:
                 state.recenter(L - 2)
             for j in range(L - 2, -1, -1):
-                ## AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
+                # AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
                 state.update_2site_left(
                     _contract_nrjl_ijk_klm(op, state[j], state[j + 1]), j, strategy
                 )

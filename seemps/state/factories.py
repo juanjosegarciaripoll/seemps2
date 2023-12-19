@@ -54,7 +54,7 @@ def W(n: int) -> MPS:
     """:class:`MPS` representing a W-state with `n` qubits.
 
     The W-state is defined as the quantum superpositions of all quantum states
-    with a single spin up :math:`\\sum_i \\sigma_i^+ |000\ldots\\rangle`
+    with a single spin up :math:`\\sum_i \\sigma_i^+ |000\\ldots\\rangle`
     """
     a = np.zeros((2, 2, 2))
     a[0, 0, 0] = 1.0

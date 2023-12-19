@@ -24,11 +24,15 @@ def mpo_flip(operator):
             ],
             strategy=operator.strategy,
         )
-    elif isinstance(operator,MPOSum):
+    elif isinstance(operator, MPOSum):
         new_mpos = []
         for weight, op in zip(operator.weights, operator.mpos):
             new_mpos.append(weight * mpo_flip(op))
-        return MPOSum(new_mpos,strategy=operator.strategy,)
+        return MPOSum(
+            new_mpos,
+            strategy=operator.strategy,
+        )
+
 
 class Space:
     """Class to encode the definition space of a discretized multidimensional function.
@@ -53,32 +57,45 @@ class Space:
         self.L = L
         self.a = [L_i[0] for L_i in L]
         self.b = [L_i[1] for L_i in L]
-        self.dx = np.array([
-            (end - start) / ((d - 1) if closed else d)
-            for (start, end), d in zip(L, self.grid_dimensions)
-        ])
-        self.x =[self.a[i] + self.dx[i] * np.arange(dim) for i, dim in enumerate(self.grid_dimensions)]
-        
+        self.dx = np.array(
+            [
+                (end - start) / ((d - 1) if closed else d)
+                for (start, end), d in zip(L, self.grid_dimensions)
+            ]
+        )
+        self.x = [
+            self.a[i] + self.dx[i] * np.arange(dim)
+            for i, dim in enumerate(self.grid_dimensions)
+        ]
+
     def increase_resolution(self, new_qubits_per_dimension):
         if self.closed:
             new_space = Space(
-            new_qubits_per_dimension,
-            self.L,
-            closed=self.closed,
-        )            
-            new_space.dx = np.array([dx * self.grid_dimensions[i]/new_space.grid_dimensions[i] for i, dx in enumerate(self.dx)])
-            new_space.x =[new_space.a[i] + new_space.dx[i] * np.arange(dim) for i, dim in enumerate(new_space.grid_dimensions)]
+                new_qubits_per_dimension,
+                self.L,
+                closed=self.closed,
+            )
+            new_space.dx = np.array(
+                [
+                    dx * self.grid_dimensions[i] / new_space.grid_dimensions[i]
+                    for i, dx in enumerate(self.dx)
+                ]
+            )
+            new_space.x = [
+                new_space.a[i] + new_space.dx[i] * np.arange(dim)
+                for i, dim in enumerate(new_space.grid_dimensions)
+            ]
         else:
             new_space = Space(
-            new_qubits_per_dimension,
-            [
-                (an, an + dxn * (2**old_qubits))
-                for an, dxn, old_qubits in zip(
-                    self.a, self.dx, self.qubits_per_dimension
-                )
-            ],
-            closed=self.closed,
-        )
+                new_qubits_per_dimension,
+                [
+                    (an, an + dxn * (2**old_qubits))
+                    for an, dxn, old_qubits in zip(
+                        self.a, self.dx, self.qubits_per_dimension
+                    )
+                ],
+                closed=self.closed,
+            )
         return new_space
 
     def __str__(self):

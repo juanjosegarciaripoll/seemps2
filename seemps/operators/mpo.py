@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-import copy
-
 import numpy as np
 import opt_einsum  # type: ignore
 
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, Weight, array
 from ..state.environments import *
 from ..state.environments import scprod
-from ..tools import InvalidOperation, log
-from ..truncate import combine
+from ..tools import InvalidOperation
 from ..typing import *
 
 
@@ -480,5 +477,5 @@ class MPOList(object):
         return scprod(bra, self.apply(ket))  # type: ignore
 
 
-from .. import truncate
-from .mposum import MPOSum
+from .. import truncate  # noqa: E402
+from .mposum import MPOSum  # noqa: E402

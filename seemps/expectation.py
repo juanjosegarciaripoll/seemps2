@@ -73,7 +73,7 @@ def all_expectation1(state: MPS, O: Union[list[Operator], Operator]) -> Vector:
 
 def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     """Expectation value of a product of local operators
-    :math:`\\langle\\psi|O_0 O_1 \cdots O_{N-1}|\\psi\\rangle`.
+    :math:`\\langle\\psi|O_0 O_1 \\cdots O_{N-1}|\\psi\\rangle`.
 
     Parameters
     ----------

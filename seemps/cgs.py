@@ -1,6 +1,6 @@
-from typing import Optional, Union
+from typing import Optional
 from .expectation import scprod
-from .state import MPS, MPSSum, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
+from .state import MPS, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
 from .mpo import MPO
 from .truncate.combine import combine
 from .tools import log

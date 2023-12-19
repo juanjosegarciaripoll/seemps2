@@ -12,7 +12,7 @@ class InvalidOperation(TypeError):
 
 
 def take_from_list(O, i):
-    if type(O) == list:
+    if isinstance(O, list):
         return O[i]
     else:
         return O

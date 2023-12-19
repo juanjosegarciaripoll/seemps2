@@ -1,9 +1,7 @@
 import copy
-
 import numpy as np
-
 from ..qft import qft_mpo
-from ..state import DEFAULT_STRATEGY, CanonicalMPS
+from ..state import DEFAULT_STRATEGY
 from ..truncate import simplify
 from .finite_differences import mpo_combined
 from .space import *

@@ -1,12 +1,9 @@
 from __future__ import annotations
-
 import numpy as np
-
 from ..tools import InvalidOperation
 from ..typing import *
 from .core import DEFAULT_STRATEGY, Strategy
 from .environments import *
-from .schmidt import vector2mps
 
 
 class MPSSum:
@@ -169,5 +166,5 @@ class MPSSum:
         )
 
 
-from .canonical_mps import CanonicalMPS
-from .mps import MPS
+from .canonical_mps import CanonicalMPS  # noqa: E402
+from .mps import MPS  # noqa: E402

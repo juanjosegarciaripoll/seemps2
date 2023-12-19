@@ -150,7 +150,7 @@ class CanonicalMPS(MPS):
         )
 
     def norm_squared(self) -> float:
-        """Norm-2 squared :math:`\\Vert{\psi}\\Vert^2` of this MPS."""
+        """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
         A = self._data[self.center]
         return np.vdot(A, A).real
 
@@ -170,7 +170,7 @@ class CanonicalMPS(MPS):
             ρ = environments.update_right_environment(A, A, ρ)
         return ρ
 
-    def entanglement_entropy(self, site: Optional[int] = None) -> Real:
+    def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
         around `site`.
 

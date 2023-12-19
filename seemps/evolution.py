@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABC
-import numpy as np
-from .typing import Unitary, Tensor3, Tensor4, Union
+from typing import Union
+from .typing import Unitary
 import scipy.linalg  # type: ignore
 from seemps.hamiltonians import NNHamiltonian  # type: ignore
 from .state import Strategy, DEFAULT_STRATEGY, MPS, CanonicalMPS
@@ -75,7 +75,7 @@ class PairwiseUnitaries:
             if center > 1:
                 state.recenter(1)
             for j in range(L - 1):
-                ## AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
+                # AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
                 state.update_2site_right(
                     _contract_nrjl_ijk_klm(U[j], state[j], state[j + 1]), j, strategy
                 )
@@ -83,7 +83,7 @@ class PairwiseUnitaries:
             if center < L - 2:
                 state.recenter(L - 2)
             for j in range(L - 2, -1, -1):
-                ## AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
+                # AA = np.einsum("ijk,klm,nrjl -> inrm", state[j], state[j + 1], U[j])
                 state.update_2site_left(
                     _contract_nrjl_ijk_klm(U[j], state[j], state[j + 1]), j, strategy
                 )

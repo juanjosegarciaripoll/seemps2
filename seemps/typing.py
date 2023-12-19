@@ -1,8 +1,6 @@
 from __future__ import annotations
-import numpy as np
 from numpy.typing import NDArray, ArrayLike
 import scipy.sparse  # type: ignore
-from numbers import Complex, Real
 from typing import (
     Sequence,
     Iterator,

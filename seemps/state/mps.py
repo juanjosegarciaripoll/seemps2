@@ -1,11 +1,7 @@
 from __future__ import annotations
-
-import copy
 import math
 import warnings
-
 import numpy as np
-
 from ..tools import InvalidOperation
 from ..typing import *
 from . import array
@@ -197,11 +193,11 @@ class MPS(array.TensorArray):
         return self.norm_squared()
 
     def norm_squared(self) -> float:
-        """Norm-2 squared :math:`\\Vert{\psi}\\Vert^2` of this MPS."""
+        """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
         return abs(scprod(self, self))
 
     def norm(self) -> float:
-        """Norm-2 :math:`\\Vert{\psi}\\Vert^2` of this MPS."""
+        """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
         return np.sqrt(abs(scprod(self, self)))
 
     def expectation1(self, O: Operator, site: int) -> Weight:
@@ -477,5 +473,5 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
     return Ψ.reshape(-1)
 
 
-from .mpssum import MPSSum
-from .environments import *
+from .mpssum import MPSSum  # noqa: E402
+from .environments import *  # noqa: E402
