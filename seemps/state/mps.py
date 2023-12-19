@@ -170,7 +170,7 @@ class MPS(array.TensorArray):
             )
         raise InvalidOperation("-", self, state)
 
-    def __mul__(self, n: Weight) -> MPS:
+    def __mul__(self, n: Union[Weight, MPS]) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
         if isinstance(n, (int, float, complex)):
             mps_mult = self.copy()
