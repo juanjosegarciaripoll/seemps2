@@ -114,7 +114,7 @@ cdef class Strategy:
 DEFAULT_TOLERANCE = np.finfo(np.float64).eps
 
 DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
-                            simplify = SIMPLIFICATION_DO_NOT_SIMPLIFY,
+                            simplify = SIMPLIFICATION_VARIATIONAL,
                             tolerance = DEFAULT_TOLERANCE,
                             simplification_tolerance = DEFAULT_TOLERANCE,
                             max_bond_dimension = MAX_BOND_DIMENSION,
