@@ -5,7 +5,7 @@ from copy import copy
 from typing import Callable, Optional
 from .maxvol import maxvol_sqr, maxvol_rct
 from ..analysis.mesh import Mesh
-from ..tools import log
+from ..tools import log, DEBUG
 from ..state import MPS, random_mps
 from ..truncate import simplify
 
@@ -111,7 +111,6 @@ class Cross:
         self.I_backward = [None for _ in range(self.sites + 1)]
         self.error = 1
         self.sweeps = 0
-        self.maxrank = 0
 
     def presweep(cross: Cross) -> None:
         """Executes a presweep on the initial MPS without evaluating
@@ -159,7 +158,10 @@ class Cross:
         self.mps[0] = np.tensordot(R, self.mps[0], 1)
 
         self.sweeps += 1
-        self.maxrank = max(self.mps.bond_dimensions())
+
+    def maximum_bond_dimension(self: Cross) -> int:
+        """Return the maximum bond dimension reached"""
+        return max(A.shape[0] for A in self.mps)
 
     # TODO: Clean and optimize
     def skeleton(
@@ -385,10 +387,11 @@ def cross_interpolation(
             cross.error = cross.norm2_error()
         else:
             raise ValueError("Invalid error_type")
-        log(
-            f"Sweep {cross.sweeps:<3} | "
-            + f"Max χ {cross.maxrank:>3} | "
-            + f"{error_name} {cross.error:.2E}"
-        )
+        if DEBUG:
+            log(
+                f"Sweep {cross.sweeps:<3} | "
+                + f"Max χ {cross.maximum_bond_dimension():>3} | "
+                + f"{error_name} {cross.error:.2E}"
+            )
 
     return cross.mps
