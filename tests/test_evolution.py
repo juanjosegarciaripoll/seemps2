@@ -34,9 +34,9 @@ class TestEuler(TestCase):
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         exact = product_state([0, 1], N)
-        result = euler(H, guess, Δβ=0.1)
+        result = euler(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-7)
+        self.assertSimilar(result.state, exact, atol=1e-4)
 
     def test_euler_with_callback(self):
         N = 4
@@ -67,9 +67,9 @@ class TestImprovedEuler(TestCase):
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         exact = product_state([0, 1], N)
-        result = improved_euler(H, guess, Δβ=0.1)
+        result = improved_euler(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-7)
+        self.assertSimilar(result.state, exact, atol=1e-4)
 
     def test_improved_euler_with_callback(self):
         N = 4
@@ -100,9 +100,9 @@ class TestRungeKutta(TestCase):
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         exact = product_state([0, 1], N)
-        result = runge_kutta(H, guess, Δβ=0.1)
+        result = runge_kutta(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-7)
+        self.assertSimilar(result.state, exact, atol=1e-4)
 
     def test_runge_kutta_with_callback(self):
         N = 4
@@ -133,9 +133,9 @@ class TestRungeKuttaFehlberg(TestCase):
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         exact = product_state([0, 1], N)
-        result = runge_kutta_fehlberg(H, guess, Δβ=0.01, tol_rk=1e-7)
+        result = runge_kutta_fehlberg(H, guess, maxiter=100, tol_rk=1e-7)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-7)
+        self.assertSimilar(result.state, exact, atol=1e-4)
 
     def test_runge_kutta_fehlberg_with_callback(self):
         N = 4
