@@ -1,6 +1,6 @@
 from typing import Tuple
 import numpy as np
-from scipy.linalg import lu, solve_triangular
+from scipy.linalg import lu, solve_triangular  # type: ignore
 
 
 def maxvol_sqr(
