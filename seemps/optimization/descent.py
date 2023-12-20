@@ -6,7 +6,7 @@ import numpy as np
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification, Strategy
-from ..tools import log
+from ..tools import DEBUG, log
 from ..truncate.simplify import simplify
 from ..typing import *
 
@@ -111,7 +111,8 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
-        log(f"step = {step:5d}, energy = {E}, variance = {variance}")
+        if DEBUG:
+            log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
