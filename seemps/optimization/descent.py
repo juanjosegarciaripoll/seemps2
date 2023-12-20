@@ -1,14 +1,14 @@
 from dataclasses import dataclass
+from typing import Callable, Union
 
 import numpy as np
 
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification, Strategy
-from ..tools import log
+from ..tools import DEBUG, log
 from ..truncate.simplify import simplify
 from ..typing import *
-from typing import Union, Callable
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -111,7 +111,8 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
-        log(f"step = {step:5d}, energy = {E}, variance = {variance}")
+        if DEBUG:
+            log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
@@ -126,14 +127,12 @@ def gradient_descent(
             converged = True
             break
         avg_H3 = H.expectation(H_state).real
-        avg_3 = (avg_H3 - 3 * E * avg_H2 + 2 * E**3).real
-        Δβ = (avg_3 - np.sqrt(avg_3**2 + 4 * variance**3)) / (2 * variance**2)
-        # TODO: Replace this formula with the formula that keeps the
-        # normalization of the state (2nd. order gradient descent from the
-        # manuscript)
-        state = simplify(
-            (1 - Δβ * E) * state + Δβ * H_state, strategy=normalization_strategy
-        )
+        A = np.array([[E, avg_H2], [avg_H2, avg_H3]])
+        B = np.array([[1, E], [E, avg_H2]])
+        w, v = scipy.linalg.eig(A, B)
+        v = v[:, np.argmin(w)]
+        v /= np.linalg.norm(v)
+        state = simplify(v[0] * state + v[1] * H_state, strategy=normalization_strategy)
         last_E_mean = E_mean
         if callback is not None:
             callback(state)

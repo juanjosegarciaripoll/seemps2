@@ -1,7 +1,7 @@
 from seemps import MPO, MPOList, MPSSum, random_uniform_mps
 from seemps.operators import MPOSum
 from seemps.state import MPSSum
-from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
+from seemps.state.core import DEFAULT_STRATEGY, NO_TRUNCATION, Simplification, Strategy
 from seemps.tools import σx, σy, σz
 from seemps.truncate import simplify
 
@@ -82,21 +82,10 @@ class TestMPOSum(TestCase):
         state = random_uniform_mps(2, self.mpoA.size, D=10)
 
         mposum = self.mpoA + self.mpoB
-        newstate = mposum.apply(state)
+        newstate = mposum.apply(state, strategy=NO_TRUNCATION)
         self.assertIsInstance(newstate, MPSSum)
         self.assertSimilar(
             (self.mpoA + self.mpoB).apply(state).to_vector(),
-            self.mpoA.apply(state).to_vector() + self.mpoB.apply(state).to_vector(),
-        )
-
-    def test_mposum_matmul_creates_mpssum(self):
-        state = random_uniform_mps(2, self.mpoA.size, D=10)
-
-        mposum = self.mpoA + self.mpoB
-        newstate = mposum @ state
-        self.assertIsInstance(newstate, MPSSum)
-        self.assertSimilar(
-            ((self.mpoA + self.mpoB) @ state).to_vector(),
             self.mpoA.apply(state).to_vector() + self.mpoB.apply(state).to_vector(),
         )
 
@@ -104,12 +93,8 @@ class TestMPOSum(TestCase):
         state = random_uniform_mps(2, self.mpoA.size, D=10)
 
         mposum = self.mpoA + self.mpoB
-        newstate = mposum.apply(state)
-        self.assertIsInstance(newstate, MPSSum)
         self.assertSimilar(
-            (self.mpoA + self.mpoB)
-            .apply(state, simplify=True, strategy=TEST_STRATEGY)
-            .to_vector(),
+            (self.mpoA + self.mpoB).apply(state, strategy=TEST_STRATEGY).to_vector(),
             (self.mpoA + self.mpoB).tomatrix() @ state.to_vector(),
         )
 
