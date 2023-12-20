@@ -132,7 +132,7 @@ class Cross:
 
         # Backward pass
         R = np.ones((1, 1))
-        for j in range(cross.sites - 1, -1, -1):
+        for j in reversed(range(cross.sites)):
             fiber = np.tensordot(cross.mps[j], R, 1)
             cross.mps[j], cross.I_backward[j], R = cross_initial.skeleton(
                 fiber, j, ltr=False
@@ -152,7 +152,7 @@ class Cross:
 
         # Backward pass
         R = np.ones((1, 1))
-        for j in range(self.sites - 1, -1, -1):
+        for j in reversed(range(self.sites)):
             fiber = self.sample(j)
             self.mps[j], self.I_backward[j], R = self.skeleton(fiber, j, ltr=False)
         self.mps[0] = np.tensordot(R, self.mps[0], 1)
