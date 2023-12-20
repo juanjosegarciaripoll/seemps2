@@ -7,6 +7,8 @@ from seemps.analysis import (
 )
 from seemps.cross import CrossStrategy, cross_interpolation, reorder_tensor
 from seemps.state import MPS
+from seemps.expectation import scprod
+from seemps.truncate import simplify, SIMPLIFICATION_STRATEGY
 
 from .tools import TestCase
 
@@ -51,12 +53,13 @@ class TestCross(TestCase):
         mps = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
         self.assertSimilar(func_vector, mps.to_vector())
 
-    # FAILS
-    # def test_cross_1d_simplified(self):
-    #     func, mesh, _, _ = self.gaussian_setting(1)
-    #     mps = cross_interpolation(func, mesh)
-    #     mps_simplified = simplify(mps)
-    #     self.assertSimilar(mps_simplified.to_vector(), mps.to_vector())
+    def test_cross_1d_simplified(self):
+        func, mesh, _, _ = self.gaussian_setting(1)
+        mps = cross_interpolation(func, mesh)
+        mps_simplified = simplify(
+            mps, strategy=SIMPLIFICATION_STRATEGY.replace(normalize=False)
+        )
+        self.assertSimilar(mps_simplified.to_vector(), mps.to_vector())
 
     # 2D Gaussian
     def test_cross_2d_from_random(self):
