@@ -25,7 +25,7 @@ class TestGradientDescent(TestCase):
         exact = product_state([0, 1], N)
         result = gradient_descent(H, guess, tol=1e-15)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-7)
+        self.assertSimilarStates(result.state, exact, atol=1e-7)
 
     def test_gradient_descent_acknowledges_tolerance(self):
         """Check that algorithm stops if energy change is below tolerance."""
@@ -42,9 +42,11 @@ class TestGradientDescent(TestCase):
 
     def callback(self):
         norms = []
-        def callback_func(state:MPS):
+
+        def callback_func(state: MPS):
             norms.append(np.sqrt(state.norm_squared()))
             return None
+
         return callback_func, norms
 
     def test_gradient_descent_with_callback(self):
@@ -53,6 +55,8 @@ class TestGradientDescent(TestCase):
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         callback_func, norms = self.callback()
-        result = gradient_descent(H, guess, maxiter=maxiter, tol=1e-15, callback=callback_func)
+        result = gradient_descent(
+            H, guess, maxiter=maxiter, tol=1e-15, callback=callback_func
+        )
         self.assertSimilar(norms, np.ones(len(norms)))
         self.assertEqual(maxiter, len(norms))
