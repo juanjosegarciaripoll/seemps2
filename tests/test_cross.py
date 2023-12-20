@@ -61,6 +61,12 @@ class TestCross(TestCase):
         )
         self.assertSimilar(mps_simplified.to_vector(), mps.to_vector())
 
+    def test_cross_1d_norm2_error(self):
+        func, mesh, mps0, func_vector = self.gaussian_setting(1)
+        strategy = CrossStrategy(error_type="norm")
+        mps = cross_interpolation(func, mesh, mps=mps0, cross_strategy=strategy)
+        self.assertSimilar(func_vector, mps.to_vector())
+
     # 2D Gaussian
     def test_cross_2d_from_random(self):
         func, mesh, _, func_vector = self.gaussian_setting(2)
