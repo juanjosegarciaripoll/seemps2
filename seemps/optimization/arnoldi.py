@@ -5,7 +5,7 @@ from ..expectation import scprod
 from ..state import MPS, CanonicalMPS, MPSSum, random_mps
 from ..mpo import MPO
 from ..truncate.simplify import simplify
-import scipy.linalg
+import scipy.linalg  # type: ignore
 
 from .descent import DESCENT_STRATEGY, OptimizeResults, Strategy
 
@@ -31,7 +31,7 @@ class MPSArnoldiRepresentation:
         self.strategy = strategy.replace(normalize=True)
         pass
 
-    def add_vector(self, v: MPS) -> bool:
+    def add_vector(self, v: MPS) -> tuple[MPS, bool]:
         # We no longer should need this. Restart takes care of creating
         # a simplified vector, and the user is responsible for letting
         # the MPO do something sensible.
@@ -57,7 +57,7 @@ class MPSArnoldiRepresentation:
         self.V.append(v)
         return v, True
 
-    def restart_with_ground_state(self) -> MPS:
+    def restart_with_ground_state(self) -> tuple[MPS, float]:
         eigenvalues, eigenstates = scipy.linalg.eig(self.H, self.N)
         eigenvalues = eigenvalues.real
         ndx = np.argmin(eigenvalues)
@@ -91,7 +91,7 @@ def arnoldi_eigh(
 
     arnoldi = MPSArnoldiRepresentation(operator, strategy)
     arnoldi.add_vector(v0)
-    v = operator @ v0
+    v: MPS = operator @ v0  # type: ignore
     best_energy = arnoldi.H[0, 0].real
     variance = abs(scprod(v, v)) - best_energy * best_energy
     best_vector = v0
@@ -123,7 +123,7 @@ def arnoldi_eigh(
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
-        v = operator @ v
+        v = operator @ v  # type: ignore
         energy = arnoldi.H[0, 0].real
         energies.append(energy)
         if energy < best_energy:
@@ -132,7 +132,7 @@ def arnoldi_eigh(
     if converged:
         best_energy = operator.expectation(best_vector, best_vector).real
         energies.append(best_energy)
-        v = operator @ best_vector
+        v = operator @ best_vector  # type: ignore
         variance = abs(scprod(v, v)) - best_energy * best_energy
         variances.append(variance)
     return OptimizeResults(
