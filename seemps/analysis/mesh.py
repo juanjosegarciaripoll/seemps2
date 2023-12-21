@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Tuple
-import numpy as np
 from itertools import product
+from typing import Callable, List, Tuple
+
+import numpy as np
 
 
 class Interval(ABC):
@@ -92,3 +93,82 @@ class Mesh:
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(self.shape())
+
+
+def mps_indices_to_mesh_indices(
+    mesh: Mesh, mps_indices: np.ndarray, mps_ordering: str = "A"
+) -> np.ndarray:
+    """
+    Converts indices from MPS format to Mesh (decimal) format.
+    If the mesh represents a multivariate domain, the indices
+    depend on the ordering of the MPS.
+
+    Parameters
+    ----------
+    mesh : Mesh
+        The mesh object defining the spatial domain.
+    mps_indices : np.ndarray
+        Array of indices in MPS format.
+    mps_ordering : str, default 'A'
+        The ordering of the MPS, either 'A' or 'B'.
+
+    Returns
+    -------
+    mesh_indices : np.ndarray
+        Array of indices in the mesh corresponding to the MPS indices.
+    """
+
+    bits_to_int = lambda bits: int("".join(map(str, bits)), 2)
+    sites_per_dimension = [int(np.log2(size)) for size in mesh.shape()[:-1]]
+    dims = len(sites_per_dimension)
+    mesh_indices = []
+    for dim, sites in enumerate(sites_per_dimension):
+        if mps_ordering == "A":
+            slice = np.arange(dim * sites, (dim + 1) * sites)
+        elif mps_ordering == "B":
+            slice = np.arange(dim, dims * sites, dims)
+        else:
+            raise ValueError("Invalid mps_ordering")
+        mesh_indices.append(
+            np.array([bits_to_int(bits) for bits in mps_indices[:, slice]])
+        )
+    return np.column_stack(mesh_indices)
+
+
+# TODO: Think if this should be included in the library
+def reorder_tensor(tensor: np.ndarray, sites_per_dimension: List[int]) -> np.ndarray:
+    """
+    Reorders a given tensor between the MPS orderings 'A' and 'B' by transposing its axes.
+
+    This reshapes the input tensor into a MPS format, transposes its axes according to the
+    MPS ordering and specified sites per dimension, and reshapes it back to the original tensor shape.
+
+    Parameters
+    ----------
+    tensor : np.ndarray
+        The tensor to be reordered.
+    sites_per_dimension : List[int]
+        A list specifying the number of sites for each dimension of the tensor.
+
+    Returns
+    -------
+    np.ndarray
+        The tensor reordered from order 'A' to 'B' or vice versa.
+    """
+    dimensions = len(sites_per_dimension)
+    shape_orig = tensor.shape
+    tensor = tensor.reshape([2] * sum(sites_per_dimension))
+    axes = [
+        np.arange(idx, dimensions * n, dimensions)
+        for idx, n in enumerate(sites_per_dimension)
+    ]
+    axes = [item for items in axes for item in items]
+    tensor = np.transpose(tensor, axes=axes)
+    return tensor.reshape(shape_orig)
+
+
+def sample_mesh(
+    func: Callable, mesh: Mesh, mps_indices: np.ndarray, mps_ordering: str
+) -> np.ndarray:
+    mesh_indices = mps_indices_to_mesh_indices(mesh, mps_indices, mps_ordering)
+    return np.array([func(mesh[idx]) for idx in mesh_indices]).flatten()
