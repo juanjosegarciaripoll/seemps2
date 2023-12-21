@@ -5,7 +5,7 @@ from copy import copy
 from typing import Callable, Optional
 from .maxvol import maxvol_sqr, maxvol_rct
 from ..analysis.mesh import Mesh
-from ..tools import log
+from ..tools import log, DEBUG
 from ..state import MPS, random_mps
 from ..truncate import simplify
 
@@ -111,34 +111,33 @@ class Cross:
         self.I_backward = [None for _ in range(self.sites + 1)]
         self.error = 1
         self.sweeps = 0
-        self.maxrank = 0
 
-    def presweep(self: Cross) -> None:
+    def presweep(cross: Cross) -> None:
         """Executes a presweep on the initial MPS without evaluating
         the function and using the square maxvol algorithm without rank
         increments."""
-        cross_initial = copy(self)
+        cross_initial = copy(cross)
         cross_initial.cross_strategy = CrossStrategy(
             maxvol_rct_minrank=0, maxvol_rct_maxrank=0
         )
 
         # Forward pass
         R = np.ones((1, 1))
-        for j in range(self.sites):
-            fiber = np.tensordot(R, self.mps[j], 1)
-            self.mps[j], self.I_forward[j + 1], R = cross_initial.skeleton(
+        for j in range(cross.sites):
+            fiber = np.tensordot(R, cross.mps[j], 1)
+            cross.mps[j], cross.I_forward[j + 1], R = cross_initial.skeleton(
                 fiber, j, ltr=True
             )
-        self.mps[self.sites - 1] = np.tensordot(self.mps[self.sites - 1], R, 1)
+        cross.mps[cross.sites - 1] = np.tensordot(cross.mps[cross.sites - 1], R, 1)
 
         # Backward pass
         R = np.ones((1, 1))
-        for j in range(self.sites - 1, -1, -1):
-            fiber = np.tensordot(self.mps[j], R, 1)
-            self.mps[j], self.I_backward[j], R = cross_initial.skeleton(
+        for j in reversed(range(cross.sites)):
+            fiber = np.tensordot(cross.mps[j], R, 1)
+            cross.mps[j], cross.I_backward[j], R = cross_initial.skeleton(
                 fiber, j, ltr=False
             )
-        self.mps[0] = np.tensordot(R, self.mps[0], 1)
+        cross.mps[0] = np.tensordot(R, cross.mps[0], 1)
 
     def sweep(self: Cross) -> None:
         """Runs a forward-backward sweep on the MPS that iteratively updates
@@ -153,13 +152,16 @@ class Cross:
 
         # Backward pass
         R = np.ones((1, 1))
-        for j in range(self.sites - 1, -1, -1):
+        for j in reversed(range(self.sites)):
             fiber = self.sample(j)
             self.mps[j], self.I_backward[j], R = self.skeleton(fiber, j, ltr=False)
         self.mps[0] = np.tensordot(R, self.mps[0], 1)
 
         self.sweeps += 1
-        self.maxrank = max(self.mps.bond_dimensions())
+
+    def maximum_bond_dimension(self: Cross) -> int:
+        """Return the maximum bond dimension reached"""
+        return max(A.shape[0] for A in self.mps)
 
     # TODO: Clean and optimize
     def skeleton(
@@ -262,7 +264,7 @@ class Cross:
             indices = _binary2decimal(
                 indices, self.qubits, self.cross_strategy.mps_ordering
             )
-        return np.array([self.func(self.mesh[idx]) for idx in indices]).flatten()
+        return np.array([self.func(self.mesh[idx]) for idx in indices]).reshape(-1)
 
     def sampling_error(self: Cross, sampling_points: int = 1000) -> float:
         """Returns the algorithm error given by comparing random samples
@@ -385,10 +387,11 @@ def cross_interpolation(
             cross.error = cross.norm2_error()
         else:
             raise ValueError("Invalid error_type")
-        log(
-            f"Sweep {cross.sweeps:<3} | "
-            + f"Max χ {cross.maxrank:>3} | "
-            + f"{error_name} {cross.error:.2E}"
-        )
+        if DEBUG:
+            log(
+                f"Sweep {cross.sweeps:<3} | "
+                + f"Max χ {cross.maximum_bond_dimension():>3} | "
+                + f"{error_name} {cross.error:.2E}"
+            )
 
     return cross.mps
