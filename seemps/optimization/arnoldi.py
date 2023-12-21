@@ -119,7 +119,7 @@ def arnoldi_eigh(
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
-            if np.abs(eigenvalue_change) < tol and i > miniter:
+            if eigenvalue_change >= abs(tol) and i > miniter:
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
