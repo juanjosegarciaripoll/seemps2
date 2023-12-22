@@ -27,7 +27,6 @@ class MPS(array.TensorArray):
     """
 
     _error: float
-    strategy: Strategy
 
     #
     # This class contains all the matrices and vectors that form
