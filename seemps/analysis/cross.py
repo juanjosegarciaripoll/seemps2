@@ -34,8 +34,8 @@ def maxvol_square(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         The matrix of coefficients. This matrix represents the coefficients for the linear combination of rows in the
         original matrix that approximates the remaining rows, namely, a matrix B such that A ≈ B A[I, :].
     """
-    square_maxiter = 100
-    square_tol = 1.05
+    SQUARE_MAXITER = 100
+    SQUARE_TOL = 1.05
     n, r = matrix.shape
     if n <= r:
         raise ValueError('Input matrix should be "tall"')
@@ -45,9 +45,9 @@ def maxvol_square(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     B = solve_triangular(
         L[:r, :], Q, trans=1, check_finite=False, unit_diagonal=True, lower=True
     ).T
-    for _ in range(square_maxiter):
+    for _ in range(SQUARE_MAXITER):
         i, j = np.divmod(np.abs(B).argmax(), r)
-        if np.abs(B[i, j]) <= square_tol:
+        if np.abs(B[i, j]) <= SQUARE_TOL:
             break
         I[j] = i
         bj = B[:, j]
@@ -83,7 +83,7 @@ def maxvol_rectangular(
         The matrix of coefficients. This matrix represents the coefficients of the linear combination of rows
         in the original matrix that approximates the remaining rows, namely, a matrix B such that A ≈ B A[I, :].
     """
-    rectangular_tol = 1.10
+    RECTANGULAR_TOL = 1.10
     n, r = matrix.shape
     r_min = r + min_rank_change
     r_max = r + max_rank_change if max_rank_change is not None else n
@@ -97,7 +97,7 @@ def maxvol_rectangular(
     F = S * np.linalg.norm(B, axis=1) ** 2
     for k in range(r, r_max):
         i = np.argmax(F)
-        if k >= r_min and F[i] <= rectangular_tol**2:
+        if k >= r_min and F[i] <= RECTANGULAR_TOL**2:
             break
         I[k] = i
         S[i] = 0
@@ -230,10 +230,10 @@ def sample_initial_indices(state: MPS) -> List[np.ndarray]:
         Q, R = np.linalg.qr(fiber_matrix.T)
         maxvol_rows, _ = maxvol(Q, rank_change)
         R = (Q[maxvol_rows, :] @ R).T
-        I_fiber_cols = np.hstack(
+        I_fiber_rows = np.hstack(
             (np.kron(_ones(r_g), I_s[k]), np.kron(I_g[k + 1], _ones(s)))
         )
-        I_g[k] = I_fiber_cols[maxvol_rows, :]
+        I_g[k] = I_fiber_rows[maxvol_rows, :]
 
     return I_g
 
@@ -347,11 +347,12 @@ def cross_interpolation(
 
     def get_error(state: MPS):
         if error_type == "sampling":
-            mps_indices = random_mps_indices(state)
-            T = mesh.binary_transformation_matrix(mps_ordering)
-            mesh_samples = func(mesh[mps_indices @ T])
-            mps_samples = sample_mps(state, mps_indices)
-            error = np.max(np.abs(mps_samples - mesh_samples))
+            if sweep == 0:
+                get_error.mps_indices = random_mps_indices(state)
+                T = mesh.binary_transformation_matrix(mps_ordering)
+                get_error.mesh_samples = func(mesh[get_error.mps_indices @ T])
+            mps_samples = sample_mps(state, get_error.mps_indices)
+            error = np.max(np.abs(mps_samples - get_error.mesh_samples))
         elif error_type == "norm":
             if sweep == 0:
                 # Save a deepcopy (needs to copy the previous tensors) to a function attribute
@@ -426,12 +427,11 @@ def cross_interpolation(
             Q, R = np.linalg.qr(fiber_matrix)
             maxvol_rows, maxvol_coefs = maxvol(Q, rank_change)
             state[k] = maxvol_coefs.reshape(r_le, s, -1, order="F")
-            R = Q[maxvol_rows, :] @ R
             I_fiber_rows = np.hstack(
                 (np.kron(_ones(s), I_le[k]), np.kron(I_s[k], _ones(r_le)))
             )
             I_le[k + 1] = I_fiber_rows[maxvol_rows, :]
-        state[k] = np.tensordot(state[k], R, 1)
+        state[k] = np.tensordot(state[k], Q[maxvol_rows, :] @ R, 1)
 
         # Backward pass
         for k in reversed(range(sites)):
@@ -444,12 +444,11 @@ def cross_interpolation(
             Q, R = np.linalg.qr(fiber_matrix)
             maxvol_rows, maxvol_coefs = maxvol(Q, rank_change)
             state[k] = maxvol_coefs.T.reshape(-1, s, r_g, order="F")
-            R = (Q[maxvol_rows, :] @ R).T
             I_fiber_rows = np.hstack(
                 (np.kron(_ones(r_g), I_s[k]), np.kron(I_g[k + 1], _ones(s)))
             )
             I_g[k] = I_fiber_rows[maxvol_rows, :]
-        state[0] = np.tensordot(R, state[0], 1)
+        state[0] = np.tensordot((Q[maxvol_rows, :] @ R).T, state[0], 1)
 
         end_time = perf_counter()
         time = end_time - start_time
