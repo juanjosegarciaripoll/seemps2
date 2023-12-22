@@ -241,7 +241,7 @@ def sample_initial_indices(state: MPS) -> List[np.ndarray]:
 def sample_tensor_fiber(
     func: Callable,
     mesh: Mesh,
-    mps_ordering: str,
+    mps_order: str,
     i_le: np.ndarray,
     i_s: np.ndarray,
     i_g: np.ndarray,
@@ -256,7 +256,7 @@ def sample_tensor_fiber(
         The vector function to be evaluated.
     mesh : Mesh
         The mesh of points where the function is defined.
-    mps_ordering : str
+    mps_order : str
         The ordering of the MPS sites, determining with which transformation matrix the tensor fiber is sampled.
     i_le : np.ndarray
         The multi-indices coming from all sites smaller or equal to k ($J_{\le k-1}$) in the MPS.
@@ -282,7 +282,7 @@ def sample_tensor_fiber(
     if i_g.size > 0:
         mps_indices = np.hstack((mps_indices, np.kron(i_g, _ones(r_le * s))))
     # Evaluate the function at the fiber indices
-    T = mesh.binary_transformation_matrix(mps_ordering)
+    T = mesh.binary_transformation_matrix(mps_order)
     fiber = func(mesh[mps_indices @ T]).reshape((r_le, s, r_g), order="F")
     return fiber
 
@@ -307,7 +307,7 @@ def cross_interpolation(
     maxiter: int = 100,
     tol: float = 1e-10,
     error_type: str = "sampling",
-    mps_ordering: str = "A",
+    mps_order: str = "A",
     strategy: Strategy = SIMPLIFICATION_STRATEGY.replace(normalize=False),
     callback: Optional[Callable] = None,
 ) -> CrossResults:
@@ -331,7 +331,7 @@ def cross_interpolation(
         The maximum number of sweeps allowed.
     tol : float, default=1e-10
         The error tolerance for convergence.
-    mps_ordering : str, default="A"
+    mps_order : str, default="A"
         Determines the order of the sites in the MPS by changing how the function is sampled.
     strategy : Strategy, default=Strategy()
         The MPS simplification strategy to perform at the end of the algorithm.
@@ -349,7 +349,7 @@ def cross_interpolation(
         if error_type == "sampling":
             if sweep == 0:
                 get_error.mps_indices = random_mps_indices(state)
-                T = mesh.binary_transformation_matrix(mps_ordering)
+                T = mesh.binary_transformation_matrix(mps_order)
                 get_error.mesh_samples = func(mesh[get_error.mps_indices @ T])
             mps_samples = sample_mps(state, get_error.mps_indices)
             error = np.max(np.abs(mps_samples - get_error.mesh_samples))
@@ -419,7 +419,7 @@ def cross_interpolation(
         # Forward pass
         for k in range(sites):
             fiber = sample_tensor_fiber(
-                func, mesh, mps_ordering, I_le[k], I_s[k], I_g[k + 1]
+                func, mesh, mps_order, I_le[k], I_s[k], I_g[k + 1]
             )
             evals += fiber.size
             r_le, s, r_g = fiber.shape
@@ -436,7 +436,7 @@ def cross_interpolation(
         # Backward pass
         for k in reversed(range(sites)):
             fiber = sample_tensor_fiber(
-                func, mesh, mps_ordering, I_le[k], I_s[k], I_g[k + 1]
+                func, mesh, mps_order, I_le[k], I_s[k], I_g[k + 1]
             )
             evals += fiber.size
             r_le, s, r_g = fiber.shape
@@ -474,10 +474,12 @@ def cross_interpolation(
     # Simplify the state according to the strategy
     state = simplify(state, strategy=strategy)
     truncated_bonds = state.bond_dimensions()
+    truncated_error = get_error(state)
     bonds.append(truncated_bonds)
+    errors.append(truncated_error)
     if DEBUG:
         log(
-            f"simplification truncates maxbond from {max(all_bonds)} to {max(truncated_bonds)}"
+            f"simplification truncates maxbond from {max(all_bonds)} to {max(truncated_bonds)} with error {truncated_error:.15e}"
         )
 
     return CrossResults(
