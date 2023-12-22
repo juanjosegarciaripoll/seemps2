@@ -3,6 +3,14 @@ from ..tools import InvalidOperation
 from ..typing import *
 
 
+cdef MPSSum _MPSSum_from_data(list weights, list states, Py_ssize_t size):
+    cdef MPSSum output = MPSSum.__new__(MPSSum)
+    output._weights = weights
+    output._states = states
+    output._size = size
+    return output
+
+
 cdef class MPSSum:
     """Class representing a weighted sum (or difference) of two or more :class:`MPS`.
 
@@ -47,25 +55,23 @@ cdef class MPSSum:
     def copy(self) -> MPSSum:
         """Return a shallow copy of the MPS sum and its data. Does not copy
         the states, only the list that stores them."""
-        cdef MPSSum output = MPSSum.__new__(MPSSum)
-        output._weights = list(self._weights)
-        output._states = list(self._states)
-        output._size = self._size
-        return output
+        return _MPSSum_from_data(list(self._weights), list(self._states), self._size)
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""
         cdef MPSSum sumstate
         if isinstance(state, MPS):
-            return MPSSum(
+            return _MPSSum_from_data(
                 self._weights + [1.0],
                 self._states + [state],
+                self._size
             )
         elif isinstance(state, MPSSum):
             sumstate = state
-            return MPSSum(
+            return _MPSSum_from_data(
                 self._weights + sumstate._weights,
                 self._states + sumstate._states,
+                self._size
             )
         raise InvalidOperation("+", self, state)
 
@@ -73,25 +79,38 @@ cdef class MPSSum:
         """Subtract `self - state`, incorporating it to the lists."""
         cdef MPSSum sumstate
         if isinstance(state, MPS):
-            return MPSSum(self._weights + [-1], self._states + [state])
+            return _MPSSum_from_data(
+                self._weights + [-1],
+                self._states + [state],
+                self._size
+            )
         if isinstance(state, MPSSum):
             sumstate = state
-            return MPSSum(
+            return _MPSSum_from_data(
                 self._weights + [-w for w in sumstate._weights],
                 self._states + sumstate._states,
+                self._size
             )
         raise InvalidOperation("-", self, state)
 
     def __mul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `n * self` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self._weights], self._states)
+            return _MPSSum_from_data(
+                [n * w for w in self._weights],
+                self._states,
+                self._size
+            )
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `self * n` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self._weights], self._states)
+            return _MPSSum_from_data(
+                [n * w for w in self._weights],
+                self._states,
+                self._size
+            )
         raise InvalidOperation("*", n, self)
 
     def to_vector(self) -> Vector:
@@ -162,9 +181,10 @@ cdef class MPSSum:
 
     def conj(self) -> MPSSum:
         """Return the complex-conjugate of this quantum state."""
-        return MPSSum(
+        return _MPSSum_from_data(
             [np.conj(w) for w in self._weights],
-            [state.conj() for state in self._states]
+            [state.conj() for state in self._states],
+            self._size
         )
 
     @property

@@ -83,6 +83,13 @@ cdef class TensorArray:
     def _data(self):
         return self._data
 
+cdef MPS _MPS_from_data(list data, Py_ssize_t size, double error):
+    cdef MPS output = MPS.__new__(MPS)
+    output._data = data
+    output._size = size
+    output._error = error
+    return output
+
 
 cdef class MPS(TensorArray):
     """MPS (Matrix Product State) class.
@@ -119,11 +126,7 @@ cdef class MPS(TensorArray):
     def copy(MPS self) -> MPS:
         """Return a shallow copy of the MPS, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        cdef MPS output = MPS.__new__(MPS)
-        output._data = list(self._data)
-        output._size = self._size
-        output._error = self._error
-        return output
+        return _MPS_from_data(list(self._data), self._size, self._error)
 
     def dimension(self) -> int:
         """Hilbert space dimension of this quantum system."""
@@ -245,20 +248,29 @@ cdef class MPS(TensorArray):
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
+        cdef MPSSum sumstate
         if isinstance(state, MPS):
-            return MPSSum([1.0, 1.0], [self, state])
+            return _MPSSum_from_data([1.0, 1.0], [self, state], self._size)
         if isinstance(state, MPSSum):
-            return MPSSum([1.0] + state.weights, [self] + state.states)
+            sumstate = state
+            return _MPSSum_from_data(
+                [1.0] + sumstate._weights,
+                [self] + sumstate._states,
+                self._size
+            )
         raise InvalidOperation("+", self, state)
 
     def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self - state` as :class:`.MPSSum`"""
+        cdef MPSSum sumstate
         if isinstance(state, MPS):
-            return MPSSum([1, -1], [self, state])
+            return _MPSSum_from_data([1, -1], [self, state], self._size)
         if isinstance(state, MPSSum):
-            return MPSSum(
-                [1] + list((-1) * np.asarray(state.weights)),
-                [self] + state.states,
+            sumstate = state
+            return _MPSSum_from_data(
+                [1] + list((-1) * np.asarray(sumstate._weights)),
+                [self] + sumstate._states,
+                self._size
             )
         raise InvalidOperation("-", self, state)
 
