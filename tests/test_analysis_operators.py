@@ -24,14 +24,14 @@ class Test_analysis_operators(TestCase):
     
     def test_x_n_mpo(self):
         n = 3
-        self.assertSimilar(self.x**n * self.f.to_vector(), x_to_n_mpo(self.n_qubits, self.a, self.dx, n) @ self.f)
+        self.assertSimilar(self.x**n * self.f.to_vector(), (x_mpo(self.n_qubits, self.a, self.dx) ** n) @ self.f)
 
     def test_p_mpo(self):
         self.assertSimilar(self.p * self.f.to_vector(), p_mpo(self.n_qubits, self.dx) @ self.f)
     
     def test_p_n_mpo(self):
         n = 3
-        self.assertSimilar(self.p**n * self.f.to_vector(), p_to_n_mpo(self.n_qubits, self.dx, n) @ self.f)
+        self.assertSimilar(self.p**n * self.f.to_vector(), (p_mpo(self.n_qubits, self.dx) ** n) @ self.f)
 
     def test_exp_mpo(self):
         c = -2j

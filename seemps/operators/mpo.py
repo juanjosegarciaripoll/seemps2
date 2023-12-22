@@ -94,6 +94,12 @@ class MPO(array.TensorArray):
             mpo_mult._data[0] = n * mpo_mult._data[0]
             return mpo_mult
         raise InvalidOperation("*", n, self)
+    
+    def __pow__(self, n: int) -> MPOList:
+        """Exponentiate a MPO to n."""
+        if isinstance(n, int):
+            return MPOList([self.copy() for _ in range(n)])
+        raise InvalidOperation("**", n, self)
 
     # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
