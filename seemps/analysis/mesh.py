@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import Callable, List, Tuple
+from typing import List, Union, Tuple
 
 import numpy as np
 
@@ -80,59 +80,57 @@ class Mesh:
     def __init__(self, intervals: List[Interval]):
         self.intervals = intervals
         self.dimension = len(intervals)
+        self.transformation_matrix = None
 
-    def __getitem__(self, indices: Tuple[int, ...]):
-        if len(indices) != self.dimension:
-            raise ValueError("Incorrect index size")
-        return np.array(
-            [interval[idx] for interval, idx in zip(self.intervals, indices)]
-        )
+    def __getitem__(self, indices: Union[Tuple[int, ...], np.ndarray]):
+        if isinstance(indices, np.ndarray):
+            indices = np.atleast_2d(indices)
+            if indices.shape[1] != self.dimension:
+                raise ValueError("Incorrect index shape for NumPy array")
+            result = np.empty_like(indices, dtype=float)
+            for i, interval in enumerate(self.intervals):
+                result[:, i] = indices[:, i] * interval.step + interval.start
+            return result[0] if indices.ndim == 1 else result
+
+        elif isinstance(indices, tuple):
+            if len(indices) != self.dimension:
+                raise ValueError("Incorrect number of indices")
+            return np.array(
+                [interval[idx] for interval, idx in zip(self.intervals, indices)]
+            )
+        else:
+            raise TypeError("Indices must be a tuple or NumPy array")
+
+    def binary_transformation_matrix(self, ordering="A", base=2) -> np.ndarray:
+        """
+        Constructs and returns a binary transformation matrix based on the specified ordering and base.
+        """
+        sites = [int(np.emath.logn(base, s)) for s in self.shape()[:-1]]
+        if self.transformation_matrix is None:
+            if ordering == "A":
+                T = np.zeros((sum(sites), len(sites)), dtype=int)
+                start = 0
+                for m, n in enumerate(sites):
+                    T[start : start + n, m] = 2 ** np.arange(n)[::-1]
+                    start += n
+                self.transformation_matrix = T
+            elif ordering == "B":
+                # Strategy: stack diagonal matrices and remove unwanted rows.
+                # TODO: Improve this logic.
+                T = []
+                for i in range(max(sites)):
+                    diagonal = [2 ** (n - i - 1) if n > i else 0 for n in sites]
+                    T.append(np.diag(diagonal))
+                T = np.vstack(T)
+                T = T[~np.all(T <= 0, axis=1)]
+                self.transformation_matrix = T
+        return self.transformation_matrix
 
     def shape(self):
         return tuple(interval.size for interval in self.intervals) + (self.dimension,)
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(self.shape())
-
-
-def mps_indices_to_mesh_indices(
-    mesh: Mesh, mps_indices: np.ndarray, mps_ordering: str = "A"
-) -> np.ndarray:
-    """
-    Converts indices from MPS format to Mesh (decimal) format.
-    If the mesh represents a multivariate domain, the indices
-    depend on the ordering of the MPS.
-
-    Parameters
-    ----------
-    mesh : Mesh
-        The mesh object defining the spatial domain.
-    mps_indices : np.ndarray
-        Array of indices in MPS format.
-    mps_ordering : str, default 'A'
-        The ordering of the MPS, either 'A' or 'B'.
-
-    Returns
-    -------
-    mesh_indices : np.ndarray
-        Array of indices in the mesh corresponding to the MPS indices.
-    """
-
-    bits_to_int = lambda bits: int("".join(map(str, bits)), 2)
-    sites_per_dimension = [int(np.log2(size)) for size in mesh.shape()[:-1]]
-    dims = len(sites_per_dimension)
-    mesh_indices = []
-    for dim, sites in enumerate(sites_per_dimension):
-        if mps_ordering == "A":
-            slice = np.arange(dim * sites, (dim + 1) * sites)
-        elif mps_ordering == "B":
-            slice = np.arange(dim, dims * sites, dims)
-        else:
-            raise ValueError("Invalid mps_ordering")
-        mesh_indices.append(
-            np.array([bits_to_int(bits) for bits in mps_indices[:, slice]])
-        )
-    return np.column_stack(mesh_indices)
 
 
 # TODO: Think if this should be included in the library
@@ -165,10 +163,3 @@ def reorder_tensor(tensor: np.ndarray, sites_per_dimension: List[int]) -> np.nda
     axes = [item for items in axes for item in items]
     tensor = np.transpose(tensor, axes=axes)
     return tensor.reshape(shape_orig)
-
-
-def sample_mesh(
-    func: Callable, mesh: Mesh, mps_indices: np.ndarray, mps_ordering: str
-) -> np.ndarray:
-    mesh_indices = mps_indices_to_mesh_indices(mesh, mps_indices, mps_ordering)
-    return np.array([func(mesh[idx]) for idx in mesh_indices]).flatten()
