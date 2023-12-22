@@ -576,7 +576,6 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
     return Ψ.reshape(-1)
 
 from .schmidt import vector2mps
-from .mpssum import MPSSum
 from .environments import (
     scprod,
     begin_environment,

@@ -1,12 +1,9 @@
-from __future__ import annotations
 import numpy as np
 from ..tools import InvalidOperation
 from ..typing import *
-from .core import DEFAULT_STRATEGY, Strategy, MPS, CanonicalMPS
-from .environments import *
 
 
-class MPSSum:
+cdef class MPSSum:
     """Class representing a weighted sum (or difference) of two or more :class:`MPS`.
 
     This class is an intermediate representation for the linear combination of
@@ -23,11 +20,6 @@ class MPSSum:
     states : list[MPS]
         List of matrix product states weighted.
     """
-
-    weights: list[Weight]
-    states: list[MPS]
-    size: int
-
     #
     # This class contains all the matrices and vectors that form
     # a Matrix-Product State.
@@ -36,72 +28,81 @@ class MPSSum:
 
     def __init__(
         self,
-        weights: list[Weight],
-        states: list[MPS],
+        weights: Sequence[Weight],
+        states: Sequence[MPS],
     ):
         # TODO: This is not consistent with MPS, MPO and MPOSum
         # which copy their input lists. We should decide whether we
         # want to copy or not.
         assert len(states) == len(weights)
         assert len(states) > 0
-        self.weights = weights
-        self.states = states
-        self.size = states[0].size
+        self._weights = list(weights)
+        self._states = list(states)
+        for A in self._states:
+            if not isinstance(A, MPS):
+                raise Exception("MPSSum argument error")
+        cdef MPS one_state = states[0]
+        self._size = one_state._size
 
     def copy(self) -> MPSSum:
         """Return a shallow copy of the MPS sum and its data. Does not copy
         the states, only the list that stores them."""
-        return MPSSum(self.weights.copy(), self.states.copy())
-
-    def __copy__(self) -> MPSSum:
-        return self.copy()
+        cdef MPSSum output = MPSSum.__new__(MPSSum)
+        output._weights = list(self._weights)
+        output._states = list(self._states)
+        output._size = self._size
+        return output
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""
+        cdef MPSSum sumstate
         if isinstance(state, MPS):
             return MPSSum(
-                self.weights + [1.0],
-                self.states + [state],
+                self._weights + [1.0],
+                self._states + [state],
             )
         elif isinstance(state, MPSSum):
+            sumstate = state
             return MPSSum(
-                self.weights + state.weights,
-                self.states + state.states,
+                self._weights + sumstate._weights,
+                self._states + sumstate._states,
             )
         raise InvalidOperation("+", self, state)
 
     def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Subtract `self - state`, incorporating it to the lists."""
+        cdef MPSSum sumstate
         if isinstance(state, MPS):
-            return MPSSum(self.weights + [-1], self.states + [state])
+            return MPSSum(self._weights + [-1], self._states + [state])
         if isinstance(state, MPSSum):
+            sumstate = state
             return MPSSum(
-                self.weights + [-w for w in state.weights],
-                self.states + state.states,
+                self._weights + [-w for w in sumstate._weights],
+                self._states + sumstate._states,
             )
         raise InvalidOperation("-", self, state)
 
     def __mul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `n * self` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self.weights], self.states)
+            return MPSSum([n * w for w in self._weights], self._states)
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `self * n` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self.weights], self.states)
+            return MPSSum([n * w for w in self._weights], self._states)
         raise InvalidOperation("*", n, self)
 
     def to_vector(self) -> Vector:
         """Return the wavefunction of this quantum state."""
-        return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore
+        return sum(wa * A.to_vector() for wa, A in zip(self._weights, self._states))  # type: ignore
 
     def _joined_tensors(self, i: int, L: int) -> Tensor3:
         """Join the tensors from all MPS into bigger tensors."""
-        As: list[Tensor3] = [s[i] for s in self.states]
+        As: list[Tensor3] = [s[i] for s in self._states]
         if i == 0:
-            return np.concatenate([w * A for w, A in zip(self.weights, As)], axis=2)
+            return np.concatenate([w * A for w, A in zip(self._weights, As)], axis=2)
         if i == L - 1:
             return np.concatenate(As, axis=0)
 
@@ -148,7 +149,7 @@ class MPSSum:
         MPS | CanonicalMPS
             Quantum state approximating this sum.
         """
-        L = self.size
+        L = self._size
         data = [self._joined_tensors(i, L) for i in range(L)]
         if canonical:
             return CanonicalMPS(
@@ -162,5 +163,18 @@ class MPSSum:
     def conj(self) -> MPSSum:
         """Return the complex-conjugate of this quantum state."""
         return MPSSum(
-            [np.conj(w) for w in self.weights], [state.conj() for state in self.states]
+            [np.conj(w) for w in self._weights],
+            [state.conj() for state in self._states]
         )
+
+    @property
+    def states(self):
+        return self._states
+
+    @property
+    def weights(self):
+        return self._weights
+
+    @property
+    def size(self):
+        return self._size

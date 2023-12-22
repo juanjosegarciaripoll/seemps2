@@ -12,6 +12,7 @@ from .factories import (
 from .core import (
     TensorArray,
     MPS,
+    MPSSum,
     CanonicalMPS,
     Strategy,
     Truncation,
@@ -21,5 +22,4 @@ from .core import (
     NO_TRUNCATION,
     MAX_BOND_DIMENSION,
 )
-from .mpssum import MPSSum
 from .sampling import sample_mps

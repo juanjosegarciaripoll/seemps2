@@ -35,7 +35,7 @@ cdef class CanonicalMPS(MPS):
     cdef Py_ssize_t _center
     cdef Strategy _strategy
 
-#cdef class MPSSum:
-#    cdef list[Weight] weights
-#    cdef list[MPS] states
-#    cdef Py_ssize_t _size
+cdef class MPSSum:
+    cdef list[Weight] _weights
+    cdef list[MPS] _states
+    cdef Py_ssize_t _size

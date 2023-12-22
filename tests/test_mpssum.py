@@ -9,11 +9,11 @@ class TestMPSSum(MPSStatesFixture):
         B = MPS(self.product_state.copy())
         return MPSSum(weights=[1, 2], states=[A, B])
 
-    def test_mpssum_init_does_not_copy_data(self):
+    def test_mpssum_init_copies_data(self):
         A = self.make_simple_sum()
         B = MPSSum(A.weights, A.states)
-        self.assertTrue(B.weights is A.weights)
-        self.assertTrue(B.states is A.states)
+        self.assertTrue(B.weights is not A.weights)
+        self.assertTrue(B.states is not A.states)
 
     def test_mpssum_copy_is_shallow(self):
         A = self.make_simple_sum()
@@ -49,7 +49,7 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(A.states, C.states)
 
     def test_addition_mpssum_and_mps(self):
-        A = self.make_simple_sum()
+        A = MPS(self.product_state.copy())
         B = MPSSum(weights=[0.5], states=[A])
         C = MPS(self.inhomogeneous_state.copy())
         D = B + C
@@ -57,7 +57,7 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(D.states, [A, C])
 
     def test_subtraction_mpssum_and_mps(self):
-        A = self.make_simple_sum()
+        A = MPS(self.product_state.copy())
         B = MPSSum(weights=[0.5], states=[A])
         C = MPS(self.inhomogeneous_state.copy())
         D = B - C
@@ -65,7 +65,7 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(D.states, [A, C])
 
     def test_subtraction_mps_and_mpssum(self):
-        A = self.make_simple_sum()
+        A = MPS(self.product_state.copy())
         B = MPSSum(weights=[0.5], states=[A])
         C = MPS(self.inhomogeneous_state.copy())
         D = C - B
