@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.fftpack import ifft  # type: ignore
 
-from seemps.state import MPS, Strategy, DEFAULT_TOLERANCE
+from seemps.analysis import Mesh, mps_tensor_product
+from seemps.expectation import scprod
+from seemps.state import DEFAULT_TOLERANCE, MPS, Strategy
 
 QUADRATURE_STRATEGY = Strategy(tolerance=DEFAULT_TOLERANCE)
 
@@ -228,3 +230,23 @@ def mps_fejer(start: float, stop: float, points: int, from_vector: bool = True) 
         raise ValueError("MPS not implemented")
     step = (stop - start) / 2
     return step * mps
+
+
+def integrate_mps(mps: MPS, mesh: Mesh, integral_type: str) -> float:
+    if integral_type == "midpoint":
+        foo = mps_midpoint
+    elif integral_type == "trapezoidal":
+        foo = mps_trapezoidal
+    elif integral_type == "simpson" and len(mps) % 2 == 0:
+        foo = mps_simpson
+    elif integral_type == "fifth_order" and len(mps) % 4 == 0:
+        foo = mps_fifth_order
+    elif integral_type == "fejer":
+        foo = mps_fejer
+    else:
+        raise ValueError("Invalid integral_type")
+
+    mps_list = []
+    for interval in mesh.intervals:
+        mps_list.append(foo(interval.start, interval.stop, int(np.log2(interval.size))))
+    return scprod(mps, mps_tensor_product(mps_list))
