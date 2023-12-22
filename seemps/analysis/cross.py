@@ -370,6 +370,7 @@ def cross_interpolation(
     def get_error(state: MPS):
         if cross_strategy.error_type == "sampling":
             nonlocal mps_indices, mesh_samples
+            # TODO: Think about this and whether the state/sampling.py module can be used instead.
             if sweep == 0:
                 mps_indices = random_mps_indices(state)
                 T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
