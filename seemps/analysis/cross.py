@@ -257,7 +257,7 @@ def sample_tensor_fiber(
     mesh : Mesh
         The mesh of points where the function is defined.
     mps_order : str
-        The ordering of the MPS sites, determining with which transformation matrix the tensor fiber is sampled.
+        The order of the MPS sites, determining with which transformation matrix the tensor fiber is sampled.
     i_le : np.ndarray
         The multi-indices coming from all sites smaller or equal to k ($J_{\le k-1}$) in the MPS.
     i_s : np.ndarray
@@ -374,7 +374,7 @@ def cross_interpolation(
             if sweep == 0:
                 mps_indices = random_mps_indices(state)
                 T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
-                mesh_samples = func(mesh[mps_indices @ T])
+                mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)
             mps_samples = sample_mps(state, mps_indices)
             error = np.max(np.abs(mps_samples - mesh_samples))
         elif cross_strategy.error_type == "norm":
