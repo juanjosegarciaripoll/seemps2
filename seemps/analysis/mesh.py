@@ -131,35 +131,3 @@ class Mesh:
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(self.shape())
-
-
-# TODO: Think if this should be included in the library
-def reorder_tensor(tensor: np.ndarray, sites_per_dimension: List[int]) -> np.ndarray:
-    """
-    Reorders a given tensor between the MPS orderings 'A' and 'B' by transposing its axes.
-
-    This reshapes the input tensor into a MPS format, transposes its axes according to the
-    MPS ordering and specified sites per dimension, and reshapes it back to the original tensor shape.
-
-    Parameters
-    ----------
-    tensor : np.ndarray
-        The tensor to be reordered.
-    sites_per_dimension : List[int]
-        A list specifying the number of sites for each dimension of the tensor.
-
-    Returns
-    -------
-    np.ndarray
-        The tensor reordered from order 'A' to 'B' or vice versa.
-    """
-    dimensions = len(sites_per_dimension)
-    shape_orig = tensor.shape
-    tensor = tensor.reshape([2] * sum(sites_per_dimension))
-    axes = [
-        np.arange(idx, dimensions * n, dimensions)
-        for idx, n in enumerate(sites_per_dimension)
-    ]
-    axes = [item for items in axes for item in items]
-    tensor = np.transpose(tensor, axes=axes)
-    return tensor.reshape(shape_orig)

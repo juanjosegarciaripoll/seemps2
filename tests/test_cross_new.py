@@ -5,7 +5,6 @@ from seemps.analysis import (
     cross_interpolation,
     CrossStrategy,
     sample_initial_indices,
-    reorder_tensor,
 )
 from seemps.state import MPS
 from seemps.truncate import simplify, SIMPLIFICATION_STRATEGY
@@ -14,6 +13,22 @@ from .tools import TestCase
 
 
 class TestCrossInterpolation(TestCase):
+    @staticmethod
+    def reorder_tensor(tensor, sites_per_dimension):
+        """
+        Reorders a given tensor between the MPS orderings 'A' and 'B' by transposing its axes.
+        """
+        dimensions = len(sites_per_dimension)
+        shape_orig = tensor.shape
+        tensor = tensor.reshape([2] * sum(sites_per_dimension))
+        axes = [
+            np.arange(idx, dimensions * n, dimensions)
+            for idx, n in enumerate(sites_per_dimension)
+        ]
+        axes = [item for items in axes for item in items]
+        tensor = np.transpose(tensor, axes=axes)
+        return tensor.reshape(shape_orig)
+
     @staticmethod
     def gaussian_setup(dims, n=5, a=-1, b=1):
         func = lambda vec: np.exp(-(np.sum(vec, axis=-1) ** 2))
@@ -79,5 +94,5 @@ class TestCrossInterpolation(TestCase):
         cross_strategy = CrossStrategy(mps_order="B")
         cross_results = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
         qubits = [int(np.log2(s)) for s in mesh.shape()[:-1]]
-        tensor = reorder_tensor(cross_results.state.to_vector(), qubits)
+        tensor = self.reorder_tensor(cross_results.state.to_vector(), qubits)
         self.assertSimilar(func_vector, tensor)
