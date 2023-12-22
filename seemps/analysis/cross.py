@@ -1,7 +1,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import numpy as np
 from scipy.linalg import lu, solve_triangular  # type: ignore
@@ -15,7 +15,7 @@ from .mesh import Mesh
 from .sampling import random_mps_indices, sample_mps
 
 
-def maxvol_square(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def maxvol_square(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the optimal row indices and matrix of coefficients for the square maxvol decomposition of a given matrix.
     This algorithm finds a submatrix of a 'tall' matrix with maximal volume (determinant of the square submatrix).
@@ -59,7 +59,7 @@ def maxvol_square(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 def maxvol_rectangular(
     matrix: np.ndarray, min_rank_change: int, max_rank_change: int
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the optimal row indices and matrix of coefficients for the maxvol algorithm applied to a tall matrix.
     This algorithm extends the square maxvol algorithm to find a 'rectangular' submatrix with more rows than the columns
@@ -110,7 +110,7 @@ def maxvol_rectangular(
     return I, B
 
 
-def maxvol(matrix: np.ndarray, rank_change: int) -> Tuple[np.ndarray, np.ndarray]:
+def maxvol(matrix: np.ndarray, rank_change: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Chooses and applies the appropriate maxvol algorithm (square or rectangular) to find a submatrix
     with maximal volume, and returns the indices of these rows along with the matrix of coefficients.
@@ -151,7 +151,7 @@ def random_initial_indices(
     I_s: np.ndarray,
     starting_bond: int,
     rng: Optional[np.random.Generator] = None,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     """
     Generates a list of random initial indices for tensor decomposition using a specified random number generator.
     Each set of indices is chosen randomly from a given array of indices and progressively concatenated.
@@ -167,7 +167,7 @@ def random_initial_indices(
 
     Returns
     -------
-    I_g : List[np.ndarray]
+    I_g : list[np.ndarray]
         A list of arrays, each containing a set of randomly chosen indices. The size of each array grows progressively
         as indices are concatenated at each step.
     """
@@ -184,7 +184,7 @@ def random_initial_indices(
     return I_g
 
 
-def sample_initial_indices(state: MPS) -> List[np.ndarray]:
+def sample_initial_indices(state: MPS) -> list[np.ndarray]:
     """
     Samples initial indices from a given MPS by performing a sweep of the cross interpolation algorithm.
     This allows to give an arbitrary starting bond dimension and a hopefully better starting point leading
@@ -197,7 +197,7 @@ def sample_initial_indices(state: MPS) -> List[np.ndarray]:
 
     Returns
     -------
-    I_g : List[np.ndarray]
+    I_g : list[np.ndarray]
         A list of arrays containing the sampled indices.
     """
     rank_change = 0
@@ -301,7 +301,7 @@ class CrossResults:
 def cross_interpolation(
     func: Callable,
     mesh: Mesh,
-    starting_indices: Optional[List[np.ndarray]] = None,
+    starting_indices: Optional[list[np.ndarray]] = None,
     bond_change: int = 1,
     maxbond: int = 100,
     maxiter: int = 100,
@@ -321,7 +321,7 @@ def cross_interpolation(
         The vectorized function to be approximated as a MPS.
     mesh : Mesh
         The mesh of points where the function is defined.
-    starting_indices : Optional[List[np.ndarray]], default=None
+    starting_indices : Optional[list[np.ndarray]], default=None
         The initial indices I_g for the algorithm. If None, random indices with bond dimension 1 are used.
     bond_change : int, default=1
         The increment in the bond dimension at each sweep until reaching maxbond.
