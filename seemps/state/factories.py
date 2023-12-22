@@ -3,7 +3,7 @@ from typing import Optional, Union
 import warnings
 import numpy as np
 from ..typing import VectorLike, Tensor3
-from .mps import MPS
+from .core import MPS
 
 
 def product_state(
@@ -211,14 +211,6 @@ def random_mps(
             T = T + 1j * rng.normal(size=T.shape)
         mps[i] = T
     return MPS(mps)
-
-
-def random(*args, **kwdargs) -> MPS:
-    """Deprecated version of :func:`random_uniform_mps`."""
-    warnings.warn(
-        "method norm2 is deprecated, use norm_squared", category=DeprecationWarning
-    )
-    return random_uniform_mps(*args, **kwdargs)
 
 
 def gaussian(n: int, x0: float, w0: float, k0: float) -> MPS:

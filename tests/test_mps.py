@@ -1,6 +1,5 @@
 import numpy as np
-from seemps.state import MPS, MPSSum
-from seemps.state.array import TensorArray
+from seemps.state import MPS, MPSSum, TensorArray
 
 from .fixture_mps_states import MPSStatesFixture
 from .tools import *
@@ -8,28 +7,29 @@ from .tools import *
 
 class TestTensorArray(MPSStatesFixture):
     def test_initial_data_is_copied(self):
-        data = [np.zeros((1,2,1))] * 10
+        data = [np.zeros((1, 2, 1))] * 10
         A = TensorArray(data)
-        self.assertFalse(A._data is data)
-        A[::] = self.other_tensor
-        self.assertTrue(contain_different_objects(A, data))
+        self.assertFalse(A.data is data)
+        A[0] = self.other_tensor
+        self.assertTrue(A[0] is not data[0])
 
 
 class TestMPS(MPSStatesFixture):
     def test_initial_data_is_copied(self):
-        data = [np.zeros((1,2,1))]*10
+        data = [np.zeros((1, 2, 1))] * 10
         A = MPS(data)
-        self.assertFalse(A._data is data)
-        self.assertEqual(A._data, data)
+        self.assertFalse(A.data is data)
+        self.assertEqual(A.data, data)
+        data[0] = np.ones((1, 2, 1))
+        self.assertTrue(data[0] is not A[0])
 
     def test_copy_is_shallow(self):
-        A = MPS(self.product_state.copy(), 0.1)
+        A = MPS([np.zeros((1, 2, 1))] * 10, 0.1)
         B = A.copy()
-        self.assertTrue(A._data is not B._data)
-        self.assertEqual(A._error, B._error)
-        self.assertTrue(contain_same_objects(A._data, B._data))
-        A[::] = self.other_tensor
-        self.assertTrue(contain_different_objects(A, B))
+        self.assertEqual(A.error(), B.error())
+        self.assertTrue(contain_same_objects(A.data, B.data))
+        A[0] = np.ones((1, 2, 1))
+        self.assertTrue(A[0] is not B[0])
 
     def test_total_dimension_is_product_of_physical_dimensions(self):
         A = MPS(self.inhomogeneous_state)

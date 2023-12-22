@@ -1,12 +1,7 @@
-from __future__ import annotations
-
 import numpy as np
-
 from ..typing import *
 from . import environments, schmidt
 from ._contractions import _contract_last_and_first
-from .core import DEFAULT_STRATEGY, Strategy
-from .mps import MPS
 
 
 # TODO: Replace einsum by a more efficient form
@@ -55,7 +50,7 @@ def _canonicalize(Ψ: list[Tensor3], center: int, truncation: Strategy) -> float
     return err
 
 
-class CanonicalMPS(MPS):
+cdef class CanonicalMPS(MPS):
     """Canonical MPS class.
 
     This implements a Matrix Product State object with open boundary
@@ -78,9 +73,6 @@ class CanonicalMPS(MPS):
         The truncation strategy for the orthogonalization and later
         algorithms. Defaults to `DEFAULT_STRATEGY`.
     """
-
-    center: int
-
     #
     # This class contains all the matrices and vectors that form
     # a Matrix-Product State.
@@ -93,21 +85,24 @@ class CanonicalMPS(MPS):
         strategy: Strategy = DEFAULT_STRATEGY,
         **kwdargs,
     ):
+        cdef CanonicalMPS cdata
+
         super().__init__(data, **kwdargs)
         actual_center: int
-        self.strategy = strategy
+        self._strategy = strategy
         if isinstance(data, CanonicalMPS):
-            actual_center = self.center = data.center
-            self._error = data._error
+            cdata = data
+            actual_center = self._center = cdata._center
+            self._error = cdata._error
             if center is not None:
                 actual_center = center
                 self.recenter(actual_center)
         else:
-            self.center = actual_center = self._interpret_center(
+            self._center = actual_center = self._interpret_center(
                 0 if center is None else center
             )
-            self.update_error(_canonicalize(self._data, actual_center, self.strategy))
-        if normalize or self.strategy.get_normalize_flag():
+            self.update_error(_canonicalize(self._data, actual_center, self._strategy))
+        if normalize or self._strategy.get_normalize_flag():
             A = self[actual_center]
             self[actual_center] = A / np.linalg.norm(A)
 
@@ -151,12 +146,12 @@ class CanonicalMPS(MPS):
 
     def norm_squared(self) -> float:
         """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        A = self._data[self.center]
+        A = self._data[self._center]
         return np.vdot(A, A).real
 
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
-        start = min(site, self.center)
+        start = min(site, self._center)
         ρ = environments.begin_environment(self[start].shape[0])
         for A in self._data[start:site]:
             ρ = environments.update_left_environment(A, A, ρ)
@@ -164,8 +159,8 @@ class CanonicalMPS(MPS):
 
     def right_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
-        start = max(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[-1])
+        start = max(site, self._center)
+        ρ = environments.begin_environment(self[start].shape[2])
         for A in self._data[start:site:-1]:
             ρ = environments.update_right_environment(A, A, ρ)
         return ρ
@@ -177,7 +172,7 @@ class CanonicalMPS(MPS):
         Parameters
         ----------
         site : int, optional
-            Site in the range `[0, self.size)`, defaulting to `self.center`.
+            Site in the range `[0, self.size)`, defaulting to `self._center`.
             The system is diveded into `[0, self.site)` and `[self.site, self.size)`.
 
         Returns
@@ -186,11 +181,11 @@ class CanonicalMPS(MPS):
             Von Neumann entropy of bipartition.
         """
         if site is None:
-            site = self.center
-        if site != self.center:
+            site = self._center
+        if site != self._center:
             return self.copy().recenter(site).entanglement_entropy()
-        # TODO: this is for [0, self.center] (self.center, self.size)
-        # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
+        # TODO: this is for [0, self._center] (self._center, self.size)
+        # bipartitions, but we can also optimizze [0, self._center) [self._center, self.size)
         A = self._data[site]
         d1, d2, d3 = A.shape
         s = schmidt.svd(
@@ -224,12 +219,12 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, err = _update_in_canonical_form_right(
-                self._data, A, self.center, truncation
+            self._center, err = _update_in_canonical_form_right(
+                self._data, A, self._center, truncation
             )
         else:
-            self.center, err = _update_in_canonical_form_left(
-                self._data, A, self.center, truncation
+            self._center, err = _update_in_canonical_form_left(
+                self._data, A, self._center, truncation
             )
         self.update_error(err)
         return err
@@ -255,7 +250,7 @@ class CanonicalMPS(MPS):
         self._data[site], self._data[site + 1], err = schmidt.left_orth_2site(
             AA, strategy
         )
-        self.center = site + 1
+        self._center = site + 1
         self.update_error(err)
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -278,7 +273,7 @@ class CanonicalMPS(MPS):
         self._data[site], self._data[site + 1], err = schmidt.right_orth_2site(
             AA, strategy
         )
-        self.center = site
+        self._center = site
         self.update_error(err)
 
     def _interpret_center(self, center: int) -> int:
@@ -312,9 +307,9 @@ class CanonicalMPS(MPS):
             This same object.
         """
         center = self._interpret_center(center)
-        old = self.center
+        old = self._center
         if strategy is None:
-            strategy = self.strategy
+            strategy = self._strategy
         if center != old:
             dr = +1 if center > old else -1
             for i in range(old, center, dr):
@@ -323,17 +318,25 @@ class CanonicalMPS(MPS):
 
     def normalize_inplace(self) -> CanonicalMPS:
         """Normalize the state by updating the central tensor."""
-        n = self.center
+        n = self._center
         A = self._data[n]
         self._data[n] = A / np.linalg.norm(A)
         return self
 
-    def __copy__(self):
-        """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
-        return type(self)(
-            self, center=self.center, strategy=self.strategy, error=self.error
-        )
-
     def copy(self):
         """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
-        return self.__copy__()
+        cdef CanonicalMPS output = CanonicalMPS.__new__(CanonicalMPS)
+        output._data = list(self._data)
+        output._size = self._size
+        output._error = self._error
+        output._center = self._center
+        output._strategy = self._strategy
+        return output
+
+    @property
+    def strategy(self):
+        return self._strategy
+
+    @property
+    def center(self):
+        return self._center

@@ -17,7 +17,7 @@ class TestExpectation(TestCase):
         # Test that scprod() can be used to project onto basis states
         for nbits in range(1, 8):
             # We create a random MPS
-            ψmps = seemps.state.random(2, nbits, 2)
+            ψmps = seemps.state.random_uniform_mps(2, nbits, 2)
             ψwave = ψmps.to_vector()
 
             # We then create the basis of all states with well defined
@@ -54,7 +54,7 @@ class TestExpectation(TestCase):
         for nbits in range(1, 8):
             for _ in range(10):
                 # We create a random MPS
-                ψmps = seemps.state.random(2, nbits, 2)
+                ψmps = seemps.state.random_uniform_mps(2, nbits, 2)
                 ψwave = ψmps.to_vector()
                 self.assertAlmostEqual(ψmps.norm_squared(), np.vdot(ψwave, ψwave))
 

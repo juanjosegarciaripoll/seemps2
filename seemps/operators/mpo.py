@@ -3,9 +3,15 @@ from __future__ import annotations
 import numpy as np
 import opt_einsum  # type: ignore
 
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, Weight, array
-from ..state.environments import *
-from ..state.environments import scprod
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
+from ..state.environments import (
+    begin_mpo_environment,
+    update_left_mpo_environment,
+    update_right_mpo_environment,
+    end_mpo_environment,
+    join_mpo_environments,
+    scprod,
+)
 from ..tools import InvalidOperation
 from ..typing import *
 
@@ -32,7 +38,7 @@ def _mpo_multiply_tensor(A, B):
     ).reshape(c * a, i, d * b)
 
 
-class MPO(array.TensorArray):
+class MPO(TensorArray):
     """Matrix Product Operator class.
 
     This implements a bare-bones Matrix Product Operator object with open

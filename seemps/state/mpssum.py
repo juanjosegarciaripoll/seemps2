@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from ..tools import InvalidOperation
 from ..typing import *
-from .core import DEFAULT_STRATEGY, Strategy
+from .core import DEFAULT_STRATEGY, Strategy, MPS, CanonicalMPS
 from .environments import *
 
 
@@ -164,7 +164,3 @@ class MPSSum:
         return MPSSum(
             [np.conj(w) for w in self.weights], [state.conj() for state in self.states]
         )
-
-
-from .canonical_mps import CanonicalMPS  # noqa: E402
-from .mps import MPS  # noqa: E402

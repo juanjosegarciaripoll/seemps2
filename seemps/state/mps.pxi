@@ -1,15 +1,90 @@
-from __future__ import annotations
 import math
 import warnings
 import numpy as np
+cimport numpy as cnp
 from ..tools import InvalidOperation
-from ..typing import *
-from . import array
-from .core import DEFAULT_STRATEGY, Strategy
-from .schmidt import vector2mps
+from ..typing import Vector, VectorLike, Operator, Environment
+from typing import Sequence
+cimport cpython
+
+cdef class TensorArray:
+    """TensorArray class.
+
+    This class provides the basis for all tensor networks. The class abstracts
+    a one-dimensional array of tensors that is freshly copied whenever the
+    object is cloned. Two TensorArray's can share the same tensors and be
+    destructively modified.
+
+    Parameters
+    ----------
+    data: Iterable[NDArray]
+        Any sequence of tensors that can be stored in this object. They are
+        not checked to have the right number of dimensions. This sequence is
+        cloned to avoid nasty side effects when destructively modifying it.
+    """
+
+    def __init__(self, data: Sequence[np.ndarray]):
+        self._data = list(data)
+        self._size = cpython.PyList_GET_SIZE(self._data)
+
+    def __getitem__(self, key):
+        #
+        # Get MP matrix at position `k`. If 'A' is an MP, we can now
+        # do A[k]
+        #
+        cdef Py_ssize_t k
+        if cpython.PyLong_Check(key):
+            k = cpython.PyLong_AsSsize_t(key)
+            if k < 0:
+                k = self._size + k
+                if k >= 0:
+                    return <object>cpython.PyList_GET_ITEM(self._data, k)
+            if k >= 0 and k < self._size:
+                return <object>cpython.PyList_GET_ITEM(self._data, k)
+        raise IndexError("Invalid index into TensorArray")
+
+    def __setitem__(self, key, value):
+        #
+        # Replace matrix at position `k` with new tensor `value`. If 'A'
+        # is an MP, we can now do A[k] = value
+        #
+        cdef Py_ssize_t k
+        if cpython.PyLong_Check(key):
+            k = cpython.PyLong_AsSsize_t(key)
+            if k < 0:
+                k = self._size + k
+            if k >= 0 and k < self._size:
+                self._data[k] = value
+                return
+        raise IndexError("Invalid index into TensorArray")
+
+    def __delitem__(self, key):
+        pass
+
+    def __iter__(self):
+        return self._data.__iter__()
+
+    def __len__(self):
+        return self._size
+
+    def extend(self, data: Sequence[np.ndarray]):
+        self._data.extend(data)
+        self._size = cpython.PyList_GET_SIZE(self._data)
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def _data(self):
+        return self._data
 
 
-class MPS(array.TensorArray):
+cdef class MPS(TensorArray):
     """MPS (Matrix Product State) class.
 
     This implements a bare-bones Matrix Product State object with open
@@ -26,9 +101,6 @@ class MPS(array.TensorArray):
         Accumulated truncation error in the previous tensors.
     """
 
-    _error: float
-    strategy: Strategy
-
     #
     # This class contains all the matrices and vectors that form
     # a Matrix-Product State.
@@ -37,24 +109,41 @@ class MPS(array.TensorArray):
 
     def __init__(
         self,
-        data: Iterable[np.ndarray],
+        data: Sequence[np.ndarray],
         error: float = 0,
     ):
-        super().__init__(data)
+        self._data = list(data)
+        self._size = cpython.PyList_GET_SIZE(self._data)
         self._error = error
 
-    def copy(self) -> MPS:
+    def copy(MPS self) -> MPS:
         """Return a shallow copy of the MPS, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        return MPS(self._data, self._error)
+        cdef MPS output = MPS.__new__(MPS)
+        output._data = list(self._data)
+        output._size = self._size
+        output._error = self._error
+        return output
 
     def dimension(self) -> int:
         """Hilbert space dimension of this quantum system."""
-        return math.prod(self.physical_dimensions())
+        cdef:
+            Py_ssize_t output = 1
+            cnp.ndarray t
+        for t in self._data:
+            output *= t.shape[1]
+        return output
 
     def physical_dimensions(self) -> list[int]:
         """List of physical dimensions for the quantum subsystems."""
-        return list(a.shape[1] for a in self._data)
+        cdef:
+            list dims = cpython.PyList_New(self._size)
+            cnp.ndarray t
+            Py_ssize_t k
+        for k in range(self._size):
+            t = <object>cpython.PyList_GET_ITEM(self._data, k)
+            cpython.PyList_SetItem(dims, k, t.shape[1])
+        return dims
 
     def bond_dimensions(self) -> list[int]:
         """List of bond dimensions for the matrix product state.
@@ -78,7 +167,15 @@ class MPS(array.TensorArray):
         >>> mps.bond_dimensions()
         [1, 3, 1]
         """
-        return list(a.shape[0] for a in self._data) + [self._data[-1].shape[-1]]
+        cdef:
+            list dims = cpython.PyList_New(self._size+1)
+            cnp.ndarray t
+            Py_ssize_t k
+        for k in range(self._size):
+            t = <object>cpython.PyList_GET_ITEM(self._data, k)
+            cpython.PyList_SetItem(dims, k, t.shape[0])
+        cpython.PyList_SetItem(dims, self._size, 1)
+        return dims
 
     def to_vector(self) -> Vector:
         """Convert this MPS to a state vector."""
@@ -167,6 +264,7 @@ class MPS(array.TensorArray):
 
     def __mul__(self, n: Union[Weight, MPS]) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
+        cdef MPS mps_mult
         if isinstance(n, (int, float, complex)):
             mps_mult = self.copy()
             mps_mult._data[0] = n * mps_mult._data[0]
@@ -178,6 +276,7 @@ class MPS(array.TensorArray):
 
     def __rmul__(self, n: Weight) -> MPS:
         """Compute `self * n`, where `n` is a scalar."""
+        cdef MPS mps_mult
         if isinstance(n, (int, float, complex)):
             mps_mult = self.copy()
             mps_mult._data[0] = n * mps_mult._data[0]
@@ -218,11 +317,11 @@ class MPS(array.TensorArray):
         float | complex
             Expectation value.
         """
-        ρL = self.left_environment(site)
+        rhoL = self.left_environment(site)
         A = self[site]
-        OL = update_left_environment(A, A, ρL, operator=O)
-        ρR = self.right_environment(site)
-        return join_environments(OL, ρR)
+        OL = update_left_environment(A, A, rhoL, operator=O)
+        rhoR = self.right_environment(site)
+        return join_environments(OL, rhoR)
 
     def expectation2(
         self, Opi: Operator, Opj: Operator, i: int, j: Optional[int] = None
@@ -280,34 +379,34 @@ class MPS(array.TensorArray):
             Numpy array of expectation values.
         """
         L = self.size
-        ρ = begin_environment()
-        allρR: list[Environment] = [ρ] * L
+        rho = begin_environment()
+        allrhoR: list[Environment] = [rho] * L
         for i in range(L - 1, 0, -1):
             A = self[i]
-            ρ = update_right_environment(A, A, ρ)
-            allρR[i - 1] = ρ
+            rho = update_right_environment(A, A, rho)
+            allrhoR[i - 1] = rho
 
-        ρL = begin_environment()
+        rhoL = begin_environment()
         output: list[Weight] = [0.0] * L
         for i in range(L):
             A = self[i]
-            ρR = allρR[i]
-            OρL = update_left_environment(
+            rhoR = allrhoR[i]
+            OrhoL = update_left_environment(
                 A,
                 A,
-                ρL,
+                rhoL,
                 operator=operator[i] if isinstance(operator, list) else operator,
             )
-            output[i] = join_environments(OρL, ρR)
-            ρL = update_left_environment(A, A, ρL)
+            output[i] = join_environments(OrhoL, rhoR)
+            rhoL = update_left_environment(A, A, rhoL)
         return np.array(output)
 
     def left_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the left of `site`."""
-        ρ = begin_environment()
+        rho = begin_environment()
         for A in self._data[:site]:
-            ρ = update_left_environment(A, A, ρ)
-        return ρ
+            rho = update_left_environment(A, A, rho)
+        return rho
 
     def right_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the right of `site`."""
@@ -329,6 +428,10 @@ class MPS(array.TensorArray):
             Upper bound for the actual error when approximating this state.
         """
         return self._error
+
+    def set_error(self, error: float) -> None:
+        """Resets the value of the accumulated error."""
+        self._error = error
 
     def update_error(self, delta: float) -> float:
         """Register an increase in the truncation error.
@@ -410,7 +513,7 @@ class MPS(array.TensorArray):
                 data[i] = A
                 k += 1
             else:
-                D = A.shape[-1]
+                D = A.shape[2]
         return MPS(data)
 
     def wavefunction_product(self, other: MPS) -> MPS:
@@ -448,7 +551,7 @@ class MPS(array.TensorArray):
 
     def conj(self) -> MPS:
         """Return the complex-conjugate of this quantum state."""
-        output = self.copy()
+        cdef MPS output = self.copy()
         for i, A in enumerate(output._data):
             output._data[i] = A.conj()
         return output
@@ -472,6 +575,13 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
         Ψ = np.dot(A.reshape(α * d, β), Ψ).reshape(α, -1)
     return Ψ.reshape(-1)
 
-
-from .mpssum import MPSSum  # noqa: E402
-from .environments import *  # noqa: E402
+from .schmidt import vector2mps
+from .mpssum import MPSSum
+from .environments import (
+    scprod,
+    begin_environment,
+    update_left_environment,
+    update_right_environment,
+    end_environment,
+    join_environments,
+)

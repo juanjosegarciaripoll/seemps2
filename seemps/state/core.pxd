@@ -1,4 +1,6 @@
 from cython import *
+cimport numpy as cnp
+from ..typing import Weight
 
 cdef enum TruncationCEnum:
     TRUNCATION_DO_NOT_TRUNCATE = 0
@@ -21,3 +23,19 @@ cdef class Strategy:
     cdef int max_sweeps
     cdef bint normalize
     cdef int simplify
+
+cdef class TensorArray:
+    cdef list _data
+    cdef Py_ssize_t _size
+
+cdef class MPS(TensorArray):
+    cdef double _error
+
+cdef class CanonicalMPS(MPS):
+    cdef Py_ssize_t _center
+    cdef Strategy _strategy
+
+#cdef class MPSSum:
+#    cdef list[Weight] weights
+#    cdef list[MPS] states
+#    cdef Py_ssize_t _size

@@ -45,19 +45,19 @@ def update_right_environment(
     return np.matmul(rho.reshape(i, j * n), B.reshape(l, j * n).T.conj())
 
 
-def end_environment(ρ: Environment) -> Weight:
+def end_environment(rho: Environment) -> Weight:
     """Extract the scalar product from the last environment."""
-    return ρ[0, 0]
+    return rho[0, 0]
 
 
 # TODO: Separate formats for left- and right- environments so that we
-# can replace this with a simple np.dot(ρL.reshape(-1), ρR.reshape(-1))
-# This involves ρR -> ρR.T with respect to current conventions
-def join_environments(ρL: Environment, ρR: Environment) -> Weight:
+# can replace this with a simple np.dot(rhoL.reshape(-1), rhoR.reshape(-1))
+# This involves rhoR -> rhoR.T with respect to current conventions
+def join_environments(rhoL: Environment, rhoR: Environment) -> Weight:
     """Join left and right environments to produce a scalar."""
-    # np.einsum("ij,ji", ρL, ρR)
-    # return np.trace(np.dot(ρL, ρR))
-    return np.dot(ρL.reshape(-1), ρR.T.reshape(-1))
+    # np.einsum("ij,ji", rhoL, rhoR)
+    # return np.trace(np.dot(rhoL, rhoR))
+    return np.dot(rhoL.reshape(-1), rhoR.T.reshape(-1))
 
 
 def scprod(bra: MPS, ket: MPS) -> Weight:
@@ -76,12 +76,12 @@ def scprod(bra: MPS, ket: MPS) -> Weight:
     float | complex
         Scalar product.
     """
-    ρ: Environment = begin_environment()
+    rho: Environment = begin_environment()
     # TODO: Verify if the order of Ai and Bi matches being bra and ket
     # Add tests for that
     for Ai, Bi in zip(bra, ket):
-        ρ = update_left_environment(Ai, Bi, ρ)
-    return end_environment(ρ)
+        rho = update_left_environment(Ai, Bi, rho)
+    return end_environment(rho)
 
 
 def begin_mpo_environment() -> MPOEnvironment:
@@ -114,13 +114,13 @@ def update_right_mpo_environment(
     return aux
 
 
-def end_mpo_environment(ρ: MPOEnvironment) -> Weight:
+def end_mpo_environment(rho: MPOEnvironment) -> Weight:
     """Extract the scalar product from the last environment."""
-    return ρ[0, 0, 0]
+    return rho[0, 0, 0]
 
 
 def join_mpo_environments(left: MPOEnvironment, right: MPOEnvironment) -> Weight:
     return np.dot(left.reshape(-1), right.reshape(-1))
 
 
-from .mps import MPS  # noqa: E402
+from .core import MPS  # noqa: E402

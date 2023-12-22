@@ -115,8 +115,7 @@ def simplify(
             log("Stopping, as tolerance reached")
             break
         direction = -direction
-    mps._error = 0.0
-    mps.update_error(state.error())
+    mps.set_error(state.error())
     mps.update_error(err)
     if normalize:
         last_tensor /= norm_mps_sqr
@@ -307,12 +306,11 @@ def combine(
             log("Stopping, as tolerance reached")
             break
         direction = -direction
-    mps._error = 0.0
     base_error = sum(
         np.abs(weights) * np.sqrt(state.error())
         for weights, state in zip(weights, states)
     )
-    mps.update_error(base_error**2)
+    mps.set_error(base_error**2)
     mps.update_error(err)
     if normalize:
         last_tensor /= norm_mps_sqr

@@ -1,7 +1,6 @@
 import numpy as np
-
-from seemps.state.mps import MPS
-from .tools import TestCase
+from scipy.linalg import expm  # type: ignore
+from seemps.state import MPS
 from seemps import random_uniform_mps, CanonicalMPS
 from seemps.register.circuit import (
     ParameterizedCircuit,
@@ -10,7 +9,7 @@ from seemps.register.circuit import (
     VQECircuit,
     interpret_operator,
 )
-from scipy.linalg import expm  # type: ignore
+from .tools import TestCase
 
 
 class TestKnownOperators(TestCase):
