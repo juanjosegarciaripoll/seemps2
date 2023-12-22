@@ -362,41 +362,46 @@ def cross_interpolation(
         The results of the cross interpolation process, including the final MPS state, convergence status,
         message, error, bond, time and evaluation count trajectories.
     """
+    mps_indices = None
+    mesh_samples = None
+    state_prev = None
+    integral_prev = None
 
     def get_error(state: MPS):
         if cross_strategy.error_type == "sampling":
+            nonlocal mps_indices, mesh_samples
             if sweep == 0:
-                get_error.mps_indices = random_mps_indices(state)
+                mps_indices = random_mps_indices(state)
                 T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
-                get_error.mesh_samples = func(mesh[get_error.mps_indices @ T])
-            mps_samples = sample_mps(state, get_error.mps_indices)
-            error = np.max(np.abs(mps_samples - get_error.mesh_samples))
+                mesh_samples = func(mesh[mps_indices @ T])
+            mps_samples = sample_mps(state, mps_indices)
+            error = np.max(np.abs(mps_samples - mesh_samples))
         elif cross_strategy.error_type == "norm":
+            nonlocal state_prev
             if sweep == 0:
                 # Save a deepcopy (needs to copy the previous tensors) to a function attribute
-                get_error.state_prev = deepcopy(state)
+                state_prev = deepcopy(state)
                 return np.Inf
             # TODO: Rethink about this way of checking convergence.
             # Right now it is computing the relative change in norm.
             # At the moment, this method is much more expensive than sampling.
             strategy = Strategy(normalize=False)
             error = abs(
-                simplify(state - get_error.state_prev, strategy=strategy).norm()
-                / get_error.state_prev.norm()
+                simplify(state - state_prev, strategy=strategy).norm()
+                / state_prev.norm()
             )
-            get_error.state_prev = deepcopy(state)
+            state_prev = deepcopy(state)
         elif cross_strategy.error_type == "integral":
+            nonlocal integral_prev
             if sweep == 0:
-                get_error.integral_prev = integrate_mps(
-                    state, mesh, integral_type="trapezoidal"
-                )
+                integral_prev = integrate_mps(state, mesh, integral_type="trapezoidal")
                 return np.Inf
             # TODO: Implement Féjer quadrature (valid for arbitrary sites and exponentially convergent)
             integral = integrate_mps(state, mesh, integral_type="trapezoidal")
             if DEBUG:
                 log(f"integral = {integral:.15e}")
-            error = abs(integral - get_error.integral_prev)
-            get_error.integral_prev = integral
+            error = abs(integral - integral_prev)
+            integral_prev = integral
         return error
 
     mesh_shape = mesh.shape()[:-1]
