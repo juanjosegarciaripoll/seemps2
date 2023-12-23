@@ -29,6 +29,13 @@ cdef _mpo_apply_tensors(Alist, MPS mps):
     output = [_mpo_multiply_tensor(A, B) for (A, B) in zip(Alist, Blist)]
     return _MPS_from_data(output, L, mps._error)
 
+cdef cnp.ndarray _empty_like_ndarray(cnp.ndarray a):
+    return cnp.PyArray_EMPTY(cnp.PyArray_NDIM(a), cnp.PyArray_DIMS(a),
+                             cnp.PyArray_TYPE(a), 0)
+
+cdef cnp.ndarray _conjugate(cnp.ndarray a):
+    return cnp.PyArray_Conjugate(a, _empty_like_ndarray(a))
+
 cdef MPO _MPO_from_data(list data, Py_ssize_t size, Strategy strategy):
     cdef MPO output = MPO.__new__(MPO)
     output._data = data
@@ -257,25 +264,40 @@ cdef class MPO(TensorArray):
             :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
             is the matrix-product operator.
         """
+        cdef:
+            list bra_list, ket_list, operators
+            Py_ssize_t i, center
         if isinstance(bra, CanonicalMPS):
-            center = bra.center
+            center = (<CanonicalMPS>bra)._center
         elif isinstance(bra, MPS):
-            center = self.size - 1
+            center = self._size - 1
         else:
             raise Exception("MPS required")
+        bra_list = bra._data
         if ket is None:
-            ket = bra
-        elif not isinstance(ket, MPS):
+            ket_list = bra_list
+        elif isinstance(ket, MPS):
+            ket_list = (<MPS>ket)._data
+        else:
             raise Exception("MPS required")
+        if (cpython.PyList_GET_SIZE(bra_list) != self._size or
+            cpython.PyList_GET_SIZE(ket_list) != self._size):
+            raise Exception("Size mismatch in expectation()")
         left = right = begin_mpo_environment()
         operators = self._data
         for i in range(0, center):
             left = update_left_mpo_environment(
-                left, bra[i].conj(), operators[i], ket[i]
+                left,
+                _conjugate(<object>cpython.PyList_GET_ITEM(bra_list, i)),
+                <object>cpython.PyList_GET_ITEM(operators, i),
+                <object>cpython.PyList_GET_ITEM(ket_list, i)
             )
-        for i in range(self.size - 1, center - 1, -1):
+        for i in range(self._size - 1, center - 1, -1):
             right = update_right_mpo_environment(
-                right, bra[i].conj(), operators[i], ket[i]
+                right,
+                _conjugate(<object>cpython.PyList_GET_ITEM(bra_list, i)),
+                <object>cpython.PyList_GET_ITEM(operators, i),
+                <object>cpython.PyList_GET_ITEM(ket_list, i)
             )
         return join_mpo_environments(left, right)
 

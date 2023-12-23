@@ -20,7 +20,6 @@ class TestMPO(TestCase):
         B = A.copy()
         self.assertTrue(contain_same_objects(A, B))
         self.assertTrue(A.strategy is B.strategy)
-        print(A.data is B.data, flush=True)
         A[0] = np.ones((1, 2, 2, 1))
         self.assertTrue(A[0] is not B[0])
 
