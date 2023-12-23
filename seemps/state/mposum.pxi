@@ -108,21 +108,19 @@ cdef class MPOSum(object):
         self,
         state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication A @ state between an MPOSum 'A' and
         a Matrix Product State 'state'."""
-        # TODO: Is this really needed?
-        if strategy is None:
-            strategy = self._strategy
-        if simplify is None:
-            simplify = strategy.get_simplify_flag()
+        cdef Strategy the_strategy
+
         output: Union[MPS, MPSSum]
         for i, (w, O) in enumerate(zip(self._weights, self._mpos)):
             Ostate = w * O.apply(state)
             output = Ostate if i == 0 else output + Ostate
-        if simplify:
-            output = truncate.simplify(output, strategy=strategy)
+
+        the_strategy = self._strategy if strategy is None else strategy
+        if the_strategy.simplify != SIMPLIFICATION_DO_NOT_SIMPLIFY:
+            output = truncate.simplify(output, strategy=the_strategy)
         return output
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:

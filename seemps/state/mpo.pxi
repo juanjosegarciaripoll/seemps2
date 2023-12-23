@@ -19,6 +19,15 @@ def _mpo_multiply_tensor(A, B):
         B.transpose(0, 2, 1).reshape(c, 1, 1, d, j), A.reshape(1, a, i, j, b)
     ).reshape(c * a, i, d * b)
 
+cdef _mpo_apply_tensors(Alist, MPS mps):
+    cdef:
+        Py_ssize_t k, L = cpython.PyList_GET_SIZE(Alist)
+        list Blist, output
+    if L != mps._size:
+        raise Exception("Mismatch in MPO and MPS size in '*' operator")
+    Blist = mps._data
+    output = [_mpo_multiply_tensor(A, B) for (A, B) in zip(Alist, Blist)]
+    return _MPS_from_data(output, L, mps._error)
 
 cdef MPO _MPO_from_data(list data, Py_ssize_t size, Strategy strategy):
     cdef MPO output = MPO.__new__(MPO)
@@ -133,7 +142,6 @@ cdef class MPO(TensorArray):
         self,
         state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
@@ -144,39 +152,29 @@ cdef class MPO(TensorArray):
             Transformed state.
         strategy : Strategy, optional
             Truncation strategy, defaults to DEFAULT_STRATEGY
-        simplify : bool, optional
-            Whether to simplify the state after the contraction.
-            Defaults to `strategy.get_simplify_flag()`
 
         Returns
         -------
         CanonicalMPS
             The result of the contraction.
         """
-        # TODO: Remove implicit conversion of MPSSum to MPS
-        if strategy is None:
-            strategy = self._strategy
-        if simplify is None:
-            simplify = strategy.get_simplify_flag()
-        if isinstance(state, MPSSum):
-            assert self.size == state.size
-            for i, (w, mps) in enumerate(zip(state.weights, state.states)):
-                Ostate = w * MPS(
-                    [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, mps._data)],
-                    error=mps.error(),
-                )
-                state = Ostate if i == 0 else state + Ostate
-        elif isinstance(state, MPS):
-            assert self.size == state.size
-            state = MPS(
-                [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
-                error=state.error(),
+        cdef Strategy the_strategy
+
+        if isinstance(state, MPS):
+            state = _mpo_apply_tensors(self._data, <MPS>state)
+        elif isinstance(state, MPSSum):
+            state = _MPSSum_from_data(
+                (<MPSSum>state)._weights,
+                [_mpo_apply_tensors(self._data, mps)
+                 for mps in (<MPSSum>state)._states],
+                (<MPSSum>state)._size
             )
         else:
             raise TypeError(f"Cannot multiply MPO with {state}")
 
-        if simplify:
-            state = truncate.simplify(state, strategy=strategy)
+        the_strategy = self._strategy if strategy is None else strategy
+        if the_strategy.simplify != SIMPLIFICATION_DO_NOT_SIMPLIFY:
+            state = truncate.simplify(state, strategy=the_strategy)
         return state
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:

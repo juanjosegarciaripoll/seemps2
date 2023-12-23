@@ -49,7 +49,7 @@ class TestMPO(TestCase):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         mps = random_uniform_mps(2, mpo.size, D=2)
         self.assertSimilar(
-            mpo.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
+            mpo.apply(mps, strategy=TEST_STRATEGY).to_vector(),
             (mpo.tomatrix() @ mps.to_vector()),
         )
 
@@ -59,11 +59,14 @@ class TestMPO(TestCase):
         self.assertTrue(new_strategy, mpo.strategy)
 
     def test_mpo_apply_works_on_mpssum(self):
+        no_truncation_strategy = TEST_STRATEGY.replace(
+            simplify=Simplification.DO_NOT_SIMPLIFY
+        )
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         mps = random_uniform_mps(2, mpo.size, D=2)
-        self.assertIsInstance(mpo.apply(mps + mps, simplify=False), MPSSum)
+        self.assertIsInstance(mpo.apply(mps + mps, no_truncation_strategy), MPSSum)
         self.assertSimilar(
-            mpo.apply(mps + mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
+            mpo.apply(mps + mps, strategy=TEST_STRATEGY).to_vector(),
             2 * (mpo.tomatrix() @ mps.to_vector()),
         )
 

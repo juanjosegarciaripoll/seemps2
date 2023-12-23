@@ -88,7 +88,6 @@ cdef class MPOList:
         self,
         state: Union[MPS, MPSSum],
         strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
@@ -108,16 +107,15 @@ cdef class MPOList:
         CanonicalMPS
             The result of the contraction.
         """
-        if strategy is None:
-            strategy = self._strategy
-        if simplify is None:
-            simplify = strategy.get_simplify_flag()
+        cdef Strategy the_strategy
 
         for mpo in self._mpos:
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
-        if simplify:
-            state = truncate.simplify(state, strategy=strategy)
+
+        the_strategy = self._strategy if strategy is None else strategy
+        if the_strategy.simplify != SIMPLIFICATION_DO_NOT_SIMPLIFY:
+            state = truncate.simplify(state, strategy=the_strategy)
         return state
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:

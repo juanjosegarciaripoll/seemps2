@@ -47,7 +47,7 @@ class TestMPOList(TestCase):
         UV = MPOList([U, V], NO_TRUNCATION)
         mps = random_uniform_mps(2, 3, D=2)
         self.assertSimilar(
-            UV.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
+            UV.apply(mps, strategy=TEST_STRATEGY).to_vector(),
             (UV.tomatrix() @ mps.to_vector()),
         )
 
