@@ -4,8 +4,8 @@ from . import (
     hdf5,
     expectation,
     truncate,
-    mpo,
     hamiltonians,
+    operators,
     evolution,
     register,
     qft,
@@ -13,7 +13,7 @@ from . import (
 )
 
 from .state import *
-from .mpo import MPO, MPOList
+from .operators import MPO, MPOList
 from .hamiltonians import *
 from .tools import σx, σy, σz
 from .evolution import *

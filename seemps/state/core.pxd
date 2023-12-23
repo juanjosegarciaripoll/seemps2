@@ -39,3 +39,17 @@ cdef class MPSSum:
     cdef list[Weight] _weights
     cdef list[MPS] _states
     cdef Py_ssize_t _size
+
+cdef class MPO(TensorArray):
+    cdef Strategy _strategy
+
+cdef class MPOList:
+    cdef list[MPO] _mpos
+    cdef Strategy _strategy
+    cdef Py_ssize_t _size
+
+cdef class MPOSum:
+    cdef list _mpos
+    cdef list _weights
+    cdef Strategy _strategy
+    cdef Py_ssize_t _size

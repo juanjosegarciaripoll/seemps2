@@ -1,6 +1,6 @@
 import numpy as np
 from ..typing import *
-from ..mpo import MPO
+from ..operators import MPO
 
 
 def twoscomplement(

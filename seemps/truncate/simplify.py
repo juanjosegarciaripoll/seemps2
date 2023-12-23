@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from ..state import (
+from ..state.core import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
     MPS,

@@ -1,5 +1,4 @@
 from __future__ import annotations
-from .mpo import MPO
 from .state.environments import (
     begin_environment,
     update_left_environment,
@@ -7,6 +6,7 @@ from .state.environments import (
     scprod,
 )
 from .state import MPS
+from .operators import MPO
 from .typing import *
 
 

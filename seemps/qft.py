@@ -2,7 +2,7 @@ import numpy as np
 from numpy import pi as π
 from .typing import *
 from .state import MPS, MPSSum
-from .mpo import MPO, MPOList
+from .operators import MPO, MPOList
 
 
 def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:

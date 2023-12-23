@@ -1,6 +1,6 @@
 import numpy as np
 from ..typing import *
-from ..mpo import MPOList, MPO
+from ..operators import MPOList, MPO
 
 
 def qubo_mpo(

@@ -1,8 +1,3 @@
-import numpy as np
-from ..tools import InvalidOperation
-from ..typing import *
-
-
 cdef MPSSum _MPSSum_from_data(list weights, list states, Py_ssize_t size):
     cdef MPSSum output = MPSSum.__new__(MPSSum)
     output._weights = weights

@@ -7,7 +7,7 @@ from ..state.environments import (
     update_right_mpo_environment,
 )
 from ..state._contractions import _contract_last_and_first
-from ..mpo import MPO
+from ..operators import MPO
 from ..hamiltonians import NNHamiltonian
 from typing import Callable
 from ..typing import Optional, Vector, Tensor4, Union

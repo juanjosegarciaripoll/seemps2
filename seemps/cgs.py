@@ -1,7 +1,7 @@
 from typing import Optional
 from .expectation import scprod
 from .state import MPS, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
-from .mpo import MPO
+from .operators import MPO
 from .truncate.simplify import combine
 from .tools import log
 

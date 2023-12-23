@@ -4,7 +4,7 @@ from typing import Callable, Union
 import numpy as np
 
 from ..expectation import scprod
-from ..mpo import MPO, MPOList, MPOSum
+from ..operators import MPO, MPOList, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification, Strategy
 from ..tools import DEBUG, log
 from ..truncate.simplify import simplify

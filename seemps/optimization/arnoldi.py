@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 from typing import Optional
 from ..expectation import scprod
 from ..state import MPS, CanonicalMPS, MPSSum, random_mps
-from ..mpo import MPO
+from ..operators import MPO
 from ..truncate.simplify import simplify
 import scipy.linalg  # type: ignore
 
