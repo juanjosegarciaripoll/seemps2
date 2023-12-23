@@ -57,13 +57,13 @@ cdef class MPOSum:
 
 cpdef cnp.ndarray begin_environment()
 cpdef cnp.ndarray update_left_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, op: Optional[Operator]
+    cnp.ndarray B, cnp.ndarray A, cnp.ndarray rho, op: Optional[Operator]
 )
 cpdef cnp.ndarray update_right_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, op: Optional[Operator]
+    cnp.ndarray B, cnp.ndarray A, cnp.ndarray rho, op: Optional[Operator]
 )
-cpdef object end_environment(rho: Environment)
-cpdef object join_environments(rhoL: Environment, rhoR: Environment)
+cpdef object end_environment(cnp.ndarray rho)
+cpdef object join_environments(cnp.ndarray rhoL, cnp.ndarray rhoR)
 
 cpdef object scprod(MPS bra, MPS ket)
 

@@ -1,11 +1,33 @@
 from numpy import matmul as _matmul
 from numpy import tensordot as _tensordot
 
+cdef cnp.ndarray _empty_like_ndarray(cnp.ndarray a):
+    return cnp.PyArray_EMPTY(cnp.PyArray_NDIM(a), cnp.PyArray_DIMS(a),
+                             cnp.PyArray_TYPE(a), 0)
+
+cdef cnp.ndarray _conjugate(cnp.ndarray a):
+    return cnp.PyArray_Conjugate(a, _empty_like_ndarray(a))
+
+cdef cnp.ndarray _environment_begin = np.eye(1, dtype=np.float64)
+
+cdef cnp.ndarray _as_matrix(cnp.ndarray A, Py_ssize_t rows, Py_ssize_t cols):
+    cdef cnp.npy_intp *dims_data = [0, 0]
+    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 2)
+    dims_data[0] = rows
+    dims_data[1] = cols
+    return cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
+
+cdef cnp.ndarray _transpose(cnp.ndarray A):
+    return cnp.PyArray_SwapAxes(A, 0, 1)
+
+cdef cnp.ndarray _adjoint(cnp.ndarray A):
+    return _transpose(_conjugate(A))
+
 cpdef cnp.ndarray begin_environment():
     """Initiate the computation of a left environment from two MPS. The bond
     dimension defaults to 1. Other values are used for states in canonical
     form that we know how to open and close."""
-    return np.eye(1, dtype=np.float64)
+    return _environment_begin
 
 cpdef cnp.ndarray begin_environment_with_D(Py_ssize_t D):
     """Initiate the computation of a left environment from two MPS. The bond
@@ -15,54 +37,59 @@ cpdef cnp.ndarray begin_environment_with_D(Py_ssize_t D):
 
 
 cpdef cnp.ndarray update_left_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, op: Optional[Operator]
+    cnp.ndarray B, cnp.ndarray A, cnp.ndarray rho, op: Optional[Operator]
 ):
     """Extend the left environment with two new tensors, 'B' and 'A' coming
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket."""
+    cdef Py_ssize_t i, j, k, n
     if op is not None:
         # A = np.einsum("ji,aib->ajb", operator, A)
         A = _matmul(op, A)
     # np.einsum("ijk,li,ljk->nk", A, rho, B.conj())
-    i, j, k = A.shape
-    l, j, n = B.shape
+    i, j, k = A.shape[0], A.shape[1], A.shape[2]
+    l, j, n = B.shape[0], B.shape[1], B.shape[2]
     # np.einsum("li,ijk->ljk")
-    rho = _matmul(rho, A.reshape(i, j * k))
+    rho = _matmul(rho, _as_matrix(A, i, j * k))
     # np.einsum("nlj,ljk->nk")
-    return _matmul(B.reshape(l * j, n).T.conj(), rho.reshape(l * j, k))
+    return _matmul(_adjoint(_as_matrix(B, l * j, n)), _as_matrix(rho, l * j, k))
 
 
 cpdef cnp.ndarray update_right_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, op: Optional[Operator]
+    cnp.ndarray B, cnp.ndarray A, cnp.ndarray rho, op: Optional[Operator]
 ):
     """Extend the left environment with two new tensors, 'B' and 'A' coming
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket."""
+    cdef Py_ssize_t i, j, k, n
     if op is not None:
         # A = np.einsum("ji,aib->ajb", operator, A)
         A = _matmul(op, A)
     # np.einsum("ijk,kn,ljn->il", A, rho, B.conj())
-    i, j, k = A.shape
-    l, j, n = B.shape
+    i, j, k = A.shape[0], A.shape[1], A.shape[2]
+    l, j, n = B.shape[0], B.shape[1], B.shape[2]
     # np.einsum("ijk,kn->ijn", A, rho)
-    rho = _matmul(A.reshape(i * j, k), rho)
-    return _matmul(rho.reshape(i, j * n), B.reshape(l, j * n).T.conj())
+    rho = _matmul(_as_matrix(A, i * j, k), rho)
+    return _matmul(_as_matrix(rho, i, j * n), _adjoint(_as_matrix(B, l, j * n)))
 
 
-cpdef object end_environment(rho: Environment):
+cpdef object end_environment(cnp.ndarray rho):
     """Extract the scalar product from the last environment."""
-    return rho[0, 0]
+    #return rho[0, 0]
+    return <object>cnp.PyArray_GETITEM(rho, cnp.PyArray_BYTES(rho))
 
 
 # TODO: Separate formats for left- and right- environments so that we
 # can replace this with a simple np.dot(rhoL.reshape(-1), rhoR.reshape(-1))
 # This involves rhoR -> rhoR.T with respect to current conventions
-cpdef object join_environments(rhoL: Environment, rhoR: Environment):
+cpdef object join_environments(cnp.ndarray rhoL, cnp.ndarray rhoR):
     """Join left and right environments to produce a scalar."""
     # np.einsum("ij,ji", rhoL, rhoR)
     # return np.trace(np.dot(rhoL, rhoR))
-    return np.dot(rhoL.reshape(-1), rhoR.T.reshape(-1))
-
+    return cnp.PyArray_InnerProduct(
+        cnp.PyArray_Ravel(rhoL, cnp.NPY_CORDER),
+        cnp.PyArray_Ravel(_transpose(rhoR), cnp.NPY_CORDER)
+    )
 
 cpdef object scprod(MPS bra, MPS ket):
     """Compute the scalar product between matrix product states
@@ -80,11 +107,16 @@ cpdef object scprod(MPS bra, MPS ket):
     float | complex
         Scalar product.
     """
-    rho: Environment = begin_environment()
+    cdef:
+        cnp.ndarray rho = _environment_begin
+        Py_ssize_t i
     # TODO: Verify if the order of Ai and Bi matches being bra and ket
     # Add tests for that
-    for Ai, Bi in zip(bra, ket):
-        rho = update_left_environment(Ai, Bi, rho, None)
+    for i in range(bra._size):
+        rho = update_left_environment(
+            <cnp.ndarray>cpython.PyList_GET_ITEM(bra._data, i),
+            <cnp.ndarray>cpython.PyList_GET_ITEM(ket._data, i),
+            rho, None)
     return end_environment(rho)
 
 

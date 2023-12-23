@@ -29,13 +29,6 @@ cdef _mpo_apply_tensors(Alist, MPS mps):
     output = [_mpo_multiply_tensor(A, B) for (A, B) in zip(Alist, Blist)]
     return _MPS_from_data(output, L, mps._error)
 
-cdef cnp.ndarray _empty_like_ndarray(cnp.ndarray a):
-    return cnp.PyArray_EMPTY(cnp.PyArray_NDIM(a), cnp.PyArray_DIMS(a),
-                             cnp.PyArray_TYPE(a), 0)
-
-cdef cnp.ndarray _conjugate(cnp.ndarray a):
-    return cnp.PyArray_Conjugate(a, _empty_like_ndarray(a))
-
 cdef MPO _MPO_from_data(list data, Py_ssize_t size, Strategy strategy):
     cdef MPO output = MPO.__new__(MPO)
     output._data = data
