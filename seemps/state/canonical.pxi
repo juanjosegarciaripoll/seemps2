@@ -1,8 +1,6 @@
 import numpy as np
 from ..typing import *
-from . import environments, schmidt
-from ._contractions import _contract_last_and_first
-
+from . import schmidt
 
 # TODO: Replace einsum by a more efficient form
 def _update_in_canonical_form_right(
@@ -151,19 +149,21 @@ cdef class CanonicalMPS(MPS):
 
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
-        start = min(site, self._center)
-        ρ = environments.begin_environment(self[start].shape[0])
-        for A in self._data[start:site]:
-            ρ = environments.update_left_environment(A, A, ρ)
-        return ρ
+        cdef Py_ssize_t k, start = min(site, self._center)
+        rho = begin_environment_with_D(self._data[start].shape[0])
+        for k in range(start, site):
+            A = self._data[k]
+            rho = update_left_environment(A, A, rho, None)
+        return rho
 
     def right_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
-        start = max(site, self._center)
-        ρ = environments.begin_environment(self[start].shape[2])
-        for A in self._data[start:site:-1]:
-            ρ = environments.update_right_environment(A, A, ρ)
-        return ρ
+        cdef Py_ssize_t k, start = max(site, self._center)
+        rho = begin_environment_with_D(self._data[start].shape[2])
+        for k in range(start, site, -1):
+            A = self._data[k]
+            rho = update_right_environment(A, A, rho, None)
+        return rho
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition

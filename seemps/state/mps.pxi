@@ -320,9 +320,10 @@ cdef class MPS(TensorArray):
         float | complex
             Expectation value.
         """
+        # TODO: Make left/right_environment a method
         rhoL = self.left_environment(site)
-        A = self[site]
-        OL = update_left_environment(A, A, rhoL, operator=O)
+        A = self._data[site]
+        OL = update_left_environment(A, A, rhoL, O)
         rhoR = self.right_environment(site)
         return join_environments(OL, rhoR)
 
@@ -358,11 +359,11 @@ cdef class MPS(TensorArray):
         for ndx in range(i, j + 1):
             A = self[ndx]
             if ndx == i:
-                OQL = update_left_environment(A, A, OQL, operator=Opi)
+                OQL = update_left_environment(A, A, OQL, Opi)
             elif ndx == j:
-                OQL = update_left_environment(A, A, OQL, operator=Opj)
+                OQL = update_left_environment(A, A, OQL, Opj)
             else:
-                OQL = update_left_environment(A, A, OQL)
+                OQL = update_left_environment(A, A, OQL, None)
         return join_environments(OQL, self.right_environment(j))
 
     def all_expectation1(self, operator: Union[Operator, list[Operator]]) -> Vector:
@@ -386,7 +387,7 @@ cdef class MPS(TensorArray):
         allrhoR: list[Environment] = [rho] * L
         for i in range(L - 1, 0, -1):
             A = self[i]
-            rho = update_right_environment(A, A, rho)
+            rho = update_right_environment(A, A, rho, None)
             allrhoR[i - 1] = rho
 
         rhoL = begin_environment()
@@ -398,25 +399,29 @@ cdef class MPS(TensorArray):
                 A,
                 A,
                 rhoL,
-                operator=operator[i] if isinstance(operator, list) else operator,
+                operator[i] if isinstance(operator, list) else operator,
             )
             output[i] = join_environments(OrhoL, rhoR)
-            rhoL = update_left_environment(A, A, rhoL)
+            rhoL = update_left_environment(A, A, rhoL, None)
         return np.array(output)
 
     def left_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the left of `site`."""
+        cdef Py_ssize_t k
         rho = begin_environment()
-        for A in self._data[:site]:
-            rho = update_left_environment(A, A, rho)
+        for k in range(site):
+            A = self._data[k]
+            rho = update_left_environment(A, A, rho, None)
         return rho
 
     def right_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the right of `site`."""
-        ρ = begin_environment()
-        for A in self._data[-1:site:-1]:
-            ρ = update_right_environment(A, A, ρ)
-        return ρ
+        cdef Py_ssize_t k
+        rho = begin_environment()
+        for k in range(self._size - 1, site, -1):
+            A = self._data[k]
+            rho = update_right_environment(A, A, rho, None)
+        return rho
 
     def error(self) -> float:
         """Upper bound of the accumulated truncation error on this state.

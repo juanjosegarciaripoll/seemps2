@@ -2,7 +2,7 @@ import numpy as np
 from typing import Optional
 from ..typing import *
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
-from ..state._contractions import _contract_nrjl_ijk_klm
+from ..state.core import _contract_nrjl_ijk_klm
 from abc import abstractmethod
 
 σx = np.array([[0.0, 1.0], [1.0, 0.0]])

@@ -23,5 +23,5 @@ class TestTwoSiteEvolutionFold(TestCase):
         exact_contraction = np.einsum(
             "ijk,klm,nrjl -> inrm", A, B, U.reshape(2, 3, 2, 3)
         )
-        fast_contraction = seemps.state._contractions._contract_nrjl_ijk_klm(U, A, B)
+        fast_contraction = seemps.state.core._contract_nrjl_ijk_klm(U, A, B)
         self.assertSimilar(exact_contraction, fast_contraction)

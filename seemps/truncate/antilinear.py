@@ -1,11 +1,11 @@
 from __future__ import annotations
 import numpy as np
 from ..typing import *
-from ..state._contractions import _contract_last_and_first
-from ..state.environments import (
+from ..state.core import (
     begin_environment,
     update_right_environment,
     update_left_environment,
+    _contract_last_and_first,
 )
 
 
@@ -33,12 +33,12 @@ class AntilinearForm:
         ρ = begin_environment()
         R = [ρ] * size
         for i in range(size - 1, center, -1):
-            R[i - 1] = ρ = update_right_environment(bra[i], ket[i], ρ)
+            R[i - 1] = ρ = update_right_environment(bra[i], ket[i], ρ, None)
 
         ρ = begin_environment()
         L = [ρ] * size
         for i in range(0, center):
-            L[i + 1] = ρ = update_left_environment(bra[i], ket[i], ρ)
+            L[i + 1] = ρ = update_left_environment(bra[i], ket[i], ρ, None)
 
         self.bra = bra
         self.ket = ket
@@ -115,7 +115,7 @@ class AntilinearForm:
         nxt = prev + 1
         assert nxt < self.size
         self.L[nxt] = update_left_environment(
-            self.bra[prev], self.ket[prev], self.L[prev]
+            self.bra[prev], self.ket[prev], self.L[prev], None
         )
         self.center = nxt
 
@@ -130,6 +130,6 @@ class AntilinearForm:
         nxt = prev - 1
         assert nxt >= 0
         self.R[nxt] = update_right_environment(
-            self.bra[prev], self.ket[prev], self.R[prev]
+            self.bra[prev], self.ket[prev], self.R[prev], None
         )
         self.center = nxt

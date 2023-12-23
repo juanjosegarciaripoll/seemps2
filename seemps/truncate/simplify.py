@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 import numpy as np
-
 from ..state.core import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
@@ -11,8 +9,8 @@ from ..state.core import (
     Simplification,
     Strategy,
     Truncation,
+    scprod,
 )
-from ..state.environments import scprod
 from ..tools import log, DEBUG
 from ..typing import *
 from .antilinear import AntilinearForm

@@ -106,7 +106,7 @@ cdef class Strategy:
                f"max_bond_dimension={self.max_bond_dimension}, normalize={self.normalize}," \
                f"simplification_method={simplification_method}, max_sweeps={self.max_sweeps})"
 
-DEFAULT_TOLERANCE = np.finfo(np.float64).eps
+DEFAULT_TOLERANCE = float(np.finfo(np.float64).eps)
 
 DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
                             simplify = SIMPLIFICATION_VARIATIONAL,

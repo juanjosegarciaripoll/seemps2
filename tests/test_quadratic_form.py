@@ -1,7 +1,7 @@
 import numpy as np
 from seemps.optimization.dmrg import QuadraticForm, dmrg
 from seemps.hamiltonians import ConstantTIHamiltonian, HeisenbergHamiltonian
-from seemps.state._contractions import _contract_last_and_first
+from seemps.state.core import _contract_last_and_first
 from seemps.state import random_uniform_mps, product_state
 from seemps.operators import MPO
 from seemps.tools import σx

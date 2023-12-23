@@ -1,12 +1,12 @@
 import numpy as np
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY, random_mps
-from ..state.environments import (
+from ..state.core import (
     MPOEnvironment,
     begin_mpo_environment,
     update_left_mpo_environment,
     update_right_mpo_environment,
+    _contract_last_and_first,
 )
-from ..state._contractions import _contract_last_and_first
 from ..operators import MPO
 from ..hamiltonians import NNHamiltonian
 from typing import Callable

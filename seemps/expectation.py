@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .state.environments import (
+from .state.core import (
     begin_environment,
     update_left_environment,
     end_environment,
@@ -97,7 +97,7 @@ def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     # in a given canonical order or another
     rho = begin_environment()
     for Ai, opi in zip(state, operator_list):
-        rho = update_left_environment(Ai.conj(), Ai, rho, operator=opi)
+        rho = update_left_environment(Ai.conj(), Ai, rho, opi)
     return end_environment(rho)
 
 

@@ -4,7 +4,7 @@ from .typing import Unitary
 import scipy.linalg  # type: ignore
 from seemps.hamiltonians import NNHamiltonian  # type: ignore
 from .state import Strategy, DEFAULT_STRATEGY, MPS, CanonicalMPS
-from .state._contractions import _contract_nrjl_ijk_klm
+from .state.core import _contract_nrjl_ijk_klm
 
 
 class PairwiseUnitaries:

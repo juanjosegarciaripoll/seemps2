@@ -1,6 +1,7 @@
 from cython import *
 cimport numpy as cnp
-from ..typing import Weight
+from typing import Optional
+from ..typing import Weight, Tensor3, Tensor4, Environment, Operator
 
 cdef enum TruncationCEnum:
     TRUNCATION_DO_NOT_TRUNCATE = 0
@@ -53,3 +54,28 @@ cdef class MPOSum:
     cdef list _weights
     cdef Strategy _strategy
     cdef Py_ssize_t _size
+
+cpdef cnp.ndarray begin_environment()
+cpdef cnp.ndarray update_left_environment(
+    B: Tensor3, A: Tensor3, rho: Environment, op: Optional[Operator]
+)
+cpdef cnp.ndarray update_right_environment(
+    B: Tensor3, A: Tensor3, rho: Environment, op: Optional[Operator]
+)
+cpdef object end_environment(rho: Environment)
+cpdef object join_environments(rhoL: Environment, rhoR: Environment)
+
+cpdef object scprod(MPS bra, MPS ket)
+
+cpdef cnp.ndarray begin_mpo_environment()
+cpdef cnp.ndarray update_left_mpo_environment(
+    rho: MPOEnvironment, A: Tensor3, O: Tensor4, B: Tensor3
+)
+cpdef cnp.ndarray update_right_mpo_environment(
+    rho: MPOEnvironment, A: Tensor3, O: Tensor4, B: Tensor3
+)
+cpdef object end_mpo_environment(rho: MPOEnvironment)
+cpdef object join_mpo_environments(left: MPOEnvironment, right: MPOEnvironment)
+
+cpdef cnp.ndarray _contract_nrjl_ijk_klm(U: Unitary, A: Tensor3, B: Tensor3)
+cpdef cnp.ndarray _contract_last_and_first(A: NDArray, B: NDArray)
