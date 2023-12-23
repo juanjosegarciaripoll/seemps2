@@ -1,3 +1,12 @@
+cdef MPOSum _MPOSum_from_data(list mpos, list weights, Py_ssize_t size, Strategy strategy):
+    cdef MPOSum output = MPOSum.__new__(MPOSum)
+    output._mpos = mpos
+    output._weights = weights
+    output._size = size
+    output._strategy = strategy
+    return output
+
+
 cdef class MPOSum(object):
     """Object representing a linear combination of matrix-product opeators.
 
@@ -32,7 +41,11 @@ cdef class MPOSum(object):
         self._strategy = strategy
 
     def copy(self) -> MPOSum:
-        return MPOSum(self._mpos, self._weights, self._strategy)
+        return _MPOSum_from_data(
+            list(self._mpos),
+            list(self._weights),
+            self._size,
+            self._strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]):
         """Add an MPO or an MPOSum from the MPOSum."""
@@ -47,7 +60,7 @@ cdef class MPOSum(object):
             new_mpos = self._mpos + A._mpos
         else:
             raise TypeError(f"Cannot add an MPOSum to an object of type {type(A)}")
-        return MPOSum(mpos=new_mpos, weights=new_weights, strategy=self._strategy)
+        return _MPOSum_from_data(new_mpos, new_weights, self._size, self._strategy)
 
     def __sub__(self, A: Union[MPO, MPOSum, MPOList]):
         """Subtract an MPO, MPOList or MPOSum from the MPOSum."""
@@ -64,7 +77,7 @@ cdef class MPOSum(object):
             raise TypeError(
                 f"Cannot subtract an object of type {type(A)} from an MPOSum"
             )
-        return MPOSum(mpos=new_mpos, weights=new_weights, strategy=self._strategy)
+        return _MPOSum_from_data(new_mpos, new_weights, self._size, self._strategy)
 
     def __mul__(self, n: Weight) -> MPOSum:
         """Multiply an MPOSum quantum state by an scalar n (MPOSum * n)"""
@@ -73,21 +86,19 @@ cdef class MPOSum(object):
         # in MPO, MPS, MPSSum, etc.
         if not isinstance(n, (int, float, complex)):
             raise TypeError(f"Cannot multiply MPOSum by {n}")
-        return MPOSum(
-            mpos=self._mpos,
-            weights=[n * weight for weight in self._weights],
-            strategy=self._strategy,
-        )
+        return _MPOSum_from_data(
+            self._mpos,
+            [n * weight for weight in self._weights],
+            self._size, self._strategy)
 
     def __rmul__(self, n: Union[MPO, MPOSum, MPOList]) -> MPOSum:
         """Multiply an MPOSum quantum state by an scalar n (MPOSum * n)"""
         if not isinstance(n, (int, float, complex)):
             raise Exception(f"Cannot multiply MPOSum by {n}")
-        return MPOSum(
-            mpos=self._mpos,
-            weights=[n * weight for weight in self._weights],
-            strategy=self._strategy,
-        )
+        return _MPOSum_from_data(
+            self._mpos,
+            [n * weight for weight in self._weights],
+            self._size, self._strategy)
 
     def tomatrix(self) -> Operator:
         """Return the matrix representation of this MPO."""
@@ -96,13 +107,13 @@ cdef class MPOSum(object):
             A = A + self._weights[i] * mpo.tomatrix()
         return A
 
-    def set_strategy(self, strategy, strategy_components=None) -> MPOSum:
+    def set_strategy(self, strategy: Strategy, strategy_components=None) -> MPOSum:
         """Return MPOSum with the given strategy."""
         if strategy_components is not None:
             mpos = [mpo.set_strategy(strategy_components) for mpo in self._mpos]
         else:
             mpos = self._mpos
-        return MPOSum(mpos=mpos, weights=self._weights, strategy=strategy)
+        return _MPOSum_from_data(mpos, self._weights, self._size, strategy)
 
     def apply(
         self,
@@ -146,12 +157,13 @@ cdef class MPOSum(object):
         MPOSum
             The extended operator.
         """
-        return MPOSum(
-            mpos=[
+        return _MPOSum_from_data(
+            [
                 mpo.extend(L, sites=sites, dimensions=dimensions) for mpo in self._mpos
             ],
-            weights=self._weights,
-            strategy=self._strategy,
+            self._weights,
+            self._size,
+            self._strategy,
         )
 
     def _joined_tensors(self, i: int, mpos: list[MPO]) -> Tensor4:
@@ -192,9 +204,10 @@ cdef class MPOSum(object):
             Quantum state approximating this sum.
         """
         mpos = [m.join() if isinstance(m, MPOList) else m for m in self._mpos]
-        return MPO(
+        return _MPO_from_data(
             [self._joined_tensors(i, mpos) for i in range(self._size)],
-            strategy=self._strategy if strategy is None else strategy,
+            self._size,
+            self._strategy if strategy is None else strategy,
         )
 
     def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
@@ -220,7 +233,7 @@ cdef class MPOSum(object):
             :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
             is the matrix-product operator.
         """
-        return sum([m.expectation(bra, ket) for m in self._mpos])
+        return sum(m.expectation(bra, ket) for m in self._mpos)
 
     @property
     def mpos(self) -> list:
