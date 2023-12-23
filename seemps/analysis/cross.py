@@ -1,7 +1,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import numpy as np
 from scipy.linalg import lu, solve_triangular  # type: ignore
@@ -15,7 +15,7 @@ from .mesh import Mesh
 from .sampling import random_mps_indices, sample_mps
 
 
-def maxvol_square(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def maxvol_square(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the optimal row indices and matrix of coefficients for the square maxvol decomposition of a given matrix.
     This algorithm finds a submatrix of a 'tall' matrix with maximal volume (determinant of the square submatrix).
@@ -59,7 +59,7 @@ def maxvol_square(matrix: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 def maxvol_rectangular(
     matrix: np.ndarray, min_rank_change: int, max_rank_change: int
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Returns the optimal row indices and matrix of coefficients for the maxvol algorithm applied to a tall matrix.
     This algorithm extends the square maxvol algorithm to find a 'rectangular' submatrix with more rows than the columns
@@ -110,7 +110,7 @@ def maxvol_rectangular(
     return I, B
 
 
-def maxvol(matrix: np.ndarray, rank_change: int) -> Tuple[np.ndarray, np.ndarray]:
+def maxvol(matrix: np.ndarray, rank_change: int) -> tuple[np.ndarray, np.ndarray]:
     """
     Chooses and applies the appropriate maxvol algorithm (square or rectangular) to find a submatrix
     with maximal volume, and returns the indices of these rows along with the matrix of coefficients.
@@ -151,7 +151,7 @@ def random_initial_indices(
     I_s: np.ndarray,
     starting_bond: int,
     rng: Optional[np.random.Generator] = None,
-) -> List[np.ndarray]:
+) -> list[np.ndarray]:
     """
     Generates a list of random initial indices for tensor decomposition using a specified random number generator.
     Each set of indices is chosen randomly from a given array of indices and progressively concatenated.
@@ -167,7 +167,7 @@ def random_initial_indices(
 
     Returns
     -------
-    I_g : List[np.ndarray]
+    I_g : list[np.ndarray]
         A list of arrays, each containing a set of randomly chosen indices. The size of each array grows progressively
         as indices are concatenated at each step.
     """
@@ -184,7 +184,7 @@ def random_initial_indices(
     return I_g
 
 
-def sample_initial_indices(state: MPS) -> List[np.ndarray]:
+def sample_initial_indices(state: MPS) -> list[np.ndarray]:
     """
     Samples initial indices from a given MPS by performing a sweep of the cross interpolation algorithm.
     This allows to give an arbitrary starting bond dimension and a hopefully better starting point leading
@@ -197,7 +197,7 @@ def sample_initial_indices(state: MPS) -> List[np.ndarray]:
 
     Returns
     -------
-    I_g : List[np.ndarray]
+    I_g : list[np.ndarray]
         A list of arrays containing the sampled indices.
     """
     rank_change = 0
@@ -241,7 +241,7 @@ def sample_initial_indices(state: MPS) -> List[np.ndarray]:
 def sample_tensor_fiber(
     func: Callable,
     mesh: Mesh,
-    mps_ordering: str,
+    mps_order: str,
     i_le: np.ndarray,
     i_s: np.ndarray,
     i_g: np.ndarray,
@@ -256,8 +256,8 @@ def sample_tensor_fiber(
         The vector function to be evaluated.
     mesh : Mesh
         The mesh of points where the function is defined.
-    mps_ordering : str
-        The ordering of the MPS sites, determining with which transformation matrix the tensor fiber is sampled.
+    mps_order : str
+        The order of the MPS sites, determining with which transformation matrix the tensor fiber is sampled.
     i_le : np.ndarray
         The multi-indices coming from all sites smaller or equal to k ($J_{\le k-1}$) in the MPS.
     i_s : np.ndarray
@@ -282,7 +282,7 @@ def sample_tensor_fiber(
     if i_g.size > 0:
         mps_indices = np.hstack((mps_indices, np.kron(i_g, _ones(r_le * s))))
     # Evaluate the function at the fiber indices
-    T = mesh.binary_transformation_matrix(mps_ordering)
+    T = mesh.binary_transformation_matrix(mps_order)
     fiber = func(mesh[mps_indices @ T]).reshape((r_le, s, r_g), order="F")
     return fiber
 
@@ -298,16 +298,44 @@ class CrossResults:
     times: VectorLike
 
 
+@dataclass
+class CrossStrategy:
+    maxbond: int = 100
+    maxiter: int = 100
+    tol: float = 1e-10
+    bond_change: int = 1
+    starting_indices: Optional[list[np.ndarray]] = None
+    starting_bond: int = 1
+    error_type: str = "sampling"
+    mps_order: str = "A"
+    """
+    Configuration strategy for the tensor cross-interpolation algorithm.
+
+    Parameters
+    ----------
+    maxbond : int, default=100
+        Maximum bond dimension allowed for the MPS.
+    maxiter : int, default=100
+        Maximum number of sweeps allowed.
+    tol : float, default=1e-10
+        Error tolerance for convergence, of type as specified by error_type.
+    bond_change : int, default=1
+        Increment in bond dimension per half-sweep (twice this value per full left-right sweep).
+    starting_indices : Optional[list[np.ndarray]], default=None
+        Initial indices for the cross algorithm; if None, uses a number of starting_bond random indices.
+    starting_bond : int, default=1
+        Initial bond dimension for the MPS, used only when starting_indices is None.
+    error_type : str, default="sampling"
+        Method for error calculation; can be 'sampling', 'norm', or 'integral'.
+     mps_order : str, default="A"
+        Order of sites in MPS; can be 'A' or 'B', affecting the sampling strategy.
+    """
+
+
 def cross_interpolation(
     func: Callable,
     mesh: Mesh,
-    starting_indices: Optional[List[np.ndarray]] = None,
-    bond_change: int = 1,
-    maxbond: int = 100,
-    maxiter: int = 100,
-    tol: float = 1e-10,
-    error_type: str = "sampling",
-    mps_ordering: str = "A",
+    cross_strategy: CrossStrategy = CrossStrategy(),
     strategy: Strategy = SIMPLIFICATION_STRATEGY.replace(normalize=False),
     callback: Optional[Callable] = None,
 ) -> CrossResults:
@@ -321,18 +349,8 @@ def cross_interpolation(
         The vectorized function to be approximated as a MPS.
     mesh : Mesh
         The mesh of points where the function is defined.
-    starting_indices : Optional[List[np.ndarray]], default=None
-        The initial indices I_g for the algorithm. If None, random indices with bond dimension 1 are used.
-    bond_change : int, default=1
-        The increment in the bond dimension at each sweep until reaching maxbond.
-    maxbond : int, default=100
-        The maximum bond dimension allowed for the MPS.
-    maxiter : int, default=100
-        The maximum number of sweeps allowed.
-    tol : float, default=1e-10
-        The error tolerance for convergence.
-    mps_ordering : str, default="A"
-        Determines the order of the sites in the MPS by changing how the function is sampled.
+    cross_strategy : CrossStrategy, default=CrossStrategy()
+        The strategy configuration for the algorithm.
     strategy : Strategy, default=Strategy()
         The MPS simplification strategy to perform at the end of the algorithm.
     callback : Optional[Callable], default=None
@@ -344,41 +362,47 @@ def cross_interpolation(
         The results of the cross interpolation process, including the final MPS state, convergence status,
         message, error, bond, time and evaluation count trajectories.
     """
+    mps_indices = None
+    mesh_samples = None
+    state_prev = None
+    integral_prev = None
 
     def get_error(state: MPS):
-        if error_type == "sampling":
+        if cross_strategy.error_type == "sampling":
+            nonlocal mps_indices, mesh_samples
+            # TODO: Think about this and whether the state/sampling.py module can be used instead.
             if sweep == 0:
-                get_error.mps_indices = random_mps_indices(state)
-                T = mesh.binary_transformation_matrix(mps_ordering)
-                get_error.mesh_samples = func(mesh[get_error.mps_indices @ T])
-            mps_samples = sample_mps(state, get_error.mps_indices)
-            error = np.max(np.abs(mps_samples - get_error.mesh_samples))
-        elif error_type == "norm":
+                mps_indices = random_mps_indices(state)
+                T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
+                mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)
+            mps_samples = sample_mps(state, mps_indices)
+            error = np.max(np.abs(mps_samples - mesh_samples))
+        elif cross_strategy.error_type == "norm":
+            nonlocal state_prev
             if sweep == 0:
                 # Save a deepcopy (needs to copy the previous tensors) to a function attribute
-                get_error.state_prev = deepcopy(state)
+                state_prev = deepcopy(state)
                 return np.Inf
             # TODO: Rethink about this way of checking convergence.
             # Right now it is computing the relative change in norm.
             # At the moment, this method is much more expensive than sampling.
             strategy = Strategy(normalize=False)
             error = abs(
-                simplify(state - get_error.state_prev, strategy=strategy).norm()
-                / get_error.state_prev.norm()
+                simplify(state - state_prev, strategy=strategy).norm()
+                / state_prev.norm()
             )
-            get_error.state_prev = deepcopy(state)
-        elif error_type == "integral":
+            state_prev = deepcopy(state)
+        elif cross_strategy.error_type == "integral":
+            nonlocal integral_prev
             if sweep == 0:
-                get_error.integral_prev = integrate_mps(
-                    state, mesh, integral_type="trapezoidal"
-                )
+                integral_prev = integrate_mps(state, mesh, integral_type="trapezoidal")
                 return np.Inf
             # TODO: Implement Féjer quadrature (valid for arbitrary sites and exponentially convergent)
             integral = integrate_mps(state, mesh, integral_type="trapezoidal")
             if DEBUG:
                 log(f"integral = {integral:.15e}")
-            error = abs(integral - get_error.integral_prev)
-            get_error.integral_prev = integral
+            error = abs(integral - integral_prev)
+            integral_prev = integral
         return error
 
     mesh_shape = mesh.shape()[:-1]
@@ -388,13 +412,15 @@ def cross_interpolation(
     sites = sum(mesh_sites_per_dimension)
     I_s = [np.array([[0], [1]]) for _ in range(sites)]
     I_le = [np.array([], dtype=int)] * (sites + 1)
-    if starting_indices is None:
+    if cross_strategy.starting_indices is None:
         rng = np.random.default_rng(seed=42)
-        I_g = random_initial_indices(I_s, starting_bond=1, rng=rng)
+        I_g = random_initial_indices(
+            I_s, starting_bond=cross_strategy.starting_bond, rng=rng
+        )
     else:
-        if len(starting_indices) - 1 != sites:
+        if len(cross_strategy.starting_indices) - 1 != sites:
             raise ValueError("Invalid starting indices")
-        I_g = starting_indices
+        I_g = cross_strategy.starting_indices
 
     errors = []
     bonds = []
@@ -404,14 +430,14 @@ def cross_interpolation(
     state = MPS([np.zeros((1, 2, 1))] * sites)  # Placeholder state
 
     converged = False
-    message = f"Maximum number of sweeps {maxiter} reached"
+    message = f"Maximum number of sweeps {cross_strategy.maxiter} reached"
     _ones = lambda x: np.ones((x, 1), dtype=int)
 
-    for sweep in range(maxiter):
+    for sweep in range(cross_strategy.maxiter):
         start_time = perf_counter()
         # Update maxvol rank change based on maxbond
-        if max(A.shape[0] for A in state) < maxbond:
-            rank_change = bond_change
+        if max(A.shape[0] for A in state) < cross_strategy.maxbond:
+            rank_change = cross_strategy.bond_change
         else:
             rank_change = 0
         evals = 0
@@ -419,7 +445,7 @@ def cross_interpolation(
         # Forward pass
         for k in range(sites):
             fiber = sample_tensor_fiber(
-                func, mesh, mps_ordering, I_le[k], I_s[k], I_g[k + 1]
+                func, mesh, cross_strategy.mps_order, I_le[k], I_s[k], I_g[k + 1]
             )
             evals += fiber.size
             r_le, s, r_g = fiber.shape
@@ -436,7 +462,7 @@ def cross_interpolation(
         # Backward pass
         for k in reversed(range(sites)):
             fiber = sample_tensor_fiber(
-                func, mesh, mps_ordering, I_le[k], I_s[k], I_g[k + 1]
+                func, mesh, cross_strategy.mps_order, I_le[k], I_s[k], I_g[k + 1]
             )
             evals += fiber.size
             r_le, s, r_g = fiber.shape
@@ -463,8 +489,8 @@ def cross_interpolation(
         evaluations.append(evals)
         times.append(time)
 
-        if error < tol:
-            message = f"State converged within tolerance {tol}"
+        if error < cross_strategy.tol:
+            message = f"State converged within tolerance {cross_strategy.tol}"
             converged = True
             break
 
@@ -474,10 +500,12 @@ def cross_interpolation(
     # Simplify the state according to the strategy
     state = simplify(state, strategy=strategy)
     truncated_bonds = state.bond_dimensions()
+    truncated_error = get_error(state)
     bonds.append(truncated_bonds)
+    errors.append(truncated_error)
     if DEBUG:
         log(
-            f"simplification truncates maxbond from {max(all_bonds)} to {max(truncated_bonds)}"
+            f"simplification truncates maxbond from {max(all_bonds)} to {max(truncated_bonds)} with error {truncated_error:.15e}"
         )
 
     return CrossResults(

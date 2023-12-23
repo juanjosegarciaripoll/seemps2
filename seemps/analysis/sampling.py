@@ -21,7 +21,7 @@ def sample_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
     -------
     samples : np.ndarray
         The array of samples corresponding to the provided indices."""
-
+    # TODO: Think about if this is redundant and whether the state/sampling.py module can be used instead.
     if mps_indices.ndim == 1:
         mps_indices = mps_indices[np.newaxis, :]
     reduced_mps = mps[0][0, mps_indices[:, 0], :]

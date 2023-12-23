@@ -101,20 +101,20 @@ class Mesh:
         else:
             raise TypeError("Indices must be a tuple or NumPy array")
 
-    def binary_transformation_matrix(self, ordering="A", base=2) -> np.ndarray:
+    def binary_transformation_matrix(self, order="A", base=2) -> np.ndarray:
         """
-        Constructs and returns a binary transformation matrix based on the specified ordering and base.
+        Constructs and returns a binary transformation matrix based on the specified order and base.
         """
         sites = [int(np.emath.logn(base, s)) for s in self.shape()[:-1]]
         if self.transformation_matrix is None:
-            if ordering == "A":
+            if order == "A":
                 T = np.zeros((sum(sites), len(sites)), dtype=int)
                 start = 0
                 for m, n in enumerate(sites):
                     T[start : start + n, m] = 2 ** np.arange(n)[::-1]
                     start += n
                 self.transformation_matrix = T
-            elif ordering == "B":
+            elif order == "B":
                 # Strategy: stack diagonal matrices and remove unwanted rows.
                 # TODO: Improve this logic.
                 T = []
@@ -131,35 +131,3 @@ class Mesh:
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(self.shape())
-
-
-# TODO: Think if this should be included in the library
-def reorder_tensor(tensor: np.ndarray, sites_per_dimension: List[int]) -> np.ndarray:
-    """
-    Reorders a given tensor between the MPS orderings 'A' and 'B' by transposing its axes.
-
-    This reshapes the input tensor into a MPS format, transposes its axes according to the
-    MPS ordering and specified sites per dimension, and reshapes it back to the original tensor shape.
-
-    Parameters
-    ----------
-    tensor : np.ndarray
-        The tensor to be reordered.
-    sites_per_dimension : List[int]
-        A list specifying the number of sites for each dimension of the tensor.
-
-    Returns
-    -------
-    np.ndarray
-        The tensor reordered from order 'A' to 'B' or vice versa.
-    """
-    dimensions = len(sites_per_dimension)
-    shape_orig = tensor.shape
-    tensor = tensor.reshape([2] * sum(sites_per_dimension))
-    axes = [
-        np.arange(idx, dimensions * n, dimensions)
-        for idx, n in enumerate(sites_per_dimension)
-    ]
-    axes = [item for items in axes for item in items]
-    tensor = np.transpose(tensor, axes=axes)
-    return tensor.reshape(shape_orig)
