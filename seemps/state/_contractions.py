@@ -1,5 +1,6 @@
 import numpy as np
 from ..typing import *
+from .core import _contract_last_and_first
 
 
 def _contract_nrjl_ijk_klm(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4:
@@ -15,7 +16,7 @@ def _contract_nrjl_ijk_klm(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4:
     ).reshape(a, d, e, c)
 
 
-def _contract_last_and_first(A: NDArray, B: NDArray) -> NDArray:
+def _contract_last_and_first2(A: NDArray, B: NDArray) -> NDArray:
     """Contract last index of `A` and first from `B`"""
     sA = A.shape
     sB = B.shape

@@ -229,3 +229,31 @@ def truncate_vector(s, Strategy strategy):
         cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):
         raise ValueError("truncate_vector() requires float vector")
     return strategy._truncate(<cnp.ndarray>s, strategy)
+
+cdef cnp.ndarray _as_matrix(cnp.ndarray A, Py_ssize_t rows, Py_ssize_t cols):
+    cdef cnp.npy_intp *dims_data = [rows, cols]
+    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 2)
+    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
+
+def _contract_last_and_first(A, B) -> cnp.ndarray:
+    """Contract last index of `A` and first from `B`"""
+    if (cnp.PyArray_Check(A) == 0 or cnp.PyArray_Check(B) == 0):
+        raise ValueError("_contract_last_and_first expects tensors")
+
+    cdef:
+        cnp.ndarray Aarray = <cnp.ndarray>A
+        cnp.ndarray Barray = <cnp.ndarray>B
+        int ndimA = cnp.PyArray_NDIM(Aarray)
+        Py_ssize_t Alast = cnp.PyArray_DIM(Aarray, ndimA - 1)
+        Py_ssize_t Bfirst = cnp.PyArray_DIM(Barray, 0)
+    #
+    # By reshaping the two tensors to matrices, we ensure Numpy
+    # will always use the CBLAS path (provided the tensors have
+    # the same type, of course)
+    #
+    return <cnp.ndarray>cnp.PyArray_Reshape(
+        <cnp.ndarray>cnp.PyArray_MatrixProduct(
+            _as_matrix(Aarray, cnp.PyArray_SIZE(Aarray) / Alast, Alast),
+            _as_matrix(Barray, Bfirst, cnp.PyArray_SIZE(Barray) / Bfirst)
+        ),
+        A.shape[:-1] + B.shape[1:])
