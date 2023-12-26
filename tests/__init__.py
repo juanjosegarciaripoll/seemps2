@@ -7,6 +7,7 @@ from .test_sample_states import *
 from .test_sampling import *
 from .test_random_mps import *
 from .test_canonical import *
+from .test_chebyshev import *
 from .test_circuits import *
 from .test_combine import *
 from .test_contractions import *
@@ -40,3 +41,4 @@ from .test_strategy import *
 from .test_TEBD import *
 from .test_tools import *
 from .test_truncate import *
+from .test_analysis_operators import *
