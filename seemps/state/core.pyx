@@ -32,9 +32,6 @@ cdef class Strategy:
             method = TRUNCATION_ABSOLUTE_SINGULAR_VALUE
         self.tolerance = tolerance
         self.simplification_tolerance = simplification_tolerance
-        if method < 0 or method > TRUNCATION_LAST_CODE:
-            raise AssertionError("Invalid method argument passed to Strategy")
-        self.method = method
         if max_bond_dimension <= 0 or max_bond_dimension > MAX_BOND_DIMENSION:
             raise AssertionError("Invalid bond dimension in Strategy")
         else:
@@ -47,6 +44,17 @@ cdef class Strategy:
         if max_sweeps < 0:
             raise AssertionError("Negative or zero number of sweeps in Strategy")
         self.max_sweeps = max_sweeps
+        self.method = method
+        if method == TRUNCATION_DO_NOT_TRUNCATE:
+            self._truncate = _truncate_do_not_truncate
+        elif method == TRUNCATION_RELATIVE_NORM_SQUARED_ERROR:
+            self._truncate = _truncate_relative_norm_squared_error
+        elif method == TRUNCATION_RELATIVE_SINGULAR_VALUE:
+            self._truncate = _truncate_relative_singular_value
+        elif method == TRUNCATION_ABSOLUTE_SINGULAR_VALUE:
+            self._truncate = _truncate_absolute_singular_value
+        else:
+            raise AssertionError("Invalid method argument passed to Strategy")
 
     def replace(self,
                  method: Optional[Truncation] = None,
@@ -123,73 +131,101 @@ DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
 NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = TRUNCATION_DO_NOT_TRUNCATE,
                                          simplify = SIMPLIFICATION_DO_NOT_SIMPLIFY)
 
-cdef cnp.float64_t[::1] errors_buffer = np.zeros(1024, dtype=np.float64)
+cdef tuple _truncate_do_not_truncate(cnp.ndarray s, Strategy strategy):
+    return s, 0.0
 
-cdef cnp.float64_t *get_errors_buffer(Py_ssize_t N) noexcept:
-    global errors_buffer
-    if errors_buffer.size <= N:
-        errors_buffer = np.zeros(2 * N, dtype=np.float64)
-    return &errors_buffer[0]
+cdef cnp.ndarray _make_empty_float64_vector(Py_ssize_t N):
+    cdef cnp.npy_intp[1] dims = [N]
+    return cnp.PyArray_EMPTY(1, &dims[0], cnp.NPY_FLOAT64, 0)
 
-def truncate_vector(cnp.ndarray[cnp.float64_t, ndim=1] s,
-                    Strategy strategy):
-    global errors_buffer
+cdef cnp.ndarray _errors_buffer = _make_empty_float64_vector(1024)
 
+cdef tuple _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
+    global _errors_buffer
     cdef:
         Py_ssize_t i, final_size, N = s.size
-        double total, max_error, new_norm
-        cnp.float64_t *errors = get_errors_buffer(N)
-        cnp.float64_t *data
+        double max_error, new_norm, final_error
+        double total = 0.0
+        cnp.float64_t *errors
+        cnp.float64_t *s_start = (<cnp.float64_t*>cnp.PyArray_DATA(s))
+        cnp.float64_t *data = &s_start[N-1]
+    if cnp.PyArray_SIZE(_errors_buffer) <= N:
+        _errors_buffer = _make_empty_float64_vector(2 * N)
+    errors = <cnp.float64_t*>cnp.PyArray_DATA(_errors_buffer)
+    #
+    # Compute the cumulative sum of the reduced density matrix eigen values
+    # in reversed order. Thus errors[i] is the error we make when we drop
+    # i singular values.
+    #
+    for i in range(N):
+        errors[i] = total
+        total += data[0]*data[0]
+        data -= 1
+    errors[N] = total
 
-    if strategy.method == TRUNCATION_DO_NOT_TRUNCATE:
-        max_error = 0.0
-    elif strategy.method == TRUNCATION_RELATIVE_NORM_SQUARED_ERROR:
-        #
-        # Compute the cumulative sum of the reduced density matrix eigen values
-        # in reversed order. Thus errors[i] is the error we make when we drop
-        # i singular values.
-        #
-        total = 0.0
-        data = &s[N-1]
-        for i in range(N):
-            errors[i] = total
-            total += data[0]*data[0]
-            data -= 1
-        errors[N] = total
-
-        max_error = total * strategy.tolerance
-        final_error = 0.0
-        for i in range(N):
-            if errors[i] >= max_error:
-                i -= 1
-                break
-        final_size = min(N - i, strategy.max_bond_dimension)
-        i = max(i, N - strategy.max_bond_dimension - 1)
-        max_error = errors[i]
-        if final_size < N:
-            s = s[:final_size]
-        if strategy.normalize:
-            new_norm = sqrt(total - max_error)
-            data = &s[0]
-            for i in range(final_size):
-                data[i] /= new_norm
-    else:
-        data = &s[0]
-        if strategy.method == TRUNCATION_RELATIVE_SINGULAR_VALUE:
-            max_error = strategy.tolerance * data[0]
-        else: # ABSOLUTE_SINGULAR_VALUE
-            max_error = strategy.tolerance
-        final_size = N
-        for i in range(N):
-            if data[i] <= max_error:
-                final_size = i
-                break
-        if final_size <= 0:
-            final_size = 1
-        elif final_size > strategy.max_bond_dimension:
-            final_size = strategy.max_bond_dimension
-        max_error = 0.0
-        for i in range(final_size, N):
-            max_error += data[i] * data[i]
+    max_error = total * strategy.tolerance
+    final_error = 0.0
+    for i in range(N):
+        if errors[i] >= max_error:
+            i -= 1
+            break
+    final_size = min(N - i, strategy.max_bond_dimension)
+    i = max(i, N - strategy.max_bond_dimension - 1)
+    max_error = errors[i]
+    if strategy.normalize:
+        new_norm = sqrt(total - max_error)
+        data = s_start
+        for i in range(final_size):
+            data[i] /= new_norm
+    if final_size < N:
         s = s[:final_size]
     return s, max_error
+
+cdef tuple _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
+    cdef:
+        cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
+        double max_error = strategy.tolerance * data[0]
+        Py_ssize_t i, N = s.size
+        Py_ssize_t final_size = N
+    for i in range(N):
+        if data[i] <= max_error:
+            final_size = i
+            break
+    if final_size <= 0:
+        final_size = 1
+    elif final_size > strategy.max_bond_dimension:
+        final_size = strategy.max_bond_dimension
+    max_error = 0.0
+    for i in range(final_size, N):
+        max_error += data[i] * data[i]
+    if final_size < N:
+        s = s[:final_size]
+    return s, max_error
+
+cdef tuple _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
+    cdef:
+        cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
+        double max_error = strategy.tolerance
+        Py_ssize_t i, N = s.size
+        Py_ssize_t final_size = N
+    for i in range(N):
+        if data[i] <= max_error:
+            final_size = i
+            break
+    if final_size <= 0:
+        final_size = 1
+    elif final_size > strategy.max_bond_dimension:
+        final_size = strategy.max_bond_dimension
+    max_error = 0.0
+    for i in range(final_size, N):
+        max_error += data[i] * data[i]
+    if final_size < N:
+        s = s[:final_size]
+    return s, max_error
+
+def truncate_vector(s, Strategy strategy):
+    if (cnp.PyArray_Check(s) == 0 or
+        cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or
+        cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):
+        raise ValueError("truncate_vector() requires float vector")
+    return strategy._truncate(<cnp.ndarray>s, strategy)

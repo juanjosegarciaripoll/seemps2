@@ -72,7 +72,7 @@ class TestStrategyAbsoluteSingularValue(TestStrategy):
         values = self.logarithmic_values()
         s, err = truncate_vector(values, strategy)
         self.assertEqual(s.size, values.size)
-        self.assertTrue(s is not values)
+        self.assertTrue(s is values)
         self.assertEqual(err, 0.0)
 
     def test_strategy_zero_tolerance_changes_method(self):

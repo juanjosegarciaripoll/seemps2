@@ -1,4 +1,5 @@
 from cython import *
+cimport numpy as cnp
 
 cdef enum TruncationCEnum:
     TRUNCATION_DO_NOT_TRUNCATE = 0
@@ -21,3 +22,4 @@ cdef class Strategy:
     cdef int max_sweeps
     cdef bint normalize
     cdef int simplify
+    cdef tuple (*_truncate)(cnp.ndarray s, Strategy)
