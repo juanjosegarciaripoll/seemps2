@@ -9,6 +9,7 @@ from seemps.analysis import (
     mps_tensor_product,
     mps_interval,
 )
+from seemps.analysis.chebyshev import DEFAULT_CHEBYSHEV_STRATEGY
 from seemps.state import Strategy
 from seemps.operators import MPO
 
@@ -114,7 +115,9 @@ class TestChebyshevMPS(TestCase):
         vector = interval.to_vector()
         func = lambda x: np.exp(-(x**2))
         t = 1e-15
-        strategy = Strategy(tolerance=t, simplification_tolerance=t)
+        strategy = DEFAULT_CHEBYSHEV_STRATEGY.replace(
+            tolerance=t, simplification_tolerance=t
+        )
         mps_intv = mps_interval(interval)
         mps_domain = mps_tensor_sum([mps_intv, mps_intv])
         mps_cheb = chebyshev_approximation(func, order, mps_domain, strategy=strategy)
