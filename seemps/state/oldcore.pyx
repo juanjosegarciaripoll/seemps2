@@ -17,11 +17,13 @@ class Simplification:
     CANONICAL_FORM = SIMPLIFICATION_CANONICAL_FORM
     VARIATIONAL = SIMPLIFICATION_VARIATIONAL
 
+DEFAULT_TOLERANCE = np.finfo(np.float64).eps
+
 cdef class Strategy:
     def __init__(self,
-                 method: int = TRUNCATION_RELATIVE_SINGULAR_VALUE,
-                 tolerance: float = 1e-8,
-                 simplification_tolerance: float = 1e-8,
+                 method: int = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
+                 tolerance: float = DEFAULT_TOLERANCE,
+                 simplification_tolerance: float = DEFAULT_TOLERANCE,
                  max_bond_dimension: int = MAX_BOND_DIMENSION,
                  normalize: bool = False,
                  simplify: int = SIMPLIFICATION_VARIATIONAL,
@@ -119,8 +121,6 @@ cdef class Strategy:
                f"max_bond_dimension={self.max_bond_dimension}, normalize={self.normalize}," \
                f"simplification_method={simplification_method}, max_sweeps={self.max_sweeps})"
 
-DEFAULT_TOLERANCE = np.finfo(np.float64).eps
-
 DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
                             simplify = SIMPLIFICATION_VARIATIONAL,
                             tolerance = DEFAULT_TOLERANCE,
@@ -170,8 +170,7 @@ cdef tuple _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strateg
             i -= 1
             break
     final_size = min(N - i, strategy.max_bond_dimension)
-    i = max(i, N - strategy.max_bond_dimension - 1)
-    max_error = errors[i]
+    max_error = errors[N - final_size]
     if strategy.normalize:
         new_norm = sqrt(total - max_error)
         data = s_start
@@ -257,3 +256,49 @@ def _contract_last_and_first(A, B) -> cnp.ndarray:
             _as_matrix(Barray, Bfirst, cnp.PyArray_SIZE(Barray) / Bfirst)
         ),
         A.shape[:-1] + B.shape[1:])
+
+
+cdef _matmul = np.matmul
+
+cdef cnp.ndarray _as_3tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j, Py_ssize_t k):
+    cdef cnp.npy_intp *dims_data = [i, j, k]
+    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 3)
+    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
+
+cdef cnp.ndarray _as_4tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j,
+                             Py_ssize_t k, Py_ssize_t l):
+    cdef cnp.npy_intp *dims_data = [i, j, k, l]
+    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 4)
+    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
+
+def _contract_nrjl_ijk_klm(U, A, B) -> cnp.ndarray:
+    #
+    # Assuming U[n*r,j*l], A[i,j,k] and B[k,l,m]
+    # Implements np.einsum('ijk,klm,nrjl -> inrm', A, B, U)
+    # See tests.test_contractions for other implementations and timing
+    #
+    if (cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_Check(B) == 0 or
+        cnp.PyArray_Check(U) == 0 or
+        cnp.PyArray_NDIM(<cnp.ndarray>A) != 3 or
+        cnp.PyArray_NDIM(<cnp.ndarray>B) != 3 or
+        cnp.PyArray_NDIM(<cnp.ndarray>U) != 2):
+        raise ValueError("Invalid arguments to _contract_nrjl_ijk_klm")
+    cdef:
+        # a, d, b = A.shape[0]
+        # b, e, c = B.shape[0]
+        Py_ssize_t a = cnp.PyArray_DIM(<cnp.ndarray>A, 0)
+        Py_ssize_t d = cnp.PyArray_DIM(<cnp.ndarray>A, 1)
+        Py_ssize_t b = cnp.PyArray_DIM(<cnp.ndarray>A, 2)
+        Py_ssize_t e = cnp.PyArray_DIM(<cnp.ndarray>B, 1)
+        Py_ssize_t c = cnp.PyArray_DIM(<cnp.ndarray>B, 2)
+    return _as_4tensor(
+        _matmul(
+            U,
+            _as_3tensor(
+                <cnp.ndarray>cnp.PyArray_MatrixProduct(
+                    _as_matrix(<cnp.ndarray>A, a*d, b),
+                    _as_matrix(<cnp.ndarray>B, b, e*c)),
+                a, d*e, c)
+        ),
+        a, d, e, c)
