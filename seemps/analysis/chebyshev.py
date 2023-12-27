@@ -7,7 +7,7 @@ from typing import Callable, Optional
 from seemps.analysis.mesh import ChebyshevZerosInterval
 from seemps.analysis.sampling import infinity_norm
 from seemps.operators import MPO
-from seemps.state import MPS, Strategy
+from seemps.state import MPS, Strategy, DEFAULT_STRATEGY, Truncation, Simplification
 from seemps.truncate import simplify
 
 
@@ -112,13 +112,22 @@ def integrate_chebyshev_coefficients(
     return c_intg * (stop - start) / 2
 
 
+DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
+    method=Truncation.RELATIVE_SINGULAR_VALUE,
+    tolerance=1e-8,
+    simplify=Simplification.VARIATIONAL,
+    simplification_tolerance=1e-8,
+    normalize=False,
+)
+
+
 def chebyshev_approximation(
     f: Callable,
     order: int,
     domain: Union[MPS, MPO],
     domain_norm_inf: Optional[float] = None,
     differentiation_order: int = 0,
-    strategy: Strategy = Strategy(),
+    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
 ) -> Union[MPS, MPO]:
     """
     Returns the MPS representation of a function or one of its integrals or derivatives
