@@ -111,7 +111,7 @@ cdef class Strategy:
             simplification_method="None"
         elif self.simplify == SIMPLIFICATION_CANONICAL_FORM:
             simplification_method="CanonicalForm"
-        elif self.simplification_method == SIMPLIFICATION_VARIATIONAL:
+        elif self.simplify == SIMPLIFICATION_VARIATIONAL:
             simplification_method="Variational"
         else:
             raise ValueError("Invalid simplification method found in Strategy")
