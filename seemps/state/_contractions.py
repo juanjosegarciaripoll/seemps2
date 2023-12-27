@@ -1,9 +1,8 @@
 import numpy as np
 from ..typing import *
-from .core import _contract_last_and_first
 
 
-def _contract_nrjl_ijk_klm(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4:
+def _contract_nrjl_ijk_klm2(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4:
     #
     # Assuming U[n*r,j*l], A[i,j,k] and B[k,l,m]
     # Implements np.einsum('ijk,klm,nrjl -> inrm', A, B, U)
@@ -21,3 +20,11 @@ def _contract_last_and_first2(A: NDArray, B: NDArray) -> NDArray:
     sA = A.shape
     sB = B.shape
     return np.matmul(A, B.reshape(sB[0], -1)).reshape(sA[:-1] + sB[1:])
+
+
+try:
+    from .core import _contract_last_and_first, _contract_nrjl_ijk_klm
+except:
+    raise Exception()
+    _contract_last_and_first = _contract_last_and_first2
+    _contract_nrjl_ijk_klm = _contract_nrjl_ijk_klm2
