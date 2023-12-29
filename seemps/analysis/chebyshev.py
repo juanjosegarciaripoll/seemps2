@@ -165,8 +165,11 @@ def chebyshev_approximation(
     strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
 ) -> MPS:
     """
-    Returns the MPS representation of a function or one of its integrals or
-    derivatives by means of the Chebyshev approximation using the Clenshaw algorithm.
+    Load a function as an MPS using Chebyshev expansions.
+
+    This function constructs a Chebyshev series that approximates `f` over
+    the given `Interval`, and uses that expansion to construct an MPS
+    representation via `cheb2mps`.
 
     Parameters
     ----------
@@ -187,10 +190,9 @@ def chebyshev_approximation(
     mps : MPS
         MPS approximation to the function.
     """
-    a, b = _interval_map((-1, 1), (domain.start, domain.stop))
-    c = chebyshev_coefficients(lambda u: f(a * u + b), order, -1, 1)
+    c = chebyshev_coefficients(f, order, domain.start, domain.stop)
     if differentiation_order < 0:
-        c = c.integ(-differentiation_order, lbnd=domain.start) * a
+        c = c.integ(-differentiation_order, lbnd=domain.start)
     elif differentiation_order > 0:
-        c = c.deriv(differentiation_order) / a
+        c = c.deriv(differentiation_order)
     return cheb2mps(c, domain, strategy)
