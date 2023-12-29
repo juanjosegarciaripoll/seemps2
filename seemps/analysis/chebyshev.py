@@ -1,26 +1,29 @@
+from __future__ import annotations
 from typing import Callable, Optional, Union
 
 import numpy as np
 from scipy.fft import dct  # type: ignore
 from typing import Callable, Optional
 
-from seemps.analysis.mesh import ChebyshevZerosInterval
-from seemps.analysis.sampling import infinity_norm
-from seemps.operators import MPO
-from seemps.state import MPS, Strategy, DEFAULT_STRATEGY, Truncation, Simplification
-from seemps.truncate import simplify
+from .mesh import ChebyshevZerosInterval, Interval
+from .factories import mps_interval
+from .sampling import infinity_norm
+from ..operators import MPO
+from ..state import MPS, Strategy, DEFAULT_STRATEGY, Truncation, Simplification
+from ..truncate import simplify
 
 
 def chebyshev_coefficients(
     f: Callable, order: int, start: float, stop: float
-) -> np.ndarray:
+) -> np.polynomial.Chebyshev:
     """
-    Returns the Chebyshev coefficients for a given function on a specified interval using
-    the Discrete Cosine Transform (DCT II).
+    Returns the Chebyshev coefficients for a given function on a specified
+    interval using the Discrete Cosine Transform (DCT II).
 
-    The accuracy of the Chebyshev approximation is correlated to the magnitude of the last few coefficients
-    in the series (depending on their periodicity), with smaller absolute values typically indicating
-    a better approximation of the function.
+    The accuracy of the Chebyshev approximation is correlated to the magnitude
+    of the last few coefficients in the series (depending on their periodicity),
+    with smaller absolute values typically indicating a better approximation of
+    the function.
 
     Parameters
     ----------
@@ -35,81 +38,13 @@ def chebyshev_coefficients(
 
     Returns
     -------
-    coefficients : np.ndarray
+    coefficients : numpy.polynomial.Chebyshev
         An array of Chebyshev coefficients scaled to the specified interval.
     """
     chebyshev_zeros = np.flip(ChebyshevZerosInterval(start, stop, order).to_vector())
     coefficients = dct(f(chebyshev_zeros), type=2) / order
     coefficients[0] /= 2
-    return coefficients
-
-
-def differentiate_chebyshev_coefficients(
-    chebyshev_coefficients: np.ndarray, start: float, stop: float
-) -> np.ndarray:
-    """
-    Returns the Chebyshev coefficients of the derivative of a function
-    whose Chebyshev coefficients are given.
-
-    Parameters
-    ----------
-    chebyshev_coefficients : np.ndarray
-        Chebyshev coefficients of the original function.
-    start : float
-        The starting point of the domain of the function.
-    stop : float
-        The ending point of the domain of the function.
-
-    Returns
-    -------
-    np.ndarray
-        Chebyshev coefficients of the derivative of the original function.
-    """
-    c = chebyshev_coefficients  # Shorter alias
-    N = len(c) - 1
-    c_diff = np.zeros_like(c)
-    c_diff[N] = 0
-    c_diff[N - 1] = 0
-    for i in range(N - 2, 0, -1):
-        c_diff[i] = 2 * (i + 1) * c[i + 1] + c_diff[i + 2]
-    c_diff[0] = (2 * c[1] + c_diff[2]) / 2
-    return c_diff * 2 / (stop - start)
-
-
-def integrate_chebyshev_coefficients(
-    chebyshev_coefficients: np.ndarray,
-    start: float,
-    stop: float,
-    integration_constant: Optional[float] = None,
-) -> np.ndarray:
-    """
-    Returns the Chebyshev coefficients of the integral of a function
-    whose Chebyshev coefficients are given.
-
-    Parameters
-    ----------
-    chebyshev_coefficients : np.ndarray
-        Chebyshev coefficients of the original function.
-    start : float
-        The starting point of the domain of the function.
-    stop : float
-        The ending point of the domain of the function.
-    integration_constant : float, optional
-        The constant of integration to be added to the zeroth coefficient.
-
-    Returns
-    -------
-    np.ndarray
-        Chebyshev coefficients of the integral of the original function.
-    """
-    c = chebyshev_coefficients  # Shorter alias
-    N = len(c) - 1
-    c_intg = np.zeros_like(c)
-    c_intg[1] = (2 * c[0] - c[2]) / 2
-    for i in range(2, N + 1):
-        c_intg[i] = (c[i - 1] - c[i + 1]) / (2 * i) if i < N else c[i - 1] / (2 * i)
-    c_intg[0] = c[0] if integration_constant is None else integration_constant
-    return c_intg * (stop - start) / 2
+    return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
 DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
@@ -121,75 +56,141 @@ DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
 )
 
 
+def _interval_map(orig, dest):
+    #
+    # Map the original domain [x0, x1] to [u0, u1]
+    # This is a transformation u = a * x + b
+    # with u0 = a * x0 + b
+    # and  u1 = a * x1 + b
+    # Hence a = (u1 - u0) / (x1 - x0)
+    #       b = ((u1 + u0) - a * (x0 + x1)) / 2
+    #
+    x0, x1 = orig
+    u0, u1 = dest
+    a = (u1 - u0) / (x1 - x0)
+    b = 0.5 * ((u1 + u0) - a * (x0 + x1))
+    return a, b
+
+
+def cheb2mps(
+    c: np.polynomial.Chebyshev,
+    domain: Optional[Interval] = None,
+    x: Optional[MPS] = None,
+    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
+) -> MPS:
+    """
+    Construct an MPS representation of a function, from a Chebyshev expansion.
+
+    Parameters
+    ----------
+    c : `numpy.polynomial.Chebyshev`
+        Chebyshev expansion over a given domain.
+    domain : Optional[Interval], default = None
+        Interval of definition for the function, which must be contained
+        in the Chebyshev's series domain.
+    x : Optional[MPS], default = None
+        MPS representation of the `x` function in the series' domain.
+    strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
+        Simplification strategy
+
+    Returns
+    -------
+    f : MPS
+        MPS representation of the polynomial expansion.
+    """
+    x_mps: MPS
+    if domain is not None:
+        x_mps = mps_interval(domain.map_to(-1, 1))
+        L = len(x_mps)
+        I = MPS([np.ones((1, 2, 1))] * L)
+    elif isinstance(x, MPS):
+        # We assume that `x` is contained in the domain (x0, x1)
+        # of the Chebyshev expansion
+        (x0, x1), _ = c.linspace(2)
+        # We map the MPS operator to the (-1, 1) domain using
+        # a linear transformation.
+        a, b = _interval_map((x0, x1), (-1, 1))
+        x_mps = a * x
+        L = len(x_mps)
+        I = MPS([np.ones((1, 2, 1))] * L)
+        if np.abs(b) > np.finfo(np.float64).eps:
+            x_mpo = (x_mps + b * I).join()
+    else:
+        raise Exception("In cheb2mps, either domain or an MPS must be provided.")
+
+    coef = c.coef
+    y = [MPS([np.zeros((1, 2, 1))] * len(x_mps))] * (len(coef) + 2)
+    for i in range(len(y) - 3, -1, -1):
+        y[i] = simplify(
+            coef[i] * I - y[i + 2] + 2 * x_mps * y[i + 1],
+            strategy=strategy,
+        )
+    return simplify(y[0] - x_mps * y[1], strategy=strategy)
+
+
+def cheb2mpo(
+    c: np.polynomial.Chebyshev,
+    domain: Optional[Interval] = None,
+    x: Optional[MPO] = None,
+    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
+) -> MPO:
+    """
+    Construct an MPS representation of a function, from a Chebyshev expansion.
+
+    Parameters
+    ----------
+    c : `numpy.polynomial.Chebyshev`
+        Chebyshev expansion over a given domain.
+    domain : Optional[Interval], default = None
+        Interval of definition for the function, whose domain must
+        coincide with that of `c`.
+    x : Optional[MPO], default = None
+        MPO representation of the `x` function in the [-1, 1] domain.
+    strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
+        Simplification strategy
+
+    Returns
+    -------
+    f : MPO
+        MPO representation of the polynomial expansion.
+    """
+    raise Exception("cheb2mpo not implemented")
+
+
 def chebyshev_approximation(
     f: Callable,
     order: int,
-    domain: Union[MPS, MPO],
-    domain_norm_inf: Optional[float] = None,
+    domain: Interval,
     differentiation_order: int = 0,
     strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
-) -> Union[MPS, MPO]:
+) -> MPS:
     """
-    Returns the MPS representation of a function or one of its integrals or derivatives
-    by means of the Chebyshev approximation using the Clenshaw algorithm.
+    Returns the MPS representation of a function or one of its integrals or
+    derivatives by means of the Chebyshev approximation using the Clenshaw algorithm.
 
     Parameters
     ----------
     f : Callable
-        A univariate scalar target function to approximate.
+        A univariate scalar function.
     order : int
-        The order of the Chebyshev approximation.
-    domain : Union[MPS, MPO]
-        The domain over which the function is to be approximated, represented as a MPS or MPO.
-    domain_norm_inf : Optional[float], default None
-        The infinity norm of the domain, used for scaling the domain and the Chebyshev coefficients.
-        If None, it is calculated from the domain.
-    differentiation_order : int, default 0
-        A parameter n which sets the target function as the n-th derivative (if positive) or
-        integral (if negative) of the original function f.
+        Order of the Chebyshev expansion
+    domain : Interval
+        The domain over which the function is to be approximated.
+    differentiation_order : int, default = 0
+        If positive or negative value `N`, integrate or differentiate the
+        function a total of `abs(N)` times prior to computing the expansion.
     strategy : Strategy, default Strategy()
         The strategy used for simplifying the MPS or MPO during computation.
 
     Returns
     -------
-    chebyshev_approximation : Union[MPS, MPO]
-        The Chebyshev approximation of the function on the domain using the Clenshaw algorithm.
+    mps : MPS
+        MPS approximation to the function.
     """
-    # Scale domain and coefficients with the infinity norm of the domain.
-    if domain_norm_inf is None:
-        domain_norm_inf = infinity_norm(domain)
-    domain = domain * (1 / domain_norm_inf)
-    coefficients = chebyshev_coefficients(f, order, -domain_norm_inf, domain_norm_inf)
-
-    # Differentiate or integrate the coefficients
-    for _ in range(abs(differentiation_order)):
-        if differentiation_order > 0:
-            coefficients = differentiate_chebyshev_coefficients(
-                coefficients, -domain_norm_inf, domain_norm_inf
-            )
-        else:
-            coefficients = integrate_chebyshev_coefficients(
-                coefficients, -domain_norm_inf, domain_norm_inf
-            )
-
-    # Run the Clenshaw algorithm.
-    if isinstance(domain, MPS):
-        I = MPS([np.ones((1, 2, 1))] * len(domain))
-        y = [MPS([np.zeros((1, 2, 1))] * len(domain))] * (len(coefficients) + 2)
-        for i in range(len(y) - 3, -1, -1):
-            y[i] = simplify(
-                coefficients[i] * I - y[i + 2] + 2 * domain * y[i + 1],
-                strategy=strategy,
-            )
-        chebyshev_approximation = simplify(y[0] - domain * y[1], strategy=strategy)
-    elif isinstance(domain, MPO):
-        I = MPO([np.eye(2).reshape((1, 2, 2, 1))] * len(domain))
-        y = [MPO([np.zeros((1, 2, 2, 1))] * len(domain))] * (len(coefficients) + 2)
-        for i in range(len(y) - 3, -1, -1):
-            # TODO: Implement simplifying the MPO for each step
-            # mpo_product = MPOList([domain, y[i + 1]]).join(strategy=strategy)
-            # y[i] = (coefficients[i] * I - y[i + 2] + 2 * mpo_product).join(
-            #     strategy=strategy
-            # )
-            chebyshev_approximation = None
-    return chebyshev_approximation
+    a, b = _interval_map((-1, 1), (domain.start, domain.stop))
+    c = chebyshev_coefficients(lambda u: f(a * u + b), order, -1, 1)
+    if differentiation_order < 0:
+        c = c.integ(-differentiation_order, lbnd=domain.start) * a
+    elif differentiation_order > 0:
+        c = c.deriv(differentiation_order) / a
+    return cheb2mps(c, domain, strategy)

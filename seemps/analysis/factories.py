@@ -10,6 +10,10 @@ from .mesh import (
     ChebyshevZerosInterval,
 )
 
+# TODO: These descriptions are wrong. `sites` is not the number of
+# discretization points, but rather the number of qubits used for this
+# representation. The size is 2**sites
+
 
 def mps_equispaced(start: float, stop: float, sites: int):
     """
@@ -104,6 +108,7 @@ def mps_cosine(start: float, stop: float, sites: int) -> MPS:
     return simplify(0.5 * (mps_1 + mps_2))
 
 
+# TODO: Eliminate the `rescale` argument now that we have `Interval.map_to`
 def mps_interval(interval: Interval, rescale: bool = False):
     """
     Returns an MPS corresponding to a specific type of interval (open, closed, or Chebyshev zeros).

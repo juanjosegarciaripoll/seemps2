@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
 from typing import List, Union, Tuple
@@ -23,6 +24,9 @@ class Interval(ABC):
 
     def to_vector(self) -> np.ndarray:
         return np.array([self[idx] for idx in range(self.size)])
+
+    def map_to(self, start: float, stop: float) -> Interval:
+        return type(self)(start, stop, self.size)
 
 
 class RegularClosedInterval(Interval):
