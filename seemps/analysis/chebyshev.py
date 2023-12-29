@@ -135,6 +135,7 @@ def cheb2mpo(
     strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
 ) -> MPO:
     """
+    *NOT IMPLEMENTED*
     Construct an MPS representation of a function, from a Chebyshev expansion.
 
     Parameters
