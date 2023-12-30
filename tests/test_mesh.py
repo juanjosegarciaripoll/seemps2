@@ -132,7 +132,7 @@ class TestMesh(TestCase):
             ],
         )
 
-    def test_mesh_transformation_matrix(self):
+    def test_mesh_transformation_matrix_A_order(self):
         m = Mesh([RegularClosedInterval(0, 1, 2)])
         T = m.binary_transformation_matrix()
         self.assertSimilar(T, np.eye(1))
@@ -152,3 +152,24 @@ class TestMesh(TestCase):
         m = Mesh([RegularClosedInterval(0, 1, 4), RegularClosedInterval(0, 1, 4)])
         T = m.binary_transformation_matrix()
         self.assertSimilar(T, [[2.0, 0.0], [1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
+
+    def test_mesh_transformation_matrix_B_order(self):
+        m = Mesh([RegularClosedInterval(0, 1, 2)])
+        T = m.binary_transformation_matrix("B")
+        self.assertSimilar(T, np.eye(1))
+
+        m = Mesh([RegularClosedInterval(0, 1, 4)])
+        T = m.binary_transformation_matrix("B")
+        self.assertSimilar(T, [[2], [1]])
+
+        m = Mesh([RegularClosedInterval(0, 1, 2), RegularClosedInterval(0, 1, 2)])
+        T = m.binary_transformation_matrix("B")
+        self.assertSimilar(T, np.eye(2))
+
+        m = Mesh([RegularClosedInterval(0, 1, 2), RegularClosedInterval(0, 1, 4)])
+        T = m.binary_transformation_matrix("B")
+        self.assertSimilar(T, [[1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
+
+        m = Mesh([RegularClosedInterval(0, 1, 4), RegularClosedInterval(0, 1, 4)])
+        T = m.binary_transformation_matrix("B")
+        self.assertSimilar(T, [[2.0, 0.0], [0.0, 2.0], [1.0, 0.0], [0.0, 1.0]])
