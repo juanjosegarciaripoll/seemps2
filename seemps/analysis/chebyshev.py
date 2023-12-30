@@ -223,4 +223,4 @@ def chebyshev_approximation(
         c = c.integ(-differentiation_order, lbnd=domain.start)
     elif differentiation_order > 0:
         c = c.deriv(differentiation_order)
-    return cheb2mps(c, domain, strategy)
+    return cheb2mps(c, domain, strategy=strategy)
