@@ -79,7 +79,7 @@ def infinity_norm(tensor_network: Union[MPS, MPO], k_vals: int = 100) -> float:
     """
     N = len(tensor_network)
     if isinstance(tensor_network, MPO):
-        mps = tensor_network @ MPS([np.ones((1, 2, 1))] * N)
+        mps: MPS = tensor_network @ MPS([np.ones((1, 2, 1))] * N)  # type: ignore
     elif isinstance(tensor_network, MPS):
         mps = tensor_network
 
