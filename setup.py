@@ -43,8 +43,8 @@ else:
     }
 
 # All Cython files with unix pathnames
-cython_files = [s.replace("\\", "/") for s in glob.glob("**/*.pyx", recursive=True)]
-extension_names = [".".join(f[:-4].split("/")) for f in cython_files]
+cython_files = [s.replace("\\", "/") for s in glob.glob("src/**/*.pyx", recursive=True)]
+extension_names = [".".join(f[4:-4].split("/")) for f in cython_files]
 print(extension_names)
 print(cython_files)
 extensions = [

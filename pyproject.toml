@@ -12,3 +12,7 @@ dependencies = ["numpy", "scipy", "h5py", "opt-einsum"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["src"]  # list of folders that contain the packages (["."] by default)
+include = ["seemps*"]  # package names should match these glob patterns (["*"] by default)
