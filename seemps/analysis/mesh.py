@@ -110,6 +110,7 @@ class Mesh:
     dimensions: tuple[int, ...]
     # TODO: Remove the `transformation_matrix` field.
     transformation_matrix: Optional[np.ndarray]
+    _v: list[np.ndarray]
 
     def __init__(self, intervals: list[Interval]):
         def unit_vector(n: int, L: int):
@@ -121,6 +122,14 @@ class Mesh:
         self.dimension = len(intervals)
         self.transformation_matrix = None
         self.dimensions = tuple(interval.size for interval in self.intervals)
+        #
+        # The field _v contains a list of arrays, each with size Ni x d
+        # where Ni is the size of the i-th interval, and d is the dimension
+        # of the mesh. The _v[i] array only has components in _v[i][:,i]
+        # This way, we can construct points in the mesh going from integers
+        # (i1, i2, ..., id) to vectors (x1, x2, ..., x2) as
+        #   x = _v[0][i1,:] + _v[1][i2,:] + ... + _v[d-1][id,:]
+        #
         self._v = [
             interval.to_vector().reshape(-1, 1) * unit_vector(i, self.dimension)
             for i, interval in enumerate(intervals)
@@ -136,13 +145,14 @@ class Mesh:
         * It can be a vector of D coordinates, indexing a single point
           in the mesh.
         * It can be an N-dimensional array, denoting multiple points.
-          The last dimension of the array must have size `D`.
+          The N-th dimension of the array must have size `D`, because
+          it is the one indexing points in the Mesh.
 
         Parameters
         ----------
         indices : int | ArrayLike
             An integer, or an array-like structure indexing points
-            into the mesh.
+            in the mesh.
 
         Returns
         -------
