@@ -14,7 +14,11 @@ from ..truncate import simplify
 
 
 def chebyshev_coefficients(
-    f: Callable, order: int, start: float, stop: float
+    f: Callable,
+    order: int,
+    start: float = -1,
+    stop: float = +1,
+    domain: Optional[Interval] = None,
 ) -> np.polynomial.Chebyshev:
     """
     Returns the Chebyshev coefficients for a given function on a specified
@@ -29,24 +33,32 @@ def chebyshev_coefficients(
     ----------
     f : Callable
         The target function to approximate with Chebyshev polynomials.
-    start : float
-        The starting point of the domain of the function.
-    stop : float
-        The ending point of the domain of the function.
     order : int
         The number of Chebyshev coefficients to compute.
+    domain : Optional[Interval], default = None
+        The domain on which the function is defined and in which the approximation
+        is desired.
+    start : float, default = -1
+    stop : float, default = +1
+        Alternative way to specify the function's domain.
 
     Returns
     -------
-    coefficients : numpy.polynomial.Chebyshev
+    coefficients : `numpy.polynomial.Chebyshev`
         An array of Chebyshev coefficients scaled to the specified interval.
     """
+    if domain is not None:
+        start, stop = domain.start, domain.stop
     chebyshev_zeros = np.flip(ChebyshevZerosInterval(start, stop, order).to_vector())
     coefficients = dct(f(chebyshev_zeros), type=2) / order
     coefficients[0] /= 2
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
+# TODO: All the tests have been done using the `RELATIVE_SINGULAR_VALUE`
+# truncation method, which is kind of flunky, because it does not measure
+# the actual error. This should be migrated to DEFAULT_STRATEGY, maybe
+# strengthening the tolerance
 DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
     method=Truncation.RELATIVE_SINGULAR_VALUE,
     tolerance=1e-8,
@@ -57,14 +69,15 @@ DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
 
 
 def _interval_map(orig, dest):
-    #
-    # Map the original domain [x0, x1] to [u0, u1]
-    # This is a transformation u = a * x + b
-    # with u0 = a * x0 + b
-    # and  u1 = a * x1 + b
-    # Hence a = (u1 - u0) / (x1 - x0)
-    #       b = ((u1 + u0) - a * (x0 + x1)) / 2
-    #
+    """Compute the affine transformation between two intervals.
+
+    Map the original domain [x0, x1] to [u0, u1]
+    This is a transformation u = a * x + b
+    with u0 = a * x0 + b
+    and  u1 = a * x1 + b
+    Hence a = (u1 - u0) / (x1 - x0)
+          b = ((u1 + u0) - a * (x0 + x1)) / 2
+    """
     x0, x1 = orig
     u0, u1 = dest
     a = (u1 - u0) / (x1 - x0)
@@ -81,17 +94,24 @@ def cheb2mps(
     """
     Construct an MPS representation of a function, from a Chebyshev expansion.
 
+    This function takes as input an MPS representation of the first order
+    polynomial `x` in a given `domain`, with values `[x0,x1]`. It also takes
+    a Chebyshev expansion `c` of a function `c(x)` defined in a domain that
+    contains this interval `[x0,x1]`. With this information, it constructs
+    the MPS that approximates `c(x)`.
+
     Parameters
     ----------
     c : `numpy.polynomial.Chebyshev`
         Chebyshev expansion over a given domain.
     domain : Optional[Interval], default = None
-        Interval of definition for the function, which must be contained
-        in the Chebyshev's series domain.
+        Interval of definition for the function, which must be contained in the
+        Chebyshev's series domain.
     x : Optional[MPS], default = None
-        MPS representation of the `x` function in the series' domain.
+        MPS representation of the `x` function in the series' domain. It will
+        be computed from `domain` if not provided.
     strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
-        Simplification strategy
+        Simplification strategy for operations between MPS.
 
     Returns
     -------
@@ -136,19 +156,26 @@ def cheb2mpo(
 ) -> MPO:
     """
     *NOT IMPLEMENTED*
-    Construct an MPS representation of a function, from a Chebyshev expansion.
+    Construct an MPO representation of a function, from a Chebyshev expansion.
+
+    This function takes as input an MPO representation of the first order
+    polynomial `x` in a given `domain`, with values `[x0,x1]`. It also takes
+    a Chebyshev expansion `c` of a function `c(x)` defined in a domain that
+    contains this interval `[x0,x1]`. With this information, it constructs
+    the MPO that approximates `c(x)`.
 
     Parameters
     ----------
     c : `numpy.polynomial.Chebyshev`
         Chebyshev expansion over a given domain.
     domain : Optional[Interval], default = None
-        Interval of definition for the function, whose domain must
-        coincide with that of `c`.
+        Interval of definition for the function, whose domain must be included
+        in that of `c`.
     x : Optional[MPO], default = None
-        MPO representation of the `x` function in the [-1, 1] domain.
+        MPS representation of the `x` function in the series' domain. It will
+        be computed from `domain` if not provided.
     strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
-        Simplification strategy
+        Simplification strategy for operations between MPOs.
 
     Returns
     -------
@@ -169,7 +196,7 @@ def chebyshev_approximation(
     Load a function as an MPS using Chebyshev expansions.
 
     This function constructs a Chebyshev series that approximates `f` over
-    the given `Interval`, and uses that expansion to construct an MPS
+    the given `domain`, and uses that expansion to construct an MPS
     representation via `cheb2mps`.
 
     Parameters
