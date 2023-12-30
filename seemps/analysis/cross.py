@@ -166,7 +166,7 @@ def maxvol(matrix: np.ndarray, rank_change: int) -> tuple[np.ndarray, np.ndarray
 def random_initial_indices(
     I_s: list[np.ndarray],
     starting_bond: int,
-    rng: Optional[np.random.Generator] = None,
+    rng: np.random.Generator = np.random.default_rng(),
 ) -> list[np.ndarray]:
     """
     Generates a list of random initial indices for tensor
@@ -181,9 +181,9 @@ def random_initial_indices(
         to be selected (physical indices).
     starting_bond : int
         The number of indices to be chosen randomly at each step.
-    rng : Optional[np.random.Generator], default=None
-        The random number generator to be used. If None, a default
-        generator with a fixed seed is used.
+    rng : np.random.Generator, default=`numpy.random.default_rng()`
+        The random number generator to be used. If None, uses Numpy's
+        default random number generator without any predefined seed.
 
     Returns
     -------
@@ -192,9 +192,6 @@ def random_initial_indices(
         indices. The size of each array grows progressively as indices
         are concatenated at each step.
     """
-    if rng is None:
-        rng = np.random.default_rng(42)
-
     I_g = [np.array([], dtype=int)]
     for i, i_s in enumerate(reversed(I_s)):
         choice = rng.choice(i_s, size=starting_bond, replace=True).reshape(-1, 1)
