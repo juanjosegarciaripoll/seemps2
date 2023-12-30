@@ -29,7 +29,7 @@ def euler(
 
     The integration algorithm is very simple. It is
     .. math::
-        \psi(t_{n+1}) = \psi(t_{n}) + i \delta t H \psi(t_{n})
+        \psi(t_{n+1}) = \psi(t_{n}) - i \delta t H \psi(t_{n})
     for real time and
     .. math::
         \psi(t_{n+1}) = \psi(t_{n}) - \delta t H \psi(t_{n})
@@ -86,6 +86,72 @@ def euler(
         if t != last_t:
             idt = factor * (t - last_t)
             state = simplify(state - idt * (H @ state), strategy=strategy)
+        if callback is not None:
+            output.append(callback(t, state))
+        last_t = t
+    if callback is None:
+        return state
+    else:
+        return output
+
+
+def euler2(
+    H: MPO,
+    t_span: Union[float, tuple[float, float], Vector],
+    state: MPS,
+    steps: int = 1000,
+    strategy: Strategy = DEFAULT_STRATEGY,
+    callback: Optional[Callable] = None,
+    itime: bool = False,
+):
+    r"""Solve a Schrodinger equation using the 2nd order Euler method.
+
+    Implements a two-step integration method. In imaginary time this is
+    .. math::
+        \xi(t_{n}) = 2 \psi(t_{n}) - i \delta t H \psi(t_{n})
+        \psi(t_{n+1}) = \psi(t_{n}) - (i \delta t/2) H \xi(t_{n})
+
+    The Euler algorithm is a very bad integrator and is offered only for
+    illustrative purposes. See :function:`euler` to understand the parameters.
+
+    Parameters
+    ----------
+    H : MPO
+        Hamiltonian in MPO form.
+    t_span : float | tuple[float, float] | Vector
+        Integration interval, or sequence of time steps.
+    state : MPS
+        Initial guess of the ground state.
+    steps : int, default = 1000
+        Integration steps, if not defined by `t_span`.
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        Truncation strategy for MPO and MPS algebra.
+    callback : Optional[Callable[[float, MPS], Any]]
+        A callable called after each iteration (defaults to None).
+    itime : bool, default = False
+        Whether to solve the imaginary time evolution problem.
+
+    Results
+    -------
+    result : MPS | list[Any]
+        Final state after evolution or values collected by callback
+    """
+    if isinstance(t_span, (int, float)):
+        t_span = (0.0, t_span)
+    if len(t_span) == 2:
+        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
+    if itime:
+        factor = 1
+    else:
+        factor = 1j
+    state = CanonicalMPS(state)
+    last_t = t_span[0]
+    output = []
+    for t in t_span:
+        if t != last_t:
+            idt = factor * (t - last_t)
+            xi = simplify(2.0 * state - idt * (H @ state), strategy=strategy)
+            state = simplify(state - (0.5 * idt) * (H @ xi), strategy=strategy)
         if callback is not None:
             output.append(callback(t, state))
         last_t = t
