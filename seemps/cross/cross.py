@@ -91,18 +91,18 @@ class Cross:
         self.mps = mps
         self.cross_strategy = cross_strategy
 
-        mps_shape = tuple(self.mps.physical_dimensions())
-        mesh_shape = self.mesh.shape()[:-1]
-        if np.prod(mps_shape) == np.prod(mesh_shape) and all(
-            dim == 2 for dim in mps_shape
+        mps_dimensions = tuple(self.mps.physical_dimensions())
+        mesh_dimensions = self.mesh.dimensions
+        if np.prod(mps_dimensions) == np.prod(mesh_dimensions) and all(
+            dim == 2 for dim in mps_dimensions
         ):
             self.structure = "binary"
-        elif mps_shape == mesh_shape:
+        elif mps_dimensions == mesh_dimensions:
             self.structure = "tt"
         else:
             raise ValueError("Non-matching mesh and initial MPS")
         self.sites = len(self.mps)
-        self.qubits = [int(np.log2(s)) for s in mesh_shape]
+        self.qubits = [int(np.log2(s)) for s in mesh_dimensions]
         self.I_physical = [
             np.arange(k, dtype=int).reshape(-1, 1)
             for k in self.mps.physical_dimensions()
@@ -369,9 +369,9 @@ def cross_interpolation(
         An object which contains the algorithm parameters.
     """
     if mps is None:
-        if not all((s != 0) and (s & (s - 1) == 0) for s in mesh.shape()[:-1]):
+        if not all((s != 0) and (s & (s - 1) == 0) for s in mesh.dimensions):
             raise ValueError("The mesh size must be a power of two")
-        sites = sum([int(np.log2(s)) for s in mesh.shape()[:-1]])
+        sites = sum([int(np.log2(s)) for s in mesh.dimensions])
         mps = random_mps([2] * sites, 1, rng=np.random.default_rng(42))
 
     cross = Cross(func, mesh, mps, cross_strategy)

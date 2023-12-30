@@ -17,22 +17,28 @@ from .sampling import random_mps_indices, sample_mps
 
 def maxvol_square(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
-    Returns the optimal row indices and matrix of coefficients for the square maxvol decomposition of a given matrix.
-    This algorithm finds a submatrix of a 'tall' matrix with maximal volume (determinant of the square submatrix).
+    Returns the optimal row indices and matrix of coefficients for the
+    square maxvol decomposition of a given matrix.  This algorithm
+    finds a submatrix of a 'tall' matrix with maximal volume
+    (determinant of the square submatrix).
 
     Parameters
     ----------
     matrix : np.ndarray
-        A 'tall' matrix (more rows than columns) for which the square maxvol decomposition is to be computed.
+        A 'tall' matrix (more rows than columns) for which the square
+        maxvol decomposition is to be computed.
 
     Returns
     -------
     I : np.ndarray
-        The optimal row indices of the tall matrix. These indices correspond to rows that form a square submatrix
-        with maximal volume.
+        The optimal row indices of the tall matrix. These indices
+        correspond to rows that form a square submatrix with maximal
+        volume.
     B : np.ndarray
-        The matrix of coefficients. This matrix represents the coefficients for the linear combination of rows in the
-        original matrix that approximates the remaining rows, namely, a matrix B such that A ≈ B A[I, :].
+        The matrix of coefficients. This matrix represents the
+        coefficients for the linear combination of rows in the
+        original matrix that approximates the remaining rows, namely,
+        a matrix B such that A ≈ B A[I, :].
     """
     SQUARE_MAXITER = 100
     SQUARE_TOL = 1.05
@@ -61,14 +67,16 @@ def maxvol_rectangular(
     matrix: np.ndarray, min_rank_change: int, max_rank_change: int
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Returns the optimal row indices and matrix of coefficients for the maxvol algorithm applied to a tall matrix.
-    This algorithm extends the square maxvol algorithm to find a 'rectangular' submatrix with more rows than the columns
-    of the original matrix.
+    Returns the optimal row indices and matrix of coefficients for the
+    maxvol algorithm applied to a tall matrix.  This algorithm extends
+    the square maxvol algorithm to find a 'rectangular' submatrix with
+    more rows than the columns of the original matrix.
 
     Parameters
     ----------
     matrix : np.ndarray
-        A 'tall' matrix (more rows than columns) for which the rectangular maxvol decomposition is to be computed.
+        A 'tall' matrix (more rows than columns) for which the
+        rectangular maxvol decomposition is to be computed.
     min_rank_change : int
         The minimum number of rows to be added to the rank of the square submatrix.
     max_rank_change : int
@@ -77,11 +85,14 @@ def maxvol_rectangular(
     Returns
     -------
     I : np.ndarray
-        The optimal row indices of the tall matrix. These indices correspond to rows that form a rectangular
-        submatrix with more rows than the columns of the original matrix.
+        The optimal row indices of the tall matrix. These indices
+        correspond to rows that form a rectangular submatrix with more
+        rows than the columns of the original matrix.
     B : np.ndarray
-        The matrix of coefficients. This matrix represents the coefficients of the linear combination of rows
-        in the original matrix that approximates the remaining rows, namely, a matrix B such that A ≈ B A[I, :].
+        The matrix of coefficients. This matrix represents the
+        coefficients of the linear combination of rows in the original
+        matrix that approximates the remaining rows, namely, a matrix
+        B such that A ≈ B A[I, :].
     """
     RECTANGULAR_TOL = 1.10
     n, r = matrix.shape
@@ -112,21 +123,23 @@ def maxvol_rectangular(
 
 def maxvol(matrix: np.ndarray, rank_change: int) -> tuple[np.ndarray, np.ndarray]:
     """
-    Chooses and applies the appropriate maxvol algorithm (square or rectangular) to find a submatrix
-    with maximal volume, and returns the indices of these rows along with the matrix of coefficients.
+    Chooses and applies the appropriate maxvol algorithm (square or
+    rectangular) to find a submatrix with maximal volume, and returns
+    the indices of these rows along with the matrix of coefficients.
 
     Parameters
     ----------
     matrix : np.ndarray
         The input matrix on which the maxvol algorithm is to be applied.
     rank_change : int
-        The desired change in rank for the matrix, determining whether to use the square or rectangular
-        maxvol algorithm.
+        The desired change in rank for the matrix, determining whether
+        to use the square or rectangular maxvol algorithm.
 
     Returns
     -------
     indices : np.ndarray
-        An array of indices corresponding to the rows that form a submatrix with maximal volume.
+        An array of indices corresponding to the rows that form a
+        submatrix with maximal volume.
     coefficients : np.ndarray
         A matrix of coefficients such that A ≈ B A[I, :].
     """
@@ -147,35 +160,40 @@ def maxvol(matrix: np.ndarray, rank_change: int) -> tuple[np.ndarray, np.ndarray
     return indices, coefficients
 
 
+# TODO: We have to make I_s an ArrayLike because it is used as a
+# list of as arrays later on. We should fix the TT Cross algorithm
+# to avoid using lists at some point
 def random_initial_indices(
-    I_s: np.ndarray,
+    I_s: list[np.ndarray],
     starting_bond: int,
-    rng: Optional[np.random.Generator] = None,
+    rng: np.random.Generator = np.random.default_rng(),
 ) -> list[np.ndarray]:
     """
-    Generates a list of random initial indices for tensor decomposition using a specified random number generator.
-    Each set of indices is chosen randomly from a given array of indices and progressively concatenated.
+    Generates a list of random initial indices for tensor
+    decomposition using a specified random number generator.  Each set
+    of indices is chosen randomly from a given array of indices and
+    progressively concatenated.
 
     Parameters
     ----------
-    I_s : np.ndarray
-        An array of possible indices from which the random indices are to be selected (physical indices).
+    I_s : `numpy.typing.ArrayLike`
+        An array of possible indices from which the random indices are
+        to be selected (physical indices).
     starting_bond : int
         The number of indices to be chosen randomly at each step.
-    rng : Optional[np.random.Generator], default=None
-        The random number generator to be used. If None, a default generator with a fixed seed is used.
+    rng : np.random.Generator, default=`numpy.random.default_rng()`
+        The random number generator to be used. If None, uses Numpy's
+        default random number generator without any predefined seed.
 
     Returns
     -------
     I_g : list[np.ndarray]
-        A list of arrays, each containing a set of randomly chosen indices. The size of each array grows progressively
-        as indices are concatenated at each step.
+        A list of arrays, each containing a set of randomly chosen
+        indices. The size of each array grows progressively as indices
+        are concatenated at each step.
     """
-    if rng is None:
-        rng = np.random.default_rng(42)
-
     I_g = [np.array([], dtype=int)]
-    for i, i_s in reversed(list(enumerate(I_s))):
+    for i, i_s in enumerate(reversed(I_s)):
         choice = rng.choice(i_s, size=starting_bond, replace=True).reshape(-1, 1)
         if i == len(I_s) - 1:
             I_g.insert(0, choice)
@@ -186,9 +204,10 @@ def random_initial_indices(
 
 def sample_initial_indices(state: MPS) -> list[np.ndarray]:
     """
-    Samples initial indices from a given MPS by performing a sweep of the cross interpolation algorithm.
-    This allows to give an arbitrary starting bond dimension and a hopefully better starting point leading
-    to faster convergence.
+    Samples initial indices from a given MPS by performing a sweep of
+    the cross interpolation algorithm.  This allows to give an
+    arbitrary starting bond dimension and a hopefully better starting
+    point leading to faster convergence.
 
     Parameters
     ----------
@@ -241,14 +260,16 @@ def sample_initial_indices(state: MPS) -> list[np.ndarray]:
 def sample_tensor_fiber(
     func: Callable,
     mesh: Mesh,
-    mps_order: str,
+    T: np.ndarray,
     i_le: np.ndarray,
     i_s: np.ndarray,
     i_g: np.ndarray,
 ) -> np.ndarray:
     """
-    Samples the k-th tensor fiber of the underlying MPS representation of a function from a collection of multi-indices
-    centered at a given site k. I.e, samples $A\left(J_{\le k-1}, i_k, J_{\g k}\right)$ (see dolgov2020 pag.7).
+    Samples the k-th tensor fiber of the underlying MPS representation
+    of a function from a collection of multi-indices centered at a
+    given site k. I.e, samples $A\left(J_{\le k-1}, i_k, J_{\g
+    k}\right)$ (see dolgov2020 pag.7).
 
     Parameters
     ----------
@@ -257,13 +278,17 @@ def sample_tensor_fiber(
     mesh : Mesh
         The mesh of points where the function is defined.
     mps_order : str
-        The order of the MPS sites, determining with which transformation matrix the tensor fiber is sampled.
+        The order of the MPS sites, determining with which
+        transformation matrix the tensor fiber is sampled.
     i_le : np.ndarray
-        The multi-indices coming from all sites smaller or equal to k ($J_{\le k-1}$) in the MPS.
+        The multi-indices coming from all sites smaller or equal to k
+        ($J_{\le k-1}$) in the MPS.
     i_s : np.ndarray
-        The physical indices, representing the physical dimension at site k of the underlying MPS.
+        The physical indices, representing the physical dimension at
+        site k of the underlying MPS.
     i_g : np.ndarray
-        The multi-indices coming from all sites greater than k ($J_{\g k}$) in the MPS.
+        The multi-indices coming from all sites greater than k ($J_{\g
+        k}$) in the MPS.
 
     Returns
     -------
@@ -282,7 +307,6 @@ def sample_tensor_fiber(
     if i_g.size > 0:
         mps_indices = np.hstack((mps_indices, np.kron(i_g, _ones(r_le * s))))
     # Evaluate the function at the fiber indices
-    T = mesh.binary_transformation_matrix(mps_order)
     fiber = func(mesh[mps_indices @ T]).reshape((r_le, s, r_g), order="F")
     return fiber
 
@@ -320,9 +344,11 @@ class CrossStrategy:
     tol : float, default=1e-10
         Error tolerance for convergence, of type as specified by error_type.
     bond_change : int, default=1
-        Increment in bond dimension per half-sweep (twice this value per full left-right sweep).
+        Increment in bond dimension per half-sweep (twice this value
+        per full left-right sweep).
     starting_indices : Optional[list[np.ndarray]], default=None
-        Initial indices for the cross algorithm; if None, uses a number of starting_bond random indices.
+        Initial indices for the cross algorithm; if None, uses a
+        number of starting_bond random indices.
     starting_bond : int, default=1
         Initial bond dimension for the MPS, used only when starting_indices is None.
     error_type : str, default="sampling"
@@ -340,8 +366,9 @@ def cross_interpolation(
     callback: Optional[Callable] = None,
 ) -> CrossResults:
     """
-    Performs cross interpolation on a vectorized function discretized on a mesh to obtain its
-    MPS representation using the maxvol algorithm on an Alternating Least Squares (ALS) scheme.
+    Performs cross interpolation on a vectorized function discretized
+    on a mesh to obtain its MPS representation using the maxvol
+    algorithm on an Alternating Least Squares (ALS) scheme.
 
     Parameters
     ----------
@@ -358,29 +385,32 @@ def cross_interpolation(
 
     Returns
     -------
-    CrossResults
-        The results of the cross interpolation process, including the final MPS state, convergence status,
-        message, error, bond, time and evaluation count trajectories.
+    results: CrossResults
+        The results of the cross interpolation process, including the
+        final MPS state, convergence status, message, error, bond,
+        time and evaluation count trajectories.
     """
     mps_indices = None
     mesh_samples = None
     state_prev = None
     integral_prev = None
+    T = mesh.binary_transformation_matrix(mps_order)
 
     def get_error(state: MPS):
         if cross_strategy.error_type == "sampling":
             nonlocal mps_indices, mesh_samples
-            # TODO: Think about this and whether the state/sampling.py module can be used instead.
+            # TODO: Think about this and whether the state/sampling.py
+            # module can be used instead.
             if sweep == 0:
                 mps_indices = random_mps_indices(state)
-                T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
                 mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)
             mps_samples = sample_mps(state, mps_indices)
             error = np.max(np.abs(mps_samples - mesh_samples))
         elif cross_strategy.error_type == "norm":
             nonlocal state_prev
             if sweep == 0:
-                # Save a deepcopy (needs to copy the previous tensors) to a function attribute
+                # Save a deepcopy (needs to copy the previous tensors)
+                # to a function attribute
                 state_prev = deepcopy(state)
                 return np.Inf
             # TODO: Rethink about this way of checking convergence.
@@ -405,10 +435,9 @@ def cross_interpolation(
             integral_prev = integral
         return error
 
-    mesh_shape = mesh.shape()[:-1]
     # TODO: Think how to generalize to arbitrary physical dimension
     base = 2
-    mesh_sites_per_dimension = [int(np.emath.logn(base, s)) for s in mesh_shape]
+    mesh_sites_per_dimension = [int(np.emath.logn(base, s)) for s in mesh.dimensions]
     sites = sum(mesh_sites_per_dimension)
     I_s = [np.array([[0], [1]]) for _ in range(sites)]
     I_le = [np.array([], dtype=int)] * (sites + 1)

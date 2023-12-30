@@ -1,7 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import List, Union, Tuple
+from typing import Union, Optional, Sequence, Iterator
+from ..typing import Vector
 
 import numpy as np
 
@@ -9,14 +10,24 @@ import numpy as np
 class Interval(ABC):
     """Interval Abstract Base Class.
 
-    This abstracts an Interval object, which represents implicitly an
-    interval discretized along N points within two endpoints start and stop.
+    This abstracts an Interval object, which represents implicitly an interval
+    discretized along N points within two endpoints start and stop. Intervals
+    act like sequences of numbers denoting points along the interval. They
+    can be accessed as in `i[0]`, `i[1]`,... up to `i[size-1]` and they can
+    be converted to other sequences, as in `list(i)`, or iterated over.
     """
+
+    start: float
+    stop: float
+    size: int
 
     def __init__(self, start: float, stop: float, size: int):
         self.start = start
         self.stop = stop
         self.size = size
+
+    def __len__(self) -> int:
+        return self.size
 
     @abstractmethod
     def __getitem__(self, idx: int) -> float:
@@ -27,6 +38,9 @@ class Interval(ABC):
 
     def map_to(self, start: float, stop: float) -> Interval:
         return type(self)(start, stop, self.size)
+
+    def __iter__(self) -> Iterator:
+        return (self[i] for i in range(self.size))
 
 
 class RegularClosedInterval(Interval):
@@ -77,61 +91,112 @@ class Mesh:
 
     Parameters
     ----------
-    intervals : List[Interval]
-        A list of Interval objects representing the discretizations along each dimension.
+    intervals : list[Interval]
+        A list of Interval objects representing the discretizations along each
+        dimension.
+
+    Attributes
+    ----------
+    intervals : list[Interval]
+        The supplied list of intervals.
+    dimension : int
+        Dimension of the space in which this mesh is embedded.
+    shape : tuple[int]
+        Shape of the equivalent tensor this Mesh can be converted to.
+    dimensions : tuple[int]
+        Tuple of the sizes of each interval
     """
 
-    def __init__(self, intervals: List[Interval]):
+    intervals: list[Interval]
+    dimension: int
+    shape: tuple[int, ...]
+    dimensions: tuple[int, ...]
+    _v: list[np.ndarray]
+
+    def __init__(self, intervals: list[Interval]):
+        def unit_vector(n: int, L: int):
+            v = np.zeros(L)
+            v[n] = 1.0
+            return v
+
         self.intervals = intervals
         self.dimension = len(intervals)
-        self.transformation_matrix = None
+        self.dimensions = tuple(interval.size for interval in self.intervals)
+        #
+        # The field _v contains a list of arrays, each with size Ni x d
+        # where Ni is the size of the i-th interval, and d is the dimension
+        # of the mesh. The _v[i] array only has components in _v[i][:,i]
+        # This way, we can construct points in the mesh going from integers
+        # (i1, i2, ..., id) to vectors (x1, x2, ..., x2) as
+        #   x = _v[0][i1,:] + _v[1][i2,:] + ... + _v[d-1][id,:]
+        #
+        self._v = [
+            interval.to_vector().reshape(-1, 1) * unit_vector(i, self.dimension)
+            for i, interval in enumerate(intervals)
+        ]
 
-    def __getitem__(self, indices: Union[Tuple[int, ...], np.ndarray]):
-        if isinstance(indices, np.ndarray):
-            indices = np.atleast_2d(indices)
-            if indices.shape[1] != self.dimension:
-                raise ValueError("Incorrect index shape for NumPy array")
-            result = np.empty_like(indices, dtype=float)
-            for i, interval in enumerate(self.intervals):
-                result[:, i] = indices[:, i] * interval.step + interval.start
-            return result[0] if indices.ndim == 1 else result
+    def __getitem__(
+        self, indices: Union[Sequence[int], np.ndarray]
+    ) -> Union[float, Vector]:
+        """Return the vector of coordinates of a point in the mesh.
 
-        elif isinstance(indices, tuple):
-            if len(indices) != self.dimension:
-                raise ValueError("Incorrect number of indices")
-            return np.array(
-                [interval[idx] for interval, idx in zip(self.intervals, indices)]
-            )
+        The input can take different shapes for a D-dimensional mesh:
+        * It can be a single integer, denoting a point in a 1D mesh.
+        * It can be a vector of D coordinates, indexing a single point
+          in the mesh.
+        * It can be an N-dimensional array, denoting multiple points.
+          The N-th dimension of the array must have size `D`, because
+          it is the one indexing points in the Mesh.
+
+        Parameters
+        ----------
+        indices : int | ArrayLike
+            An integer, or an array-like structure indexing points
+            in the mesh.
+
+        Returns
+        -------
+        points : float | np.ndarray[float]
+            Coordinates of one or more points.
+        """
+        if isinstance(indices, int):
+            if self.dimension == 1:
+                return self._v[0][indices]
+            raise IndexError("Invalid index into a Mesh")
+        indices = np.asarray(indices)
+        if indices.shape[-1] != self.dimension:
+            raise IndexError("Invalid index into a Mesh")
         else:
-            raise TypeError("Indices must be a tuple or NumPy array")
+            return sum(self._v[n][indices[..., n]] for n in range(self.dimension))
 
     def binary_transformation_matrix(self, order="A", base=2) -> np.ndarray:
         """
-        Constructs and returns a binary transformation matrix based on the specified order and base.
+        Constructs and returns a binary transformation matrix based on the
+        specified order and base.
         """
-        sites = [int(np.emath.logn(base, s)) for s in self.shape()[:-1]]
-        if self.transformation_matrix is None:
-            if order == "A":
-                T = np.zeros((sum(sites), len(sites)), dtype=int)
-                start = 0
-                for m, n in enumerate(sites):
-                    T[start : start + n, m] = 2 ** np.arange(n)[::-1]
-                    start += n
-                self.transformation_matrix = T
-            elif order == "B":
-                # Strategy: stack diagonal matrices and remove unwanted rows.
-                # TODO: Improve this logic.
-                T = []
-                for i in range(max(sites)):
-                    diagonal = [2 ** (n - i - 1) if n > i else 0 for n in sites]
-                    T.append(np.diag(diagonal))
-                T = np.vstack(T)
-                T = T[~np.all(T <= 0, axis=1)]
-                self.transformation_matrix = T
-        return self.transformation_matrix
-
-    def shape(self):
-        return tuple(interval.size for interval in self.intervals) + (self.dimension,)
+        sites = [int(np.emath.logn(base, s)) for s in self.dimensions]
+        if order == "A":
+            T = np.zeros((sum(sites), len(sites)), dtype=int)
+            start = 0
+            for m, n in enumerate(sites):
+                T[start : start + n, m] = 2 ** np.arange(n)[::-1]
+                start += n
+            return T
+        elif order == "B":
+            # Strategy: stack diagonal matrices and remove unwanted rows.
+            # TODO: Improve this logic.
+            T = np.vstack(
+                [
+                    np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites])
+                    for i in range(max(sites))
+                ]
+            )
+            T = T[~np.all(T <= 0, axis=1)]
+            return T
+        else:
+            raise ValueError("Invalid MPS order")
 
     def to_tensor(self):
-        return np.array(list(product(*self.intervals))).reshape(self.shape())
+        return np.array(list(product(*self.intervals))).reshape(
+            *self.dimensions, self.dimension
+        )

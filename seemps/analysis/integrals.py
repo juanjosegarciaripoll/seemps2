@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.fftpack import ifft  # type: ignore
-
+from typing import Callable, Union
 from seemps.analysis import Mesh, mps_tensor_product
 from seemps.expectation import scprod
 from seemps.state import DEFAULT_TOLERANCE, MPS, Strategy
@@ -196,7 +196,7 @@ def mps_fifth_order(start: float, stop: float, sites: int) -> MPS:
     return (5 * step / 288) * MPS(tensors)
 
 
-def mps_fejer(start: float, stop: float, points: int, from_vector: bool = True) -> MPS:
+def mps_fejer(start: float, stop: float, points: int) -> MPS:
     """
     Returns a MPS representing the Féjer quadrature of an interval.
 
@@ -208,31 +208,28 @@ def mps_fejer(start: float, stop: float, points: int, from_vector: bool = True) 
         The ending point of the interval.
     points : int
         The number of quadrature points.
-    from_vector : bool
-        Whether to construct the MPS from a vector (True) or tensors (False).
     """
-    if from_vector:
-        d = 2**points
-        N = np.arange(start=1, stop=d, step=2)[:, None]
-        l = N.size
-        v0 = [2 * np.exp(1j * np.pi * k / d) / (1 - 4 * k**2) for k in range(l)] + [
-            0
-        ] * (l + 1)
-        v1 = v0[0:-1] + np.conj(v0[:0:-1])
-        vector = ifft(v1).flatten().real
-        mps = MPS.from_vector(
-            vector,
-            [2 for _ in range(points)],
-            normalize=False,
-            strategy=QUADRATURE_STRATEGY,
-        )
-    else:
-        raise ValueError("MPS not implemented")
+    # TODO: Optimize maybe this?
+    d = 2**points
+    N = np.arange(start=1, stop=d, step=2)[:, None]
+    l = N.size
+    v0 = [2 * np.exp(1j * np.pi * k / d) / (1 - 4 * k**2) for k in range(l)] + [0] * (
+        l + 1
+    )
+    v1 = v0[0:-1] + np.conj(v0[:0:-1])
+    vector = ifft(v1).flatten().real
+    mps = MPS.from_vector(
+        vector,
+        [2 for _ in range(points)],
+        normalize=False,
+        strategy=QUADRATURE_STRATEGY,
+    )
     step = (stop - start) / 2
     return step * mps
 
 
-def integrate_mps(mps: MPS, mesh: Mesh, integral_type: str) -> float:
+def integrate_mps(mps: MPS, mesh: Mesh, integral_type: str) -> Union[float, complex]:
+    foo: Callable[[float, float, int], MPS]
     if integral_type == "midpoint":
         foo = mps_midpoint
     elif integral_type == "trapezoidal":

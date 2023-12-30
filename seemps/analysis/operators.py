@@ -1,6 +1,7 @@
 import numpy as np
 from ..operators import MPO, MPOList
 from ..state import Strategy, DEFAULT_STRATEGY
+from typing import Union
 
 
 def id_mpo(n_qubits: int, strategy=DEFAULT_STRATEGY):
@@ -15,7 +16,7 @@ def id_mpo(n_qubits: int, strategy=DEFAULT_STRATEGY):
 
     Returns
     -------
-    MPO 
+    MPO
         Identity operator MPO.
     """
     B = np.zeros((1, 2, 2, 1))
@@ -77,6 +78,7 @@ def x_mpo(n_qubits: int, a: float, dx: float, strategy=DEFAULT_STRATEGY):
 
         return MPO(MPO_x, strategy=strategy)
 
+
 def x_to_n_mpo(
     n_qubits: int,
     a: float,
@@ -104,8 +106,7 @@ def x_to_n_mpo(
     MPO
         x^n operator MPO.
     """
-    return MPOList(
-        [x_mpo(n_qubits, a, dx) for n_i in range(n)]).join(strategy=strategy)
+    return MPOList([x_mpo(n_qubits, a, dx) for n_i in range(n)]).join(strategy=strategy)
 
 
 def p_mpo(n_qubits: int, dx: float, strategy=DEFAULT_STRATEGY):
@@ -157,6 +158,7 @@ def p_mpo(n_qubits: int, dx: float, strategy=DEFAULT_STRATEGY):
 
     return MPO(MPO_p, strategy=strategy)
 
+
 def p_to_n_mpo(
     n_qubits: int,
     dx: float,
@@ -181,14 +183,17 @@ def p_to_n_mpo(
     MPO
         p^n operator MPO.
     """
-    return MPOList(
-        [p_mpo(n_qubits, dx) for n_i in range(n)]).join(
+    return MPOList([p_mpo(n_qubits, dx) for n_i in range(n)]).join(
         strategy=strategy,
     )
 
 
 def exponential_mpo(
-    n: int, a: float, dx: float, c: float = 1, strategy: Strategy = DEFAULT_STRATEGY
+    n: int,
+    a: float,
+    dx: float,
+    c: Union[float, complex] = 1,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ):
     """exp(cx) MPO.
 
@@ -200,7 +205,7 @@ def exponential_mpo(
         Initial value of the position interval.
     dx: float
         Spacing of the position interval.
-    c: float
+    c: float | complex, default = 1
         Constant preceeding the x coordinate.
     strategy: Strategy
         MPO strategy, defaults to DEFAULT_STRATEGY.

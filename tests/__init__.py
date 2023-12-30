@@ -42,3 +42,4 @@ from .test_TEBD import *
 from .test_tools import *
 from .test_truncate import *
 from .test_analysis_operators import *
+from .test_mesh import *
