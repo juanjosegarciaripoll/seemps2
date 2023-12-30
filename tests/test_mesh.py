@@ -41,6 +41,14 @@ class TestIntervals(TestCase):
         self.assertEqual([I[0], I[1]], list(I))
         self.assertEqual([I[0], I[1]], [x for x in I])
 
+    def test_rescaled_chebyshev_zeros_interval(self):
+        f = lambda x: 2 * x + 2  # Affine transformation
+        I = ChebyshevZerosInterval(f(-1), f(1), 2)
+        self.assertEqual(I.start, f(-1))
+        self.assertEqual(I.stop, f(1))
+        self.assertAlmostEqual(I[0], f(-np.sqrt(2.0) / 2.0))
+        self.assertAlmostEqual(I[1], f(np.sqrt(2.0) / 2.0))
+
 
 class TestMesh(TestCase):
     def test_mesh_constructor_1d(self):
