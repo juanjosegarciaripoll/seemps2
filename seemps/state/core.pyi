@@ -1,5 +1,7 @@
-from ..typing import Optional, Vector
+from typing import Optional
+from ..typing import Vector, Unitary, Tensor3, Tensor4
 from enum import Enum
+import numpy as np
 
 MAX_BOND_DIMENSION: int
 
@@ -13,7 +15,6 @@ class Simplification:
     DO_NOT_SIMPLIFY = 0
     CANONICAL_FORM = 1
     VARIATIONAL = 2
-    SIMPLIFICATION_LAST_CODE = 2
 
 class Strategy:
     def __init__(
@@ -52,5 +53,6 @@ NO_TRUNCATION: Strategy
 
 DEFAULT_STRATEGY: Strategy
 
-def truncate_vector(s: Vector, strategy: Strategy) -> tuple[Vector, float]:
-    pass
+def truncate_vector(s: Vector, strategy: Strategy) -> tuple[Vector, float]: ...
+def _contract_nrjl_ijk_klm(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4: ...
+def _contract_last_and_first(A: np.ndarray, B: np.ndarray) -> np.ndarray: ...
