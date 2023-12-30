@@ -394,7 +394,7 @@ def cross_interpolation(
     mesh_samples = None
     state_prev = None
     integral_prev = None
-    T = mesh.binary_transformation_matrix(mps_order)
+    T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
 
     def get_error(state: MPS):
         if cross_strategy.error_type == "sampling":
@@ -473,9 +473,7 @@ def cross_interpolation(
 
         # Forward pass
         for k in range(sites):
-            fiber = sample_tensor_fiber(
-                func, mesh, cross_strategy.mps_order, I_le[k], I_s[k], I_g[k + 1]
-            )
+            fiber = sample_tensor_fiber(func, mesh, T, I_le[k], I_s[k], I_g[k + 1])
             evals += fiber.size
             r_le, s, r_g = fiber.shape
             fiber_matrix = fiber.reshape(r_le * s, r_g, order="F")
@@ -490,9 +488,7 @@ def cross_interpolation(
 
         # Backward pass
         for k in reversed(range(sites)):
-            fiber = sample_tensor_fiber(
-                func, mesh, cross_strategy.mps_order, I_le[k], I_s[k], I_g[k + 1]
-            )
+            fiber = sample_tensor_fiber(func, mesh, T, I_le[k], I_s[k], I_g[k + 1])
             evals += fiber.size
             r_le, s, r_g = fiber.shape
             fiber_matrix = fiber.reshape(r_le, s * r_g, order="F").T
