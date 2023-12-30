@@ -79,7 +79,6 @@ def euler(
         factor = 1
     else:
         factor = 1j
-    state = CanonicalMPS(state)
     last_t = t_span[0]
     output = []
     for t in t_span:
@@ -144,7 +143,6 @@ def euler2(
         factor = 1
     else:
         factor = 1j
-    state = CanonicalMPS(state)
     last_t = t_span[0]
     output = []
     for t in t_span:
