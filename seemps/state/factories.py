@@ -216,7 +216,8 @@ def random_mps(
 def random(*args, **kwdargs) -> MPS:
     """Deprecated version of :func:`random_uniform_mps`."""
     warnings.warn(
-        "method norm2 is deprecated, use norm_squared", category=DeprecationWarning
+        "seemps.state.random() is deprecated, use random_uniform_mps()",
+        category=DeprecationWarning,
     )
     return random_uniform_mps(*args, **kwdargs)
 
