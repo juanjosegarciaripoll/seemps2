@@ -1,23 +1,13 @@
 from seemps.state import CanonicalMPS, DEFAULT_STRATEGY, product_state, NO_TRUNCATION
 from seemps.tools import *
-from .tools import *
 from seemps.evolution.trotter import *
 from seemps.hamiltonians import HeisenbergHamiltonian
+from .problem import EvolutionTestCase
 
 
 def random_wavefunction(n):
     ψ = np.random.rand(n) - 0.5
     return ψ / np.linalg.norm(ψ)
-
-
-class EvolutionTestCase(TestCase):
-    Heisenberg2 = 0.25 * (np.kron(σx, σx) + np.kron(σy, σy) + np.kron(σz, σz))
-
-    def random_initial_state(self, size: int) -> MPS:
-        states = np.random.randn(size, 2) + 1j * np.random.randn(size, 2)
-        for n in range(size):
-            states[n, :] /= np.linalg.norm(states[n, :])
-        return product_state(states)
 
 
 class TestPairwiseUnitaries(EvolutionTestCase):

@@ -12,7 +12,7 @@ from .test_circuits import *
 from .test_combine import *
 from .test_contractions import *
 from .test_cross import *
-from .test_evolution import *
+from .test_itime import *
 from .test_expectation import *
 from .test_finite_differences import *
 from .test_gradient_descent import *
@@ -38,8 +38,8 @@ from .test_sampling import *
 from .test_simplify import *
 from .test_space import *
 from .test_strategy import *
-from .test_TEBD import *
 from .test_tools import *
 from .test_truncate import *
 from .test_analysis_operators import *
 from .test_mesh import *
+from .test_evolution import *
