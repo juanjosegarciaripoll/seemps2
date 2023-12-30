@@ -173,6 +173,7 @@ def chebyshev_approximation(
             )
 
     # Run the Clenshaw algorithm.
+    I: Union[MPS, MPO]
     if isinstance(domain, MPS):
         I = MPS([np.ones((1, 2, 1))] * len(domain))
         y = [MPS([np.zeros((1, 2, 1))] * len(domain))] * (len(coefficients) + 2)
@@ -181,15 +182,9 @@ def chebyshev_approximation(
                 coefficients[i] * I - y[i + 2] + 2 * domain * y[i + 1],
                 strategy=strategy,
             )
-        chebyshev_approximation = simplify(y[0] - domain * y[1], strategy=strategy)
+        return simplify(y[0] - domain * y[1], strategy=strategy)
     elif isinstance(domain, MPO):
-        I = MPO([np.eye(2).reshape((1, 2, 2, 1))] * len(domain))
-        y = [MPO([np.zeros((1, 2, 2, 1))] * len(domain))] * (len(coefficients) + 2)
-        for i in range(len(y) - 3, -1, -1):
-            # TODO: Implement simplifying the MPO for each step
-            # mpo_product = MPOList([domain, y[i + 1]]).join(strategy=strategy)
-            # y[i] = (coefficients[i] * I - y[i + 2] + 2 * mpo_product).join(
-            #     strategy=strategy
-            # )
-            chebyshev_approximation = None
+        raise Exception("chebyshev_approximation not implemented for MPOs")
+    else:
+        raise Exception("Invalid argument to chebyshev_approximation")
     return chebyshev_approximation
