@@ -77,6 +77,7 @@ def euler(
         t_span = np.linspace(t_span[0], t_span[1], steps + 1)
     if itime:
         factor = 1
+        strategy = strategy.replace(normalize=True)
     else:
         factor = 1j
     last_t = t_span[0]
@@ -141,6 +142,7 @@ def euler2(
         t_span = np.linspace(t_span[0], t_span[1], steps + 1)
     if itime:
         factor = 1
+        strategy = strategy.replace(normalize=True)
     else:
         factor = 1j
     last_t = t_span[0]

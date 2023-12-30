@@ -49,8 +49,10 @@ def runge_kutta(
         t_span = np.linspace(t_span[0], t_span[1], steps + 1)
     if itime:
         factor = 1
+        normalize_strategy = strategy.replace(normalize=True)
     else:
         factor = 1j
+        normalize_strategy = strategy
     last_t = t_span[0]
     output = []
     for t in t_span:
@@ -65,7 +67,7 @@ def runge_kutta(
             H_state4 = H.apply(state4)
             state = simplify(
                 state - (idt / 6) * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
-                strategy=strategy,
+                strategy=normalize_strategy,
             )
         if callback is not None:
             output.append(callback(t, state))
