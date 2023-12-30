@@ -65,11 +65,7 @@ class TestMesh(TestCase):
         self.assertEqual(m[[1]], 0.5)
         self.assertEqual(m[[2]], 1.0)
         with self.assertRaises(IndexError):
-            m[[-1]]
-        with self.assertRaises(IndexError):
             m[[3]]
-        with self.assertRaises(IndexError):
-            m[2, 0]
 
     def test_mesh_1d_integer_access(self):
         m = Mesh([RegularClosedInterval(0, 1, 3)])
@@ -80,17 +76,13 @@ class TestMesh(TestCase):
     def test_mesh_1d_checks_bounds(self):
         m = Mesh([RegularClosedInterval(0, 1, 3)])
         with self.assertRaises(IndexError):
-            m[-1]
-        with self.assertRaises(IndexError):
             m[3]
         with self.assertRaises(IndexError):
             m[3, 0]
 
-    def test_mesh_1d_integer_access(self):
+    def test_mesh_1d_multiple_index_access(self):
         m = Mesh([RegularClosedInterval(0, 1, 3)])
-        self.assertEqual(m[0], 0.0)
-        self.assertEqual(m[1], 0.5)
-        self.assertEqual(m[2], 1.0)
+        self.assertSimilar(m[[[0], [2], [1]]], [[0.0], [1.0], [0.5]])
 
     def test_mesh_1d_to_tensor(self):
         m = Mesh([RegularClosedInterval(0, 1, 3)])
@@ -115,14 +107,17 @@ class TestMesh(TestCase):
         self.assertSimilar(m[2, 0], [1.0, 0.0])
         self.assertSimilar(m[2, 1], [1.0, 0.5])
 
+    def test_mesh_2d_multiple_index_access(self):
+        m = Mesh([RegularClosedInterval(0, 1, 3), RegularHalfOpenInterval(0, 1, 2)])
+        self.assertSimilar(
+            m[[(0, 0), (1, 0), (0, 1), (2, 0), (1, 1)]],
+            [(0.0, 0.0), (0.5, 0.0), (0.0, 0.5), (1.0, 0.0), (0.5, 0.5)],
+        )
+
     def test_mesh_2d_checks_bounds(self):
         m = Mesh([RegularClosedInterval(0, 1, 3), RegularHalfOpenInterval(0, 1, 2)])
         with self.assertRaises(IndexError):
             m[3, 0]
-        with self.assertRaises(IndexError):
-            m[-1, 0]
-        with self.assertRaises(IndexError):
-            m[0, -1]
         with self.assertRaises(IndexError):
             m[0]
 

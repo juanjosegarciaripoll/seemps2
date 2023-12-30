@@ -112,42 +112,52 @@ class Mesh:
     transformation_matrix: Optional[np.ndarray]
 
     def __init__(self, intervals: list[Interval]):
+        def unit_vector(n: int, L: int):
+            v = np.zeros(L)
+            v[n] = 1.0
+            return v
+
         self.intervals = intervals
         self.dimension = len(intervals)
         self.transformation_matrix = None
         self.dimensions = tuple(interval.size for interval in self.intervals)
+        self._v = [
+            interval.to_vector().reshape(-1, 1) * unit_vector(i, self.dimension)
+            for i, interval in enumerate(intervals)
+        ]
 
     def __getitem__(
         self, indices: Union[Sequence[int], np.ndarray]
     ) -> Union[float, Vector]:
         """Return the vector of coordinates of a point in the mesh.
 
+        The input can take different shapes for a D-dimensional mesh:
+        * It can be a single integer, denoting a point in a 1D mesh.
+        * It can be a vector of D coordinates, indexing a single point
+          in the mesh.
+        * It can be an N-dimensional array, denoting multiple points.
+          The last dimension of the array must have size `D`.
+
         Parameters
         ----------
-        indices : Sequence[int] | np.ndarray[dim=1] | int
-            A sequence of integers indexing a point in the mesh.
-            A single integer is accepted if the mesh is 1D.
+        indices : int | ArrayLike
+            An integer, or an array-like structure indexing points
+            into the mesh.
 
         Returns
         -------
-        point : float | np.ndarray[float]
-            A vector of coordinates into the mesh, or a scalar if this
-            a 1D field.
+        points : float | np.ndarray[float]
+            Coordinates of one or more points.
         """
         if isinstance(indices, int):
             if self.dimension == 1:
-                return self.intervals[0][indices]
+                return self._v[0][indices]
             raise IndexError("Invalid index into a Mesh")
-        if (isinstance(indices, np.ndarray) and indices.ndim != 1) or len(
-            indices
-        ) != self.dimension:
+        indices = np.asarray(indices)
+        if indices.shape[-1] != self.dimension:
             raise IndexError("Invalid index into a Mesh")
-        if self.dimension == 1:
-            return self.intervals[0][indices[0]]
         else:
-            return np.asarray(
-                [interval[i] for i, interval in zip(indices, self.intervals)]
-            )
+            return sum(self._v[n][indices[..., n]] for n in range(self.dimension))
 
     def binary_transformation_matrix(self, order="A", base=2) -> np.ndarray:
         """
