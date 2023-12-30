@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import Union, Optional, Sequence
+from typing import Union, Optional, Sequence, Iterator
 from ..typing import Vector
 
 import numpy as np
@@ -106,8 +106,8 @@ class Mesh:
 
     intervals: list[Interval]
     dimension: int
-    shape: tuple[int]
-    dimensions: tuple[int]
+    shape: tuple[int, ...]
+    dimensions: tuple[int, ...]
     # TODO: Remove the `transformation_matrix` field.
     transformation_matrix: Optional[np.ndarray]
 
