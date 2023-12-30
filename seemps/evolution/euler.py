@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Union, Optional
+from typing import Union, Optional, Callable
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
 from ..truncate import simplify
@@ -75,6 +75,7 @@ def euler(
         t_span = (0.0, t_span)
     if len(t_span) == 2:
         t_span = np.linspace(t_span[0], t_span[1], steps + 1)
+    factor: float | complex
     if itime:
         factor = 1
         strategy = strategy.replace(normalize=True)
@@ -140,6 +141,7 @@ def euler2(
         t_span = (0.0, t_span)
     if len(t_span) == 2:
         t_span = np.linspace(t_span[0], t_span[1], steps + 1)
+    factor: float | complex
     if itime:
         factor = 1
         strategy = strategy.replace(normalize=True)
