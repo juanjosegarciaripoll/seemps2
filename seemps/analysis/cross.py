@@ -260,7 +260,7 @@ def sample_initial_indices(state: MPS) -> list[np.ndarray]:
 def sample_tensor_fiber(
     func: Callable,
     mesh: Mesh,
-    mps_order: str,
+    T: np.ndarray,
     i_le: np.ndarray,
     i_s: np.ndarray,
     i_g: np.ndarray,
@@ -307,7 +307,6 @@ def sample_tensor_fiber(
     if i_g.size > 0:
         mps_indices = np.hstack((mps_indices, np.kron(i_g, _ones(r_le * s))))
     # Evaluate the function at the fiber indices
-    T = mesh.binary_transformation_matrix(mps_order)
     fiber = func(mesh[mps_indices @ T]).reshape((r_le, s, r_g), order="F")
     return fiber
 
@@ -395,6 +394,7 @@ def cross_interpolation(
     mesh_samples = None
     state_prev = None
     integral_prev = None
+    T = mesh.binary_transformation_matrix(mps_order)
 
     def get_error(state: MPS):
         if cross_strategy.error_type == "sampling":
@@ -403,7 +403,6 @@ def cross_interpolation(
             # module can be used instead.
             if sweep == 0:
                 mps_indices = random_mps_indices(state)
-                T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
                 mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)
             mps_samples = sample_mps(state, mps_indices)
             error = np.max(np.abs(mps_samples - mesh_samples))

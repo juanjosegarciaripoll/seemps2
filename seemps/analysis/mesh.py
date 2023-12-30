@@ -108,8 +108,6 @@ class Mesh:
     dimension: int
     shape: tuple[int, ...]
     dimensions: tuple[int, ...]
-    # TODO: Remove the `transformation_matrix` field.
-    transformation_matrix: Optional[np.ndarray]
     _v: list[np.ndarray]
 
     def __init__(self, intervals: list[Interval]):
@@ -120,7 +118,6 @@ class Mesh:
 
         self.intervals = intervals
         self.dimension = len(intervals)
-        self.transformation_matrix = None
         self.dimensions = tuple(interval.size for interval in self.intervals)
         #
         # The field _v contains a list of arrays, each with size Ni x d
@@ -175,29 +172,26 @@ class Mesh:
         specified order and base.
         """
         sites = [int(np.emath.logn(base, s)) for s in self.dimensions]
-        if self.transformation_matrix is None:
-            if order == "A":
-                T = np.zeros((sum(sites), len(sites)), dtype=int)
-                start = 0
-                for m, n in enumerate(sites):
-                    T[start : start + n, m] = 2 ** np.arange(n)[::-1]
-                    start += n
-                self.transformation_matrix = T
-            elif order == "B":
-                # Strategy: stack diagonal matrices and remove unwanted rows.
-                # TODO: Improve this logic.
-                T = np.vstack(
-                    [
-                        np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites])
-                        for i in range(max(sites))
-                    ]
-                )
-                T = T[~np.all(T <= 0, axis=1)]
-                self.transformation_matrix = T
-            else:
-                raise ValueError("Invalid MPS order")
+        if order == "A":
+            T = np.zeros((sum(sites), len(sites)), dtype=int)
+            start = 0
+            for m, n in enumerate(sites):
+                T[start : start + n, m] = 2 ** np.arange(n)[::-1]
+                start += n
             return T
-        return self.transformation_matrix
+        elif order == "B":
+            # Strategy: stack diagonal matrices and remove unwanted rows.
+            # TODO: Improve this logic.
+            T = np.vstack(
+                [
+                    np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites])
+                    for i in range(max(sites))
+                ]
+            )
+            T = T[~np.all(T <= 0, axis=1)]
+            return T
+        else:
+            raise ValueError("Invalid MPS order")
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(
