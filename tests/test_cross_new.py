@@ -93,6 +93,6 @@ class TestCrossInterpolation(TestCase):
         func, mesh, _, func_vector = self.gaussian_setup(2)
         cross_strategy = CrossStrategy(mps_order="B")
         cross_results = cross_interpolation(func, mesh, cross_strategy=cross_strategy)
-        qubits = [int(np.log2(s)) for s in mesh.shape()[:-1]]
+        qubits = [int(np.log2(s)) for s in mesh.dimensions]
         tensor = self.reorder_tensor(cross_results.state.to_vector(), qubits)
         self.assertSimilar(func_vector, tensor)

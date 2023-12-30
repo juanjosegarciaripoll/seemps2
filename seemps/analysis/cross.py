@@ -405,10 +405,9 @@ def cross_interpolation(
             integral_prev = integral
         return error
 
-    mesh_shape = mesh.shape()[:-1]
     # TODO: Think how to generalize to arbitrary physical dimension
     base = 2
-    mesh_sites_per_dimension = [int(np.emath.logn(base, s)) for s in mesh_shape]
+    mesh_sites_per_dimension = [int(np.emath.logn(base, s)) for s in mesh.dimensions]
     sites = sum(mesh_sites_per_dimension)
     I_s = [np.array([[0], [1]]) for _ in range(sites)]
     I_le = [np.array([], dtype=int)] * (sites + 1)

@@ -91,16 +91,31 @@ class Mesh:
     intervals : list[Interval]
         A list of Interval objects representing the discretizations along each
         dimension.
+
+    Attributes
+    ----------
+    intervals : list[Interval]
+        The supplied list of intervals.
+    dimension : int
+        Dimension of the space in which this mesh is embedded.
+    shape : tuple[int]
+        Shape of the equivalent tensor this Mesh can be converted to.
+    dimensions : tuple[int]
+        Tuple of the sizes of each interval
     """
 
     intervals: list[Interval]
     dimension: int
+    shape: tuple[int]
+    dimensions: tuple[int]
+    # TODO: Remove the `transformation_matrix` field.
     transformation_matrix: Optional[np.ndarray]
 
     def __init__(self, intervals: list[Interval]):
         self.intervals = intervals
         self.dimension = len(intervals)
         self.transformation_matrix = None
+        self.dimensions = tuple(interval.size for interval in self.intervals)
 
     def __getitem__(
         self, indices: Union[Sequence[int], np.ndarray]
@@ -109,8 +124,9 @@ class Mesh:
 
         Parameters
         ----------
-        indices : Sequence[int] | np.ndarray[dim=1]
+        indices : Sequence[int] | np.ndarray[dim=1] | int
             A sequence of integers indexing a point in the mesh.
+            A single integer is accepted if the mesh is 1D.
 
         Returns
         -------
@@ -118,10 +134,14 @@ class Mesh:
             A vector of coordinates into the mesh, or a scalar if this
             a 1D field.
         """
+        if isinstance(indices, int):
+            if self.dimension == 1:
+                return self.intervals[0][indices]
+            raise IndexError("Invalid index into a Mesh")
         if (isinstance(indices, np.ndarray) and indices.ndim != 1) or len(
             indices
         ) != self.dimension:
-            raise ValueError("Invalid index into the mesh")
+            raise IndexError("Invalid index into a Mesh")
         if self.dimension == 1:
             return self.intervals[0][indices[0]]
         else:
@@ -134,7 +154,7 @@ class Mesh:
         Constructs and returns a binary transformation matrix based on the
         specified order and base.
         """
-        sites = [int(np.emath.logn(base, s)) for s in self.shape()[:-1]]
+        sites = [int(np.emath.logn(base, s)) for s in self.dimensions]
         if self.transformation_matrix is None:
             if order == "A":
                 T = np.zeros((sum(sites), len(sites)), dtype=int)
@@ -159,8 +179,7 @@ class Mesh:
             return T
         return self.transformation_matrix
 
-    def shape(self):
-        return tuple(interval.size for interval in self.intervals) + (self.dimension,)
-
     def to_tensor(self):
-        return np.array(list(product(*self.intervals))).reshape(self.shape())
+        return np.array(list(product(*self.intervals))).reshape(
+            *self.dimensions, self.dimension
+        )
