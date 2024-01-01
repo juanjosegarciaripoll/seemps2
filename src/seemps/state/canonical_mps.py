@@ -170,6 +170,41 @@ class CanonicalMPS(MPS):
             ρ = environments.update_right_environment(A, A, ρ)
         return ρ
 
+    def Schmidt_weights(self, site: Optional[int] = None) -> Vector:
+        """Return the Schmidt weights for a bipartition around `site`.
+
+        Parameters
+        ----------
+        site : int, optional
+            Site in the range `[0, self.size)`, defaulting to `self.center`.
+            The system is diveded into `[0, self.site)` and `[self.site, self.size)`.
+
+        Returns
+        -------
+        numbers: np.ndarray
+            Vector of non-negative Schmidt weights.
+        """
+        if site is None:
+            site = self.center
+        else:
+            site = self._interpret_center(site)
+        if site != self.center:
+            return self.copy().recenter(site).Schmidt_weights()
+        # TODO: this is for [0, self.center] (self.center, self.size)
+        # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
+        A = self._data[site]
+        d1, d2, d3 = A.shape
+        s = schmidt.svd(
+            A.reshape(d1 * d2, d3),
+            full_matrices=False,
+            compute_uv=False,
+            check_finite=False,
+            lapack_driver=schmidt.SVD_LAPACK_DRIVER,
+        )
+        s *= s
+        s /= np.sum(s)
+        return s
+
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
         around `site`.
@@ -185,22 +220,35 @@ class CanonicalMPS(MPS):
         float
             Von Neumann entropy of bipartition.
         """
-        if site is None:
-            site = self.center
-        if site != self.center:
-            return self.copy().recenter(site).entanglement_entropy()
-        # TODO: this is for [0, self.center] (self.center, self.size)
-        # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        A = self._data[site]
-        d1, d2, d3 = A.shape
-        s = schmidt.svd(
-            A.reshape(d1 * d2, d3),
-            full_matrices=False,
-            compute_uv=False,
-            check_finite=False,
-            lapack_driver=schmidt.SVD_LAPACK_DRIVER,
-        )
-        return -np.sum(2 * s * s * np.log2(s))
+        s = self.Schmidt_weights(site)
+        return -np.sum(s * np.log2(s))
+
+    def Renyi_entropy(self, site: Optional[int] = None, alpha: float = 2.0) -> float:
+        """Compute the Renyi entropy of the MPS for a bipartition
+        around `site`.
+
+        Parameters
+        ----------
+        site : int, optional
+            Site in the range `[0, self.size)`, defaulting to `self.center`.
+            The system is diveded into `[0, self.site)` and `[self.site, self.size)`.
+        alpha : float, default = 2
+            Power of the Renyi entropy.
+
+        Returns
+        -------
+        float
+            Von Neumann entropy of bipartition.
+        """
+        s = self.Schmidt_weights(site)
+        if alpha < 0:
+            raise ValueError("Invalid Renyi entropy power")
+        if alpha == 0:
+            alpha = 1e-9
+        elif alpha == 1:
+            alpha = 1 - 1e-9
+        S = np.log(np.sum(s**alpha)) / (1 - alpha)
+        return S
 
     def update_canonical(
         self, A: Tensor3, direction: int, truncation: Strategy

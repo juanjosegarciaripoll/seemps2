@@ -153,11 +153,23 @@ class TestCanonicalForm(TestCase):
         with self.assertRaises(Exception):
             CanonicalMPS(mps, center=-11)
 
+    def test_canonical_Schmidt_weights(self):
+        mps = CanonicalMPS(product_state([1.0, 0.0], 10), center=0)
+        self.assertSimilar(mps.Schmidt_weights(), [1.0])
+        self.assertSimilar(mps.Schmidt_weights(0), [1.0])
+        self.assertSimilar(mps.Schmidt_weights(-1), [1.0])
+
     def test_canonical_entanglement_entropy(self):
         mps = CanonicalMPS(product_state([1.0, 0.0], 10), center=0)
         self.assertAlmostEqual(mps.entanglement_entropy(), 0.0)
         self.assertAlmostEqual(mps.entanglement_entropy(0), 0.0)
         self.assertAlmostEqual(mps.entanglement_entropy(-1), 0.0)
+
+    def test_canonical_Renyi_entropy(self):
+        mps = CanonicalMPS(product_state([1.0, 0.0], 10), center=0)
+        self.assertAlmostEqual(mps.Renyi_entropy(alpha=2), 0.0)
+        self.assertAlmostEqual(mps.Renyi_entropy(0, alpha=2), 0.0)
+        self.assertAlmostEqual(mps.Renyi_entropy(-1, alpha=2), 0.0)
 
     def test_canonical_from_vector(self):
         state = self.rng.normal(size=2**8)
