@@ -6,13 +6,22 @@ from typing import Callable, Optional
 import numpy as np
 from scipy.linalg import lu, solve_triangular  # type: ignore
 
-from ..state import MPS, Strategy
+from ..state import MPS, Strategy, Truncation, Simplification
 from ..tools import DEBUG, log
 from ..truncate import SIMPLIFICATION_STRATEGY, simplify
 from ..typing import *
 from .integrals import integrate_mps
 from .mesh import Mesh
 from .sampling import random_mps_indices, sample_mps
+
+
+DEFAULT_CROSS_STRATEGY = Strategy(
+    method=Truncation.ABSOLUTE_SINGULAR_VALUE,
+    tolerance=1e-8,
+    simplify=Simplification.VARIATIONAL,
+    simplification_tolerance=1e-8,
+    normalize=False,
+)
 
 
 def maxvol_square(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -193,7 +202,7 @@ def random_initial_indices(
         are concatenated at each step.
     """
     I_g = [np.array([], dtype=int)]
-    for i, i_s in enumerate(reversed(I_s)):
+    for i, i_s in reversed(list(enumerate(I_s))):  # index counts in reverse order
         choice = rng.choice(i_s, size=starting_bond, replace=True).reshape(-1, 1)
         if i == len(I_s) - 1:
             I_g.insert(0, choice)
@@ -353,7 +362,7 @@ class CrossStrategy:
         Initial bond dimension for the MPS, used only when starting_indices is None.
     error_type : str, default="sampling"
         Method for error calculation; can be 'sampling', 'norm', or 'integral'.
-     mps_order : str, default="A"
+    mps_order : str, default="A"
         Order of sites in MPS; can be 'A' or 'B', affecting the sampling strategy.
     """
 
@@ -364,6 +373,7 @@ def cross_interpolation(
     cross_strategy: CrossStrategy = CrossStrategy(),
     strategy: Strategy = SIMPLIFICATION_STRATEGY.replace(normalize=False),
     callback: Optional[Callable] = None,
+    rng: np.random.Generator = np.random.default_rng(),
 ) -> CrossResults:
     """
     Performs cross interpolation on a vectorized function discretized
@@ -392,9 +402,9 @@ def cross_interpolation(
     """
     mps_indices = None
     mesh_samples = None
-    state_prev = None
+    data_prev = None
     integral_prev = None
-    T = mesh.binary_transformation_matrix(cross_strategy.mps_order)
+    T = mesh.mps_to_mesh_matrix(cross_strategy.mps_order)
 
     def get_error(state: MPS):
         if cross_strategy.error_type == "sampling":
@@ -402,26 +412,26 @@ def cross_interpolation(
             # TODO: Think about this and whether the state/sampling.py
             # module can be used instead.
             if sweep == 0:
-                mps_indices = random_mps_indices(state)
+                mps_indices = random_mps_indices(state, rng=rng)
                 mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)
             mps_samples = sample_mps(state, mps_indices)
             error = np.max(np.abs(mps_samples - mesh_samples))
         elif cross_strategy.error_type == "norm":
-            nonlocal state_prev
+            nonlocal data_prev
             if sweep == 0:
-                # Save a deepcopy (needs to copy the previous tensors)
-                # to a function attribute
-                state_prev = deepcopy(state)
+                # Save a copy of the previous tensors
+                data_prev = deepcopy(state._data)
                 return np.Inf
             # TODO: Rethink about this way of checking convergence.
             # Right now it is computing the relative change in norm.
             # At the moment, this method is much more expensive than sampling.
             strategy = Strategy(normalize=False)
+            state_prev = MPS(data_prev)
             error = abs(
                 simplify(state - state_prev, strategy=strategy).norm()
                 / state_prev.norm()
             )
-            state_prev = deepcopy(state)
+            data_prev = deepcopy(state._data)
         elif cross_strategy.error_type == "integral":
             nonlocal integral_prev
             if sweep == 0:
@@ -442,7 +452,6 @@ def cross_interpolation(
     I_s = [np.array([[0], [1]]) for _ in range(sites)]
     I_le = [np.array([], dtype=int)] * (sites + 1)
     if cross_strategy.starting_indices is None:
-        rng = np.random.default_rng(seed=42)
         I_g = random_initial_indices(
             I_s, starting_bond=cross_strategy.starting_bond, rng=rng
         )
