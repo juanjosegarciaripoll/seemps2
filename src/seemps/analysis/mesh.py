@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import Union, Optional, Sequence, Iterator
+from typing import Union, Sequence, Iterator
 from ..typing import Vector
 
 import numpy as np
@@ -169,10 +169,10 @@ class Mesh:
         else:
             return sum(self._v[n][indices[..., n]] for n in range(self.dimension))
 
-    def binary_transformation_matrix(self, order="A", base=2) -> np.ndarray:
+    def mps_to_mesh_matrix(self, order="A", base=2) -> np.ndarray:
         """
-        Constructs and returns a binary transformation matrix based on the
-        specified order and base.
+        Returns a matrix that transforms an array of MPS indices
+        to an array of Mesh indices based on the specified order and base.
         """
         sites = [int(np.emath.logn(base, s)) for s in self.dimensions]
         if order == "A":

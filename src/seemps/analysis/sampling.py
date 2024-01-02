@@ -35,7 +35,9 @@ def sample_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
 
 
 def random_mps_indices(
-    mps: MPS, num_indices: int = 1000, rng: Optional[np.random.Generator] = None
+    mps: MPS,
+    num_indices: int = 1000,
+    rng: np.random.Generator = np.random.default_rng(),
 ):
     """
     Generates random indices for sampling a MPS.
@@ -46,16 +48,14 @@ def random_mps_indices(
         The matrix product state to sample from.
     num_indices : int, default 1000
         The number of random indices to generate.
-    rng : Optional[np.random.Generator], default None
-        Random number generator instance. If None, a default generator is used.
+    rng : np.random.Generator, default=`numpy.random.default_rng()`
+        The random number generator to be used. If None, uses Numpy's
+        default random number generator without any predefined seed.
 
     Returns
     -------
     indices : np.ndarray
         An array of random MPS indices."""
-
-    if rng is None:
-        rng = np.random.default_rng()
     return np.vstack([rng.choice(k, num_indices) for k in mps.physical_dimensions()]).T
 
 
