@@ -39,6 +39,9 @@ class Interval(ABC):
     def map_to(self, start: float, stop: float) -> Interval:
         return type(self)(start, stop, self.size)
 
+    def update_size(self, size: int) -> Interval:
+        return type(self)(self.start, self.stop, size)
+
     def __iter__(self) -> Iterator:
         return (self[i] for i in range(self.size))
 
@@ -181,10 +184,8 @@ class Mesh:
             for m, n in enumerate(sites):
                 T[start : start + n, m] = 2 ** np.arange(n)[::-1]
                 start += n
-            return T
         elif order == "B":
-            # Strategy: stack diagonal matrices and remove unwanted rows.
-            # TODO: Improve this logic.
+            # Procedure: stack diagonal matrices and remove unwanted rows.
             T = np.vstack(
                 [
                     np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites])
@@ -192,9 +193,11 @@ class Mesh:
                 ]
             )
             T = T[~np.all(T <= 0, axis=1)]
-            return T
+        elif order == "TT":
+            T = np.eye(sum(sites))
         else:
             raise ValueError("Invalid MPS order")
+        return T
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(
