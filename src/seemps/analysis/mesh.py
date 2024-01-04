@@ -39,6 +39,9 @@ class Interval(ABC):
     def map_to(self, start: float, stop: float) -> Interval:
         return type(self)(start, stop, self.size)
 
+    def update_size(self, size: int) -> Interval:
+        return type(self)(self.start, self.stop, size)
+
     def __iter__(self) -> Iterator:
         return (self[i] for i in range(self.size))
 
