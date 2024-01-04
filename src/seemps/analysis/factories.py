@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
 
-from ..state import MPS, Strategy
+from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .mesh import (
     Interval,
@@ -9,10 +9,6 @@ from .mesh import (
     RegularHalfOpenInterval,
     ChebyshevZerosInterval,
 )
-
-# TODO: These descriptions are wrong. `sites` is not the number of
-# discretization points, but rather the number of qubits used for this
-# representation. The size is 2**sites
 
 
 def mps_equispaced(start: float, stop: float, sites: int):
@@ -26,12 +22,12 @@ def mps_equispaced(start: float, stop: float, sites: int):
     stop : float
         The end of the interval.
     sites : int
-        The number of discretization points.
+        The number of sites or qubits for the MPS.
 
     Returns
     -------
     MPS
-        An MPS representing the equispaced discretization of the interval.
+        An MPS representing an equispaced discretization within [start, stop].
     """
     step = (stop - start) / 2**sites
     tensor_1 = np.zeros((1, 2, 2))
@@ -47,7 +43,7 @@ def mps_equispaced(start: float, stop: float, sites: int):
     return MPS(tensors)
 
 
-def mps_exponential(start: float, stop: float, sites: int, c: complex) -> MPS:
+def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MPS:
     """
     Returns an MPS representing an exponential function discretized over an interval.
 
@@ -58,7 +54,7 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex) -> MPS:
     stop : float
         The end of the interval.
     sites : int
-        The number of discretization points.
+        The number of sites or qubits for the MPS.
     c : complex
         The coefficient in the exponent of the exponential function.
 
@@ -84,7 +80,35 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex) -> MPS:
     return MPS(tensors)
 
 
-def mps_cosine(start: float, stop: float, sites: int) -> MPS:
+def mps_sine(
+    start: float, stop: float, sites: int, strategy: Strategy = DEFAULT_STRATEGY
+) -> MPS:
+    """
+    Returns an MPS representing a sine function discretized over an interval.
+
+    Parameters
+    ----------
+    start : float
+        The start of the interval.
+    stop : float
+        The end of the interval.
+    sites : int
+        The number of sites or qubits for the MPS.
+
+    Returns
+    -------
+    MPS
+        An MPS representing the discretized sine function over the interval.
+    """
+    mps_1 = mps_exponential(start, stop, sites, c=1j)
+    mps_2 = mps_exponential(start, stop, sites, c=-1j)
+
+    return -0.5j * simplify(mps_1 - mps_2, strategy=strategy)
+
+
+def mps_cosine(
+    start: float, stop: float, sites: int, strategy: Strategy = DEFAULT_STRATEGY
+) -> MPS:
     """
     Returns an MPS representing a cosine function discretized over an interval.
 
@@ -95,7 +119,7 @@ def mps_cosine(start: float, stop: float, sites: int) -> MPS:
     stop : float
         The end of the interval.
     sites : int
-        The number of discretization points.
+        The number of sites or qubits for the MPS.
 
     Returns
     -------
@@ -105,11 +129,10 @@ def mps_cosine(start: float, stop: float, sites: int) -> MPS:
     mps_1 = mps_exponential(start, stop, sites, c=1j)
     mps_2 = mps_exponential(start, stop, sites, c=-1j)
 
-    return simplify(0.5 * (mps_1 + mps_2))
+    return 0.5 * simplify(mps_1 + mps_2, strategy=strategy)
 
 
-# TODO: Eliminate the `rescale` argument now that we have `Interval.map_to`
-def mps_interval(interval: Interval, rescale: bool = False):
+def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
     """
     Returns an MPS corresponding to a specific type of interval (open, closed, or Chebyshev zeros).
 
@@ -117,16 +140,14 @@ def mps_interval(interval: Interval, rescale: bool = False):
     ----------
     interval : Interval
         The interval object containing start and stop points and the interval type.
-    rescale : bool, optional
-        Flag to rescale the interval to [-1, 1].
 
     Returns
     -------
     MPS
         An MPS representing the interval according to its type.
     """
-    start = interval.start if not rescale else -1
-    stop = interval.stop if not rescale else 1
+    start = interval.start
+    stop = interval.stop
     sites = int(np.log2(interval.size))
     if isinstance(interval, RegularHalfOpenInterval):
         return mps_equispaced(start, stop, sites)
@@ -136,7 +157,7 @@ def mps_interval(interval: Interval, rescale: bool = False):
     elif isinstance(interval, ChebyshevZerosInterval):
         start_mapped = np.pi / (2 ** (sites + 1))
         stop_mapped = np.pi + start_mapped
-        return -1.0 * mps_cosine(start_mapped, stop_mapped, sites)
+        return -1.0 * mps_cosine(start_mapped, stop_mapped, sites, strategy=strategy)
     else:
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
@@ -160,7 +181,7 @@ def mps_tensor_product(mps_list: List[MPS]) -> MPS:
     return MPS(flattened_sites)
 
 
-def mps_tensor_sum(mps_list: List[MPS], strategy: Strategy = Strategy()) -> MPS:
+def mps_tensor_sum(mps_list: List[MPS], strategy: Strategy = DEFAULT_STRATEGY) -> MPS:
     """
     Returns the tensor sum of a list of MPS.
 
