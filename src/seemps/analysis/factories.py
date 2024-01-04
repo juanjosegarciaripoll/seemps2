@@ -103,7 +103,7 @@ def mps_sine(
     mps_1 = mps_exponential(start, stop, sites, c=1j)
     mps_2 = mps_exponential(start, stop, sites, c=-1j)
 
-    return -0.5j * simplify(mps_1 - mps_2, strategy=strategy)
+    return simplify(-0.5j * (mps_1 - mps_2), strategy=strategy)
 
 
 def mps_cosine(
@@ -129,7 +129,7 @@ def mps_cosine(
     mps_1 = mps_exponential(start, stop, sites, c=1j)
     mps_2 = mps_exponential(start, stop, sites, c=-1j)
 
-    return 0.5 * simplify(mps_1 + mps_2, strategy=strategy)
+    return simplify(0.5 * (mps_1 + mps_2), strategy=strategy)
 
 
 def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
