@@ -94,6 +94,8 @@ def mps_sine(
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        The MPS simplification strategy to apply.
 
     Returns
     -------
@@ -120,6 +122,8 @@ def mps_cosine(
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        The MPS simplification strategy to apply.
 
     Returns
     -------
@@ -140,6 +144,8 @@ def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
     ----------
     interval : Interval
         The interval object containing start and stop points and the interval type.
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        The MPS simplification strategy to apply.
 
     Returns
     -------
@@ -189,7 +195,7 @@ def mps_tensor_sum(mps_list: List[MPS], strategy: Strategy = DEFAULT_STRATEGY) -
     ----------
     mps_list : List[MPS]
         The list of MPS objects to sum.
-    strategy : Strategy, optional
+    strategy : Strategy, default = DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
