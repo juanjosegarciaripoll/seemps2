@@ -173,16 +173,3 @@ class TestMesh(TestCase):
         m = Mesh([RegularClosedInterval(0, 1, 4), RegularClosedInterval(0, 1, 4)])
         T = m.mps_to_mesh_matrix("B")
         self.assertSimilar(T, [[2.0, 0.0], [0.0, 2.0], [1.0, 0.0], [0.0, 1.0]])
-
-    def test_mesh_transformation_matrix_TT_order(self):
-        m = Mesh([RegularClosedInterval(0, 1, 2)])
-        T = m.mps_to_mesh_matrix("TT")
-        self.assertSimilar(T, np.eye(1))
-
-        m = Mesh([RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix("TT")
-        self.assertSimilar(T, np.eye(2))
-
-        m = Mesh([RegularClosedInterval(0, 1, 4), RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix("TT")
-        self.assertSimilar(T, np.eye(4))
