@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 import numpy as np
 from scipy.fft import dct  # type: ignore
@@ -7,9 +7,8 @@ from typing import Callable, Optional
 
 from .mesh import ChebyshevZerosInterval, Interval
 from .factories import mps_interval
-from .sampling import infinity_norm
 from ..operators import MPO
-from ..state import MPS, Strategy, DEFAULT_STRATEGY, Truncation, Simplification
+from ..state import MPS, Strategy, Truncation, Simplification
 from ..truncate import simplify
 
 
@@ -24,10 +23,11 @@ def chebyshev_coefficients(
     Returns the Chebyshev coefficients for a given function on a specified
     interval using the Discrete Cosine Transform (DCT II).
 
-    The accuracy of the Chebyshev approximation is correlated to the magnitude
-    of the last few coefficients in the series (depending on their periodicity),
-    with smaller absolute values typically indicating a better approximation of
-    the function.
+    The error of the Chebyshev approximation is related to the magnitude of the
+    last (or second-to-last) coefficient of the series. As a rule of thumb, the
+    error is given by the sum of all the neglected coefficients, which can be
+    close to the magnitude of the last coefficient if the series decays sufficiently
+    fast (for example, exponentially fast for analytical functions).
 
     Parameters
     ----------
@@ -134,7 +134,7 @@ def cheb2mps(
         L = len(x_mps)
         I = MPS([np.ones((1, 2, 1))] * L)
         if np.abs(b) > np.finfo(np.float64).eps:
-            x_mpo = (x_mps + b * I).join()
+            x_mps = (x_mps + b * I).join()
     else:
         raise Exception("In cheb2mps, either domain or an MPS must be provided.")
 
