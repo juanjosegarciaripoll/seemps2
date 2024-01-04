@@ -7,13 +7,10 @@ from seemps.analysis import (
     chebyshev_approximation,
     cheb2mps,
     mps_tensor_sum,
-    mps_tensor_product,
     mps_interval,
 )
 from seemps.analysis.chebyshev import DEFAULT_CHEBYSHEV_STRATEGY
-from seemps.state import Strategy
-from seemps.operators import MPO
-from numpy.polynomial import Polynomial, Chebyshev
+from numpy.polynomial import Chebyshev
 
 from .tools import TestCase
 
@@ -101,105 +98,49 @@ class TestChebyshevExpansion(TestCase):
 
 class TestChebyshevMPS(TestCase):
     def test_gaussian_1d(self):
-        start = 0
-        stop = 2
-        sites = 5
-        order = 20
         f = lambda x: np.exp(-(x**2))
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        mps_cheb = chebyshev_approximation(f, order, interval)
+        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        mps_cheb = chebyshev_approximation(f, 20, interval)
         self.assertSimilar(f(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_derivative_1d(self):
-        start = -1
-        stop = 2
-        sites = 5
-        order = 22
         f = lambda x: np.exp(-(x**2))
         f_diff = lambda x: -2 * x * np.exp(-(x**2))
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        mps_cheb = chebyshev_approximation(f, order, interval, differentiation_order=1)
+        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        mps_cheb = chebyshev_approximation(f, 22, interval, differentiation_order=1)
         self.assertSimilar(f_diff(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d(self):
-        start = -1
-        stop = 2
-        sites = 5
-        order = 20
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(start))
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        mps_cheb = chebyshev_approximation(f_intg, order, interval)
+        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        mps_cheb = chebyshev_approximation(f_intg, 20, interval)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d_b(self):
-        start = -1
-        stop = 2
-        sites = 5
-        order = 20
         f = lambda x: np.exp(-(x**2))
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(start))
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        mps_cheb = chebyshev_approximation(f, order, interval, differentiation_order=-1)
+        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        mps_cheb = chebyshev_approximation(f, 20, interval, differentiation_order=-1)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
-    # TODO: This does not have a place here. Move tests to separate file
-    def test_tensor_product(self):
-        start = -1
-        stop = 2
-        sites = 5
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        vector = interval.to_vector()
-        mps_intv = mps_interval(interval)
-        mps_domain = mps_tensor_product([mps_intv, mps_intv])
-        Z_mps = mps_domain.to_vector().reshape((2**sites, 2**sites))
-        X, Y = np.meshgrid(vector, vector)
-        self.assertSimilar(Z_mps, X * Y)
-
-    # TODO: This does not have a place here. Move tests to separate file
-    def test_tensor_sum(self):
-        start = -2
-        stop = 2
-        sites = 5
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        vector = interval.to_vector()
-        mps_intv = mps_interval(interval)
-        mps_domain = mps_tensor_sum([mps_intv, mps_intv])
-        Z_mps = mps_domain.to_vector().reshape((2**sites, 2**sites))
-        X, Y = np.meshgrid(vector, vector)
-        self.assertSimilar(Z_mps, X + Y)
-
     def test_gaussian_2d(self):
-        start = -0.5
-        stop = 0.5
-        sites = 5
-        order = 40
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
-        vector = interval.to_vector()
-        func = lambda x: np.exp(-(x**2))
+        f = lambda z: np.exp(-(z**2))
+        c = chebyshev_coefficients(f, 30, -1, 5)
+        sites = 6
+        interval_x = RegularHalfOpenInterval(-0.5, 2, 2**sites)
+        interval_y = RegularHalfOpenInterval(-0.5, 3, 2**sites)
+        mps_x_plus_y = mps_tensor_sum(
+            [mps_interval(interval_y), mps_interval(interval_x)]
+        )
         strategy = DEFAULT_CHEBYSHEV_STRATEGY.replace(
             tolerance=1e-15, simplification_tolerance=1e-15
         )
-        mps_x_plus_y = mps_tensor_sum([mps_interval(interval)] * 2)
-        mps_cheb = cheb2mps(
-            # Note that we give `chebyshev_coefficients` an interval
-            # that covers the smallest and largest values of `X + Y`
-            chebyshev_coefficients(func, order, 2 * start, 2 * stop),
-            x=mps_x_plus_y,
-            strategy=strategy,
-        )
-        Z_mps = mps_cheb.to_vector().reshape((2**sites, 2**sites))
-        X, Y = np.meshgrid(vector, vector)
-        Z_vector = func(X + Y)
-        self.assertSimilar(Z_mps, Z_vector)
+        mps_cheb = cheb2mps(c, x=mps_x_plus_y, strategy=strategy)
+        X, Y = np.meshgrid(interval_x.to_vector(), interval_y.to_vector())
+        Z_vector = f(X + Y)
+        Z_mps = mps_cheb.to_vector().reshape([2**sites, 2**sites])
+        self.assertSimilar(Z_vector, Z_mps)
 
 
 class TestChebyshevMPO(TestCase):
     pass
-    # def test_gaussian_on_diagonal_mpo(self):
-    #     start = -1
-    #     stop = 2
-    #     sites = 5
-    #     order = 10
-    #     f = lambda x: np.exp(-(x**2))
-    #     mpo_domain = position_mpo(start, stop, sites)
-    #     mpo_cheb = chebyshev_approximation(f, order, mpo_domain)
