@@ -267,7 +267,7 @@ def sample_initial_indices(state: MPS) -> list[np.ndarray]:
 
 
 def sample_tensor_fiber(
-    func: Callable,
+    func: Callable[[np.ndarray], np.ndarray],
     mesh: Mesh,
     T: np.ndarray,
     i_le: np.ndarray,
@@ -283,12 +283,14 @@ def sample_tensor_fiber(
     Parameters
     ----------
     func : Callable
-        The vector function to be evaluated.
+        The vector function to be evaluated. It takes as input an N+1
+        dimensional array, `X[...,d]`, where the index 'd' runs over the
+        `d` dimensions of the mesh, and returns an N-dimensional array
+        with the function evaluated on those coordinates.
     mesh : Mesh
         The mesh of points where the function is defined.
-    mps_order : str
-        The order of the MPS sites, determining with which
-        transformation matrix the tensor fiber is sampled.
+    T : np.ndarray
+        Transformation matrix that maps indices to coordinates in the mesh.
     i_le : np.ndarray
         The multi-indices coming from all sites smaller or equal to k
         ($J_{\le k-1}$) in the MPS.
@@ -368,7 +370,7 @@ class CrossStrategy:
 
 
 def cross_interpolation(
-    func: Callable,
+    func: Callable[[np.ndarray], np.ndarray],
     mesh: Mesh,
     cross_strategy: CrossStrategy = CrossStrategy(),
     strategy: Strategy = SIMPLIFICATION_STRATEGY.replace(normalize=False),
@@ -382,8 +384,11 @@ def cross_interpolation(
 
     Parameters
     ----------
-    func : Callable
-        The vectorized function to be approximated as a MPS.
+    func : Callable[[numpy.ndarray], numpy.ndarray]
+        The vectorized function to be approximated as a MPS. It takes as input
+        an N+1 dimensional array, `X[...,d]`, where the index 'd' runs over the
+        `d` dimensions of the mesh, and returns an N-dimensional array with the
+        function evaluated on those coordinates.
     mesh : Mesh
         The mesh of points where the function is defined.
     cross_strategy : CrossStrategy, default=CrossStrategy()
