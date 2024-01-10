@@ -112,7 +112,11 @@ def gradient_descent(
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
         if callback is not None:
+<<<<<<< HEAD
             callback(state)
+=======
+            callback(state, E)
+>>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         if DEBUG:
             log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)

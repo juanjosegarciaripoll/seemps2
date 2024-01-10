@@ -75,7 +75,11 @@ def euler(
         H_state = H.apply(state)
         E = H.expectation(state).real
         if callback is not None:
+<<<<<<< HEAD
             callback(state)
+=======
+            callback(state, E)
+>>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
@@ -134,7 +138,11 @@ def improved_euler(
         H_state = H.apply(state)
         E = H.expectation(state).real
         if callback is not None:
+<<<<<<< HEAD
             callback(state)
+=======
+            callback(state, E)
+>>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
@@ -196,7 +204,11 @@ def runge_kutta(
         H_state = H.apply(state)
         E = H.expectation(state).real
         if callback is not None:
+<<<<<<< HEAD
             callback(state)
+=======
+            callback(state, E)
+>>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
@@ -270,7 +282,11 @@ def runge_kutta_fehlberg(
         H_state = H.apply(state)
         E = H.expectation(state).real
         if callback is not None:
+<<<<<<< HEAD
             callback(state)
+=======
+            callback(state, E)
+>>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         k1 = -1 * H_state
         state2 = simplify(state + 0.25 * Δβ * k1, strategy=strategy)
         k2 = -1 * H.apply(state2)

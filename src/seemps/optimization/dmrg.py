@@ -172,7 +172,11 @@ def dmrg(
                 log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
 
         if callback is not None:
+<<<<<<< HEAD
             callback(QF.state)
+=======
+            callback(QF.state, newE)
+>>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         log(
             f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
         )
