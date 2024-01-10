@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import numpy as np
 import scipy.linalg  # type: ignore
