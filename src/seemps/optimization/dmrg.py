@@ -1,20 +1,22 @@
+from typing import Callable
+
 import numpy as np
-from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY, random_mps
+import scipy.sparse.linalg  # type: ignore
+from opt_einsum import contract  # type: ignore
+
+from ..hamiltonians import NNHamiltonian
+from ..mpo import MPO
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, random_mps
+from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
     MPOEnvironment,
     begin_mpo_environment,
     update_left_mpo_environment,
     update_right_mpo_environment,
 )
-from ..state._contractions import _contract_last_and_first
-from ..mpo import MPO
-from ..hamiltonians import NNHamiltonian
-from typing import Callable
-from ..typing import Optional, Vector, Tensor4, Union
-from .descent import OptimizeResults
 from ..tools import log
-import scipy.sparse.linalg  # type: ignore
-from opt_einsum import contract  # type: ignore
+from ..typing import Optional, Tensor4, Union, Vector
+from .descent import OptimizeResults
 
 
 class QuadraticForm:
@@ -168,21 +170,24 @@ def dmrg(
                 newE, AB = QF.diagonalize(i)
                 QF.update_2site_left(AB, i, strategy)
                 log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
+
+        if callback is not None:
+            callback(QF.state)
         log(
             f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
         )
         energies.append(newE)
         if newE < best_energy:
             best_energy, best_vector = newE, QF.state
-        if newE - oldE >= abs(tol):  # This criteria makes it stop
+        if newE - oldE >= abs(tol) or newE - oldE >= -abs(
+            tol
+        ):  # This criteria makes it stop
             msg = "Energy change below tolerance"
             log(msg)
             converged = True
             break
         direction = -direction
         oldE = newE
-        if callback is not None:
-            callback(QF.state)
     if not converged:
         guess = CanonicalMPS(QF.state, center=0, normalize=True)
         newE = H.expectation(guess).real

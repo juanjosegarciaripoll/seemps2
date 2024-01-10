@@ -1,4 +1,5 @@
 import numpy as np
+
 from seemps import MPO, product_state
 from seemps.analysis.evolution import *
 from seemps.hamiltonians import HeisenbergHamiltonian
@@ -10,6 +11,8 @@ def callback():
     norms = []
 
     def callback_func(state: MPS):
+        if state is None:
+            norms.pop()
         norms.append(np.sqrt(state.norm_squared()))
         return None
 

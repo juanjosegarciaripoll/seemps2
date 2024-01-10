@@ -1,12 +1,13 @@
-import numpy as np
-from numpy.typing import NDArray
-from typing import Optional, Union
-from ..expectation import scprod
-from ..state import MPS, CanonicalMPS, MPSSum, random_mps
-from ..mpo import MPO
-from ..truncate.simplify import simplify
-import scipy.linalg  # type: ignore
+from typing import Callable, Optional, Union
 
+import numpy as np
+import scipy.linalg  # type: ignore
+from numpy.typing import NDArray
+
+from ..expectation import scprod
+from ..mpo import MPO
+from ..state import MPS, CanonicalMPS, MPSSum, random_mps
+from ..truncate.simplify import simplify
 from .descent import DESCENT_STRATEGY, OptimizeResults, Strategy
 
 
@@ -107,6 +108,7 @@ def arnoldi_eigh(
     tol: float = 1e-13,
     strategy: Strategy = DESCENT_STRATEGY,
     miniter: int = 1,
+    callback: Optional[Callable] = None,
 ) -> OptimizeResults:
     if v0 is None:
         v0 = random_mps(operator.dimensions(), D=2)
@@ -141,12 +143,16 @@ def arnoldi_eigh(
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
-            if eigenvalue_change >= abs(tol) and i > miniter:
+            if (
+                eigenvalue_change >= abs(tol) or eigenvalue_change >= -abs(tol)
+            ) and i > miniter:
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
         v = operator @ v  # type: ignore
         energy = arnoldi.H[0, 0].real
+        if callback is not None:
+            callback(v)
         energies.append(energy)
         if energy < best_energy:
             best_energy, best_vector = energy, arnoldi.V[0]
