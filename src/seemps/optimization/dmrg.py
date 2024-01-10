@@ -170,6 +170,9 @@ def dmrg(
                 newE, AB = QF.diagonalize(i)
                 QF.update_2site_left(AB, i, strategy)
                 log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
+
+        if callback is not None:
+            callback(QF.state)
         log(
             f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
         )
@@ -185,8 +188,6 @@ def dmrg(
             break
         direction = -direction
         oldE = newE
-        if callback is not None:
-            callback(QF.state)
     if not converged:
         guess = CanonicalMPS(QF.state, center=0, normalize=True)
         newE = H.expectation(guess).real
