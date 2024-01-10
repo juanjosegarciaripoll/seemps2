@@ -75,11 +75,7 @@ def euler(
         H_state = H.apply(state)
         E = H.expectation(state).real
         if callback is not None:
-<<<<<<< HEAD
             callback(state)
-=======
-            callback(state, E)
->>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state

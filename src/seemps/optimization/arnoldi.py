@@ -152,11 +152,7 @@ def arnoldi_eigh(
         v = operator @ v  # type: ignore
         energy = arnoldi.H[0, 0].real
         if callback is not None:
-<<<<<<< HEAD
             callback(v)
-=======
-            callback(v, energy)
->>>>>>> efa1ec87dedd2493560275876751c3699594fafd
         energies.append(energy)
         if energy < best_energy:
             best_energy, best_vector = energy, arnoldi.V[0]
