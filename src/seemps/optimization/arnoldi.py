@@ -108,6 +108,7 @@ def arnoldi_eigh(
     tol: float = 1e-13,
     strategy: Strategy = DESCENT_STRATEGY,
     miniter: int = 1,
+    callback: Optional[Callable] = None,
 ) -> OptimizeResults:
     if v0 is None:
         v0 = random_mps(operator.dimensions(), D=2)
@@ -150,6 +151,8 @@ def arnoldi_eigh(
                 break
         v = operator @ v  # type: ignore
         energy = arnoldi.H[0, 0].real
+        if callback is not None:
+            callback(v, energy)
         energies.append(energy)
         if energy < best_energy:
             best_energy, best_vector = energy, arnoldi.V[0]
