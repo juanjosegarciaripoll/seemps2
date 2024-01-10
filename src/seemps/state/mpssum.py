@@ -36,16 +36,16 @@ class MPSSum:
 
     def __init__(
         self,
-        weights: list[Weight],
-        states: list[MPS],
+        weights: Sequence[Weight],
+        states: Sequence[MPS],
     ):
         # TODO: This is not consistent with MPS, MPO and MPOSum
         # which copy their input lists. We should decide whether we
         # want to copy or not.
         assert len(states) == len(weights)
         assert len(states) > 0
-        self.weights = weights
-        self.states = states
+        self.weights = list(weights)
+        self.states = list(states)
         self.size = states[0].size
 
     def copy(self) -> MPSSum:

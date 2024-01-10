@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import Optional
+from typing import Optional, Union
 from ..expectation import scprod
 from ..state import MPS, CanonicalMPS, MPSSum, random_mps
 from ..mpo import MPO
@@ -57,16 +57,19 @@ class MPSArnoldiRepresentation:
         self.V.append(v)
         return v, True
 
+    def restart_with_vector(self, v: MPS) -> MPS:
+        self.H = self.empty.copy()
+        self.N = self.empty.copy()
+        self.V = []
+        v, _ = self.add_vector(v)
+        return v
+
     def restart_with_ground_state(self) -> tuple[MPS, float]:
         eigenvalues, eigenstates = scipy.linalg.eig(self.H, self.N)
         eigenvalues = eigenvalues.real
         ndx = np.argmin(eigenvalues)
         v = simplify(MPSSum(eigenstates[:, ndx], self.V), strategy=self.strategy)
-        self.H = self.empty.copy()
-        self.N = self.empty.copy()
-        self.V = []
-        v, _ = self.add_vector(v)
-        return v, eigenvalues[ndx].real
+        return self.restart_with_vector(v), eigenvalues[ndx].real
 
     def variance_estimate(self) -> float:
         # Our basis is built as the sequence of normalized vectors
@@ -75,6 +78,25 @@ class MPSArnoldiRepresentation:
         # H[0,0] = <v|H|v>
         # H[0,1] = <v|H|Hv> / sqrt(<Hv|Hv>) = sqrt(<Hv|Hv>)
         return np.abs(self.H[0, 1]) ** 2 - np.abs(self.H[0, 0]) ** 2
+
+    def exponential(self, factor: Union[complex, float]) -> MPS:
+        w = np.zeros(len(self.V))
+        w[0] = 1.0
+        w = scipy.sparse.linalg.expm_multiply(factor * self.H, w)
+        return simplify(MPSSum(w.tolist(), self.V), strategy=self.strategy)
+
+    def build_Krylov_basis(self, v: MPS, order: int) -> bool:
+        """Build a Krylov basis up to given order. Returns False
+        if the size of the basis had to be truncated due to linear
+        dependencies between vectors."""
+        for i in range(order):
+            if i == 0:
+                v = self.restart_with_vector(v)
+            else:
+                v, succeed = self.add_vector(v)
+                if not succeed:
+                    return False
+        return True
 
 
 def arnoldi_eigh(
