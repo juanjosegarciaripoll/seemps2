@@ -1,12 +1,13 @@
-import numpy as np
-from numpy.typing import NDArray
 from typing import Optional, Union
-from ..expectation import scprod
-from ..state import MPS, CanonicalMPS, MPSSum, random_mps
-from ..mpo import MPO
-from ..truncate.simplify import simplify
-import scipy.linalg  # type: ignore
 
+import numpy as np
+import scipy.linalg  # type: ignore
+from numpy.typing import NDArray
+
+from ..expectation import scprod
+from ..mpo import MPO
+from ..state import MPS, CanonicalMPS, MPSSum, random_mps
+from ..truncate.simplify import simplify
 from .descent import DESCENT_STRATEGY, OptimizeResults, Strategy
 
 
@@ -141,7 +142,9 @@ def arnoldi_eigh(
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
-            if eigenvalue_change >= abs(tol) and i > miniter:
+            if (
+                eigenvalue_change >= abs(tol) or eigenvalue_change >= -abs(tol)
+            ) and i > miniter:
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
