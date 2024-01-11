@@ -1,9 +1,10 @@
 import numpy as np
-from .tools import *
 from seemps.tools import *
 from seemps.state import *
+from ..tools import *
 
 
+# TODO: Is this file redundant or better than test_sampling.py
 class TestSampleStates(TestCase):
     def test_product_state(self):
         a = np.array([1.0, 7.0])

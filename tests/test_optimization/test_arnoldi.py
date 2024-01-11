@@ -2,7 +2,7 @@ import numpy as np
 from seemps.optimization.arnoldi import arnoldi_eigh
 from seemps.hamiltonians import HeisenbergHamiltonian
 from seemps import MPO, product_state
-from .tools import *
+from ..tools import *
 
 
 class TestArnoldiEigH(TestCase):

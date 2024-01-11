@@ -1,5 +1,5 @@
 import numpy as np
-from .tools import *
+from ..tools import *
 from seemps.state import sample_mps, product_state
 
 

@@ -4,7 +4,7 @@ from seemps.analysis.space import Space
 from seemps.state import MPS
 from seemps.state.core import DEFAULT_STRATEGY
 
-from .tools import *
+from ..tools import *
 from .tools_interpolation import *
 
 

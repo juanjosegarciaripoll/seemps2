@@ -3,7 +3,7 @@ from seemps import MPO, random_uniform_mps, σx, MPOList
 from seemps.state import MPSSum
 from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 
-from .tools import *
+from ..tools import *
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -103,4 +103,4 @@ class TestMPO(TestCase):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         mps = random_uniform_mps(2, mpo.size, D=2)
         self.assertIsInstance(mpo**2, MPOList)
-        self.assertSimilar((mpo**2) @ mps, MPOList([mpo,mpo]) @ mps)
+        self.assertSimilar((mpo**2) @ mps, MPOList([mpo, mpo]) @ mps)

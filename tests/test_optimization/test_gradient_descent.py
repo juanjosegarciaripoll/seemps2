@@ -2,7 +2,7 @@ import numpy as np
 from seemps.optimization.descent import gradient_descent
 from seemps.hamiltonians import HeisenbergHamiltonian
 from seemps import MPO, product_state
-from .tools import *
+from ..tools import *
 
 
 class TestGradientDescent(TestCase):

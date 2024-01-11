@@ -4,7 +4,7 @@ from seemps import MPO, product_state
 from seemps.analysis.evolution import *
 from seemps.hamiltonians import HeisenbergHamiltonian
 
-from .tools import *
+from ..tools import *
 
 
 def callback():

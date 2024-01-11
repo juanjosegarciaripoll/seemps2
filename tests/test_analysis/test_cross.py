@@ -9,7 +9,7 @@ from seemps.analysis import (
 from seemps.state import MPS
 from seemps.truncate import simplify, SIMPLIFICATION_STRATEGY
 
-from .tools import TestCase
+from ..tools import TestCase
 
 
 class TestCrossInterpolation(TestCase):

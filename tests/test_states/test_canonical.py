@@ -1,4 +1,3 @@
-from .tools import *
 from seemps.state import (
     DEFAULT_STRATEGY,
     CanonicalMPS,
@@ -10,6 +9,7 @@ from seemps.state.canonical_mps import (
     _update_in_canonical_form_right,
     _canonicalize,
 )
+from ..tools import *
 
 
 class TestCanonicalForm(TestCase):
