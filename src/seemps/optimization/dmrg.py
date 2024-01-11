@@ -191,6 +191,8 @@ def dmrg(
     if not converged:
         guess = CanonicalMPS(QF.state, center=0, normalize=True)
         newE = H.expectation(guess).real
+        if callback is not None:
+            callback(QF.state)
         energies.append(newE)
         if newE < best_energy:
             best_energy, best_vector = newE, QF.state
