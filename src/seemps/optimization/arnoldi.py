@@ -17,7 +17,7 @@ def _ill_conditioned_norm_matrix(N, tol=np.finfo(float).eps * 10):
 
 
 class MPSArnoldiRepresentation:
-    empty: NDArray = np.zeros((0, 0), dtype=np.complex128)
+    empty: NDArray = np.zeros((0, 0))
     operator: MPO
     H: NDArray
     N: NDArray
@@ -40,21 +40,14 @@ class MPSArnoldiRepresentation:
             v.normalize_inplace()
         else:
             v = simplify(v, strategy=self.strategy)
-        new_H = np.pad(self.H + 0.0, ((0, 1), (0, 1)))
-        new_N = np.pad(self.N + 0.0, ((0, 1), (0, 1)))
-        n = [scprod(vi, v) for vi in self.V]
-        new_N[:-1, -1] = n
-        new_N[-1, :-1] = np.conj(n)
-        new_N[-1, -1] = 1.0
+        n = np.asarray([scprod(vi, v) for vi in self.V]).reshape(-1, 1)
+        new_N = np.block([[self.N, n], [n.T.conj(), 1.0]])
         if len(new_N) > 1 and _ill_conditioned_norm_matrix(new_N):
             return v, False
-        Op = self.operator
-        h = [Op.expectation(vi, v) for vi in self.V]
-        new_H[:-1, -1] = h
-        new_H[-1, :-1] = np.conj(h)
-        new_H[-1, -1] = Op.expectation(v).real
-        self.H = new_H
         self.N = new_N
+        Op = self.operator
+        h = np.asarray([Op.expectation(vi, v) for vi in self.V]).reshape(-1, 1)
+        self.H = np.block([[self.H, h], [h.T.conj(), Op.expectation(v).real]])
         self.V.append(v)
         return v, True
 
