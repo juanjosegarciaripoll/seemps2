@@ -1,7 +1,9 @@
 import numpy as np
-from seemps.optimization.descent import gradient_descent
-from seemps.hamiltonians import HeisenbergHamiltonian
+
 from seemps import MPO, product_state
+from seemps.hamiltonians import HeisenbergHamiltonian
+from seemps.optimization.descent import gradient_descent
+
 from ..tools import *
 
 
@@ -59,4 +61,4 @@ class TestGradientDescent(TestCase):
             H, guess, maxiter=maxiter, tol=1e-15, callback=callback_func
         )
         self.assertSimilar(norms, np.ones(len(norms)))
-        self.assertEqual(maxiter, len(norms))
+        self.assertEqual(maxiter + 1, len(norms))

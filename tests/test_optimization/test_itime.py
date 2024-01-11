@@ -49,7 +49,7 @@ class TestEuler(TestCase):
         callback_func, norms = callback()
         result = euler(H, guess, maxiter=maxiter, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
-        self.assertEqual(maxiter, len(norms))
+        self.assertEqual(maxiter + 1, len(norms))
 
 
 class TestImprovedEuler(TestCase):
@@ -82,7 +82,7 @@ class TestImprovedEuler(TestCase):
         callback_func, norms = callback()
         result = improved_euler(H, guess, maxiter=maxiter, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
-        self.assertEqual(maxiter, len(norms))
+        self.assertEqual(maxiter + 1, len(norms))
 
 
 class TestRungeKutta(TestCase):
@@ -115,7 +115,7 @@ class TestRungeKutta(TestCase):
         callback_func, norms = callback()
         result = runge_kutta(H, guess, maxiter=maxiter, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
-        self.assertEqual(maxiter, len(norms))
+        self.assertEqual(maxiter + 1, len(norms))
 
 
 class TestRungeKuttaFehlberg(TestCase):
