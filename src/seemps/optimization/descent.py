@@ -111,6 +111,8 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
+        if callback is not None:
+            callback(state)
         if DEBUG:
             log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
@@ -118,7 +120,7 @@ def gradient_descent(
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
         E_mean: float = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])  # type: ignore
-        if E_mean - last_E_mean >= abs(tol):
+        if E_mean - last_E_mean >= abs(tol) or E_mean - last_E_mean >= -abs(tol):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -134,13 +136,13 @@ def gradient_descent(
         v /= np.linalg.norm(v)
         state = simplify(v[0] * state + v[1] * H_state, strategy=normalization_strategy)
         last_E_mean = E_mean
-        if callback is not None:
-            callback(state)
         # TODO: Implement stop criteria based on gradient size Δβ
         # It must take into account the norm of the displacement, H_state
         # which was already calculated
     if not converged:
         H_state, E, variance, _ = energy_and_variance(state)
+        if callback is not None:
+            callback(state)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
         energies.append(E)

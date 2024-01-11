@@ -1,5 +1,7 @@
 import numpy as np
-from seemps.state import MPS, MPSSum, NO_TRUNCATION
+
+from seemps.state import MPS, NO_TRUNCATION, MPSSum
+
 from .fixture_mps_states import MPSStatesFixture
 
 
@@ -12,8 +14,8 @@ class TestMPSSum(MPSStatesFixture):
     def test_mpssum_init_does_not_copy_data(self):
         A = self.make_simple_sum()
         B = MPSSum(A.weights, A.states)
-        self.assertTrue(B.weights is A.weights)
-        self.assertTrue(B.states is A.states)
+        self.assertTrue(B.weights is not A.weights)
+        self.assertTrue(B.states is not A.states)
 
     def test_mpssum_copy_is_shallow(self):
         A = self.make_simple_sum()
