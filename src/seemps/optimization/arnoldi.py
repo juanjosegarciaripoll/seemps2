@@ -112,11 +112,12 @@ def arnoldi_eigh(
 ) -> OptimizeResults:
     if v0 is None:
         v0 = random_mps(operator.dimensions(), D=2)
-
     arnoldi = MPSArnoldiRepresentation(operator, strategy)
     arnoldi.add_vector(v0)
     v: MPS = operator @ v0  # type: ignore
     best_energy = arnoldi.H[0, 0].real
+    if callback is not None:
+        callback(arnoldi.V[0])
     variance = abs(scprod(v, v)) - best_energy * best_energy
     best_vector = v0
     energies: list[float] = [best_energy]
@@ -152,17 +153,10 @@ def arnoldi_eigh(
         v = operator @ v  # type: ignore
         energy = arnoldi.H[0, 0].real
         if callback is not None:
-            callback(v)
+            callback(arnoldi.V[0])
         energies.append(energy)
         if energy < best_energy:
             best_energy, best_vector = energy, arnoldi.V[0]
-
-    if converged:
-        best_energy = operator.expectation(best_vector, best_vector).real
-        energies.append(best_energy)
-        v = operator @ best_vector  # type: ignore
-        variance = abs(scprod(v, v)) - best_energy * best_energy
-        variances.append(variance)
     return OptimizeResults(
         state=best_vector,
         energy=best_energy,

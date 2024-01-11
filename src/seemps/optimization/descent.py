@@ -141,6 +141,8 @@ def gradient_descent(
         # which was already calculated
     if not converged:
         H_state, E, variance, _ = energy_and_variance(state)
+        if callback is not None:
+            callback(state)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
         energies.append(E)
