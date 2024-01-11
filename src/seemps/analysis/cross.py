@@ -318,7 +318,7 @@ def sample_tensor_fiber(
     if i_g.size > 0:
         mps_indices = np.hstack((mps_indices, np.kron(i_g, _ones(r_le * s))))
     # Evaluate the function at the fiber indices
-    fiber = func(mesh[mps_indices @ T]).reshape((r_le, s, r_g), order="F")
+    fiber = func(mesh[mps_indices @ T]).reshape((r_le, s, r_g), order="F")  # type: ignore
     return fiber
 
 
@@ -418,7 +418,7 @@ def cross_interpolation(
             # module can be used instead.
             if sweep == 0:
                 mps_indices = random_mps_indices(state, rng=rng)
-                mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)
+                mesh_samples = func(mesh[mps_indices @ T]).reshape(-1)  # type: ignore
             mps_samples = sample_mps(state, mps_indices)
             error = np.max(np.abs(mps_samples - mesh_samples))
         elif cross_strategy.error_type == "norm":
