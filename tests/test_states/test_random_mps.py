@@ -1,7 +1,7 @@
 import numpy as np
-from .tools import *
 from seemps.tools import *
 from seemps.state import *
+from ..tools import *
 
 
 class TestRandomUniformMPSStates(TestCase):

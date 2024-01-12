@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
 from seemps.analysis import (
@@ -10,9 +11,8 @@ from seemps.analysis import (
     mps_interval,
 )
 from seemps.analysis.chebyshev import DEFAULT_CHEBYSHEV_STRATEGY
-from numpy.polynomial import Chebyshev
 
-from .tools import TestCase
+from ..tools import TestCase
 
 
 class TestChebyshevExpansion(TestCase):

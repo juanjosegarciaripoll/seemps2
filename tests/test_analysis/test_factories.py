@@ -12,7 +12,7 @@ from seemps.analysis import (
     mps_tensor_product,
 )
 
-from .tools import TestCase
+from ..tools import TestCase
 
 
 class TestMPSFactories(TestCase):

@@ -1,7 +1,7 @@
 from seemps.expectation import mpo_expectation
 from seemps import MPO, σx, σy
 from seemps.qft import qft_mpo
-from .tools import *
+from ..tools import *
 
 
 class TestMPOExpectation(TestCase):
@@ -87,7 +87,7 @@ class TestMPOExpectation(TestCase):
         vbra = bra.to_vector()
         vket = ket.to_vector()
         self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
-    
+
     def test_mpo_sum_expectation(self):
         H1 = MPO([σx.reshape(1, 2, 2, 1)] * 10)
         H2 = qft_mpo(10)

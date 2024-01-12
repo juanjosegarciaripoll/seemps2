@@ -2,7 +2,7 @@ import numpy as np
 
 from seemps.state import MPS, NO_TRUNCATION, MPSSum
 
-from .fixture_mps_states import MPSStatesFixture
+from ..fixture_mps_states import MPSStatesFixture
 
 
 class TestMPSSum(MPSStatesFixture):

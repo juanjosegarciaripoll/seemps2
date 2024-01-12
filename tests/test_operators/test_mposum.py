@@ -5,7 +5,7 @@ from seemps.state.core import DEFAULT_STRATEGY, NO_TRUNCATION, Simplification, S
 from seemps.tools import σx, σy, σz
 from seemps.truncate import simplify
 
-from .tools import TestCase, contain_same_objects
+from ..tools import TestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 

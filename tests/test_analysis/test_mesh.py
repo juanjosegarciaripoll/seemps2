@@ -1,6 +1,6 @@
 import numpy as np
-from .tools import TestCase
 from seemps.analysis.mesh import *
+from ..tools import TestCase
 
 
 class TestIntervals(TestCase):

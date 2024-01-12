@@ -1,7 +1,7 @@
 from seemps.expectation import *
 from seemps.state import CanonicalMPS
 
-from .tools import *
+from ..tools import *
 
 
 def bit2state(b):

@@ -1,7 +1,7 @@
 import scipy.sparse as sp  # type: ignore
-from .tools import *
 from seemps.tools import σx, σy, σz
 from seemps.hamiltonians import ConstantNNHamiltonian, HeisenbergHamiltonian
+from ..tools import *
 
 i2 = sp.eye(2)
 

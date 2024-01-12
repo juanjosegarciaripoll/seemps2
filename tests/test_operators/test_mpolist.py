@@ -3,7 +3,7 @@ from seemps import MPO, NO_TRUNCATION, MPOList, random_uniform_mps, σx, σy, σ
 from seemps.state import MPSSum
 from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
 
-from .tools import TestCase, contain_same_objects
+from ..tools import TestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 

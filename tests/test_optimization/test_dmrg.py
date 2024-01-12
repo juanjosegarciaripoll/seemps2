@@ -1,13 +1,13 @@
 import numpy as np
+import scipy.sparse.linalg  # type: ignore
 from seemps.optimization.dmrg import QuadraticForm, dmrg
 from seemps.hamiltonians import ConstantTIHamiltonian, HeisenbergHamiltonian
 from seemps.state._contractions import _contract_last_and_first
 from seemps.state import random_uniform_mps, product_state
 from seemps.mpo import MPO
 from seemps.tools import σx
-from .tools import *
 from seemps.tools import DEBUG
-import scipy.sparse.linalg  # type: ignore
+from ..tools import *
 
 
 class TestQuadraticForm(TestCase):
