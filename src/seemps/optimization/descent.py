@@ -48,6 +48,7 @@ def gradient_descent(
     state: MPS,
     maxiter=1000,
     tol: float = 1e-13,
+    tol_up: float = 1e-13,
     k_mean=10,
     tol_variance: float = 1e-14,
     strategy: Strategy = DESCENT_STRATEGY,
@@ -120,7 +121,7 @@ def gradient_descent(
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
         E_mean: float = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])  # type: ignore
-        if E_mean - last_E_mean >= abs(tol) or E_mean - last_E_mean >= -abs(tol):
+        if (E_mean - last_E_mean > 0 and E_mean - last_E_mean >= abs(tol_up)) or (E_mean - last_E_mean <0 and  E_mean - last_E_mean>= -abs(tol)):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break

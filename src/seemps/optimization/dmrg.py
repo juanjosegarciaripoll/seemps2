@@ -102,6 +102,7 @@ def dmrg(
     guess: Optional[MPS] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
+    tol_up: float = 1e-13,
     maxiter: int = 20,
     callback: Optional[Callable] = None,
 ) -> OptimizeResults:
@@ -179,8 +180,9 @@ def dmrg(
         energies.append(newE)
         if newE < best_energy:
             best_energy, best_vector = newE, QF.state
-        if newE - oldE >= abs(tol) or newE - oldE >= -abs(
-            tol
+        if (newE - oldE >0 and newE - oldE>= abs(tol_up)) or (newE - oldE < 0 and newE - oldE>= -abs(
+            tol)
+        
         ):  # This criteria makes it stop
             msg = "Energy change below tolerance"
             log(msg)
@@ -204,3 +206,4 @@ def dmrg(
         message=msg,
         trajectory=energies,
     )
+

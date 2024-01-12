@@ -99,6 +99,7 @@ def arnoldi_eigh(
     maxiter: int = 100,
     nvectors: int = 10,
     tol: float = 1e-13,
+    tol_up: float = 1e-13,
     strategy: Strategy = DESCENT_STRATEGY,
     miniter: int = 1,
     callback: Optional[Callable] = None,
@@ -137,8 +138,8 @@ def arnoldi_eigh(
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
-            if (
-                eigenvalue_change >= abs(tol) or eigenvalue_change >= -abs(tol)
+            if (eigenvalue_change > 0 and eigenvalue_change >= abs(tol_up)
+            ) or ( eigenvalue_change < 0 and eigenvalue_change >= -abs(tol)
             ) and i > miniter:
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
