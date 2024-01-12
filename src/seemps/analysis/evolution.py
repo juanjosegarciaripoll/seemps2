@@ -339,6 +339,8 @@ def runge_kutta_fehlberg(
             )
         ).real
         if δ > tol_rk:
+            if callback is not None:
+                callback(None)
             Δβ = 0.9 * Δβ * (tol_rk / δ) ** (1 / 5)
         elif δ == 0:
             i += 1
@@ -348,8 +350,6 @@ def runge_kutta_fehlberg(
             state = state_ord5
             Δβs.append(Δβ)
         else:
-            if callback is not None:
-                callback(None)
             i += 1
             energies.append(E)
             if E < best_energy:

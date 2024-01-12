@@ -9,10 +9,10 @@ from ..tools import *
 
 def callback():
     norms = []
-
     def callback_func(state: MPS):
         if state is None:
             norms.pop()
+            return None
         norms.append(np.sqrt(state.norm_squared()))
         return None
 
