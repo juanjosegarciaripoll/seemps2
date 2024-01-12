@@ -144,7 +144,11 @@ def dmrg(
         H = H.to_mpo()
     if guess is None:
         guess = random_mps(H.dimensions(), D=2)
-
+        oldE = np.inf
+        energies = [np.inf]
+    else:
+        oldE = H.expectation(guess).real
+        energies = [oldE]
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
     if guess.center == 0:
@@ -153,10 +157,10 @@ def dmrg(
     else:
         direction = -1
         QF = QuadraticForm(H, guess, start=H.size - 2)
-    best_energy = np.Inf
+    if callback is not None:
+        callback(QF.state)
+    best_energy = oldE
     best_vector = guess
-    oldE = np.inf
-    energies = []
     converged = False
     msg = "DMRG did not converge"
     strategy = strategy.replace(normalize=True)
@@ -190,15 +194,7 @@ def dmrg(
             break
         direction = -direction
         oldE = newE
-    if not converged:
-        guess = CanonicalMPS(QF.state, center=0, normalize=True)
-        newE = H.expectation(guess).real
-        if callback is not None:
-            callback(QF.state)
-        energies.append(newE)
-        if newE < best_energy:
-            best_energy, best_vector = newE, QF.state
-        best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
+    best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
     return OptimizeResults(
         state=best_vector,
         energy=best_energy,
