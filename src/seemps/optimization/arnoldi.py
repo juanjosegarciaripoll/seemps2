@@ -138,14 +138,19 @@ def arnoldi_eigh(
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
-            if (eigenvalue_change > 0 and eigenvalue_change >= abs(tol_up)
-            ) or ( eigenvalue_change < 0 and eigenvalue_change >= -abs(tol)
-            ) and i > miniter:
+        v = operator @ v  # type: ignore
+        energy = arnoldi.H[0, 0].real
+        if len(arnoldi.V) == 1:
+            eigenvalue_change = energy - energies[-1]
+            if (
+                (eigenvalue_change > 0 and eigenvalue_change >= abs(tol_up))
+                or (eigenvalue_change < 0 and eigenvalue_change >= -abs(tol))
+                and i > miniter
+            ):
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
-        v = operator @ v  # type: ignore
-        energy = arnoldi.H[0, 0].real
+        print(i, energy)
         if callback is not None:
             callback(arnoldi.V[0])
         energies.append(energy)
