@@ -24,7 +24,6 @@ if not debug_library:
         "cdivision": True,  # No exception on zero denominator
         "initializedcheck": False,  # We take care of initializing cdef classes and memory views
         "overflowcheck": False,
-        "cpp_locals": True,
         "binding": False,
     }
     if sys.platform == "linux":
@@ -51,7 +50,6 @@ extensions = [
     Extension(
         name,
         [file],
-        language="c++",
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
         extra_compile_args=extra_compile_args,
         include_dirs=[np.get_include()],

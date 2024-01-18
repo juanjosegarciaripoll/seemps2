@@ -1,7 +1,6 @@
 import numpy as np
 cimport numpy as cnp
 from libc.math cimport sqrt
-from libcpp cimport bool
 
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
