@@ -120,8 +120,10 @@ def gradient_descent(
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
-        E_mean: float = np.mean(energies[(-max(-k_mean - 1, len(energies))) : -1])  # type: ignore
-        if (E_mean - last_E_mean > 0 and E_mean - last_E_mean >= abs(tol_up)) or (E_mean - last_E_mean <0 and  E_mean - last_E_mean>= -abs(tol)):
+        E_mean: float = np.mean(energies[(-min(k_mean, len(energies) - 1)) - 1 : -1])  # type: ignore
+        if (E_mean - last_E_mean > 0 and E_mean - last_E_mean >= abs(tol_up)) or (
+            E_mean - last_E_mean < 0 and E_mean - last_E_mean >= -abs(tol)
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
