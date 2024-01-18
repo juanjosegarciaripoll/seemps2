@@ -110,8 +110,6 @@ def arnoldi_eigh(
     arnoldi.add_vector(v0)
     v: MPS = operator @ v0  # type: ignore
     best_energy = arnoldi.H[0, 0].real
-    if callback is not None:
-        callback(arnoldi.V[0])
     variance = abs(scprod(v, v)) - best_energy * best_energy
     best_vector = v0
     energies: list[float] = [best_energy]
@@ -119,6 +117,18 @@ def arnoldi_eigh(
     last_eigenvalue = variance = np.Inf
     message = f"Exceeded maximum number of steps {maxiter}"
     converged = True
+    if callback is not None:
+        callback(
+            arnoldi.V[0],
+            OptimizeResults(
+                state=best_vector,
+                energy=best_energy,
+                converged=converged,
+                message=message,
+                trajectory=energies,
+                variances=variances,
+            ),
+        )
     for i in range(maxiter):
         v, success = arnoldi.add_vector(v)
         if not success and nvectors == 2:
@@ -150,12 +160,21 @@ def arnoldi_eigh(
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
-        print(i, energy)
-        if callback is not None:
-            callback(arnoldi.V[0])
         energies.append(energy)
         if energy < best_energy:
             best_energy, best_vector = energy, arnoldi.V[0]
+        if callback is not None:
+            callback(
+                arnoldi.V[0],
+                OptimizeResults(
+                    state=best_vector,
+                    energy=best_energy,
+                    converged=converged,
+                    message=message,
+                    trajectory=energies,
+                    variances=variances,
+                ),
+            )
     return OptimizeResults(
         state=best_vector,
         energy=best_energy,

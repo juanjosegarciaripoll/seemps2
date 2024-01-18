@@ -163,6 +163,17 @@ def dmrg(
     best_vector = guess
     converged = False
     msg = "DMRG did not converge"
+    if callback is not None:
+        callback(
+            QF.state,
+            OptimizeResults(
+                state=best_vector,
+                energy=best_energy,
+                converged=converged,
+                message=msg,
+                trajectory=energies,
+            ),
+        )
     strategy = strategy.replace(normalize=True)
     for step in range(maxiter):
         if direction > 0:
@@ -175,18 +186,25 @@ def dmrg(
                 newE, AB = QF.diagonalize(i)
                 QF.update_2site_left(AB, i, strategy)
                 log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
-
-        if callback is not None:
-            callback(QF.state)
         log(
             f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
         )
         energies.append(newE)
         if newE < best_energy:
             best_energy, best_vector = newE, QF.state
-        if (newE - oldE >0 and newE - oldE>= abs(tol_up)) or (newE - oldE < 0 and newE - oldE>= -abs(
-            tol)
-        
+        if callback is not None:
+            callback(
+                QF.state,
+                OptimizeResults(
+                    state=best_vector,
+                    energy=best_energy,
+                    converged=converged,
+                    message=msg,
+                    trajectory=energies,
+                ),
+            )
+        if (newE - oldE > 0 and newE - oldE >= abs(tol_up)) or (
+            newE - oldE < 0 and newE - oldE >= -abs(tol)
         ):  # This criteria makes it stop
             msg = "Energy change below tolerance"
             log(msg)
@@ -202,4 +220,3 @@ def dmrg(
         message=msg,
         trajectory=energies,
     )
-
