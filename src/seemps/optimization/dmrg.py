@@ -157,8 +157,6 @@ def dmrg(
     else:
         direction = -1
         QF = QuadraticForm(H, guess, start=H.size - 2)
-    if callback is not None:
-        callback(QF.state)
     best_energy = oldE
     best_vector = guess
     converged = False
