@@ -102,6 +102,7 @@ def dmrg(
     guess: Optional[MPS] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
+    tol_up: float = 1e-13,
     maxiter: int = 20,
     callback: Optional[Callable] = None,
 ) -> OptimizeResults:
@@ -143,7 +144,11 @@ def dmrg(
         H = H.to_mpo()
     if guess is None:
         guess = random_mps(H.dimensions(), D=2)
-
+        oldE = np.inf
+        energies = [np.inf]
+    else:
+        oldE = H.expectation(guess).real
+        energies = [oldE]
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
     if guess.center == 0:
@@ -152,12 +157,21 @@ def dmrg(
     else:
         direction = -1
         QF = QuadraticForm(H, guess, start=H.size - 2)
-    best_energy = np.Inf
+    best_energy = oldE
     best_vector = guess
-    oldE = np.inf
-    energies = []
     converged = False
     msg = "DMRG did not converge"
+    if callback is not None:
+        callback(
+            QF.state,
+            OptimizeResults(
+                state=best_vector,
+                energy=best_energy,
+                converged=converged,
+                message=msg,
+                trajectory=energies,
+            ),
+        )
     strategy = strategy.replace(normalize=True)
     for step in range(maxiter):
         if direction > 0:
@@ -170,17 +184,25 @@ def dmrg(
                 newE, AB = QF.diagonalize(i)
                 QF.update_2site_left(AB, i, strategy)
                 log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
-
-        if callback is not None:
-            callback(QF.state)
         log(
             f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
         )
         energies.append(newE)
         if newE < best_energy:
             best_energy, best_vector = newE, QF.state
-        if newE - oldE >= abs(tol) or newE - oldE >= -abs(
-            tol
+        if callback is not None:
+            callback(
+                QF.state,
+                OptimizeResults(
+                    state=best_vector,
+                    energy=best_energy,
+                    converged=converged,
+                    message=msg,
+                    trajectory=energies,
+                ),
+            )
+        if (newE - oldE > 0 and newE - oldE >= abs(tol_up)) or (
+            newE - oldE < 0 and newE - oldE >= -abs(tol)
         ):  # This criteria makes it stop
             msg = "Energy change below tolerance"
             log(msg)
@@ -188,15 +210,7 @@ def dmrg(
             break
         direction = -direction
         oldE = newE
-    if not converged:
-        guess = CanonicalMPS(QF.state, center=0, normalize=True)
-        newE = H.expectation(guess).real
-        if callback is not None:
-            callback(QF.state)
-        energies.append(newE)
-        if newE < best_energy:
-            best_energy, best_vector = newE, QF.state
-        best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
+    best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
     return OptimizeResults(
         state=best_vector,
         energy=best_energy,

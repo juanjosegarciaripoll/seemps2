@@ -99,6 +99,7 @@ def arnoldi_eigh(
     maxiter: int = 100,
     nvectors: int = 10,
     tol: float = 1e-13,
+    tol_up: float = 1e-13,
     strategy: Strategy = DESCENT_STRATEGY,
     miniter: int = 1,
     callback: Optional[Callable] = None,
@@ -109,8 +110,6 @@ def arnoldi_eigh(
     arnoldi.add_vector(v0)
     v: MPS = operator @ v0  # type: ignore
     best_energy = arnoldi.H[0, 0].real
-    if callback is not None:
-        callback(arnoldi.V[0])
     variance = abs(scprod(v, v)) - best_energy * best_energy
     best_vector = v0
     energies: list[float] = [best_energy]
@@ -118,6 +117,18 @@ def arnoldi_eigh(
     last_eigenvalue = variance = np.Inf
     message = f"Exceeded maximum number of steps {maxiter}"
     converged = True
+    if callback is not None:
+        callback(
+            arnoldi.V[0],
+            OptimizeResults(
+                state=best_vector,
+                energy=best_energy,
+                converged=converged,
+                message=message,
+                trajectory=energies,
+                variances=variances,
+            ),
+        )
     for i in range(maxiter):
         v, success = arnoldi.add_vector(v)
         if not success and nvectors == 2:
@@ -137,19 +148,33 @@ def arnoldi_eigh(
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
+        v = operator @ v  # type: ignore
+        energy = arnoldi.H[0, 0].real
+        if len(arnoldi.V) == 1:
+            eigenvalue_change = energy - energies[-1]
             if (
-                eigenvalue_change >= abs(tol) or eigenvalue_change >= -abs(tol)
-            ) and i > miniter:
+                (eigenvalue_change > 0 and eigenvalue_change >= abs(tol_up))
+                or (eigenvalue_change < 0 and eigenvalue_change >= -abs(tol))
+                and i > miniter
+            ):
                 message = f"Eigenvalue converged within tolerance {tol}"
                 converged = True
                 break
-        v = operator @ v  # type: ignore
-        energy = arnoldi.H[0, 0].real
-        if callback is not None:
-            callback(arnoldi.V[0])
         energies.append(energy)
         if energy < best_energy:
             best_energy, best_vector = energy, arnoldi.V[0]
+        if callback is not None:
+            callback(
+                arnoldi.V[0],
+                OptimizeResults(
+                    state=best_vector,
+                    energy=best_energy,
+                    converged=converged,
+                    message=message,
+                    trajectory=energies,
+                    variances=variances,
+                ),
+            )
     return OptimizeResults(
         state=best_vector,
         energy=best_energy,

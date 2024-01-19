@@ -48,6 +48,7 @@ def gradient_descent(
     state: MPS,
     maxiter=1000,
     tol: float = 1e-13,
+    tol_up: float = 1e-13,
     k_mean=10,
     tol_variance: float = 1e-14,
     strategy: Strategy = DESCENT_STRATEGY,
@@ -111,16 +112,28 @@ def gradient_descent(
     state = CanonicalMPS(state, normalize=True)
     for step in range(maxiter):
         H_state, E, variance, avg_H2 = energy_and_variance(state)
-        if callback is not None:
-            callback(state)
         if DEBUG:
             log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         energies.append(E)
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
-        E_mean: float = np.mean(energies[(-min(k_mean, len(energies)-1))-1 : -1])  # type: ignore
-        if E_mean - last_E_mean >= abs(tol) or E_mean - last_E_mean >= -abs(tol):
+        if callback is not None:
+            callback(
+            state,
+            OptimizeResults(
+                state=best_vector,
+                energy=best_energy,
+                converged=converged,
+                message=message,
+                trajectory=energies,
+                variances=variances,
+            ),
+        )
+        E_mean: float = np.mean(energies[(-min(k_mean, len(energies)-1))-1 : -1])  # type: ignore        
+        if (E_mean - last_E_mean > 0 and E_mean - last_E_mean >= abs(tol_up)) or (
+            E_mean - last_E_mean < 0 and E_mean - last_E_mean >= -abs(tol)
+        ):
             message = f"Energy converged within tolerance {tol}"
             converged = True
             break
@@ -141,12 +154,22 @@ def gradient_descent(
         # which was already calculated
     if not converged:
         H_state, E, variance, _ = energy_and_variance(state)
-        if callback is not None:
-            callback(state)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
         energies.append(E)
         variances.append(variance)
+        if callback is not None:
+            callback(
+                state,
+                OptimizeResults(
+                    state=best_vector,
+                    energy=best_energy,
+                    converged=converged,
+                    message=message,
+                    trajectory=energies,
+                    variances=variances,
+                ),
+            )
     return OptimizeResults(
         state=best_vector,
         energy=best_energy,
