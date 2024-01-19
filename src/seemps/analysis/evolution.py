@@ -74,35 +74,19 @@ def euler(
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if callback is not None:
+            callback(state)
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if callback is not None:
-            callback(
-                state,
-                EvolutionResults(
-                    state=best_vector,
-                    energy=best_energy,
-                    trajectory=energies,
-                    Δβ=Δβ,
-                ),
-            )
         state = simplify(state - Δβ * H_state, strategy=normalization_strategy)
     H_state = H.apply(state)
     E = H.expectation(state).real
+    if callback is not None:
+        callback(state)
     energies.append(E)
     if E < best_energy:
         best_energy, best_vector = E, state
-    if callback is not None:
-        callback(
-            state,
-            EvolutionResults(
-                state=best_vector,
-                energy=best_energy,
-                trajectory=energies,
-                Δβ=Δβ,
-            ),
-        )
     β = Δβ * np.arange(maxiter + 1)
     return EvolutionResults(
         state=best_vector,
@@ -151,37 +135,21 @@ def improved_euler(
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if callback is not None:
+            callback(state)
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if callback is not None:
-            callback(
-                state,
-                EvolutionResults(
-                    state=best_vector,
-                    energy=best_energy,
-                    trajectory=energies,
-                    Δβ=Δβ,
-                ),
-            )
         k = simplify(2 * state - Δβ * H_state, strategy=strategy)
         Hk = H.apply(k)
         state = simplify(state - 0.5 * Δβ * Hk, strategy=normalization_strategy)
     H_state = H.apply(state)
     E = H.expectation(state).real
+    if callback is not None:
+        callback(state)
     energies.append(E)
     if E < best_energy:
         best_energy, best_vector = E, state
-    if callback is not None:
-        callback(
-            state,
-            EvolutionResults(
-                state=best_vector,
-                energy=best_energy,
-                trajectory=energies,
-                Δβ=Δβ,
-            ),
-        )
     β = Δβ * np.arange(maxiter + 1)
     return EvolutionResults(
         state=best_vector,
@@ -231,19 +199,11 @@ def runge_kutta(
     for i in range(maxiter):
         H_state = H.apply(state)
         E = H.expectation(state).real
+        if callback is not None:
+            callback(state)
         energies.append(E)
         if E < best_energy:
             best_energy, best_vector = E, state
-        if callback is not None:
-            callback(
-                state,
-                EvolutionResults(
-                    state=best_vector,
-                    energy=best_energy,
-                    trajectory=energies,
-                    Δβ=Δβ,
-                ),
-            )
         state2 = simplify(state - 0.5 * Δβ * H_state, strategy=strategy)
         H_state2 = H.apply(state2)
         state3 = simplify(state - 0.5 * Δβ * H_state2, strategy=strategy)
@@ -256,19 +216,11 @@ def runge_kutta(
         )
     H_state = H.apply(state)
     E = H.expectation(state).real
+    if callback is not None:
+        callback(state)
     energies.append(E)
     if E < best_energy:
         best_energy, best_vector = E, state
-    if callback is not None:
-        callback(
-            state,
-            EvolutionResults(
-                state=best_vector,
-                energy=best_energy,
-                trajectory=energies,
-                Δβ=Δβ,
-            ),
-        )
     β = Δβ * np.arange(maxiter + 1)
     return EvolutionResults(
         state=best_vector,
@@ -323,19 +275,8 @@ def runge_kutta_fehlberg(
     while i < maxiter:
         H_state = H.apply(state)
         E = H.expectation(state).real
-        energies.append(E)
-        if E < best_energy:
-            best_energy, best_vector = E, state
         if callback is not None:
-            callback(
-                state,
-                EvolutionResults(
-                    state=best_vector,
-                    energy=best_energy,
-                    trajectory=energies,
-                    Δβ=Δβ,
-                ),
-            )
+            callback(state)
         k1 = -1 * H_state
         state2 = simplify(state + 0.25 * Δβ * k1, strategy=strategy)
         k2 = -1 * H.apply(state2)
@@ -398,34 +339,31 @@ def runge_kutta_fehlberg(
             )
         ).real
         if δ > tol_rk:
-            energies.pop()
             if callback is not None:
                 callback(None)
             Δβ = 0.9 * Δβ * (tol_rk / δ) ** (1 / 5)
         elif δ == 0:
             i += 1
+            energies.append(E)
+            if E < best_energy:
+                best_energy, best_vector = E, state
             state = state_ord5
             Δβs.append(Δβ)
         else:
             i += 1
+            energies.append(E)
+            if E < best_energy:
+                best_energy, best_vector = E, state
             state = state_ord5
             Δβs.append(Δβ)
             Δβ = 0.9 * Δβ * (tol_rk / δ) ** (1 / 5)
     H_state = H.apply(state)
     E = H.expectation(state).real
+    if callback is not None:
+        callback(state)
     energies.append(E)
     if E < best_energy:
         best_energy, best_vector = E, state
-    if callback is not None:
-        callback(
-            state,
-            EvolutionResults(
-                state=best_vector,
-                energy=best_energy,
-                trajectory=energies,
-                Δβ=Δβs,
-            ),
-        )
     β = [0]
     β_i = 0
     for Δβ_i in Δβs:
