@@ -24,6 +24,24 @@ class TestMPO(TestCase):
         A[::] = np.ones((1, 2, 2, 1))
         self.assertTrue(contain_different_objects(A, B))
 
+    def test_flip_order(self):
+        A = MPO(
+            [
+                self.rng.normal(size=(1, 2, 3, 4)),
+                self.rng.normal(size=(4, 2, 3, 5)),
+                self.rng.normal(size=(5, 2, 3, 1)),
+            ]
+        )
+        B = A.flip()
+        self.assertEqual(len(B), len(A))
+        self.assertEqual(B[0].shape, (1, 2, 3, 5))
+        self.assertEqual(B[1].shape, (5, 2, 3, 4))
+        self.assertEqual(B[2].shape, (4, 2, 3, 1))
+        self.assertSimilar(B[0], A[2].transpose(3, 1, 2, 0))
+        self.assertSimilar(B[1], A[1].transpose(3, 1, 2, 0))
+        self.assertSimilar(B[2], A[0].transpose(3, 1, 2, 0))
+        self.assertTrue(B.strategy is A.strategy)
+
     def test_mpo_multiplies_by_number(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         self.assertSimilar(mpo.tomatrix() * (-3.0), (mpo * (-3)).tomatrix())

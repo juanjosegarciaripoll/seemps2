@@ -94,7 +94,7 @@ class MPO(array.TensorArray):
             mpo_mult._data[0] = n * mpo_mult._data[0]
             return mpo_mult
         raise InvalidOperation("*", n, self)
-    
+
     def __pow__(self, n: int) -> MPOList:
         """Exponentiate a MPO to n."""
         if isinstance(n, int):
@@ -277,6 +277,12 @@ class MPO(array.TensorArray):
                 right, bra[i].conj(), operators[i], ket[i]
             )
         return join_mpo_environments(left, right)
+
+    def flip(self) -> MPO:
+        """Return a copy of the MPO with the physical indices reversed."""
+        return MPO(
+            [op.transpose(3, 1, 2, 0) for op in reversed(self._data)], self.strategy
+        )
 
 
 class MPOList(object):
