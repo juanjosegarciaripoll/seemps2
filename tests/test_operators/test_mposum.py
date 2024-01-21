@@ -37,6 +37,28 @@ class TestMPOSum(TestCase):
         self.assertTrue(contain_same_objects(A.weights, B.weights))
         self.assertTrue(A.strategy is B.strategy)
 
+    def test_mposum_flip_reverses_systems(self):
+        A = MPO(
+            [
+                self.rng.normal(size=(1, 2, 3, 4)),
+                self.rng.normal(size=(4, 2, 3, 5)),
+                self.rng.normal(size=(5, 2, 3, 1)),
+            ]
+        )
+        B = MPO(
+            [
+                self.rng.normal(size=(1, 2, 3, 4)),
+                self.rng.normal(size=(4, 2, 3, 5)),
+                self.rng.normal(size=(5, 2, 3, 1)),
+            ]
+        )
+        AB = MPOSum([A, B], [1.0, 3.0])
+        ABflipped = AB.flip()
+        self.assertEqual(len(ABflipped.mpos), 2)
+        self.assertEqual(ABflipped.weights, AB.weights)
+        self.assertSimilarMPO(ABflipped.mpos[0], A.flip())
+        self.assertSimilarMPO(ABflipped.mpos[1], B.flip())
+
     def test_mposum_simple(self):
         mposum = MPOSum([self.mpoA, self.mpoB])
         self.assertIdenticalLists(mposum.mpos, [self.mpoA, self.mpoB, self.mpoC])
