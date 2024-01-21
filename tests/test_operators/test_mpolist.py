@@ -41,6 +41,27 @@ class TestMPOList(TestCase):
         self.assertSimilar(UV @ state, V.apply(U.apply(state)))
         self.assertEqual(UV.size, U.size)
 
+    def test_mpolist_flip_reverses_systems(self):
+        A = MPO(
+            [
+                self.rng.normal(size=(1, 2, 3, 4)),
+                self.rng.normal(size=(4, 2, 3, 5)),
+                self.rng.normal(size=(5, 2, 3, 1)),
+            ]
+        )
+        B = MPO(
+            [
+                self.rng.normal(size=(1, 2, 3, 4)),
+                self.rng.normal(size=(4, 2, 3, 5)),
+                self.rng.normal(size=(5, 2, 3, 1)),
+            ]
+        )
+        AB = MPOList([A, B])
+        ABflipped = AB.flip()
+        self.assertEqual(len(ABflipped.mpos), 2)
+        self.assertSimilarMPO(ABflipped.mpos[0], A.flip())
+        self.assertSimilarMPO(ABflipped.mpos[1], B.flip())
+
     def test_mpo_apply_can_simplify(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)

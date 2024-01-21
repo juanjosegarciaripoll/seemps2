@@ -488,6 +488,10 @@ class MPOList(object):
             ket = bra
         return scprod(bra, self.apply(ket))  # type: ignore
 
+    def flip(self) -> MPOList:
+        """Return a copy of the MPO with the physical indices reversed."""
+        return MPOList([mpo.flip() for mpo in self.mpos], self.strategy)
+
 
 from .. import truncate  # noqa: E402
 from .mposum import MPOSum  # noqa: E402

@@ -4,6 +4,7 @@ import numpy as np
 import scipy.sparse as sp  # type: ignore
 import seemps.state
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps
+from seemps.operators import MPO
 
 
 class TestCase(unittest.TestCase):
@@ -57,6 +58,14 @@ class TestCase(unittest.TestCase):
                 return
             error = f"\nmax(|A-B|)={np.max(np.abs(A - B))}"
         raise self.failureException(f"Objects are not similar:\nA={A}\nB={B}" + error)
+
+    def assertSimilarMPO(self, A, B) -> None:
+        if len(A) != len(B):
+            raise self.failureException("MPOs of unequal size")
+        if any(np.any(opA != opB) for opA, opB in zip(A, B)):
+            raise self.failureException("MPOs with unequal tensors")
+        if A.strategy is not B.strategy:
+            raise self.failureException("MPOs with different strategies")
 
     def assertAlmostIdentity(self, A, **kwdargs) -> None:
         if not almostIdentity(A, **kwdargs):
