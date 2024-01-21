@@ -25,6 +25,7 @@ class MPOSum(object):
 
     __array_priority__ = 10000
 
+    # TODO: The order of arguments is contrary to the one in MPSSum
     def __init__(
         self,
         mpos: Sequence[Union[MPO, MPOList]],
@@ -229,3 +230,7 @@ class MPOSum(object):
             is the matrix-product operator.
         """
         return sum([m.expectation(bra, ket) for m in self.mpos])
+
+    def flip(self) -> MPOSum:
+        """Return a copy of the MPOSum with the physical indices reversed."""
+        return MPOSum([mpo.flip() for mpo in self.mpos], self.weights, self.strategy)
