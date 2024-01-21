@@ -1,12 +1,11 @@
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
-from seemps.optimization.dmrg import QuadraticForm, dmrg
+from seemps.optimization.dmrg import QuadraticForm, dmrg, OptimizeResults
 from seemps.hamiltonians import ConstantTIHamiltonian, HeisenbergHamiltonian
 from seemps.state._contractions import _contract_last_and_first
 from seemps.state import random_uniform_mps, product_state
 from seemps.mpo import MPO
 from seemps.tools import σx
-from seemps.tools import DEBUG
 from ..tools import *
 
 
@@ -95,13 +94,31 @@ class TestDMRG(TestCase):
         self.assertAlmostEqual(v[0] ** 2 + v[3] ** 2, 1.0)
         self.assertAlmostEqual(v[1] ** 2 + v[2] ** 2, 0.0)
 
-    def test_dmrg_on_Ising_three_sites(self):
-        """Check we can compute ground state of Sz * Sz on two sites"""
+    def solve_Ising_three_sites(self, **kwdargs):
         H = ConstantTIHamiltonian(size=3, interaction=-np.kron(self.Sz, self.Sz))
         Hmpo = H.to_mpo()
-        result = dmrg(Hmpo)
+        return dmrg(Hmpo, **kwdargs), Hmpo
+
+    def test_dmrg_on_Ising_three_sites(self):
+        """Check we can compute ground state of Sz * Sz on two sites"""
+        result, Hmpo = self.solve_Ising_three_sites()
         self.assertAlmostEqual(result.energy, -2)
         self.assertAlmostEqual(Hmpo.expectation(result.state), -2)
+
+    def test_dmrg_honors_callback_with_three_arguments(self):
+        """Check we can compute ground state of Sz * Sz on two sites"""
+        callback_calls = 0
+
+        def callback(state, E, results):
+            nonlocal callback_calls
+            callback_calls += 1
+            self.assertTrue(isinstance(state, MPS))
+            self.assertTrue(isinstance(E, float))
+            self.assertTrue(isinstance(results, OptimizeResults))
+
+        result, _ = self.solve_Ising_three_sites(callback=callback)
+        self.assertTrue(callback_calls > 1)
+        self.assertEqual(len(result.trajectory), callback_calls)
 
     def test_dmrg_on_Heisenberg_five_sites(self):
         """Check we can compute ground state of Sz * Sz on two sites"""

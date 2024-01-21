@@ -1,4 +1,5 @@
-from typing import Callable
+from __future__ import annotations
+from typing import Callable, Any
 
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
@@ -14,7 +15,7 @@ from ..state.environments import (
     update_left_mpo_environment,
     update_right_mpo_environment,
 )
-from ..tools import log
+from .. import tools
 from ..typing import Optional, Tensor4, Union, Vector
 from .descent import OptimizeResults
 
@@ -103,7 +104,7 @@ def dmrg(
     strategy: Strategy = DEFAULT_STRATEGY,
     tol: float = 1e-10,
     maxiter: int = 20,
-    callback: Optional[Callable] = None,
+    callback: Optional[Callable[[MPS, float, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
     """Compute the ground state of a Hamiltonian represented as MPO using the
     two-site DMRG algorithm.
@@ -123,8 +124,10 @@ def dmrg(
     maxiter : int
         Maximum number of steps of the DMRG. Each step is a sweep that runs
         over every pair of neighborin sites. Defaults to 20.
-    callback : Optional[callable]
-        A callable called after each iteration (defaults to None).
+    callback : Optional[Callable[[MPS, float, OptimizeResults], Any]]
+        A callable called after each iteration with the current state,
+        an estimate of the energy, and the accumulated results object.
+        Defaults to None.
 
     Returns
     -------
@@ -143,64 +146,52 @@ def dmrg(
         H = H.to_mpo()
     if guess is None:
         guess = random_mps(H.dimensions(), D=2)
-
-    if not isinstance(guess, CanonicalMPS):
-        guess = CanonicalMPS(guess, center=0)
-    if guess.center == 0:
+    state: CanonicalMPS = CanonicalMPS(guess, normalize=True)
+    if state.center == 0:
         direction = +1
-        QF = QuadraticForm(H, guess, start=0)
+        QF = QuadraticForm(H, state, start=0)
     else:
+        state.recenter(-1)
         direction = -1
-        QF = QuadraticForm(H, guess, start=H.size - 2)
-    best_energy = np.Inf
-    best_vector = guess
-    oldE = np.inf
-    energies = []
-    converged = False
-    msg = "DMRG did not converge"
+        QF = QuadraticForm(H, state, start=H.size - 2)
+    oldE = H.expectation(state).real
+    results = OptimizeResults(
+        state=state,
+        energy=oldE,
+        trajectory=[oldE],
+        converged=False,
+        message=f"DMRG exceeded number of iterations {maxiter}",
+    )
+    if callback is not None:
+        callback(state, oldE, results)
     strategy = strategy.replace(normalize=True)
     for step in range(maxiter):
         if direction > 0:
             for i in range(0, H.size - 1):
                 newE, AB = QF.diagonalize(i)
                 QF.update_2site_right(AB, i, strategy)
-                log(f"-> site={i}, energy={newE}, {H.expectation(QF.state)}")
+                if tools.DEBUG:
+                    tools.log(f"-> site={i}, energy={newE}, {H.expectation(QF.state)}")
         else:
             for i in range(H.size - 2, -1, -1):
                 newE, AB = QF.diagonalize(i)
                 QF.update_2site_left(AB, i, strategy)
-                log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
-
+                if tools.DEBUG:
+                    tools.log(f"<- site={i}, energy={newE}, {H.expectation(QF.state)}")
         if callback is not None:
-            callback(QF.state)
-        log(
-            f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
-        )
-        energies.append(newE)
-        if newE < best_energy:
-            best_energy, best_vector = newE, QF.state
-        if newE - oldE >= abs(tol) or newE - oldE >= -abs(
-            tol
-        ):  # This criteria makes it stop
-            msg = "Energy change below tolerance"
-            log(msg)
-            converged = True
+            callback(QF.state, newE, results)
+        if tools.DEBUG:
+            tools.log(
+                f"step={step}, energy={newE}, change={oldE-newE}, {H.expectation(QF.state)}"
+            )
+        results.trajectory.append(newE)
+        if newE < results.energy:
+            results.energy, results.state = newE, QF.state
+        if newE - oldE >= -abs(tol):
+            results.message = "Energy change below tolerance"
+            results.converged = True
+            tools.log(results.message)
             break
         direction = -direction
         oldE = newE
-    if not converged:
-        guess = CanonicalMPS(QF.state, center=0, normalize=True)
-        newE = H.expectation(guess).real
-        if callback is not None:
-            callback(QF.state)
-        energies.append(newE)
-        if newE < best_energy:
-            best_energy, best_vector = newE, QF.state
-        best_vector = CanonicalMPS(best_vector, center=0, normalize=True)
-    return OptimizeResults(
-        state=best_vector,
-        energy=best_energy,
-        converged=converged,
-        message=msg,
-        trajectory=energies,
-    )
+    return results
