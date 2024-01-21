@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+import dataclasses
 from typing import Callable, Union
 
 import numpy as np
@@ -13,7 +13,7 @@ from ..typing import *
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-@dataclass
+@dataclasses.dataclass
 class OptimizeResults:
     """Results from ground state search.
 
@@ -39,8 +39,8 @@ class OptimizeResults:
     energy: float
     converged: bool
     message: str
-    trajectory: Optional[VectorLike] = None
-    variances: Optional[VectorLike] = None
+    trajectory: list[float] = dataclasses.field(default_factory=list)
+    variances: list[float] = dataclasses.field(default_factory=list)
 
 
 def gradient_descent(
@@ -119,7 +119,7 @@ def gradient_descent(
         variances.append(variance)
         if E < best_energy:
             best_energy, best_vector, _ = E, state, variance
-        E_mean: float = np.mean(energies[(-min(k_mean, len(energies)-1))-1 : -1])  # type: ignore
+        E_mean: float = np.mean(energies[(-min(k_mean, len(energies) - 1)) - 1 : -1])  # type: ignore
         if E_mean - last_E_mean >= abs(tol) or E_mean - last_E_mean >= -abs(tol):
             message = f"Energy converged within tolerance {tol}"
             converged = True
