@@ -2,38 +2,6 @@ import numpy as np
 from ..operators import MPO, MPOList, MPOSum
 
 
-def mpo_flip(operator):
-    """Swap the qubits in the quantum register, to fix the reversal
-    suffered during the quantum Fourier transform."""
-    if isinstance(operator, MPO):
-        return MPO(
-            [np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0]) for op in reversed(operator)],
-            strategy=operator.strategy,
-        )
-    elif isinstance(operator, MPOList):
-        return MPOList(
-            [
-                MPO(
-                    [
-                        np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0])
-                        for op in reversed(mpo)
-                    ],
-                    strategy=operator.strategy,
-                )
-                for mpo in operator.mpos
-            ],
-            strategy=operator.strategy,
-        )
-    elif isinstance(operator, MPOSum):
-        new_mpos = []
-        for weight, op in zip(operator.weights, operator.mpos):
-            new_mpos.append(weight * mpo_flip(op))
-        return MPOSum(
-            new_mpos,
-            strategy=operator.strategy,
-        )
-
-
 class Space:
     """Class to encode the definition space of a discretized multidimensional function.
 

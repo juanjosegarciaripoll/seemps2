@@ -48,7 +48,7 @@ def fourier_interpolation_1D(ψ0mps, space, M0, Mf, dim, strategy=DEFAULT_STRATE
         New space of the interpolated MPS.
     """
     old_sites = space.sites
-    U2c = space.extend(mpo_flip(twoscomplement(M0)), dim)
+    U2c = space.extend(twoscomplement(M0).flip(), dim)
     QFT_op = space.extend(qft_mpo(len(old_sites[dim]), sign=+1, strategy=strategy), dim)
     Fψ0mps = U2c @ (QFT_op @ ψ0mps)
     #
@@ -66,9 +66,9 @@ def fourier_interpolation_1D(ψ0mps, space, M0, Mf, dim, strategy=DEFAULT_STRATE
     #
     # Undo Fourier transform
     iQFT_op = new_space.extend(
-        mpo_flip(qft_mpo(len(new_sites[dim]), sign=-1, strategy=strategy)), dim
+        qft_mpo(len(new_sites[dim]), sign=-1, strategy=strategy).flip(), dim
     )
-    U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
+    U2c = new_space.extend(twoscomplement(Mf, strategy=strategy).flip(), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
     ψfmps = ψfmps * (1 / np.sqrt(ψfmps.norm_squared()))
 
