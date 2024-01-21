@@ -1,5 +1,6 @@
+from __future__ import annotations
 import dataclasses
-from typing import Callable, Union
+from typing import Callable, Union, Any
 
 import numpy as np
 
@@ -57,7 +58,7 @@ def gradient_descent(
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Optional[Callable[[MPS, float, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -76,8 +77,10 @@ def gradient_descent(
     strategy : Optional[Strategy]
         Linear combination of MPS truncation strategy. Defaults to
         DESCENT_STRATEGY.
-    callback : Optional[callable]
-        A callable called after each iteration (defaults to None).
+    callback : Optional[Callable[[MPS, float, OptimizeResult], Any]]
+        A callable called after each iteration with the current state,
+        an estimate of the energy, and the accumulated results object.
+        Defaults to None.
 
     Results
     -------

@@ -1,11 +1,12 @@
-from typing import Callable, Optional, Union
+from __future__ import annotations
+from typing import Callable, Optional, Union, Any
 
 import numpy as np
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
 
 from ..expectation import scprod
-from ..mpo import MPO
+from ..operators import MPO, MPOSum, MPOList
 from ..state import MPS, CanonicalMPS, MPSSum, random_mps
 from ..truncate.simplify import simplify
 from .descent import DESCENT_STRATEGY, OptimizeResults, Strategy
@@ -18,13 +19,17 @@ def _ill_conditioned_norm_matrix(N, tol=np.finfo(float).eps * 10):
 
 class MPSArnoldiRepresentation:
     empty: NDArray = np.zeros((0, 0))
-    operator: MPO
+    operator: Union[MPO, MPOSum]
     H: NDArray
     N: NDArray
     V: list[MPS]
     strategy: Strategy
 
-    def __init__(self, operator: MPO, strategy: Strategy = DESCENT_STRATEGY):
+    def __init__(
+        self,
+        operator: Union[MPO, MPOSum],
+        strategy: Strategy = DESCENT_STRATEGY,
+    ):
         self.operator = operator
         self.H = self.empty
         self.N = self.empty
@@ -71,13 +76,13 @@ class MPSArnoldiRepresentation:
         # This means
         # H[0,0] = <v|H|v>
         # H[0,1] = <v|H|Hv> / sqrt(<Hv|Hv>) = sqrt(<Hv|Hv>)
-        return np.abs(self.H[0, 1]) ** 2 - np.abs(self.H[0, 0]) ** 2
+        return abs(np.abs(self.H[0, 1]) ** 2 - np.abs(self.H[0, 0]) ** 2)
 
     def exponential(self, factor: Union[complex, float]) -> MPS:
         w = np.zeros(len(self.V))
         w[0] = 1.0
         w = scipy.sparse.linalg.expm_multiply(factor * self.H, w)
-        return simplify(MPSSum(w, self.V), strategy=self.strategy)
+        return simplify(MPSSum(w.tolist(), self.V), strategy=self.strategy)
 
     def build_Krylov_basis(self, v: MPS, order: int) -> bool:
         """Build a Krylov basis up to given order. Returns False
@@ -94,67 +99,88 @@ class MPSArnoldiRepresentation:
 
 
 def arnoldi_eigh(
-    operator: MPO,
+    operator: Union[MPO, MPOSum],
     v0: Optional[MPS] = None,
-    maxiter: int = 100,
     nvectors: int = 10,
+    maxiter: int = 100,
     tol: float = 1e-13,
     strategy: Strategy = DESCENT_STRATEGY,
     miniter: int = 1,
-    callback: Optional[Callable] = None,
+    callback: Optional[Callable[[MPS, float, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
+    """Ground state search of Hamiltonian `H` by Arnoldi diagonalization.
+
+    Parameters
+    ----------
+    H : Union[MPO, MPOSum]
+        Hamiltonian in MPO form.
+    state : MPS
+        Initial guess of the ground state.
+    nvectors : int
+        Number of vectors in the Arnoldi algorithm (defaults to 10).
+        It must be an integer between 2 and 100, both included.
+    maxiter : int
+        Maximum number of iterations (defaults to 1000).
+    tol : float
+        Energy variation that indicates termination (defaults to 1e-13).
+    strategy : Optional[Strategy]
+        Linear combination of MPS truncation strategy. Defaults to
+        DESCENT_STRATEGY.
+    callback : Optional[Callable[[MPS, float, OptimizeResults], Any]]
+        A callable called after each iteration with the current state,
+        an estimate of the energy, and the accumulated results object.
+        Defaults to None.
+
+    Results
+    -------
+    OptimizeResults
+        Results from the optimization. See :class:`OptimizeResults`.
+    """
     if v0 is None:
         v0 = random_mps(operator.dimensions(), D=2)
+    if nvectors < 2 or nvectors > 100 or not isinstance(nvectors, int):
+        raise ValueError("nvectors must be an integer between 2 and 100")
     arnoldi = MPSArnoldiRepresentation(operator, strategy)
     arnoldi.add_vector(v0)
     v: MPS = operator @ v0  # type: ignore
-    best_energy = arnoldi.H[0, 0].real
+    energy = arnoldi.H[0, 0].real
+    variance = abs(scprod(v, v) - energy * energy)
+    results = OptimizeResults(
+        state=v0,
+        energy=energy,
+        trajectory=[energy],
+        variances=[variance],
+        message=f"Exceeded maximum number of steps {maxiter}",
+        converged=False,
+    )
     if callback is not None:
-        callback(arnoldi.V[0])
-    variance = abs(scprod(v, v)) - best_energy * best_energy
-    best_vector = v0
-    energies: list[float] = [best_energy]
-    variances: list[float] = [variance]
-    last_eigenvalue = variance = np.Inf
-    message = f"Exceeded maximum number of steps {maxiter}"
-    converged = True
+        callback(arnoldi.V[0], energy, results)
+    last_eigenvalue = np.Inf
     for i in range(maxiter):
         v, success = arnoldi.add_vector(v)
         if not success and nvectors == 2:
-            message = "Unable to construct Arnoldi matrix"
-            converged = False
+            results.message = "Unable to construct Arnoldi matrix"
+            results.converged = False
             break
         L = len(arnoldi.V)
-        if L == 2 and i > 0:
-            if L > 1:
-                variance = arnoldi.variance_estimate()
-            variances.append(variance)
-        elif L != 2 and i > 0:
-            variances.append(variances[-1])
+        if L > 1:
+            variance = arnoldi.variance_estimate()
+        results.variances.append(variance)
         if L == nvectors or not success:
             v, eigenvalue = arnoldi.restart_with_ground_state()
             eigenvalue_change, last_eigenvalue = (
                 eigenvalue - last_eigenvalue,
                 eigenvalue,
             )
-            if (
-                eigenvalue_change >= abs(tol) or eigenvalue_change >= -abs(tol)
-            ) and i > miniter:
-                message = f"Eigenvalue converged within tolerance {tol}"
-                converged = True
+            if (eigenvalue_change >= -abs(tol)) and i > miniter:
+                results.message = f"Eigenvalue converged within tolerance {tol}"
+                results.converged = True
                 break
-        v = operator @ v  # type: ignore
         energy = arnoldi.H[0, 0].real
+        results.trajectory.append(energy)
+        if energy < results.energy:
+            results.energy, results.state = energy, arnoldi.V[0]
         if callback is not None:
-            callback(arnoldi.V[0])
-        energies.append(energy)
-        if energy < best_energy:
-            best_energy, best_vector = energy, arnoldi.V[0]
-    return OptimizeResults(
-        state=best_vector,
-        energy=best_energy,
-        converged=converged,
-        message=message,
-        trajectory=energies,
-        variances=variances,
-    )
+            callback(arnoldi.V[0], energy, results)
+        v = operator @ v  # type: ignore
+    return results

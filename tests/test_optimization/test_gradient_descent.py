@@ -2,7 +2,7 @@ import numpy as np
 
 from seemps import MPO, product_state
 from seemps.hamiltonians import HeisenbergHamiltonian
-from seemps.optimization.descent import gradient_descent
+from seemps.optimization.descent import gradient_descent, OptimizeResults
 
 from ..tools import *
 
@@ -38,14 +38,13 @@ class TestGradientDescent(TestCase):
             random_uniform_mps(2, N, rng=self.rng), center=0, normalize=True
         )
         result = gradient_descent(H, guess, tol=tol, maxiter=1000)
-        print(result)
         self.assertTrue(result.converged)
         self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)
 
     def callback(self):
         norms = []
 
-        def callback_func(state: MPS):
+        def callback_func(state: MPS, energy: float, results: OptimizeResults):
             norms.append(np.sqrt(state.norm_squared()))
             return None
 
