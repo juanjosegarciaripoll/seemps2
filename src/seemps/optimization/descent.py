@@ -5,7 +5,14 @@ import numpy as np
 
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Simplification, Strategy
+from ..state import (
+    DEFAULT_STRATEGY,
+    MPS,
+    MPSSum,
+    CanonicalMPS,
+    Simplification,
+    Strategy,
+)
 from ..tools import DEBUG, log
 from ..truncate.simplify import simplify
 from ..typing import *
@@ -48,7 +55,6 @@ def gradient_descent(
     state: MPS,
     maxiter=1000,
     tol: float = 1e-13,
-    k_mean=10,
     tol_variance: float = 1e-14,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable] = None,
@@ -64,10 +70,7 @@ def gradient_descent(
     maxiter : int
         Maximum number of iterations (defaults to 1000).
     tol : float
-        Energy variation with respect to the k_mean moving average that
-        indicates termination (defaults to 1e-13).
-    k_mean: int
-        Number of elements for the moving average.
+        Minimal energy variation that indicates termination (defaults to 1e-13).
     tol_variance : float
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
@@ -82,19 +85,8 @@ def gradient_descent(
         Results from the optimization. See :class:`OptimizeResults`.
     """
 
-    def energy_and_variance(state: MPS) -> tuple[MPS, float, float, float]:
-        true_E = H.expectation(state).real
-        H_state: MPS = H.apply(state)  # type: ignore
-        avg_H2 = scprod(H_state, H_state).real
-        variance = avg_H2 - scprod(state, H_state).real ** 2
-        return H_state, true_E, variance, avg_H2
-
     normalization_strategy = strategy.replace(normalize=True)
-    energies: list[float] = []
-    variances: list[float] = []
-    last_E_mean: float = np.Inf
-    best_energy: float = np.Inf
-    best_vector: MPS = state
+    last_E: float = np.Inf
     """
     The algorithm aims to find the optimal linear combination
         ψ' = a * ψ + b * H * ψ
@@ -106,52 +98,46 @@ def gradient_descent(
         | <ψ|H*H|ψ>  <ψ|H*H*H|ψ> | | b |     | <ψ|H|ψ>  <ψ|H*H|ψ> |
 
     """
-    converged = False
-    message = f"Maximum number of iterations {maxiter} reached"
     state = CanonicalMPS(state, normalize=True)
-    for step in range(maxiter):
-        H_state, E, variance, avg_H2 = energy_and_variance(state)
+    results = OptimizeResults(
+        energy=np.Inf,
+        state=state,
+        converged=False,
+        message=f"Maximum number of iterations {maxiter} reached",
+    )
+    for step in range(maxiter + 1):
+        if step:
+            state = simplify(
+                MPSSum(weights, [state, H_state]),  # type: ignore
+                strategy=normalization_strategy,
+            )
+        E = H.expectation(state).real
+        H_state: MPS = H.apply(state)  # type: ignore
+        avg_H2 = scprod(H_state, H_state).real
+        variance = avg_H2 - E * E
         if callback is not None:
-            callback(state)
+            callback(state, E, results)
         if DEBUG:
             log(f"step = {step:5d}, energy = {E}, variance = {variance}")
-        energies.append(E)
-        variances.append(variance)
-        if E < best_energy:
-            best_energy, best_vector, _ = E, state, variance
-        E_mean: float = np.mean(energies[(-min(k_mean, len(energies) - 1)) - 1 : -1])  # type: ignore
-        if E_mean - last_E_mean >= abs(tol) or E_mean - last_E_mean >= -abs(tol):
-            message = f"Energy converged within tolerance {tol}"
-            converged = True
+        results.trajectory.append(E)
+        results.variances.append(variance)
+        if E < results.energy:
+            results.energy, results.state = E, state
+        if E - last_E >= -abs(tol):
+            results.message = f"Energy converged within tolerance {tol}"
+            results.converged = True
             break
+        last_E = E
         if variance < tol_variance:
-            message = f"Stationary state reached within tolerance {tol_variance}"
-            converged = True
+            results.message = (
+                f"Stationary state reached within tolerance {tol_variance}"
+            )
+            results.converged = True
             break
         avg_H3 = H.expectation(H_state).real
-        A = np.array([[E, avg_H2], [avg_H2, avg_H3]])
-        B = np.array([[1, E], [E, avg_H2]])
-        w, v = scipy.linalg.eig(A, B)
-        v = v[:, np.argmin(w)]
-        v /= np.linalg.norm(v)
-        state = simplify(v[0] * state + v[1] * H_state, strategy=normalization_strategy)
-        last_E_mean = E_mean
-        # TODO: Implement stop criteria based on gradient size Δβ
-        # It must take into account the norm of the displacement, H_state
-        # which was already calculated
-    if not converged:
-        H_state, E, variance, _ = energy_and_variance(state)
-        if callback is not None:
-            callback(state)
-        if E < best_energy:
-            best_energy, best_vector, _ = E, state, variance
-        energies.append(E)
-        variances.append(variance)
-    return OptimizeResults(
-        state=best_vector,
-        energy=best_energy,
-        converged=converged,
-        message=message,
-        trajectory=energies,
-        variances=variances,
-    )
+        w, eigenvectors = scipy.linalg.eig(
+            [[E, avg_H2], [avg_H2, avg_H3]], [[1, E], [E, avg_H2]]
+        )
+        weights = eigenvectors[:, np.argmin(w)]
+
+    return results
