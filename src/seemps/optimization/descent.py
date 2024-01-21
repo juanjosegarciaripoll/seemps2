@@ -108,8 +108,9 @@ def gradient_descent(
         converged=False,
         message=f"Maximum number of iterations {maxiter} reached",
     )
+    weights: Any = []
     for step in range(maxiter + 1):
-        if step:
+        if step > 0:
             state = simplify(
                 MPSSum(weights, [state, H_state]),  # type: ignore
                 strategy=normalization_strategy,
