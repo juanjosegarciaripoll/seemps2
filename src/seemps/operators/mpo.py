@@ -356,6 +356,11 @@ class MPOList(object):
             return MPOList([n * self.mpos[0]] + self.mpos[1:], self.strategy)
         raise InvalidOperation("*", n, self)
 
+    # TODO: Rename to physical_dimensions()
+    def dimensions(self) -> list[int]:
+        """Return the physical dimensions of the MPOList."""
+        return self.mpos[0].dimensions()
+
     # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""

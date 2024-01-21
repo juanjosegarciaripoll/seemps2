@@ -96,6 +96,11 @@ class MPOSum(object):
             strategy=self.strategy,
         )
 
+    # TODO: Rename to physical_dimensions()
+    def dimensions(self) -> list[int]:
+        """Return the physical dimensions of the MPOList."""
+        return self.mpos[0].dimensions()
+
     def tomatrix(self) -> Operator:
         """Return the matrix representation of this MPO."""
         A = self.weights[0] * self.mpos[0].tomatrix()
