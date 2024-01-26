@@ -129,7 +129,10 @@ def finite_differences_interpolation_1D(
     """
     derivative_mps = (
         space.extend(
-            mpo_combined(len(space.sites[dim]), 0.5, 0, 0.5, strategy=strategy), dim
+            mpo_combined(
+                len(space.sites[dim]), 0.5, 0, 0.5, closed=closed, strategy=strategy
+            ),
+            dim,
         )
         @ ψ0mps
     )
@@ -144,7 +147,10 @@ def finite_differences_interpolation_1D(
     derivative_mps = derivative_mps.extend(L=new_size, sites=sum(idx_old_sites, []))
     derivative_mps = (
         new_space.extend(
-            mpo_combined(len(new_space.sites[dim]), 0, 1, 0, strategy=strategy), dim
+            mpo_combined(
+                len(new_space.sites[dim]), 0, 1, 0, closed=closed, strategy=strategy
+            ),
+            dim,
         )
         @ derivative_mps
     )
