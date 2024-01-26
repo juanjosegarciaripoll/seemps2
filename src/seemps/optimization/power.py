@@ -16,6 +16,7 @@ from ..cgs import cgs
 def power_method(
     H: Union[MPO, MPOList, MPOSum],
     inverse: bool = False,
+    shift: float = 0.0,
     guess: Optional[MPS] = None,
     maxiter: int = 1000,
     maxiter_cgs: int = 50,
@@ -55,6 +56,9 @@ def power_method(
     OptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.
     """
+    if inverse and shift:
+        identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.dimensions()])
+        H = MPOSum([H, identity], [1.0, shift]).join()
     state = CanonicalMPS(
         random_mps(operator.dimensions(), D=2) if guess is None else guess,
         strategy=strategy,
