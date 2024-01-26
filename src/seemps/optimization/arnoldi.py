@@ -135,6 +135,7 @@ def arnoldi_eigh(
     )
     if callback is not None:
         callback(arnoldi.V[0], results)
+    last_energy = np.Inf
     for i in range(maxiter):
         v, success = arnoldi.add_vector(operator @ v)
         if not success and nvectors == 2:
@@ -151,13 +152,14 @@ def arnoldi_eigh(
         if callback is not None:
             callback(arnoldi.V[0], results)
         if len(arnoldi.V) == 1:
-            energy_change = energy - results.trajectory[-1]
+            energy_change = energy - last_energy
             if energy_change > abs(tol):
                 results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
                 results.converged = True
                 break
-            if (-abs(tol) <= energy_change < 0) and i > miniter:
+            if (-abs(tol) <= energy_change) and i > miniter:
                 results.message = f"Eigenvalue change below tolerance {tol}"
                 results.converged = True
                 break
+            last_energy = energy
     return results
