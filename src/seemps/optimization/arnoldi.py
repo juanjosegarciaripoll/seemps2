@@ -90,7 +90,7 @@ class MPSArnoldiRepresentation:
         return self._variance
 
     def exponential(self, factor: Union[complex, float]) -> MPS:
-        w = [0.0] * len(self.V)
+        w = np.zeros(self.V)
         w[0] = 1.0
         w = scipy.sparse.linalg.expm_multiply(factor * self.H, w)
         return simplify(MPSSum(w, self.V), strategy=self.strategy)

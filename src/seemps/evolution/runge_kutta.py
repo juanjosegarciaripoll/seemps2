@@ -211,13 +211,7 @@ def runge_kutta_fehlberg(
             )
             if delta > 0:
                 desired_dt = 0.9 * dt * (tolerance / delta) ** 0.2
-                print(
-                    f"delta = {delta} vs tol = {tolerance}, step change dt = {dt} -> {desired_dt}"
-                )
             if delta <= tolerance:
-                print(
-                    f"delta = {delta} vs tol = {tolerance}, step increase dt = {dt} -> {desired_dt} and advance"
-                )
                 return state_ord5, dt, desired_dt
 
     dt = np.inf
