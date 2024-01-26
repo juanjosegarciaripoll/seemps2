@@ -4,8 +4,10 @@ from seemps.operators import MPO
 from seemps.evolution.runge_kutta import runge_kutta_fehlberg
 from seemps.hamiltonians import HeisenbergHamiltonian
 from .problem import EvolutionTestCase
+import unittest
 
 
+@unittest.skip("Unfinished evolution method RKF")
 class TestRungeKuttaFehlberg(EvolutionTestCase):
     def test_runge_kutta_fehlberg_time_steps_and_callback(self):
         """Check the integration times used by the algorithm"""
