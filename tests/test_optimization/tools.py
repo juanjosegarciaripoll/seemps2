@@ -4,6 +4,7 @@ from abc import abstractmethod
 from seemps.state import MPS, product_state
 from seemps.operators import MPO
 from seemps.analysis.evolution import EvolutionResults
+from seemps.optimization.descent import OptimizeResults
 from ..tools import TestCase
 
 
@@ -35,7 +36,7 @@ class TestItimeCase(TestCase):
     def solve(self, H: MPO, state: MPS, **kwdargs) -> EvolutionResults:
         raise Exception("solve() not implemented")
 
-    def test_itime_solver_with_local_field(self):
+    def test_eigenvalue_solver_with_local_field(self):
         if type(self) != TestItimeCase:
             N = 4
             H, exact = self.make_problem_and_solution(N)
@@ -44,7 +45,7 @@ class TestItimeCase(TestCase):
             self.assertAlmostEqual(result.energy, H.expectation(exact))
             self.assertSimilar(result.state, exact, atol=1e-4)
 
-    def test_itime_solver_with_callback(self):
+    def test_eigenvalue_solver_with_callback(self):
         if type(self) != TestItimeCase:
             N = 4
             H, exact = self.make_problem_and_solution(N)
@@ -52,3 +53,61 @@ class TestItimeCase(TestCase):
             callback_func, norms = self.make_callback()
             result = self.solve(H, guess, maxiter=10, callback=callback_func)
             self.assertSimilar(norms, np.ones(len(norms)))
+
+
+class TestOptimizeCase(TestItimeCase):
+    Sz = np.diag([0.5, -0.5])
+
+    def make_problem_and_solution(self, size: int) -> tuple[MPO, MPS]:
+        A = np.zeros((2, 2, 2, 2))
+        A[0, :, :, 0] = np.eye(2)
+        A[1, :, :, 1] = np.eye(2)
+        A[0, :, :, 1] = self.Sz
+        tensors = [A] * size
+        tensors[0] = tensors[0][[0], :, :, :]
+        tensors[-1] = tensors[-1][:, :, :, [1]]
+        return MPO(tensors), product_state([0, 1], size)
+
+    def make_callback(self):
+        norms = []
+
+        def callback_func(state: MPS, results: OptimizeResults):
+            self.assertIsInstance(results, OptimizeResults)
+            self.assertIsInstance(state, MPS)
+            norms.append(np.sqrt(state.norm_squared()))
+            return None
+
+        return callback_func, norms
+
+    @abstractmethod
+    def solve(self, H: MPO, state: MPS, **kwdargs) -> OptimizeResults:
+        raise Exception("solve() not implemented")
+
+    def test_eigenvalue_solver_with_local_field(self):
+        if type(self) != TestOptimizeCase:
+            N = 4
+            H, exact = self.make_problem_and_solution(N)
+            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+            result = self.solve(H, guess)
+            self.assertAlmostEqual(result.energy, H.expectation(exact))
+            self.assertSimilar(result.state, exact, atol=1e-4)
+
+    def test_eigenvalue_solver_with_callback(self):
+        if type(self) != TestOptimizeCase:
+            N = 4
+            H, exact = self.make_problem_and_solution(N)
+            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+            callback_func, norms = self.make_callback()
+            result = self.solve(H, guess, maxiter=10, callback=callback_func)
+            self.assertSimilar(norms, np.ones(len(norms)))
+
+    def test_eigenvalue_solver_acknowledges_tolerance(self):
+        """Check that algorithm stops if energy change is below tolerance."""
+        if type(self) != TestOptimizeCase:
+            N = 4
+            tol = 1e-5
+            H, _ = self.make_problem_and_solution(4)
+            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+            result = self.solve(H, guess, tol=tol)
+            self.assertTrue(result.converged)
+            self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)
