@@ -1,9 +1,9 @@
 from typing import Optional
 from .expectation import scprod
-from .state import MPS, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
+from .state import MPS, MPSSum, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
 from .mpo import MPO
-from .truncate.combine import combine
-from .tools import log
+from .truncate import simplify
+from . import tools
 
 
 # TODO: Write tests for this
@@ -42,28 +42,21 @@ def cgs(
         Norm square of the residual :math:`\\Vert{A \\psi - b}\\Vert^2`
     """
     normb = scprod(b, b).real
-    r = b
     if strategy.get_normalize_flag():
         strategy = strategy.replace(normalize=False)
-    if guess is not None:
-        x: MPS = A.apply(guess)  # type: ignore
-        r = combine([1.0, -1.0], [b, x], strategy=strategy)
+    x = b if guess is None else guess
+    r = simplify(MPSSum([1.0, -1.0], [b, A @ x]), strategy=strategy)
     p = r
     ρ = scprod(r, r).real
-    log(f"CGS algorithm for {maxiter} iterations")
+    tools.log(f"CGS algorithm for {maxiter} iterations")
     for i in range(maxiter):
-        Ap: MPS = A.apply(p)  # type: ignore
-        α = ρ / scprod(p, Ap).real
-        if i > 0 or guess is not None:
-            x = combine([1, α], [x, p], strategy=strategy)
-        else:
-            x = combine([α], [p], strategy=strategy)
-        Ax: MPS = A.apply(guess)  # type: ignore
-        r = combine([1, -1], [b, Ax], strategy=strategy)
+        α = ρ / A.expectation(p).real
+        x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
+        r = simplify(MPSSum([1, -1.0], [b, A @ x]), strategy=strategy)
         ρ, ρold = scprod(r, r).real, ρ
         if ρ < tolerance * normb:
-            log("Breaking on convergence")
+            tools.log("Breaking on convergence")
             break
-        p = combine([1.0, ρ / ρold], [r, p], strategy=strategy)
-        log(f"Iteration {i:5}: |r|={ρ:5g}")
+        p = simplify(MPSSum([1.0, ρ / ρold], [r, p]), strategy=strategy)
+        tools.log(f"Iteration {i:5}: |r|={ρ:5g} tol={tolerance:5g}")
     return x, abs(ρ)
