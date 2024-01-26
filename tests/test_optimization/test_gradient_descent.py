@@ -2,8 +2,10 @@ import numpy as np
 
 from seemps import MPO, product_state
 from seemps.hamiltonians import HeisenbergHamiltonian
-from seemps.optimization.descent import gradient_descent
+from seemps.optimization.descent import gradient_descent, OptimizeResults
 
+# TODO: Make this consisten with TestItime
+# TODO: Replace EvolutionResults with OptimizeResults
 from ..tools import *
 
 
@@ -38,14 +40,15 @@ class TestGradientDescent(TestCase):
             random_uniform_mps(2, N, rng=self.rng), center=0, normalize=True
         )
         result = gradient_descent(H, guess, tol=tol, maxiter=1000)
-        print(result)
         self.assertTrue(result.converged)
         self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)
 
-    def callback(self):
+    def make_callback(self):
         norms = []
 
-        def callback_func(state: MPS):
+        def callback_func(state: MPS, results: OptimizeResults):
+            self.assertIsInstance(state, MPS)
+            self.assertIsInstance(results, OptimizeResults)
             norms.append(np.sqrt(state.norm_squared()))
             return None
 
@@ -56,7 +59,7 @@ class TestGradientDescent(TestCase):
         maxiter = 10
         H = self.make_local_Sz_mpo(N)
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
-        callback_func, norms = self.callback()
+        callback_func, norms = self.make_callback()
         result = gradient_descent(
             H, guess, maxiter=maxiter, tol=1e-15, callback=callback_func
         )
