@@ -18,6 +18,7 @@ def power_method(
     inverse: bool = False,
     guess: Optional[MPS] = None,
     maxiter: int = 1000,
+    maxiter_cgs: int = 50,
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
     strategy: Strategy = DESCENT_STRATEGY,
@@ -34,6 +35,8 @@ def power_method(
         MPS deduced from the operator's dimensions.
     maxiter : int
         Maximum number of iterations (defaults to 1000).
+    maxiter_cgs : int
+        Maximum number of iterations of CGS (defaults to 50).
     tol : float
         Energy variation with respect to the k_mean moving average that
         indicates termination (defaults to 1e-13).
@@ -78,7 +81,7 @@ def power_method(
         tools.log(f"step = {step:5d}, energy = {energy}, variance = {variance}")
         if callback is not None:
             callback(state, results)
-        if energy - last_energy >= -abs(tol):
+        if (energy - last_energy) >= -abs(tol):
             results.message = f"Energy converged within tolerance {tol}"
             results.converged = True
             break
@@ -91,7 +94,12 @@ def power_method(
             break
         if inverse:
             state, residual = cgs(
-                H, state, guess=state, tolerance=tol_variance, strategy=strategy
+                H,
+                state,
+                guess=state,
+                maxiter=maxiter_cgs,
+                tolerance=np.sqrt(tol_variance),
+                strategy=strategy,
             )
         else:
             state = CanonicalForm(H_v, strategy=strategy)
