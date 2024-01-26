@@ -105,7 +105,9 @@ def fourier_interpolation(ψmps, space, old_sites, new_sites, **kwargs):
     return ψmps
 
 
-def finite_differences_interpolation_1D(ψ0mps, space, dim=0, strategy=DEFAULT_STRATEGY):
+def finite_differences_interpolation_1D(
+    ψ0mps, space, dim=0, strategy=DEFAULT_STRATEGY, closed=False
+):
     """Finite differences interpolation of dimension dim of an MPS representing
     a multidimensional function.
 
