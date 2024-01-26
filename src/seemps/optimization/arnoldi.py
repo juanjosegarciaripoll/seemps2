@@ -103,7 +103,7 @@ class MPSArnoldiRepresentation:
             if i == 0:
                 v = self.restart_with_vector(v)
             else:
-                v, succeed = self.add_vector(v)
+                v, succeed = self.add_vector(self.operator @ v)
                 if not succeed:
                     return False
         return True
