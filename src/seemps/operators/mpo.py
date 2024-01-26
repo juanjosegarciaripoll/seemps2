@@ -82,19 +82,39 @@ class MPO(array.TensorArray):
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `n * self`"""
         if isinstance(n, (int, float, complex)):
+            absn = np.abs(n)
+            if absn:
+                phase = n / absn
+                factor = np.exp(np.log(absn) / self.size)
+            else:
+                phase = 0.0
+                factor = 0.0
             mpo_mult = self.copy()
-            mpo_mult._data[0] = n * mpo_mult._data[0]
+            mpo_mult._data = [
+                (factor if i > 0 else (factor * phase)) * A
+                for i, A in enumerate(mpo_mult._data)
+            ]
             return mpo_mult
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `self * self`"""
         if isinstance(n, (int, float, complex)):
+            absn = np.abs(n)
+            if absn:
+                phase = n / absn
+                factor = np.exp(np.log(absn) / self.size)
+            else:
+                phase = 0.0
+                factor = 0.0
             mpo_mult = self.copy()
-            mpo_mult._data[0] = n * mpo_mult._data[0]
+            mpo_mult._data = [
+                (factor if i > 0 else (factor * phase)) * A
+                for i, A in enumerate(mpo_mult._data)
+            ]
             return mpo_mult
         raise InvalidOperation("*", n, self)
-    
+
     def __pow__(self, n: int) -> MPOList:
         """Exponentiate a MPO to n."""
         if isinstance(n, int):
