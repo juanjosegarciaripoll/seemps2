@@ -58,6 +58,5 @@ def cgs(
             tools.log("Breaking on convergence")
             break
         p = simplify(MPSSum([1.0, ρ / ρold], [r, p]), strategy=strategy)
-        tools.log(f"Iteration {i:5}: |r|={ρ:5g} tol={tolerance:5g}")
-    tools.DEBUG = 0
+        tools.log(f"Iteration {i:5}: |r|^2={ρ:5g} tol={tolerance:5g}")
     return x, abs(ρ)
