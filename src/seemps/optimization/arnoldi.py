@@ -131,25 +131,57 @@ class MPSArnoldiRepresentation:
 
 def arnoldi_eigh(
     operator: MPO,
-    v0: Optional[MPS] = None,
+    guess: Optional[MPS] = None,
     maxiter: int = 100,
     nvectors: int = 10,
     tol: float = 1e-13,
-    strategy: Strategy = DESCENT_STRATEGY,
-    miniter: int = 1,
     tol_ill: float = np.finfo(float).eps * 10,
     tol_up: Optional[float] = None,
     gamma: float = 0,
+    strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
-    if v0 is None:
-        v0 = random_mps(operator.dimensions(), D=2)
+    """Ground state search of Hamiltonian `H` by the Arnoldi method.
+
+    Parameters
+    ----------
+    H : Union[MPO, MPOList, MPOSum]
+        Hamiltonian in MPO form.
+    guess : Optional[MPS]
+        Initial guess of the ground state. If None, defaults to a random
+        MPS deduced from the operator's dimensions.
+    maxiter : int
+        Maximum number of iterations (defaults to 1000).
+    nvectors: int
+        Number of vectors in the Krylov basis (defaults to 10).
+    tol : float
+        Energy variation that indicates termination (defaults to 1e-13).
+    tol_up : float, default = `tol`
+        If energy fluctuates up below this tolerance, continue the optimization.
+    tol_ill : float
+        Check for ill conditioning of the Krylov basis (defaults to 1e-15).
+    gamma : float
+        If nonzero, convergence acceleration factor. Default is 0.0 (no inertia).
+        Alternatively, provide -0.75.
+    strategy : Optional[Strategy]
+        Linear combination of MPS truncation strategy. Defaults to
+        DESCENT_STRATEGY.
+    callback : Optional[Callable[[MPS, OptimizeResults], Any]]
+        A callable called after each iteration (defaults to None).
+
+    Results
+    -------
+    OptimizeResults
+        Results from the optimization. See :class:`OptimizeResults`.
+    """
+    if guess is None:
+        guess = random_mps(operator.dimensions(), D=2)
     if tol_up is None:
         tol_up = abs(tol)
     arnoldi = MPSArnoldiRepresentation(
         operator, strategy, tol_ill_conditioning=tol_ill, gamma=gamma
     )
-    v: MPS = arnoldi.restart_with_vector(v0)
+    v: MPS = arnoldi.restart_with_vector(guess)
     energy, variance = arnoldi.energy_and_variance()
     results = OptimizeResults(
         state=v,
@@ -183,7 +215,7 @@ def arnoldi_eigh(
                 results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
                 results.converged = True
                 break
-            if i > miniter and (-abs(tol * energy) <= energy_change):
+            if -abs(tol * energy) <= energy_change:
                 results.message = f"Eigenvalue change below tolerance {tol}"
                 results.converged = True
                 break
