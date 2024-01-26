@@ -13,7 +13,7 @@ from ..state import (
     Truncation,
 )
 from ..state.environments import scprod
-from ..tools import log, DEBUG
+from .. import tools
 from ..typing import *
 from .antilinear import AntilinearForm
 
@@ -81,11 +81,11 @@ def simplify(
     norm_state_sqr = scprod(state, state).real
     form = AntilinearForm(mps, state, center=start)
     err = 2.0
-    if DEBUG:
-        log(
-            f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
-            f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}."
-        )
+    tools.log(
+        f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
+        f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.",
+        debug_level=2,
+    )
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
@@ -106,13 +106,13 @@ def simplify(
         err = 2 * abs(
             1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
         )
-        if DEBUG:
-            log(
-                f"sweep={sweep}, rel.err.={err}, old err.={old_err}, "
-                f"|mps|={norm_mps_sqr**0.5}"
-            )
+        tools.log(
+            f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
+            f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
+            debug_level=2,
+        )
         if err < simplification_tolerance or err > old_err:
-            log("Stopping, as tolerance reached")
+            tools.log("Stopping, as tolerance reached", debug_level=3)
             break
         direction = -direction
     mps._error = 0.0
@@ -257,11 +257,11 @@ def combine(
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_state_sqr = multi_norm_squared(weights, states)
-    if DEBUG:
-        log(
-            f"COMBINE state with |state|={norm_state_sqr**0.5} for strategy.get_max_sweeps()) "
-            f"sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}"
-        )
+    tools.log(
+        f"COMBINE state with |state|={norm_state_sqr**0.5} for strategy.get_max_sweeps()) "
+        f"sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}",
+        debug_level=2,
+    )
     size = mps.size
     forms = [AntilinearForm(mps, state, center=start) for state in states]
     err = 2.0
@@ -298,13 +298,13 @@ def combine(
         err = 2 * abs(
             1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
         )
-        if DEBUG:
-            log(
-                f"sweep={sweep}, rel.err.={err}, old err.={old_err}, "
-                f"|mps|={norm_mps_sqr**0.5}"
-            )
+        tools.log(
+            f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
+            f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
+            debug_level=2,
+        )
         if err < simplification_tolerance or err > old_err:
-            log("Stopping, as tolerance reached")
+            tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
     mps._error = 0.0
