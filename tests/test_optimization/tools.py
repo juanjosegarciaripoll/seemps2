@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+import unittest
 from abc import abstractmethod
 from seemps.state import MPS, product_state
 from seemps.operators import MPO
@@ -21,6 +22,12 @@ class TestItimeCase(TestCase):
         tensors[-1] = tensors[-1][:, :, :, [1]]
         return MPO(tensors), product_state([0, 1], size)
 
+    @classmethod
+    def setUpClass(cls):
+        if cls is TestItimeCase:
+            raise unittest.SkipTest(f"Skip {cls} tests, it's a base class")
+        super().setUpClass()
+
     def make_callback(self):
         norms = []
 
@@ -37,26 +44,30 @@ class TestItimeCase(TestCase):
         raise Exception("solve() not implemented")
 
     def test_eigenvalue_solver_with_local_field(self):
-        if type(self) != TestItimeCase:
-            N = 4
-            H, exact = self.make_problem_and_solution(N)
-            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
-            result = self.solve(H, guess)
-            self.assertAlmostEqual(result.energy, H.expectation(exact))
-            self.assertSimilar(result.state, exact, atol=1e-4)
+        N = 4
+        H, exact = self.make_problem_and_solution(N)
+        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        result = self.solve(H, guess)
+        self.assertAlmostEqual(result.energy, H.expectation(exact))
+        self.assertSimilar(result.state, exact, atol=1e-4)
 
     def test_eigenvalue_solver_with_callback(self):
-        if type(self) != TestItimeCase:
-            N = 4
-            H, exact = self.make_problem_and_solution(N)
-            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
-            callback_func, norms = self.make_callback()
-            result = self.solve(H, guess, maxiter=10, callback=callback_func)
-            self.assertSimilar(norms, np.ones(len(norms)))
+        N = 4
+        H, exact = self.make_problem_and_solution(N)
+        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        callback_func, norms = self.make_callback()
+        result = self.solve(H, guess, maxiter=10, callback=callback_func)
+        self.assertSimilar(norms, np.ones(len(norms)))
 
 
 class TestOptimizeCase(TestItimeCase):
     Sz = np.diag([0.5, -0.5])
+
+    @classmethod
+    def setUpClass(cls):
+        if cls is TestOptimizeCase:
+            raise unittest.SkipTest("Skip TestOptimizeCase tests, it's a base class")
+        super().setUpClass()
 
     def make_problem_and_solution(self, size: int) -> tuple[MPO, MPS]:
         A = np.zeros((2, 2, 2, 2))
@@ -84,30 +95,27 @@ class TestOptimizeCase(TestItimeCase):
         raise Exception("solve() not implemented")
 
     def test_eigenvalue_solver_with_local_field(self):
-        if type(self) != TestOptimizeCase:
-            N = 4
-            H, exact = self.make_problem_and_solution(N)
-            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
-            result = self.solve(H, guess)
-            self.assertAlmostEqual(result.energy, H.expectation(exact))
-            self.assertSimilar(result.state, exact, atol=1e-4)
+        N = 4
+        H, exact = self.make_problem_and_solution(N)
+        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        result = self.solve(H, guess)
+        self.assertAlmostEqual(result.energy, H.expectation(exact))
+        self.assertSimilar(result.state, exact, atol=1e-4)
 
     def test_eigenvalue_solver_with_callback(self):
-        if type(self) != TestOptimizeCase:
-            N = 4
-            H, exact = self.make_problem_and_solution(N)
-            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
-            callback_func, norms = self.make_callback()
-            result = self.solve(H, guess, maxiter=10, callback=callback_func)
-            self.assertSimilar(norms, np.ones(len(norms)))
+        N = 4
+        H, exact = self.make_problem_and_solution(N)
+        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        callback_func, norms = self.make_callback()
+        result = self.solve(H, guess, maxiter=10, callback=callback_func)
+        self.assertSimilar(norms, np.ones(len(norms)))
 
     def test_eigenvalue_solver_acknowledges_tolerance(self):
         """Check that algorithm stops if energy change is below tolerance."""
-        if type(self) != TestOptimizeCase:
-            N = 4
-            tol = 1e-5
-            H, _ = self.make_problem_and_solution(4)
-            guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
-            result = self.solve(H, guess, tol=tol)
-            self.assertTrue(result.converged)
-            self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)
+        N = 4
+        tol = 1e-5
+        H, _ = self.make_problem_and_solution(4)
+        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        result = self.solve(H, guess, tol=tol)
+        self.assertTrue(result.converged)
+        self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)
