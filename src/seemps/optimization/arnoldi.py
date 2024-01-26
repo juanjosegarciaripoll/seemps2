@@ -1,4 +1,5 @@
-from typing import Callable, Optional, Union, Optional
+from __future__ import annotations
+from typing import Callable, Optional, Union, Optional, Any
 
 import numpy as np
 import scipy.linalg  # type: ignore
@@ -20,12 +21,17 @@ class MPSArnoldiRepresentation:
     strategy: Strategy
     tol_ill_conditioning: float
     _variance: Optional[float]
+    gamma: float = 0.0
+    _eigenvector: NDArray
+    _energy: Optional[float]
+    _variance: Optional[float]
 
     def __init__(
         self,
         operator: MPO,
         strategy: Strategy = DESCENT_STRATEGY,
         tol_ill_conditioning: float = np.finfo(float).eps * 10,
+        gamma: float = 0.0,
     ):
         self.operator = operator
         self.H = self.empty
@@ -33,7 +39,10 @@ class MPSArnoldiRepresentation:
         self.V = []
         self.strategy = strategy.replace(normalize=True)
         self.tol_ill_conditioning = tol_ill_conditioning
+        self._eigenvector = None
         self._variance = None
+        self._energy = None
+        self.gamma = gamma
         pass
 
     def _ill_conditioned_norm_matrix(self, N: np.ndarray) -> bool:
@@ -64,7 +73,6 @@ class MPSArnoldiRepresentation:
         self.N = self.empty.copy()
         self.V = []
         v, _ = self.add_vector(v)
-        self._variance = None
         return v
 
     def restart_with_ground_state(self) -> tuple[MPS, float]:
@@ -72,22 +80,34 @@ class MPSArnoldiRepresentation:
         eigenvalues = eigenvalues.real
         ndx = np.argmin(eigenvalues)
         v = simplify(MPSSum(eigenstates[:, ndx], self.V), strategy=self.strategy)
-        return self.restart_with_vector(v), eigenvalues[ndx].real
+        if self.gamma == 0 or self._eigenvector is None:
+            new_v = v
+        else:
+            print(f"gamma = {self.gamma}")
+            new_v = simplify(
+                MPSSum([1 - self.gamma, self.gamma], [v, self._eigenvector]),
+                strategy=self.strategy,
+            )
+        new_v = self.restart_with_vector(new_v)
+        self._eigenvector = v
+        self._variance = self._energy = None
+        return new_v
 
-    def energy(self) -> float:
-        return self.H[0, 0].real
+    def eigenvector(self) -> MPS:
+        return self.V[0] if self._eigenvector is None else self._eigenvector
 
-    def variance(self) -> float:
+    def energy_and_variance(self) -> float:
         # Our basis is built as the sequence of normalized vectors
         # v, Hv/||Hv||, H^2v/||H^2v||, ...
         # This means
         # H[0,0] = <v|H|v>
         # H[0,1] = <v|H|Hv> / sqrt(<Hv|Hv>) = sqrt(<Hv|Hv>)
-        if self._variance is None:
-            energy = self.energy()
+        if self._energy is None or self._variance is None:
+            v = self.eigenvector()
+            self._energy = energy = self.operator.expectation(v)
             H_v = self.operator.apply(self.V[0], strategy=NO_TRUNCATION)
             self._variance = abs(abs(scprod(H_v, H_v).real) - energy * energy)
-        return self._variance
+        return self._energy, self._variance
 
     def exponential(self, factor: Union[complex, float]) -> MPS:
         w = np.zeros(self.V)
@@ -117,25 +137,31 @@ def arnoldi_eigh(
     tol: float = 1e-13,
     strategy: Strategy = DESCENT_STRATEGY,
     miniter: int = 1,
-    callback: Optional[Callable] = None,
     tol_ill: float = np.finfo(float).eps * 10,
-    **kwdargs,
+    tol_up: Optional[float] = None,
+    gamma: float = 0,
+    callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
     if v0 is None:
         v0 = random_mps(operator.dimensions(), D=2)
-    arnoldi = MPSArnoldiRepresentation(operator, strategy, tol_ill)
+    if tol_up is None:
+        tol_up = abs(tol)
+    arnoldi = MPSArnoldiRepresentation(
+        operator, strategy, tol_ill_conditioning=tol_ill, gamma=gamma
+    )
     v: MPS = arnoldi.restart_with_vector(v0)
+    energy, variance = arnoldi.energy_and_variance()
     results = OptimizeResults(
         state=v,
-        energy=arnoldi.energy(),
-        variances=[arnoldi.variance()],
-        trajectory=[arnoldi.energy()],
+        energy=energy,
+        variances=[variance],
+        trajectory=[energy],
         converged=False,
         message=f"Exceeded maximum number of steps {maxiter}",
     )
     if callback is not None:
         callback(arnoldi.V[0], results)
-    last_energy = np.Inf
+    last_energy = energy
     for i in range(maxiter):
         v, success = arnoldi.add_vector(operator @ v)
         if not success and nvectors == 2:
@@ -143,21 +169,21 @@ def arnoldi_eigh(
             results.converged = False
             break
         if len(arnoldi.V) == nvectors or not success:
-            v, _ = arnoldi.restart_with_ground_state()
-        energy = arnoldi.energy()
+            v = arnoldi.restart_with_ground_state()
+        energy, variance = arnoldi.energy_and_variance()
         results.trajectory.append(energy)
-        results.variances.append(arnoldi.variance())
+        results.variances.append(variance)
         if energy < results.energy:
-            results.energy, results.state = energy, arnoldi.V[0]
+            results.energy, results.state = energy, arnoldi.eigenvector()
         if callback is not None:
-            callback(arnoldi.V[0], results)
+            callback(arnoldi.eigenvector(), results)
         if len(arnoldi.V) == 1:
             energy_change = energy - last_energy
-            if energy_change > abs(tol):
+            if energy_change > abs(tol_up * energy):
                 results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
                 results.converged = True
                 break
-            if (-abs(tol) <= energy_change) and i > miniter:
+            if i > miniter and (-abs(tol * energy) <= energy_change):
                 results.message = f"Eigenvalue change below tolerance {tol}"
                 results.converged = True
                 break

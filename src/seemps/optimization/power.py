@@ -22,6 +22,7 @@ def power_method(
     maxiter_cgs: int = 50,
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
+    tol_up: Optional[float] = None,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
@@ -39,10 +40,9 @@ def power_method(
     maxiter_cgs : int
         Maximum number of iterations of CGS (defaults to 50).
     tol : float
-        Energy variation with respect to the k_mean moving average that
-        indicates termination (defaults to 1e-13).
-    k_mean: int
-        Number of elements for the moving average.
+        Energy variation that indicates termination (defaults to 1e-13).
+    tol_up : float, default = `tol`
+        If energy fluctuates up below this tolerance, continue the optimization.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
@@ -56,6 +56,8 @@ def power_method(
     OptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.
     """
+    if tol_up is None:
+        tol_up = tol
     if inverse and shift:
         identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.dimensions()])
         H = MPOSum([H, identity], [1.0, shift]).join()
@@ -85,14 +87,19 @@ def power_method(
         tools.log(f"step = {step:5d}, energy = {energy}, variance = {variance}")
         if callback is not None:
             callback(state, results)
-        if (energy - last_energy) >= -abs(tol):
-            results.message = f"Energy converged within tolerance {tol}"
+        energy_change = energy - last_energy
+        if energy_change > tol_up:
+            results.message = f"Energy fluctuates upwards above tolerance {tol_up:5g}"
+            results.converged = True
+            break
+        if -abs(tol) < energy_change < 0:
+            results.message = f"Energy converged within tolerance {tol:5g}"
             results.converged = True
             break
         last_energy = energy
         if variance < tol_variance:
             results.message = (
-                f"Stationary state reached within tolerance {tol_variance}"
+                f"Stationary state reached within tolerance {tol_variance:5g}"
             )
             results.converged = True
             break
@@ -102,7 +109,7 @@ def power_method(
                 state,
                 guess=state,
                 maxiter=maxiter_cgs,
-                tolerance=np.sqrt(tol_variance),
+                tolerance=tol_variance,
                 strategy=strategy,
             )
         else:

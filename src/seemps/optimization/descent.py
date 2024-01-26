@@ -58,8 +58,9 @@ def gradient_descent(
     tol: float = 1e-13,
     k_mean=10,
     tol_variance: float = 1e-14,
+    tol_up: Optional[float] = None,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -72,16 +73,15 @@ def gradient_descent(
     maxiter : int
         Maximum number of iterations (defaults to 1000).
     tol : float
-        Energy variation with respect to the k_mean moving average that
-        indicates termination (defaults to 1e-13).
-    k_mean: int
-        Number of elements for the moving average.
+        Energy variation that indicates termination (defaults to 1e-13).
+    tol_up : float, default = `tol`
+        If energy fluctuates up below this tolerance, continue the optimization.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
     strategy : Optional[Strategy]
         Linear combination of MPS truncation strategy. Defaults to
         DESCENT_STRATEGY.
-    callback : Optional[callable]
+    callback : Optional[Callable[[MPS, OptimizeResults],Any]]
         A callable called after each iteration (defaults to None).
 
     Results
@@ -89,7 +89,8 @@ def gradient_descent(
     OptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.
     """
-
+    if tol_up is None:
+        tol_up = tol
     normalization_strategy = strategy.replace(normalize=True)
     state = CanonicalMPS(state, normalize=True)
     results = OptimizeResults(
@@ -102,6 +103,7 @@ def gradient_descent(
     )
     last_E: float = np.Inf
     H_state: MPS = state
+    tools.log(f"gradient_descent() invoked with {maxiter} iterations")
     for step in range(maxiter + 1):
         """
         The algorithm aims to find the optimal linear combination
@@ -136,14 +138,19 @@ def gradient_descent(
         results.variances.append(variance)
         if E < results.energy:
             results.energy, results.state = E, state
-        if E - last_E >= -abs(tol):
-            results.message = f"Energy converged within tolerance {tol}"
+        energy_change = E - last_E
+        if energy_change > tol_up:
+            results.message = f"Energy fluctuates upwards above tolerance {tol_up:5g}"
+            results.converged = True
+            break
+        if -abs(tol) < energy_change < 0:
+            results.message = f"Energy converged within tolerance {tol:5g}"
             results.converged = True
             break
         last_E = E
         if variance < tol_variance:
             results.message = (
-                f"Stationary state reached within tolerance {tol_variance}"
+                f"Stationary state reached within tolerance {tol_variance:5g}"
             )
             results.converged = True
             break
