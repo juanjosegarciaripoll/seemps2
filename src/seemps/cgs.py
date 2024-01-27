@@ -55,7 +55,9 @@ def cgs(
         r = simplify(MPSSum([1, -1.0], [b, A @ x]), strategy=strategy)
         ρ, ρold = scprod(r, r).real, ρ
         if ρ < tolerance * normb:
-            tools.log("Breaking on convergence")
+            tools.log(
+                f"CGS converged with residual {ρ} below relative tolerance {tolerance}"
+            )
             break
         p = simplify(MPSSum([1.0, ρ / ρold], [r, p]), strategy=strategy)
         tools.log(f"Iteration {i:5}: |r|^2={ρ:5g} tol={tolerance:5g}")
