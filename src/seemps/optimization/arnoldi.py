@@ -20,8 +20,8 @@ class MPSArnoldiRepresentation:
     V: list[MPS]
     strategy: Strategy
     tol_ill_conditioning: float
-    _variance: Optional[float]
-    gamma: float = 0.0
+    gamma: float
+    orthogonalize: bool
     _eigenvector: NDArray
     _energy: Optional[float]
     _variance: Optional[float]
@@ -32,6 +32,7 @@ class MPSArnoldiRepresentation:
         strategy: Strategy = DESCENT_STRATEGY,
         tol_ill_conditioning: float = np.finfo(float).eps * 10,
         gamma: float = 0.0,
+        orthogonalize: bool = True,
     ):
         self.operator = operator
         self.H = self.empty
@@ -43,6 +44,7 @@ class MPSArnoldiRepresentation:
         self._variance = None
         self._energy = None
         self.gamma = gamma
+        self.orthogonalize = orthogonalize
         pass
 
     def _ill_conditioned_norm_matrix(self, N: np.ndarray) -> bool:
@@ -57,9 +59,16 @@ class MPSArnoldiRepresentation:
             v.normalize_inplace()
         else:
             v = simplify(v, strategy=self.strategy)
+        if self.orthogonalize and len(self.V):
+            w = np.linalg.solve(self.N, [-scprod(vi, v) for vi in self.V])
+            v = simplify(MPSSum([1] + w.tolist(), [v] + self.V), strategy=self.strategy)
         n = np.asarray([scprod(vi, v) for vi in self.V]).reshape(-1, 1)
         new_N = np.block([[self.N, n], [n.T.conj(), 1.0]])
-        if len(new_N) > 1 and self._ill_conditioned_norm_matrix(new_N):
+        if (
+            not self.orthogonalize
+            and len(new_N) > 1
+            and self._ill_conditioned_norm_matrix(new_N)
+        ):
             return v, False
         self.N = new_N
         Op = self.operator
@@ -83,7 +92,6 @@ class MPSArnoldiRepresentation:
         if self.gamma == 0 or self._eigenvector is None:
             new_v = v
         else:
-            print(f"gamma = {self.gamma}")
             new_v = simplify(
                 MPSSum([1 - self.gamma, self.gamma], [v, self._eigenvector]),
                 strategy=self.strategy,
@@ -137,7 +145,7 @@ def arnoldi_eigh(
     tol: float = 1e-13,
     tol_ill: float = np.finfo(float).eps * 10,
     tol_up: Optional[float] = None,
-    gamma: float = 0,
+    gamma: float = -0.75,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
