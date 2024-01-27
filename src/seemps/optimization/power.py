@@ -22,6 +22,7 @@ def power_method(
     maxiter_cgs: int = 50,
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
+    tol_cgs: Optional[float] = None,
     tol_up: Optional[float] = None,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
@@ -58,6 +59,8 @@ def power_method(
     """
     if tol_up is None:
         tol_up = tol
+    if tol_cgs is None:
+        tol_cgs = tol_variance
     if inverse and shift:
         identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.dimensions()])
         H = MPOSum([H, identity], [1.0, shift]).join()
@@ -107,9 +110,9 @@ def power_method(
             state, residual = cgs(
                 H,
                 state,
-                guess=state,
+                guess=(1 / energy) * state,
                 maxiter=maxiter_cgs,
-                tolerance=tol_variance,
+                tolerance=tol_cgs,
                 strategy=strategy,
             )
         else:
