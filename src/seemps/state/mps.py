@@ -358,6 +358,7 @@ class MPS(array.TensorArray):
         L: int,
         sites: Optional[Sequence[int]] = None,
         dimensions: Union[int, list[int]] = 2,
+        state: Optional[Vector] = None,
     ):
         """Enlarge an MPS so that it lives in a Hilbert space with `L` sites.
 
@@ -405,7 +406,10 @@ class MPS(array.TensorArray):
         for i, A in enumerate(data):
             if A.ndim == 0:
                 A = np.zeros((D, final_dimensions[k], D))
-                A[:, 0, :] = np.eye(D)
+                if state is not None:
+                    A = np.eye(D).reshape(D, 1, D) * np.reshape(state, (-1, 1))
+                else:
+                    A[:, 0, :] = np.eye(D)
                 data[i] = A
                 k += 1
             else:
