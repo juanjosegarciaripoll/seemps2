@@ -223,8 +223,10 @@ def arnoldi_eigh(
                 results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
                 results.converged = True
                 break
-            if -abs(tol * energy) <= energy_change:
-                results.message = f"Eigenvalue change below tolerance {tol}"
+            if -abs(tol * energy) <= energy_change < 0:
+                results.message = (
+                    f"Eigenvalue change {energy_change} below tolerance {tol}"
+                )
                 results.converged = True
                 break
             last_energy = energy
