@@ -32,12 +32,12 @@ class TestCase(unittest.TestCase):
         else:
             B = np.asarray(B)
         if A.ndim != B.ndim or A.shape != B.shape:
-            error = ""
+            error = f"They do not have the same shape:\n{A.shape} != {B.shape}"
         elif np.all(np.isclose(A, B, **kwdargs)):
             return
         else:
-            error = f"\nmax(|A-B|)={np.max(np.abs(A - B))}"
-        raise self.failureException(f"Objects are not similar:\nA={A}\nB={B}" + error)
+            error = f"Their difference exceeds their value:\nmax(|A-B|)={np.max(np.abs(A - B))}"
+        raise self.failureException(f"Objects are not similar:\nA={A}\nB={B}\n" + error)
 
     def assertSimilarStates(self, A, B, **kwdargs) -> None:
         if isinstance(A, (MPS, MPSSum)):
