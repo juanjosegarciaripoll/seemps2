@@ -126,3 +126,9 @@ class TestMPOSum(TestCase):
         newstate = mposum @ state
         newstate_join = mposum.join() @ state
         self.assertSimilar(newstate.to_vector(), newstate_join.to_vector())
+
+    def test_mposum_T_is_transpose(self):
+        mposum = MPOSum([self.mpoA, self.mpoB], [1, 1j])
+        self.assertSimilar(
+            mposum.T.tomatrix(), self.mpoA.tomatrix().T + 1j * self.mpoB.tomatrix().T
+        )

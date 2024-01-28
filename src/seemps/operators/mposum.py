@@ -95,6 +95,12 @@ class MPOSum(object):
             strategy=self.strategy,
         )
 
+    @property
+    def T(self) -> MPOSum:
+        output = self.copy()
+        output.mpos = [A.T for A in output.mpos]
+        return output
+
     def tomatrix(self) -> Operator:
         """Return the matrix representation of this MPO."""
         A = self.weights[0] * self.mpos[0].tomatrix()

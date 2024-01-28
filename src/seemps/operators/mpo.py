@@ -130,16 +130,24 @@ class MPO(array.TensorArray):
         """Return the bond dimensions of the MPO."""
         return [A.shape[-1] for A in self._data][:-1]
 
+    @property
+    def T(self) -> MPO:
+        output = self.copy()
+        output._data = [A.transpose(0, 2, 1, 3) for A in output._data]
+        return output
+
     # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""
-        D = 1  # Total physical dimension so far
+        Di = 1  # Total physical dimension so far
+        Dj = 1
         out = np.array([[[1.0]]])
         for A in self._data:
-            _, i, _, b = A.shape
+            _, i, j, b = A.shape
             out = np.einsum("lma,aijb->limjb", out, A)
-            D *= i
-            out = out.reshape(D, D, b)
+            Di *= i
+            Dj *= j
+            out = out.reshape(Di, Dj, b)
         return out[:, :, 0]
 
     def set_strategy(self, strategy) -> MPO:
@@ -369,6 +377,12 @@ class MPOList(object):
         if isinstance(n, (int, float, complex)):
             return MPOList([n * self.mpos[0]] + self.mpos[1:], self.strategy)
         raise InvalidOperation("*", n, self)
+
+    @property
+    def T(self) -> MPOList:
+        output = self.copy()
+        output.mpos = [A.T for A in reversed(output.mpos)]
+        return output
 
     # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:

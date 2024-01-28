@@ -123,3 +123,10 @@ class TestMPOList(TestCase):
         UV = MPOList([U, V], NO_TRUNCATION)
         UV_join = UV.join()
         self.assertSimilar(UV.tomatrix(), UV_join.tomatrix())
+
+    def test_mpolist_T_returns_transpose(self):
+        U = MPO([σy.reshape(1, 2, 2, 1)] * 3)
+        V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
+        UV = MPOList([U, V], NO_TRUNCATION)
+        UVT = UV.T
+        self.assertSimilar(UV.tomatrix().T, UVT.tomatrix())
