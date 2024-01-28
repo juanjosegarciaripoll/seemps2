@@ -49,7 +49,7 @@ class TestItimeCase(TestCase):
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         result = self.solve(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-4)
+        self.assertSimilarStates(result.state, exact, atol=1e-4)
 
     def test_eigenvalue_solver_with_callback(self):
         N = 4
@@ -100,7 +100,7 @@ class TestOptimizeCase(TestItimeCase):
         guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
         result = self.solve(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
-        self.assertSimilar(result.state, exact, atol=1e-4)
+        self.assertSimilarStates(result.state, exact, atol=1e-4)
 
     def test_eigenvalue_solver_with_callback(self):
         N = 4
