@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Callable, Any
 from .expectation import scprod
 from .state import MPS, MPSSum, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
 from .mpo import MPO
@@ -14,6 +14,7 @@ def cgs(
     maxiter: int = 100,
     strategy: Strategy = DEFAULT_STRATEGY,
     tolerance: float = DEFAULT_TOLERANCE,
+    callback: Optional[Callable[[MPS, float], Any]] = None,
 ) -> tuple[MPS, float]:
     """Approximate solution of :math:`A \\psi = b`.
 
@@ -54,6 +55,8 @@ def cgs(
         x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
         r = simplify(MPSSum([1, -1.0], [b, A @ x]), strategy=strategy)
         ρ, ρold = scprod(r, r).real, ρ
+        if callback is not None:
+            callback(x, ρ)
         if ρ < tolerance * normb:
             tools.log(
                 f"CGS converged with residual {ρ} below relative tolerance {tolerance}"
