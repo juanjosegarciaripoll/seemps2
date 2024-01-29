@@ -145,6 +145,7 @@ def arnoldi_eigh(
     tol: float = 1e-13,
     tol_ill: float = np.finfo(float).eps * 10,
     tol_up: Optional[float] = None,
+    upward_moves: int = 5,
     gamma: float = -0.75,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
@@ -220,9 +221,12 @@ def arnoldi_eigh(
         if len(arnoldi.V) == 1:
             energy_change = energy - last_energy
             if energy_change > abs(tol_up * energy):
-                results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
-                results.converged = True
-                break
+                if upward_moves <= 0:
+                    results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
+                    results.converged = True
+                    break
+                print(f"Upwards energy fluctuation ignored {energy_change:5g}")
+                upward_moves -= 1
             if -abs(tol * energy) <= energy_change < 0:
                 results.message = (
                     f"Eigenvalue change {energy_change} below tolerance {tol}"

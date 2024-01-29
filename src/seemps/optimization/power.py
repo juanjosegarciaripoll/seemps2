@@ -24,6 +24,7 @@ def power_method(
     tol_variance: float = 1e-14,
     tol_cgs: Optional[float] = None,
     tol_up: Optional[float] = None,
+    upward_moves: int = 5,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
 ) -> OptimizeResults:
@@ -61,7 +62,7 @@ def power_method(
         tol_up = tol
     if tol_cgs is None:
         tol_cgs = tol_variance
-    if inverse and shift:
+    if abs(shift):
         identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.dimensions()])
         H = MPOSum([H, identity], [1.0, shift]).join()
     state = CanonicalMPS(
@@ -76,8 +77,17 @@ def power_method(
         variances=[],
         message=f"Maximum number of iterations {maxiter} reached",
     )
+    # This extra field is needed because CGS consumes iterations
+    # in itself.
+    results.steps = []
     last_energy = np.Inf
     tools.log(f"power_method() invoked with {maxiter} iterations")
+    total_steps = 0
+
+    def cgs_callback(state, residual):
+        nonlocal total_steps
+        total_steps += 1
+
     for step in range(maxiter):
         state.normalize_inplace()
         energy = H.expectation(state)
@@ -87,14 +97,20 @@ def power_method(
         variance = abs(scprod(H_v, H_v) - energy * energy)
         results.trajectory.append(energy)
         results.variances.append(variance)
+        results.steps.append(total_steps)
         tools.log(f"step = {step:5d}, energy = {energy}, variance = {variance}")
         if callback is not None:
             callback(state, results)
         energy_change = energy - last_energy
         if energy_change > tol_up:
-            results.message = f"Energy fluctuates upwards above tolerance {tol_up:5g}"
-            results.converged = True
-            break
+            if upward_moves <= 0:
+                results.message = (
+                    f"Energy fluctuates upwards above tolerance {tol_up:5g}"
+                )
+                results.converged = True
+                break
+            print("Upwards energy fluctuation ignored {energy_change:5g}")
+            upward_moves -= 1
         if -abs(tol) < energy_change < 0:
             results.message = f"Energy converged within tolerance {tol:5g}"
             results.converged = True
@@ -106,6 +122,8 @@ def power_method(
             )
             results.converged = True
             break
+        if total_steps > maxiter:
+            break
         if inverse:
             state, residual = cgs(
                 H,
@@ -114,8 +132,10 @@ def power_method(
                 maxiter=maxiter_cgs,
                 tolerance=tol_cgs,
                 strategy=strategy,
+                callback=cgs_callback,
             )
         else:
             state = CanonicalForm(H_v, strategy=strategy)
+            total_steps += 1
     tools.log(f"power_method() finished with results\n{results}")
     return results
