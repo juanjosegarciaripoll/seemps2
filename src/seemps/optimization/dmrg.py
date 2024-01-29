@@ -161,8 +161,8 @@ def dmrg(
     energy = H.expectation(QF.state)
     variance = abs(H.apply(QF.state).norm_squared() - energy * energy)
     results = OptimizeResults(
-        state=guess,
-        energy=np.Inf,
+        state=QF.state.copy(),
+        energy=energy,
         converged=False,
         message=f"Exceeded maximum number of steps {maxiter}",
         trajectory=[energy],
