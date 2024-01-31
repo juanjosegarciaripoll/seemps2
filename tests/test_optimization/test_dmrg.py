@@ -6,7 +6,7 @@ from seemps.state._contractions import _contract_last_and_first
 from seemps.state import random_uniform_mps, product_state
 from seemps.mpo import MPO
 from seemps.tools import σx
-from seemps.tools import DEBUG
+import seemps.tools
 from ..tools import *
 
 
@@ -89,7 +89,7 @@ class TestDMRG(TestCase):
         """Check we can compute ground state of Sz * Sz on two sites"""
         H = ConstantTIHamiltonian(size=2, interaction=-np.kron(self.Sz, self.Sz))
         Hmpo = H.to_mpo()
-        result = dmrg(Hmpo)
+        result = dmrg(Hmpo, guess=self.random_uniform_mps(2, 2))
         self.assertAlmostEqual(result.energy, -1)
         v = result.state.to_vector()
         self.assertAlmostEqual(v[0] ** 2 + v[3] ** 2, 1.0)
@@ -99,7 +99,7 @@ class TestDMRG(TestCase):
         """Check we can compute ground state of Sz * Sz on two sites"""
         H = ConstantTIHamiltonian(size=3, interaction=-np.kron(self.Sz, self.Sz))
         Hmpo = H.to_mpo()
-        result = dmrg(Hmpo)
+        result = dmrg(Hmpo, guess=self.random_uniform_mps(2, 3))
         self.assertAlmostEqual(result.energy, -2)
         self.assertAlmostEqual(Hmpo.expectation(result.state), -2)
 
@@ -107,7 +107,7 @@ class TestDMRG(TestCase):
         """Check we can compute ground state of Sz * Sz on two sites"""
         H = HeisenbergHamiltonian(size=5, field=[0.0, 0.0, 0.1])
         Hmpo = H.to_mpo()
-        result = dmrg(Hmpo)
+        result = dmrg(Hmpo, guess=self.random_uniform_mps(2, 5))
         E, exact_v = scipy.sparse.linalg.eigsh(H.tomatrix(), k=1, which="SA")
         self.assertAlmostEqual(result.energy, E[0])
         v = result.state.to_vector()
@@ -117,7 +117,7 @@ class TestDMRG(TestCase):
         """Check we can compute ground state of Sz * Sz on two sites"""
         H = ConstantTIHamiltonian(size=3, interaction=-np.kron(self.Sz, self.Sz))
         Hmpo = H.to_mpo()
-        result = dmrg(H)
+        result = dmrg(H, guess=self.random_uniform_mps(2, 3))
         self.assertAlmostEqual(result.energy, -2)
         self.assertAlmostEqual(Hmpo.expectation(result.state), -2)
 
