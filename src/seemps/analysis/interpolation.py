@@ -148,10 +148,10 @@ def finite_differences_interpolation_1D(
         new_qubits_per_dimension[dim] += 1
         new_space = Space(new_qubits_per_dimension, space.L, space.closed)
         new_sites = new_space.sites
-        idx_old_sites = new_sites.copy()
-        idx_old_sites[dim] = list(np.array(idx_old_sites[dim][:-(1)]))
+        new_positions = new_sites.copy()
+        new_positions[dim] = list(np.array(new_positions[dim][:-(1)]))
         new_size = ψ0mps.size + 1
-        derivative_mps = derivative_mps.extend(L=new_size, sites=sum(idx_old_sites, []))
+        derivative_mps = derivative_mps.extend(L=new_size, sites=sum(new_positions, []))
         derivative_mps = (
             new_space.extend(
                 mpo_combined(
@@ -161,7 +161,7 @@ def finite_differences_interpolation_1D(
             )
             @ derivative_mps
         )
-        new_ψ0mps = ψ0mps.extend(L=new_size, sites=sum(idx_old_sites, []))
+        new_ψ0mps = ψ0mps.extend(L=new_size, sites=sum(new_positions, []))
         new_ψ0mps = derivative_mps + new_ψ0mps
         return simplify(new_ψ0mps, strategy=strategy), new_space
     else:
@@ -208,35 +208,26 @@ def finite_differences_interpolation_1D(
             raise Exception("Invalid interpolation order")
         #
         # The new space representation with one more qubit
-        new_qubits_per_dimension = space.qubits_per_dimension.copy()
-        new_qubits_per_dimension[dim] += 1
-        new_space = Space(new_qubits_per_dimension, space.L, space.closed)
-        idx_old_sites = new_space.sites.copy()
-        idx_old_sites[dim] = list(np.array(idx_old_sites[dim][:-(1)]))
-        new_size = ψ0mps.size + 1
+        new_space = space.enlarge_dimension(dim, 1)
+        new_positions = new_space.new_positions_from_old_space(space)
         #
         # We create an MPS by extending the old one to the even sites
         # and placing the interpolating polynomials in an MPS that
         # is only nonzero in the odd sites. We then add. There are better
         # ways for sure.
-        return (
-            simplify(
-                ψ0mps.extend(
-                    L=new_size,
-                    sites=sum(idx_old_sites, []),
-                    dimensions=2,
-                    state=[1.0, 0.0],
-                )
-                + interpolated_points.extend(
-                    L=new_size,
-                    sites=sum(idx_old_sites, []),
-                    dimensions=2,
-                    state=[0.0, 1.0],
-                ),
-                strategy=strategy,
-            ),
-            new_space,
+        odd = ψ0mps.extend(
+            L=new_space.n_sites,
+            sites=new_positions,
+            dimensions=2,
+            state=[1.0, 0.0],
         )
+        even = interpolated_points.extend(
+            L=new_space.n_sites,
+            sites=new_positions,
+            dimensions=2,
+            state=[0.0, 1.0],
+        )
+        return simplify(odd + even, strategy=strategy), new_space
 
 
 def finite_differences_interpolation(ψmps, space, **kwargs):

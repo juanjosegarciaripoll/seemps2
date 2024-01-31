@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from ..operators import MPO, MPOList, MPOSum
 
@@ -48,11 +49,12 @@ class Space:
         If False, the interval is open. (Optional, defaults to True).
     """
 
-    def __init__(self, qubits_per_dimension, L, closed=True):
+    def __init__(self, qubits_per_dimension, L, closed=True, order="A"):
         self.qubits_per_dimension = qubits_per_dimension
         self.grid_dimensions = [2**n for n in qubits_per_dimension]
         self.closed = closed
         self.n_sites = sum(qubits_per_dimension)
+        self.order = order
         self.sites = self.get_sites()
         self.L = L
         self.a = [L_i[0] for L_i in L]
@@ -119,11 +121,32 @@ class Space:
         """Sites for each dimension"""
         sites = []
         index = 0
-        for n in self.qubits_per_dimension:
-            sites.append(list(range(index, index + n)))
-            index += n
+        if self.order == "A":
+            for n in self.qubits_per_dimension:
+                sites.append(np.arange(index, index + n).tolist())
+                index += n
+        else:
+            sites = [[] for _ in self.qubits_per_dimension]
+            for n in range(max(self.qubits_per_dimension)):
+                for d, m in enumerate(self.qubits_per_dimension):
+                    if n < m:
+                        sites[d].append(index)
+                        index += 1
         return sites
 
     def extend(self, op, dim):
         """Extend MPO acting on 1D to a multi-dimensional MPS."""
         return op.extend(self.n_sites, self.sites[dim])
+
+    def enlarge_dimension(self, dim, amount) -> Space:
+        new_qubits_per_dimension = self.qubits_per_dimension.copy()
+        new_qubits_per_dimension[dim] += amount
+        return Space(new_qubits_per_dimension, self.L, self.closed, self.order)
+
+    def new_positions_from_old_space(self, space: Space) -> list[int]:
+        new_positions = self.sites.copy()
+        for d, n in enumerate(space.qubits_per_dimension):
+            new_positions[d] = new_positions[d][:n]
+        new_positions = sum(new_positions, [])
+        new_positions.sort()
+        return new_positions
