@@ -201,7 +201,7 @@ def arnoldi_eigh(
         message=f"Exceeded maximum number of steps {maxiter}",
     )
     if callback is not None:
-        callback(arnoldi.V[0], results)
+        callback(arnoldi.eigenvector(), results)
     last_energy = energy
     for i in range(maxiter):
         v, success = arnoldi.add_vector(operator @ v)
