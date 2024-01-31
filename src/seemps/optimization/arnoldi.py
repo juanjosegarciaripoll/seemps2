@@ -9,6 +9,7 @@ from ..expectation import scprod
 from ..mpo import MPO
 from ..state import MPS, CanonicalMPS, MPSSum, random_mps, Strategy, NO_TRUNCATION
 from ..truncate.simplify import simplify
+from ..tools import log
 from .descent import DESCENT_STRATEGY, OptimizeResults
 
 
@@ -190,6 +191,7 @@ def arnoldi_eigh(
     arnoldi = MPSArnoldiRepresentation(
         operator, strategy, tol_ill_conditioning=tol_ill, gamma=gamma
     )
+    log(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
     v: MPS = arnoldi.restart_with_vector(guess)
     energy, variance = arnoldi.energy_and_variance()
     results = OptimizeResults(
@@ -200,10 +202,11 @@ def arnoldi_eigh(
         converged=False,
         message=f"Exceeded maximum number of steps {maxiter}",
     )
+    log(f"start, energy={energy}, variance={variance}")
     if callback is not None:
         callback(arnoldi.eigenvector(), results)
     last_energy = energy
-    for i in range(maxiter):
+    for step in range(maxiter):
         v, success = arnoldi.add_vector(operator @ v)
         if not success and nvectors == 2:
             results.message = "Unable to construct Arnoldi matrix"
@@ -216,6 +219,7 @@ def arnoldi_eigh(
         results.variances.append(variance)
         if energy < results.energy:
             results.energy, results.state = energy, arnoldi.eigenvector()
+        log(f"step={step}, energy={energy}, variance={variance}")
         if callback is not None:
             callback(arnoldi.eigenvector(), results)
         if len(arnoldi.V) == 1:
@@ -227,11 +231,15 @@ def arnoldi_eigh(
                     break
                 print(f"Upwards energy fluctuation ignored {energy_change:5g}")
                 upward_moves -= 1
-            if -abs(tol * energy) <= energy_change < 0:
+            if -abs(tol * energy) <= energy_change <= 0:
                 results.message = (
-                    f"Eigenvalue change {energy_change} below tolerance {tol}"
+                    f"Eigenvalue change {energy_change} below relative tolerance {tol}"
                 )
                 results.converged = True
                 break
             last_energy = energy
+    log(
+        f"Arnoldi finished with {step} iterations:\n"
+        f"message = {results.message}\nconverged = {results.converged}"
+    )
     return results

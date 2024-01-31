@@ -150,6 +150,7 @@ def dmrg(
     if tol_up is None:
         tol_up = abs(tol)
 
+    log(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
     if guess.center == 0:
@@ -168,6 +169,7 @@ def dmrg(
         trajectory=[energy],
         variances=[variance],
     )
+    log(f"start, energy={energy}, variance={variance}")
     if callback is not None:
         callback(QF.state, results)
     E: float = np.Inf
@@ -211,4 +213,8 @@ def dmrg(
             break
         direction = -direction
         last_E = E
+    log(
+        f"DMRG finished with {step} iterations:\n"
+        f"message = {results.message}\nconverged = {results.converged}"
+    )
     return results
