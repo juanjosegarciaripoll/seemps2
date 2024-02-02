@@ -15,7 +15,7 @@ from ..state.environments import (
     update_left_mpo_environment,
     update_right_mpo_environment,
 )
-from ..tools import log
+from .. import tools
 from ..typing import Optional, Tensor4, Union, Vector
 from .descent import OptimizeResults
 
@@ -74,10 +74,13 @@ class QuadraticForm:
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
         )
 
-    def diagonalize(self, i: int) -> tuple[float, Tensor4]:
+    def diagonalize(self, i: int, tol: float) -> tuple[float, Tensor4]:
         Op = self.two_site_Hamiltonian(i)
         v = _contract_last_and_first(self.state[i], self.state[i + 1])
-        eval, evec = scipy.sparse.linalg.eigsh(Op, 1, which="SA", v0=v.reshape(-1))
+        v /= np.linalg.norm(v.reshape(-1))
+        eval, evec = scipy.sparse.linalg.eigsh(
+            Op, 1, which="SA", v0=v.reshape(-1), tol=tol
+        )
         return eval[0], evec.reshape(v.shape)
 
     def update_2site_right(self, AB: Tensor4, i: int, strategy: Strategy) -> None:
@@ -124,6 +127,9 @@ def dmrg(
         Tolerance in the energy to detect convergence of the algorithm.
     tol_up : float, default = `tol`
         If energy fluctuates up below this tolerance, continue the optimization.
+    tol_eigs : Optional[float], default = `tol`
+        Tolerance of Scipy's eigsh() solver, used internally. Zero means use
+        machine precision.
     strategy : Strategy
         Truncation strategy to keep bond dimensions in check. Defaults to
         `DEFAULT_STRATEGY`, which is very strict.
@@ -149,8 +155,10 @@ def dmrg(
         guess = random_mps(H.dimensions(), D=2)
     if tol_up is None:
         tol_up = abs(tol)
+    if tol_eigs is None:
+        tol_eigs = tol
 
-    log(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
+    tools.log(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
     if guess.center == 0:
@@ -169,7 +177,7 @@ def dmrg(
         trajectory=[energy],
         variances=[variance],
     )
-    log(f"start, energy={energy}, variance={variance}")
+    tools.log(f"start, energy={energy}, variance={variance}")
     if callback is not None:
         callback(QF.state, results)
     E: float = np.Inf
@@ -178,14 +186,14 @@ def dmrg(
     for step in range(maxiter):
         if direction > 0:
             for i in range(0, H.size - 1):
-                E, AB = QF.diagonalize(i)
+                E, AB = QF.diagonalize(i, tol=tol_eigs)
                 QF.update_2site_right(AB, i, strategy)
-                log(f"-> site={i}, eigenvalue={E}")
+                tools.log(f"-> site={i}, eigenvalue={E}")
         else:
             for i in range(H.size - 2, -1, -1):
-                E, AB = QF.diagonalize(i)
+                E, AB = QF.diagonalize(i, tol=tol_eigs)
                 QF.update_2site_left(AB, i, strategy)
-                log(f"<- site={i}, eigenvalue={E}")
+                tools.log(f"<- site={i}, eigenvalue={E}")
 
         # In principle, E is the exact eigenvalue. However, we have
         # truncated the eigenvector, which means that the computation of
@@ -196,7 +204,7 @@ def dmrg(
 
         results.trajectory.append(E)
         results.variances.append(variance)
-        log(f"step={step}, eigenvalue={E}, energy={energy}, variance={variance}")
+        tools.log(f"step={step}, eigenvalue={E}, energy={energy}, variance={variance}")
         if E < results.energy:
             results.energy, results.state = E, QF.state.copy()
         if callback is not None:
@@ -213,7 +221,7 @@ def dmrg(
             break
         direction = -direction
         last_E = E
-    log(
+    tools.log(
         f"DMRG finished with {step} iterations:\n"
         f"message = {results.message}\nconverged = {results.converged}"
     )
