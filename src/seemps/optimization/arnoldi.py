@@ -131,7 +131,7 @@ class MPSArnoldiRepresentation:
         w[0] = 1.0
         NinvH = scipy.linalg.inv(self.N) @ self.H
         u = scipy.sparse.linalg.expm_multiply(factor * NinvH, w)
-        return simplify(MPSSum(w, self.V), strategy=self.strategy)
+        return simplify(MPSSum(u, self.V), strategy=self.strategy)
 
     def build_Krylov_basis(self, v: MPS, order: int) -> bool:
         """Build a Krylov basis up to given order. Returns False
