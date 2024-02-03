@@ -107,6 +107,7 @@ def dmrg(
     maxiter: int = 20,
     tol: float = 1e-10,
     tol_up: Optional[float] = None,
+    tol_eigs: Optional[float] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: Optional[Callable] = None,
 ) -> OptimizeResults:
