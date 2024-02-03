@@ -119,9 +119,18 @@ class MPSArnoldiRepresentation:
         return self._energy, self._variance
 
     def exponential(self, factor: Union[complex, float]) -> MPS:
-        w = np.zeros(self.V)
+        # self.H contains <Vi|H|Vj> for all Krylov vectors |Vi>
+        # self.N contains <Vi|Vj>
+        # The action H |w> on a state |w> = \sum_i wi |Vi>
+        # is not given by self.H, but by inv(self.N) @ self.H @ w
+        # The reason is that if we define
+        #    |u> = H|w> = \sum_i ui |Vi>
+        # then the projection onto the basis gives the equation
+        #    <Vi|H|w> = self.H[i,j] wj = self.N[i,j] uj
+        w = np.zeros(len(self.V))
         w[0] = 1.0
-        w = scipy.sparse.linalg.expm_multiply(factor * self.H, w)
+        NinvH = scipy.linalg.inv(self.N) @ self.H
+        u = scipy.sparse.linalg.expm_multiply(factor * NinvH, w)
         return simplify(MPSSum(w, self.V), strategy=self.strategy)
 
     def build_Krylov_basis(self, v: MPS, order: int) -> bool:
