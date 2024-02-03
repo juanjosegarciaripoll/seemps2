@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from typing import overload
 import numpy as np
 import opt_einsum  # type: ignore
 
@@ -7,7 +7,7 @@ from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, Weigh
 from ..state.environments import *
 from ..state.environments import scprod
 from ..tools import InvalidOperation
-from ..typing import *
+from ..typing import Tensor4, Operator, Weight
 
 
 def _mpo_multiply_tensor(A, B):
@@ -154,6 +154,24 @@ class MPO(array.TensorArray):
         """Return MPO with the given strategy."""
         return MPO(data=self._data, strategy=strategy)
 
+    @overload
+    def apply(
+        self,
+        state: MPS,
+        strategy: Optional[Strategy] = None,
+        simplify: Optional[bool] = None,
+    ) -> MPS:
+        ...
+
+    @overload
+    def apply(
+        self,
+        state: MPSSum,
+        strategy: Optional[Strategy] = None,
+        simplify: Optional[bool] = None,
+    ) -> MPS:
+        ...
+
     def apply(
         self,
         state: Union[MPS, MPSSum],
@@ -203,6 +221,14 @@ class MPO(array.TensorArray):
         if simplify:
             state = truncate.simplify(state, strategy=strategy)
         return state
+
+    @overload
+    def __matmul__(self, b: MPS) -> MPS:
+        ...
+
+    @overload
+    def __matmul__(self, b: MPSSum) -> MPS | MPSSum:
+        ...
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""
@@ -400,6 +426,24 @@ class MPOList(object):
             mpos = self.mpos
         return MPOList(mpos=mpos, strategy=strategy)
 
+    @overload
+    def apply(
+        self,
+        state: MPS,
+        strategy: Optional[Strategy] = None,
+        simplify: Optional[bool] = None,
+    ) -> MPS:
+        ...
+
+    @overload
+    def apply(
+        self,
+        state: MPSSum,
+        strategy: Optional[Strategy] = None,
+        simplify: Optional[bool] = None,
+    ) -> MPS | MPSSum:
+        ...
+
     # TODO: Describe how `strategy` and simplify act as compared to
     # the values provided by individual operators.
     def apply(
@@ -437,6 +481,14 @@ class MPOList(object):
         if simplify:
             state = truncate.simplify(state, strategy=strategy)
         return state
+
+    @overload
+    def __matmul__(self, b: MPS) -> MPS:
+        ...
+
+    @overload
+    def __matmul__(self, b: MPSSum) -> MPS | MPSSum:
+        ...
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""
