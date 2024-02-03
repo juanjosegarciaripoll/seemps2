@@ -217,7 +217,7 @@ cdef tuple _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
         double max_error = strategy.tolerance
         Py_ssize_t i, N = s.size
         Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
-    for i in range(1, N):
+    for i in range(1, final_size):
         if data[i] <= max_error:
             final_size = i
             break
