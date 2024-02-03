@@ -198,7 +198,7 @@ cdef tuple _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
         double max_error = strategy.tolerance * data[0]
         Py_ssize_t i, N = s.size
         Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
-    for i in range(2, final_size):
+    for i in range(1, final_size):
         if data[i] <= max_error:
             final_size = i
             break
@@ -216,15 +216,11 @@ cdef tuple _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
         cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
         double max_error = strategy.tolerance
         Py_ssize_t i, N = s.size
-        Py_ssize_t final_size = N
-    for i in range(N):
+        Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
+    for i in range(1, N):
         if data[i] <= max_error:
             final_size = i
             break
-    if final_size <= 0:
-        final_size = 1
-    elif final_size > strategy.max_bond_dimension:
-        final_size = strategy.max_bond_dimension
     max_error = 0.0
     for i in range(final_size, N):
         max_error += data[i] * data[i]
