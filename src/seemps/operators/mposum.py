@@ -37,6 +37,11 @@ class MPOSum(object):
         self.weights = [1.0] * len(mpos) if weights is None else list(weights)
         self.strategy = strategy
 
+    # TODO: Rename to physical_dimensions()
+    def dimensions(self) -> list[int]:
+        """Return the physical dimensions of the MPO."""
+        return self.mpos[0].dimensions()
+
     def copy(self) -> MPOSum:
         return MPOSum(self.mpos, self.weights, self.strategy)
 

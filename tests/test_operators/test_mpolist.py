@@ -130,3 +130,9 @@ class TestMPOList(TestCase):
         UV = MPOList([U, V], NO_TRUNCATION)
         UVT = UV.T
         self.assertSimilar(UV.tomatrix().T, UVT.tomatrix())
+
+    def test_mpolist_dimensions_returns_those_of_first_mpo(self):
+        U = MPO([self.rng.random(size=(1, 3, 2, 1))] * 3)
+        V = MPO([self.rng.random(size=(1, 4, 3, 1))] * 3)
+        UV = MPOList([U, V], NO_TRUNCATION)
+        self.assertEqual(UV.dimensions(), U.dimensions())

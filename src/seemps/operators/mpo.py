@@ -124,7 +124,7 @@ class MPO(array.TensorArray):
     # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPO."""
-        return [A.shape[1] for A in self._data]
+        return [A.shape[2] for A in self._data]
 
     def bond_dimensions(self) -> list[int]:
         """Return the bond dimensions of the MPO."""
@@ -409,6 +409,11 @@ class MPOList(object):
         output = self.copy()
         output.mpos = [A.T for A in reversed(output.mpos)]
         return output
+
+    # TODO: Rename to physical_dimensions()
+    def dimensions(self) -> list[int]:
+        """Return the physical dimensions of the MPOList."""
+        return self.mpos[0].dimensions()
 
     # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:
