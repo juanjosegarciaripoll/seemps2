@@ -47,6 +47,9 @@ class MPS(array.TensorArray):
         # We use the fact that TensorArray duplicates the list
         return MPS(self._data, self._error)
 
+    def as_mps(self) -> MPS:
+        return self
+
     def dimension(self) -> int:
         """Hilbert space dimension of this quantum system."""
         return math.prod(self.physical_dimensions())

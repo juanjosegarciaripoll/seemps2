@@ -36,17 +36,26 @@ class MPSSum:
 
     def __init__(
         self,
-        weights: Sequence[Weight],
-        states: Sequence[MPS],
+        weights: Iterable[Weight],
+        states: Iterable[Union[MPS, MPSSum]],
     ):
-        # TODO: This is not consistent with MPS, MPO and MPOSum
-        # which copy their input lists. We should decide whether we
-        # want to copy or not.
-        assert len(states) == len(weights)
-        assert len(states) > 0
-        self.weights = list(weights)
-        self.states = list(states)
+        new_weights = []
+        new_states = []
+        for w, s in zip(weights, states):
+            if isinstance(s, MPS):
+                new_weights.append(w)
+                new_states.append(s)
+            elif isinstance(s, MPSSum):
+                new_weights += [w * wi for wi in s.weights]
+                new_states += s.states
+            else:
+                raise ValueError(s)
+        self.weights = new_weights
+        self.states = new_states
         self.size = states[0].size
+
+    def as_mps(self) -> MPS:
+        return self.join()
 
     def copy(self) -> MPSSum:
         """Return a shallow copy of the MPS sum and its data. Does not copy

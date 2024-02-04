@@ -7,7 +7,7 @@ from ..fixture_mps_states import MPSStatesFixture
 
 class TestMPSSum(MPSStatesFixture):
     def make_simple_sum(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         return MPSSum(weights=[1, 2], states=[A, B])
 
@@ -24,14 +24,14 @@ class TestMPSSum(MPSStatesFixture):
         self.assertTrue(B.states is not A.states)
 
     def test_simple_sums(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[1, 2], states=[A, B])
         self.assertTrue(C.weights == [1, 2])
         self.assertTrue(C.states == [A, B])
 
     def test_simple_subtractions(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = A - B
         self.assertIsInstance(C, MPSSum)
@@ -50,8 +50,18 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(B.weights, C.weights)
         self.assertEqual(A.states, C.states)
 
+    def test_mpssum_accepts_mpssums_as_arguments(self):
+        A = MPS(self.product_state)
+        B = MPSSum([0.5, -3], [A.copy(), A.copy()])
+        C = MPSSum([1, 0.5], [A, B])
+        self.assertIsInstance(C, MPSSum)
+        self.assertSimilar(C.weights, [1, 0.5 * 0.5, -0.5 * 3])
+        self.assertTrue(C.states[0] is A)
+        self.assertTrue(C.states[1] is B.states[0])
+        self.assertTrue(C.states[2] is B.states[1])
+
     def test_addition_mpssum_and_mps(self):
-        A = self.make_simple_sum()
+        A = MPS(self.product_state)
         B = MPSSum(weights=[0.5], states=[A])
         C = MPS(self.inhomogeneous_state.copy())
         D = B + C
@@ -59,7 +69,7 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(D.states, [A, C])
 
     def test_subtraction_mpssum_and_mps(self):
-        A = self.make_simple_sum()
+        A = MPS(self.product_state)
         B = MPSSum(weights=[0.5], states=[A])
         C = MPS(self.inhomogeneous_state.copy())
         D = B - C
@@ -67,7 +77,7 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(D.states, [A, C])
 
     def test_subtraction_mps_and_mpssum(self):
-        A = self.make_simple_sum()
+        A = MPS(self.product_state)
         B = MPSSum(weights=[0.5], states=[A])
         C = MPS(self.inhomogeneous_state.copy())
         D = C - B
@@ -81,13 +91,13 @@ class TestMPSSum(MPSStatesFixture):
         self.assertEqual(D.states, A.states + A.states)
 
     def test_mpssum_to_vector(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B])
         self.assertTrue(np.all((0.5 * A.to_vector() - B.to_vector()) == C.to_vector()))
 
     def test_mpssum_join_produces_right_size_tensors(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(canonical=False)
         for i, A in enumerate(C):
@@ -98,13 +108,13 @@ class TestMPSSum(MPSStatesFixture):
             self.assertEqual(A.shape[1], 2)
 
     def test_mpssum_join_produces_sum(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(canonical=False)
         self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
 
     def test_mpssum_join_produces_canonical_form_sum(self):
-        A = MPS(self.product_state.copy())
+        A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(strategy=NO_TRUNCATION)
         self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
