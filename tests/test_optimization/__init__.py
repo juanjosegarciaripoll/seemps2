@@ -1,7 +1,9 @@
-from .test_arnoldi import *
-from .test_gradient_descent import *
-from .test_dmrg import *
-from .test_itime_euler import *
-from .test_itime_improved_euler import *
-from .test_itime_rk import *
-from .test_itime_rkf import *
+from . import (
+    test_arnoldi,
+    test_gradient_descent,
+    test_dmrg,
+    test_itime_euler,
+    test_itime_improved_euler,
+    test_itime_rk,
+    test_itime_rkf,
+)
