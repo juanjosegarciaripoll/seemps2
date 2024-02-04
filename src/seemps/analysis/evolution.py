@@ -1,22 +1,21 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Union
-
+from typing import Union, Callable, Optional, Any
 import numpy as np
+import dataclasses
 
 from ..expectation import scprod
 from ..optimization.descent import DESCENT_STRATEGY
-from ..state import MPS, CanonicalMPS, MPSSum
+from ..state import MPS, CanonicalMPS, MPSSum, Strategy
 from ..operators import MPO, MPOList, MPOSum
 from ..truncate import simplify
-from ..typing import *
+from ..typing import VectorLike
 
 import warnings
 
 warnings.filterwarnings("error")
 
 
-@dataclass
+@dataclasses.dataclass
 class EvolutionResults:
     """Results from ground state search using imaginary time evolution.
 
@@ -36,9 +35,9 @@ class EvolutionResults:
 
     state: Union[MPS, np.ndarray]
     energy: float
-    trajectory: Optional[VectorLike] = None
-    Δβ: Union[float, VectorLike, None] = None
-    β: Optional[VectorLike] = None
+    trajectory: list[float] = dataclasses.field(default_factory=list)
+    Δβ: Union[float, list[float], None] = None
+    β: list[float] = dataclasses.field(default_factory=list)
 
 
 def euler(
@@ -281,14 +280,14 @@ def runge_kutta_fehlberg(
         if δ > tol_rk:
             Δβ = 0.9 * Δβ * (tol_rk / δ) ** (1 / 5)
             continue
-        E = H.expectation(state, state)
+        E = H.expectation(state, state).real
         state = state_ord5
         results.trajectory.append(E)
         if callback is not None:
             callback(state, results)
         if E < results.energy:
             results.energy, results.state = E, state
-            results.Δβ.append(Δβ)
+            results.Δβ.append(Δβ)  # type: ignore
         results.β.append(results.β[-1] + Δβ)
         if δ > 0:
             Δβ = 0.9 * Δβ * (tol_rk / δ) ** (1 / 5)
