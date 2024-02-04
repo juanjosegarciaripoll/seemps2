@@ -168,7 +168,7 @@ def dmrg(
     else:
         direction = -1
         QF = QuadraticForm(H, guess, start=H.size - 2)
-    energy = H.expectation(QF.state)
+    energy = H.expectation(QF.state).real
     variance = abs(H.apply(QF.state).norm_squared() - energy * energy)
     results = OptimizeResults(
         state=QF.state.copy(),
@@ -199,7 +199,7 @@ def dmrg(
         # In principle, E is the exact eigenvalue. However, we have
         # truncated the eigenvector, which means that the computation of
         # the residual cannot use that value
-        energy = H.expectation(QF.state)
+        energy = H.expectation(QF.state).real
         H_state = H @ QF.state
         variance = abs(H_state.norm_squared() - energy * energy)
 

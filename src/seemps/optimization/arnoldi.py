@@ -18,12 +18,12 @@ class MPSArnoldiRepresentation:
     operator: MPO
     H: NDArray
     N: NDArray
-    V: list[MPS]
+    V: list[CanonicalMPS]
     strategy: Strategy
     tol_ill_conditioning: float
     gamma: float
     orthogonalize: bool
-    _eigenvector: NDArray
+    _eigenvector: Optional[CanonicalMPS]
     _energy: Optional[float]
     _variance: Optional[float]
 
@@ -31,7 +31,7 @@ class MPSArnoldiRepresentation:
         self,
         operator: MPO,
         strategy: Strategy = DESCENT_STRATEGY,
-        tol_ill_conditioning: float = np.finfo(float).eps * 10,
+        tol_ill_conditioning: float = np.finfo(float).eps * 10,  # type: ignore
         gamma: float = 0.0,
         orthogonalize: bool = True,
     ):
@@ -48,11 +48,11 @@ class MPSArnoldiRepresentation:
         self.orthogonalize = orthogonalize
         pass
 
-    def _ill_conditioned_norm_matrix(self, N: np.ndarray) -> bool:
+    def _ill_conditioned_norm_matrix(self, N: np.ndarray) -> np.bool_:
         l = np.linalg.eigvalsh(N)[0]
         return np.any(np.abs(l) < self.tol_ill_conditioning)
 
-    def add_vector(self, v: MPS) -> tuple[MPS, bool]:
+    def add_vector(self, v: MPS) -> tuple[CanonicalMPS, bool]:
         # We no longer should need this. Restart takes care of creating
         # a simplified vector, and the user is responsible for letting
         # the MPO do something sensible.
@@ -78,14 +78,14 @@ class MPSArnoldiRepresentation:
         self.V.append(v)
         return v, True
 
-    def restart_with_vector(self, v: MPS) -> MPS:
+    def restart_with_vector(self, v: MPS) -> CanonicalMPS:
         self.H = self.empty.copy()
         self.N = self.empty.copy()
         self.V = []
         v, _ = self.add_vector(v)
         return v
 
-    def restart_with_ground_state(self) -> tuple[MPS, float]:
+    def restart_with_ground_state(self) -> CanonicalMPS:
         eigenvalues, eigenstates = scipy.linalg.eig(self.H, self.N)
         eigenvalues = eigenvalues.real
         ndx = np.argmin(eigenvalues)
@@ -102,10 +102,10 @@ class MPSArnoldiRepresentation:
         self._variance = self._energy = None
         return new_v
 
-    def eigenvector(self) -> MPS:
+    def eigenvector(self) -> CanonicalMPS:
         return self.V[0] if self._eigenvector is None else self._eigenvector
 
-    def energy_and_variance(self) -> float:
+    def energy_and_variance(self) -> tuple[float, float]:
         # Our basis is built as the sequence of normalized vectors
         # v, Hv/||Hv||, H^2v/||H^2v||, ...
         # This means
@@ -113,12 +113,12 @@ class MPSArnoldiRepresentation:
         # H[0,1] = <v|H|Hv> / sqrt(<Hv|Hv>) = sqrt(<Hv|Hv>)
         if self._energy is None or self._variance is None:
             v = self.eigenvector()
-            self._energy = energy = self.operator.expectation(v)
+            self._energy = energy = self.operator.expectation(v).real
             H_v = self.operator.apply(self.V[0], strategy=NO_TRUNCATION)
-            self._variance = abs(abs(scprod(H_v, H_v).real) - energy * energy)
+            self._variance = abs(H_v.norm_squared() - energy * energy)
         return self._energy, self._variance
 
-    def exponential(self, factor: Union[complex, float]) -> MPS:
+    def exponential(self, factor: Union[complex, float]) -> CanonicalMPS:
         # self.H contains <Vi|H|Vj> for all Krylov vectors |Vi>
         # self.N contains <Vi|Vj>
         # The action H |w> on a state |w> = \sum_i wi |Vi>
@@ -153,7 +153,7 @@ def arnoldi_eigh(
     maxiter: int = 100,
     nvectors: int = 10,
     tol: float = 1e-13,
-    tol_ill: float = np.finfo(float).eps * 10,
+    tol_ill: float = np.finfo(float).eps * 10,  # type: ignore
     tol_up: Optional[float] = None,
     upward_moves: int = 5,
     gamma: float = -0.75,

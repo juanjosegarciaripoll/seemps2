@@ -1,16 +1,21 @@
 from __future__ import annotations
-from dataclasses import dataclass
 from typing import Callable, Union, Optional, Any
+import dataclasses
 
 import numpy as np
 
 from ..expectation import scprod
 from ..mpo import MPO, MPOList, MPOSum
-from ..state import MPS, CanonicalMPS, Strategy
+from ..state import MPS, CanonicalMPS, Strategy, random_mps
 from .. import tools
 from ..truncate import simplify
 from .descent import DESCENT_STRATEGY, OptimizeResults
 from ..cgs import cgs
+
+
+@dataclasses.dataclass
+class PowerMethodOptimizeResults(OptimizeResults):
+    steps: list[int] = dataclasses.field(default_factory=list)
 
 
 def power_method(
@@ -27,7 +32,7 @@ def power_method(
     upward_moves: int = 5,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
-) -> OptimizeResults:
+) -> PowerMethodOptimizeResults:
     """Ground state search of Hamiltonian `H` by power method.
 
     Parameters
@@ -55,7 +60,7 @@ def power_method(
 
     Results
     -------
-    OptimizeResults
+    PowerMethodOptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.
     """
     if tol_up is None:
@@ -64,12 +69,12 @@ def power_method(
         tol_cgs = tol_variance
     if abs(shift):
         identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.dimensions()])
-        H = MPOSum([H, identity], [1.0, shift]).join()
+        H = (H + shift * identity).join()
     state = CanonicalMPS(
-        random_mps(operator.dimensions(), D=2) if guess is None else guess,
+        random_mps(H.dimensions(), D=2) if guess is None else guess,
         strategy=strategy,
     )
-    results = OptimizeResults(
+    results = PowerMethodOptimizeResults(
         state=state,
         energy=np.Inf,
         converged=False,
@@ -90,11 +95,11 @@ def power_method(
 
     for step in range(maxiter):
         state.normalize_inplace()
-        energy = H.expectation(state)
+        energy = H.expectation(state).real
         if energy < results.energy:
             results.energy, results.state = energy, state
         H_v = H @ state
-        variance = abs(scprod(H_v, H_v) - energy * energy)
+        variance = abs(H_v.norm_squared() - energy * energy)
         results.trajectory.append(energy)
         results.variances.append(variance)
         results.steps.append(total_steps)
@@ -135,7 +140,7 @@ def power_method(
                 callback=cgs_callback,
             )
         else:
-            state = CanonicalForm(H_v, strategy=strategy)
+            state = simplify(H_v, strategy=strategy)
             total_steps += 1
     tools.log(f"power_method() finished with results\n{results}")
     return results

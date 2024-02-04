@@ -219,13 +219,13 @@ def finite_differences_interpolation_1D(
             L=new_space.n_sites,
             sites=new_positions,
             dimensions=2,
-            state=[1.0, 0.0],
+            state=np.asarray([1.0, 0.0]),
         )
         even = interpolated_points.extend(
             L=new_space.n_sites,
             sites=new_positions,
             dimensions=2,
-            state=[0.0, 1.0],
+            state=np.asarray([0.0, 1.0]),
         )
         return simplify(odd + even, strategy=strategy), new_space
 
