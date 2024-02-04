@@ -174,6 +174,17 @@ class MPSSum:
             [np.conj(w) for w in self.weights], [state.conj() for state in self.states]
         )
 
+    def norm_squared(self) -> float:
+        """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
+        w = self.weights
+        s = self.states
+        L = len(w)
+        return sum(
+            (w[i].conjugate() * w[j] * scprod(s[i], s[j])).real * (1 if i == j else 2)
+            for i in range(L)
+            for j in range(i, L)
+        )
+
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402

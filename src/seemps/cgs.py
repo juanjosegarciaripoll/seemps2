@@ -1,21 +1,28 @@
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Union
 from .expectation import scprod
-from .state import MPS, MPSSum, DEFAULT_TOLERANCE, DEFAULT_STRATEGY, Strategy
-from .mpo import MPO
+from .state import (
+    MPS,
+    MPSSum,
+    CanonicalMPS,
+    DEFAULT_TOLERANCE,
+    DEFAULT_STRATEGY,
+    Strategy,
+)
+from .operators import MPO, MPOList, MPOSum
 from .truncate import simplify
 from . import tools
 
 
 # TODO: Write tests for this
 def cgs(
-    A: MPO,
-    b: MPS,
+    A: Union[MPO, MPOList, MPOSum],
+    b: Union[MPS, MPSSum],
     guess: Optional[MPS] = None,
     maxiter: int = 100,
     strategy: Strategy = DEFAULT_STRATEGY,
     tolerance: float = DEFAULT_TOLERANCE,
     callback: Optional[Callable[[MPS, float], Any]] = None,
-) -> tuple[MPS, float]:
+) -> tuple[CanonicalMPS, float]:
     """Approximate solution of :math:`A \\psi = b`.
 
     Given the :class:`MPO` `A` and the :class:`MPS` `b`, use the conjugate
@@ -24,9 +31,9 @@ def cgs(
 
     Parameters
     ----------
-    A : MPO
+    A : MPO | MPOList | MPOSum
         Matrix product state that will be inverted
-    b : MPS
+    b : MPS | MPSSum
         Right-hand side of the equation
     maxiter : int, default = 100
         Maximum number of iterations
@@ -42,22 +49,22 @@ def cgs(
     float
         Norm square of the residual :math:`\\Vert{A \\psi - b}\\Vert^2`
     """
-    normb = scprod(b, b).real
+    normb2 = b.norm_squared()
     if strategy.get_normalize_flag():
         strategy = strategy.replace(normalize=False)
-    x = b if guess is None else guess
-    r = simplify(MPSSum([1.0, -1.0], [b, A @ x]), strategy=strategy)
-    p = r
-    ρ = scprod(r, r).real
+    x = simplify(b if guess is None else guess, strategy=strategy)
+    r = b - A @ x
+    p = simplify(r, strategy=strategy)
+    ρ = r.norm_squared()
     tools.log(f"CGS algorithm for {maxiter} iterations")
     for i in range(maxiter):
         α = ρ / A.expectation(p).real
         x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
-        r = simplify(MPSSum([1, -1.0], [b, A @ x]), strategy=strategy)
-        ρ, ρold = scprod(r, r).real, ρ
+        r = b - A @ x
+        ρ, ρold = r.norm_squared(), ρ
         if callback is not None:
             callback(x, ρ)
-        if ρ < tolerance * normb:
+        if ρ < tolerance * normb2:
             tools.log(
                 f"CGS converged with residual {ρ} below relative tolerance {tolerance}"
             )

@@ -118,3 +118,10 @@ class TestMPSSum(MPSStatesFixture):
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(strategy=NO_TRUNCATION)
         self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
+
+    def test_mpssum_norm_squared(self):
+        A = self.random_uniform_mps(2, 3)
+        B = self.random_uniform_mps(2, 3)
+        C = MPSSum([1.0, 1j], [A, B])
+        n2 = C.norm_squared()
+        self.assertAlmostEqual(n2, C.join().norm_squared())
