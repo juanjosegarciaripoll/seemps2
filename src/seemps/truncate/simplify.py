@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union, Optional
-import scipy.linalg
+import scipy.linalg  # type: ignore # scipy does not provide type declarations
 from ..state import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
