@@ -1,6 +1,6 @@
 from __future__ import annotations
-
 import numpy as np
+from typing import Union, Optional
 
 from ..state import (
     DEFAULT_TOLERANCE,
@@ -14,8 +14,8 @@ from ..state import (
 )
 from ..state.environments import scprod
 from .. import tools
-from ..typing import *
 from .antilinear import AntilinearForm
+from ..typing import Weight, Tensor3
 
 # TODO: We have to rationalize all this about directions. The user should
 # not really care about it and we can guess the direction from the canonical
@@ -35,7 +35,7 @@ def simplify(
     state: Union[MPS, MPSSum],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-) -> MPS:
+) -> CanonicalMPS:
     """Simplify an MPS state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
 
@@ -212,7 +212,7 @@ def combine(
     guess: Optional[MPS] = None,
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-) -> MPS:
+) -> CanonicalMPS:
     """Approximate a linear combination of MPS :math:`\\sum_i w_i \\psi_i` by
     another one with a smaller bond dimension, sweeping until convergence is achieved.
 
