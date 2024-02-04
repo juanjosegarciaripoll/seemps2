@@ -1,7 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Callable, Union
-
+from typing import Callable, Union, Any, Optional
+import scipy.linalg  # type: ignore
+import dataclasses
 import numpy as np
 
 from ..expectation import scprod
@@ -16,12 +16,11 @@ from ..state import (
 )
 from .. import tools
 from ..truncate.simplify import simplify
-from ..typing import *
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-@dataclass
+@dataclasses.dataclass
 class OptimizeResults:
     """Results from ground state search.
 
@@ -47,13 +46,13 @@ class OptimizeResults:
     energy: float
     converged: bool
     message: str
-    trajectory: Optional[VectorLike] = None
-    variances: Optional[VectorLike] = None
+    trajectory: list[float] = dataclasses.field(default_factory=list)
+    variances: list[float] = dataclasses.field(default_factory=list)
 
 
 def gradient_descent(
     H: Union[MPO, MPOList, MPOSum],
-    state: MPS,
+    guess: Union[MPS, MPSSum],
     maxiter=1000,
     tol: float = 1e-13,
     k_mean=10,
@@ -68,7 +67,7 @@ def gradient_descent(
     ----------
     H : Union[MPO, MPOList, MPOSum]
         Hamiltonian in MPO form.
-    state : MPS
+    state : MPS | MPSSum
         Initial guess of the ground state.
     maxiter : int
         Maximum number of iterations (defaults to 1000).
@@ -92,17 +91,15 @@ def gradient_descent(
     if tol_up is None:
         tol_up = tol
     normalization_strategy = strategy.replace(normalize=True)
-    state = CanonicalMPS(state, normalize=True)
+    state = simplify(guess, strategy=strategy)
     results = OptimizeResults(
         state=state,
         energy=np.Inf,
-        variances=[],
-        trajectory=[],
         converged=False,
         message=f"Exceeded maximum number of steps {maxiter}",
     )
-    last_E: float = np.Inf
-    H_state: MPS = state
+    E = last_E = variance = avg_H2 = np.Inf
+    H_state: MPS
     tools.log(f"gradient_descent() invoked with {maxiter} iterations")
     for step in range(maxiter + 1):
         """
