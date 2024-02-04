@@ -52,7 +52,7 @@ class MPSSum:
                 raise ValueError(s)
         self.weights = new_weights
         self.states = new_states
-        self.size = states[0].size
+        self.size = new_states[0].size
 
     def as_mps(self) -> MPS:
         return self.join()

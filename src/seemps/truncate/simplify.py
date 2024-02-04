@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union, Optional
-
+import scipy.linalg
 from ..state import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
