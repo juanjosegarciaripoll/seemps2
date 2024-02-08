@@ -100,27 +100,27 @@ class TestChebyshevMPS(TestCase):
     def test_gaussian_1d(self):
         f = lambda x: np.exp(-(x**2))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f, 20, interval)
+        mps_cheb = chebyshev_approximation(f, 30, interval)
         self.assertSimilar(f(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_derivative_1d(self):
         f = lambda x: np.exp(-(x**2))
         f_diff = lambda x: -2 * x * np.exp(-(x**2))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f, 22, interval, differentiation_order=1)
+        mps_cheb = chebyshev_approximation(f, 30, interval, differentiation_order=1)
         self.assertSimilar(f_diff(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d(self):
         f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f_intg, 20, interval)
+        mps_cheb = chebyshev_approximation(f_intg, 30, interval)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d_b(self):
         f = lambda x: np.exp(-(x**2))
         f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f, 20, interval, differentiation_order=-1)
+        mps_cheb = chebyshev_approximation(f, 30, interval, differentiation_order=-1)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_2d(self):
