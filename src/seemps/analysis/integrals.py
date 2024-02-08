@@ -8,7 +8,7 @@ from ..expectation import scprod
 
 from .mesh import RegularHalfOpenInterval, Mesh
 from .factories import mps_tensor_product, mps_affine_transformation
-from .cross_refactored import cross_interpolation, CrossStrategy
+from .cross import cross_interpolation, CrossStrategy
 
 
 def mps_midpoint(start: float, stop: float, sites: int) -> MPS:

@@ -209,7 +209,7 @@ class CrossResults:
 def cross_interpolation(
     func: Callable,
     mesh: Mesh,
-    cross_strategy: Optional[CrossStrategy] = CrossStrategy(),
+    cross_strategy: Optional[CrossStrategy] = None,
     initial_state: Optional[MPS] = None,
     callback: Optional[Callable] = None,
 ) -> CrossResults:
@@ -246,6 +246,11 @@ def cross_interpolation(
         returns other information about the trajectories of a collection of
         magnitudes.
     """
+    # Avoid default argument initialization pitfall
+    # (the cross_strategy does not reinitialize for different calls of cross_interpolation()
+    #  and, for example makes test fail)
+    if cross_strategy == None:
+        cross_strategy = CrossStrategy()
     # Initialize Cross data structure
     base = cross_strategy.physical_dimension
     sites_per_dimension = [int(np.emath.logn(base, s)) for s in mesh.dimensions]
