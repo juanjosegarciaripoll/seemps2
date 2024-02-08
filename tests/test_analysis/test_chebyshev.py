@@ -135,7 +135,7 @@ class TestChebyshevMPS(TestCase):
         strategy = DEFAULT_CHEBYSHEV_STRATEGY.replace(
             tolerance=1e-15, simplification_tolerance=1e-15
         )
-        mps_cheb = cheb2mps(c, x=mps_x_plus_y, strategy=strategy)
+        mps_cheb = cheb2mps(c, x_mps=mps_x_plus_y, strategy=strategy)
         X, Y = np.meshgrid(interval_x.to_vector(), interval_y.to_vector())
         Z_vector = f(X + Y)
         Z_mps = mps_cheb.to_vector().reshape([2**sites, 2**sites])
