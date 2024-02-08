@@ -6,32 +6,44 @@ from scipy.fft import dct  # type: ignore
 from typing import Callable, Optional
 
 from .mesh import ChebyshevZerosInterval, Interval
-from .factories import mps_interval
+from .factories import mps_interval, mps_affine_transformation
 from ..operators import MPO
 from ..state import MPS, Strategy, Truncation, Simplification
 from ..truncate import simplify
+from ..tools import log
+
+# TODO: All the tests have been done using the `RELATIVE_SINGULAR_VALUE`
+# truncation method, which is kind of flunky, because it does not measure
+# the actual error. This should be migrated to DEFAULT_STRATEGY, maybe
+# strengthening the tolerance
+DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
+    method=Truncation.RELATIVE_SINGULAR_VALUE,
+    tolerance=1e-8,
+    simplify=Simplification.VARIATIONAL,
+    simplification_tolerance=1e-8,
+    normalize=False,
+)
 
 
+# TODO: Implement projection coefficients (coming from integration)
 def chebyshev_coefficients(
-    f: Callable,
+    func: Callable,
     order: int,
     start: float = -1,
     stop: float = +1,
     domain: Optional[Interval] = None,
 ) -> np.polynomial.Chebyshev:
     """
-    Returns the Chebyshev coefficients for a given function on a specified
-    interval using the Discrete Cosine Transform (DCT II).
+    Returns the Chebyshev interpolation coefficients for a given function
+    on a specified interval.
 
-    The error of the Chebyshev approximation is related to the magnitude of the
-    last (or second-to-last) coefficient of the series. As a rule of thumb, the
-    error is given by the sum of all the neglected coefficients, which can be
-    close to the magnitude of the last coefficient if the series decays sufficiently
-    fast (for example, exponentially fast for analytical functions).
+    The error of a Chebyshev interpolation is proportiona to all of the neglected
+    coefficients of higher order. If the decay is exponential, it can be approximated by
+    the last coefficient computed by this function.
 
     Parameters
     ----------
-    f : Callable
+    func : Callable
         The target function to approximate with Chebyshev polynomials.
     order : int
         The number of Chebyshev coefficients to compute.
@@ -50,54 +62,25 @@ def chebyshev_coefficients(
     if domain is not None:
         start, stop = domain.start, domain.stop
     chebyshev_zeros = np.flip(ChebyshevZerosInterval(start, stop, order).to_vector())
-    coefficients = dct(f(chebyshev_zeros), type=2) / order
+    coefficients = dct(func(chebyshev_zeros), type=2) / order
     coefficients[0] /= 2
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
-# TODO: All the tests have been done using the `RELATIVE_SINGULAR_VALUE`
-# truncation method, which is kind of flunky, because it does not measure
-# the actual error. This should be migrated to DEFAULT_STRATEGY, maybe
-# strengthening the tolerance
-DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
-    method=Truncation.RELATIVE_SINGULAR_VALUE,
-    tolerance=1e-8,
-    simplify=Simplification.VARIATIONAL,
-    simplification_tolerance=1e-8,
-    normalize=False,
-)
-
-
-def _interval_map(orig, dest):
-    """Compute the affine transformation between two intervals.
-
-    Map the original domain [x0, x1] to [u0, u1]
-    This is a transformation u = a * x + b
-    with u0 = a * x0 + b
-    and  u1 = a * x1 + b
-    Hence a = (u1 - u0) / (x1 - x0)
-          b = ((u1 + u0) - a * (x0 + x1)) / 2
-    """
-    x0, x1 = orig
-    u0, u1 = dest
-    a = (u1 - u0) / (x1 - x0)
-    b = 0.5 * ((u1 + u0) - a * (x0 + x1))
-    return a, b
-
-
+# TODO: Implement adaptivity (starting point) for when using projection coefficients
 def cheb2mps(
     c: np.polynomial.Chebyshev,
     domain: Optional[Interval] = None,
-    x: Optional[MPS] = None,
+    x_mps: Optional[MPS] = None,
     strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
 ) -> MPS:
     """
     Construct an MPS representation of a function, from a Chebyshev expansion.
 
     This function takes as input an MPS representation of the first order
-    polynomial `x` in a given `domain`, with values `[x0,x1]`. It also takes
+    polynomial `x` in a given `domain`, with values `[x0, x1]`. It also takes
     a Chebyshev expansion `c` of a function `c(x)` defined in a domain that
-    contains this interval `[x0,x1]`. With this information, it constructs
+    contains this interval `[x0, x1]`. With this information, it constructs
     the MPS that approximates `c(x)`.
 
     Parameters
@@ -107,7 +90,7 @@ def cheb2mps(
     domain : Optional[Interval], default = None
         Interval of definition for the function, which must be contained in the
         Chebyshev's series domain.
-    x : Optional[MPS], default = None
+    x_mps : Optional[MPS], default = None
         MPS representation of the `x` function in the series' domain. It will
         be computed from `domain` if not provided.
     strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
@@ -121,33 +104,25 @@ def cheb2mps(
     x_mps: MPS
     if domain is not None:
         x_mps = mps_interval(domain.map_to(-1, 1))
-        L = len(x_mps)
-        I = MPS([np.ones((1, 2, 1))] * L)
-    elif isinstance(x, MPS):
-        # We assume that `x` is contained in the domain (x0, x1)
-        # of the Chebyshev expansion
-        (x0, x1), _ = c.linspace(2)
-        # We map the MPS operator to the (-1, 1) domain using
-        # a linear transformation.
-        a, b = _interval_map((x0, x1), (-1, 1))
-        x_mps = a * x
-        L = len(x_mps)
-        I = MPS([np.ones((1, 2, 1))] * L)
-        if np.abs(b) > np.finfo(np.float64).eps:
-            x_mps = (x_mps + b * I).join()
+    elif isinstance(x_mps, MPS):
+        orig, _ = c.linspace(2)
+        x_mps = mps_affine_transformation(x_mps, orig, (-1, 1))
     else:
         raise Exception("In cheb2mps, either domain or an MPS must be provided.")
 
     coef = c.coef
+    I = MPS([np.ones((1, 2, 1))] * len(x_mps))
     y = [MPS([np.zeros((1, 2, 1))] * len(x_mps))] * (len(coef) + 2)
     for i in range(len(y) - 3, -1, -1):
         y[i] = simplify(
             coef[i] * I - y[i + 2] + 2 * x_mps * y[i + 1],
             strategy=strategy,
         )
+        log(f"Clenshaw step {i} with maxbond {max(y[i].bond_dimensions())}")
     return simplify(y[0] - x_mps * y[1], strategy=strategy)
 
 
+# TODO: Implement
 def cheb2mpo(
     c: np.polynomial.Chebyshev,
     domain: Optional[Interval] = None,
@@ -185,8 +160,9 @@ def cheb2mpo(
     raise Exception("cheb2mpo not implemented")
 
 
+# TODO: Consider if this helper function is necessary
 def chebyshev_approximation(
-    f: Callable,
+    func: Callable,
     order: int,
     domain: Interval,
     differentiation_order: int = 0,
@@ -201,7 +177,7 @@ def chebyshev_approximation(
 
     Parameters
     ----------
-    f : Callable
+    func : Callable
         A univariate scalar function.
     order : int
         Order of the Chebyshev expansion
@@ -218,7 +194,7 @@ def chebyshev_approximation(
     mps : MPS
         MPS approximation to the function.
     """
-    c = chebyshev_coefficients(f, order, domain.start, domain.stop)
+    c = chebyshev_coefficients(func, order, domain.start, domain.stop)
     if differentiation_order < 0:
         c = c.integ(-differentiation_order, lbnd=domain.start)
     elif differentiation_order > 0:

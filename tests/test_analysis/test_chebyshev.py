@@ -100,27 +100,27 @@ class TestChebyshevMPS(TestCase):
     def test_gaussian_1d(self):
         f = lambda x: np.exp(-(x**2))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f, 20, interval)
+        mps_cheb = chebyshev_approximation(f, 30, interval)
         self.assertSimilar(f(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_derivative_1d(self):
         f = lambda x: np.exp(-(x**2))
         f_diff = lambda x: -2 * x * np.exp(-(x**2))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f, 22, interval, differentiation_order=1)
+        mps_cheb = chebyshev_approximation(f, 30, interval, differentiation_order=1)
         self.assertSimilar(f_diff(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d(self):
         f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f_intg, 20, interval)
+        mps_cheb = chebyshev_approximation(f_intg, 30, interval)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d_b(self):
         f = lambda x: np.exp(-(x**2))
         f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
-        mps_cheb = chebyshev_approximation(f, 20, interval, differentiation_order=-1)
+        mps_cheb = chebyshev_approximation(f, 30, interval, differentiation_order=-1)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_2d(self):
@@ -135,7 +135,7 @@ class TestChebyshevMPS(TestCase):
         strategy = DEFAULT_CHEBYSHEV_STRATEGY.replace(
             tolerance=1e-15, simplification_tolerance=1e-15
         )
-        mps_cheb = cheb2mps(c, x=mps_x_plus_y, strategy=strategy)
+        mps_cheb = cheb2mps(c, x_mps=mps_x_plus_y, strategy=strategy)
         X, Y = np.meshgrid(interval_x.to_vector(), interval_y.to_vector())
         Z_vector = f(X + Y)
         Z_mps = mps_cheb.to_vector().reshape([2**sites, 2**sites])
