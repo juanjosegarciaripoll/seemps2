@@ -133,43 +133,33 @@ class TestMesh(TestCase):
         )
 
     def test_mesh_transformation_matrix_A_order(self):
-        m = Mesh([RegularClosedInterval(0, 1, 2)])
-        T = m.mps_to_mesh_matrix()
+        T = mps_to_mesh_matrix([1])
         self.assertSimilar(T, np.eye(1))
 
-        m = Mesh([RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix()
+        T = mps_to_mesh_matrix([2])
         self.assertSimilar(T, [[2], [1]])
 
-        m = Mesh([RegularClosedInterval(0, 1, 2), RegularClosedInterval(0, 1, 2)])
-        T = m.mps_to_mesh_matrix()
+        T = mps_to_mesh_matrix([1, 1])
         self.assertSimilar(T, np.eye(2))
 
-        m = Mesh([RegularClosedInterval(0, 1, 2), RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix()
+        T = mps_to_mesh_matrix([1, 2])
         self.assertSimilar(T, [[1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
 
-        m = Mesh([RegularClosedInterval(0, 1, 4), RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix()
+        T = mps_to_mesh_matrix([2, 2])
         self.assertSimilar(T, [[2.0, 0.0], [1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
 
     def test_mesh_transformation_matrix_B_order(self):
-        m = Mesh([RegularClosedInterval(0, 1, 2)])
-        T = m.mps_to_mesh_matrix("B")
+        T = mps_to_mesh_matrix([1], "B")
         self.assertSimilar(T, np.eye(1))
 
-        m = Mesh([RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix("B")
+        T = mps_to_mesh_matrix([2], "B")
         self.assertSimilar(T, [[2], [1]])
 
-        m = Mesh([RegularClosedInterval(0, 1, 2), RegularClosedInterval(0, 1, 2)])
-        T = m.mps_to_mesh_matrix("B")
+        T = mps_to_mesh_matrix([1, 1], "B")
         self.assertSimilar(T, np.eye(2))
 
-        m = Mesh([RegularClosedInterval(0, 1, 2), RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix("B")
+        T = mps_to_mesh_matrix([1, 2], "B")
         self.assertSimilar(T, [[1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
 
-        m = Mesh([RegularClosedInterval(0, 1, 4), RegularClosedInterval(0, 1, 4)])
-        T = m.mps_to_mesh_matrix("B")
+        T = mps_to_mesh_matrix([2, 2], "B")
         self.assertSimilar(T, [[2.0, 0.0], [0.0, 2.0], [1.0, 0.0], [0.0, 1.0]])
