@@ -1,11 +1,14 @@
 import numpy as np
-from scipy.fftpack import ifft  # type: ignore
-from typing import Callable, Union
-from seemps.analysis import Mesh, mps_tensor_product
-from seemps.expectation import scprod
-from seemps.state import DEFAULT_TOLERANCE, MPS, Strategy
+from typing import Callable, Union, Optional
 
-QUADRATURE_STRATEGY = Strategy(tolerance=DEFAULT_TOLERANCE)
+from ..state import MPS, Strategy, Truncation
+from ..truncate import simplify
+from ..qft import iqft, qft_flip
+from ..expectation import scprod
+
+from .mesh import RegularHalfOpenInterval, Mesh
+from .factories import mps_tensor_product, mps_affine_transformation
+from .cross import cross_interpolation, CrossStrategy
 
 
 def mps_midpoint(start: float, stop: float, sites: int) -> MPS:
@@ -196,39 +199,126 @@ def mps_fifth_order(start: float, stop: float, sites: int) -> MPS:
     return (5 * step / 288) * MPS(tensors)
 
 
-def mps_fejer(start: float, stop: float, points: int) -> MPS:
+def mps_fejer(
+    start: float,
+    stop: float,
+    sites: int,
+    strategy: Optional[Strategy] = Strategy(
+        tolerance=1e-15,
+        simplification_tolerance=1e-15,
+        method=Truncation.ABSOLUTE_SINGULAR_VALUE,
+    ),
+    cross_strategy: CrossStrategy = CrossStrategy(tol_error=1e-15),
+) -> MPS:
     """
-    Returns a MPS representing the Féjer quadrature of an interval.
+    Returns the MPS encoding of the Fejér first quadrature rule.
+    This is achieved using the formulation of Waldvogel (see waldvogel2006 formula 4.4)
+    by means of a direct encoding of the Féjer phase, tensor cross interpolation
+    for the term $1/(1-4*k**2)$, and the corrected inverse Quantum Fourier Transform (iQFT).
 
     Parameters
-    ---------
+    ----------
     start : float
-        The starting point of the interval.
+        The start of the interval.
     stop : float
-        The ending point of the interval.
-    points : int
-        The number of quadrature points.
+        The end of the interval.
+    sites : int
+        The number of sites or qubits for the MPS.
+    strategy : Optional[Strategy], optional
+        The strategy for MPS simplification. Defaults to a tolerance of 1e-15.
+    cross_strategy : CrossStrategy, optional
+        The strategy for cross interpolation. Defaults to a tolerance of 1e-15.
+
+    Returns
+    -------
+    MPS
+        An MPS encoding of the Fejér first quadrature rule.
     """
-    # TODO: Optimize maybe this?
-    d = 2**points
-    N = np.arange(start=1, stop=d, step=2)[:, None]
-    l = N.size
-    v0 = [2 * np.exp(1j * np.pi * k / d) / (1 - 4 * k**2) for k in range(l)] + [0] * (
-        l + 1
+
+    N = int(2**sites)
+
+    # Encode 1/(1 - 4*k**2) term with cross interpolation
+    # TODO: Consider a better way instead of using cross
+    func = lambda k: np.where(
+        k < N / 2,
+        2 / (1 - 4 * k**2),
+        2 / (1 - 4 * (N - k) ** 2),
     )
-    v1 = v0[0:-1] + np.conj(v0[:0:-1])
-    vector = ifft(v1).flatten().real
-    mps = MPS.from_vector(
-        vector,
-        [2 for _ in range(points)],
-        normalize=False,
-        strategy=QUADRATURE_STRATEGY,
+    cross_results = cross_interpolation(
+        func, Mesh([RegularHalfOpenInterval(0, N, N)]), cross_strategy=cross_strategy
     )
-    step = (stop - start) / 2
-    return step * mps
+    mps_k2 = simplify(cross_results.state, strategy=strategy)
+
+    # Encode phase term directly
+    p = 1j * np.pi / N  # prefactor
+    exponent = p * 2 ** (sites - 1)
+    tensor_1 = np.zeros((1, 2, 5), dtype=complex)
+    tensor_2 = np.zeros((5, 2, 1), dtype=complex)
+    tensors_bulk = [np.zeros((5, 2, 5), dtype=complex) for _ in range(sites - 2)]
+    tensor_1[0, 0, 0] = 1
+    tensor_1[0, 1, 1] = np.exp(-exponent)
+    tensor_1[0, 1, 2] = np.exp(exponent)
+    tensor_1[0, 1, 3] = -np.exp(-exponent)
+    tensor_1[0, 1, 4] = -np.exp(exponent)
+    tensor_2[0, 0, 0] = 1
+    tensor_2[0, 1, 0] = np.exp(p)
+    tensor_2[1, 0, 0] = 1
+    tensor_2[1, 1, 0] = np.exp(p)
+    tensor_2[2, 0, 0] = 1
+    tensor_2[3, 0, 0] = 1
+    tensor_2[4, 0, 0] = 1
+    for idx, tensor in enumerate(tensors_bulk):
+        exponent = p * 2 ** (sites - (idx + 2))
+        tensor[0, 0, 0] = 1
+        tensor[0, 1, 0] = np.exp(exponent)
+        tensor[1, 0, 1] = 1
+        tensor[1, 1, 1] = np.exp(exponent)
+        tensor[2, 0, 2] = 1
+        tensor[3, 0, 3] = 1
+        tensor[4, 0, 4] = 1
+    tensors = [tensor_1] + tensors_bulk + [tensor_2]
+    mps_phase = MPS(tensors)
+
+    # Encode Fejér MPS with iQFT
+    mps_v = mps_k2 * mps_phase
+    mps = (1 / np.sqrt(2) ** sites) * qft_flip(iqft(mps_v, strategy=strategy))
+
+    return mps_affine_transformation(mps, (-1, 1), (start, stop))
 
 
-def integrate_mps(mps: MPS, mesh: Mesh, integral_type: str) -> Union[float, complex]:
+# TODO: Consider if this helper function is necessary
+def integrate_mps(
+    mps: MPS, mesh: Mesh, integral_type: str = "trapezoidal", mps_order: str = "A"
+) -> Union[float, complex]:
+    """
+    Returns the integral of a MPS representation of a function defined on a given mesh.
+    Supports multiple quadrature types, including midpoint, trapezoidal, Simpson's rule,
+    fifth-order, and Fejér's rule.
+
+    Parameters
+    ----------
+    mps : MPS
+        The input MPS to integrate representing a multivariate function.
+    mesh : Mesh
+        A Mesh object representing the intervals over which the function is defined.
+    integral_type : str
+        The type of numerical integration method to use. Options:
+        - "midpoint": Midpoint rule integration.
+        - "trapezoidal": Trapezoidal rule integration (default).
+        - "simpson": Simpson's rule integration (requires the qubits of each MPS to be a multiple of 2).
+        - "fifth_order": Fifth-order rule integration (requires the qubits of each MPS to be a multiple of 4).
+        - "fejer": Fejér's rule integration (requires the function to be discretized on Chebyshev zeros).
+        If an unsupported integral type is specified, a ValueError is raised.
+    mps_order : str, optional
+        The order in which to arrange the qubits of the quadrature before contraction. Options:
+        - 'A': The qubits are arranged by dimension (default).
+        - 'B': The qubits are arranged by significance.
+
+    Returns
+    -------
+    Union[float, complex]
+        The resulting integral.
+    """
     foo: Callable[[float, float, int], MPS]
     if integral_type == "midpoint":
         foo = mps_midpoint
@@ -241,9 +331,9 @@ def integrate_mps(mps: MPS, mesh: Mesh, integral_type: str) -> Union[float, comp
     elif integral_type == "fejer":
         foo = mps_fejer
     else:
-        raise ValueError("Invalid integral_type")
+        raise ValueError("Invalid integral_type or number of sites")
 
     mps_list = []
     for interval in mesh.intervals:
         mps_list.append(foo(interval.start, interval.stop, int(np.log2(interval.size))))
-    return scprod(mps, mps_tensor_product(mps_list))
+    return scprod(mps, mps_tensor_product(mps_list, mps_order=mps_order))

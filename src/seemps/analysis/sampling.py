@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 
@@ -6,32 +6,30 @@ from seemps.operators import MPO
 from seemps.state import MPS
 
 
-def sample_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
+def evaluate_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
     """
-    Returns the samples corresponding to an array of MPS indices.
+    Evaluates a collection of MPS indices by contracting the MPS tensors.
 
     Parameters
     ----------
     mps : MPS
-        The MPS to sample from.
+        The MPS to evaluate.
     mps_indices : np.ndarray
-        An array of indices to be sampled on the MPS.
+        An array of indices to be evaluated on the MPS.
 
     Returns
     -------
-    samples : np.ndarray
-        The array of samples corresponding to the provided indices."""
-    # TODO: Think about if this is redundant and whether the state/sampling.py module can be used instead.
+    np.ndarray
+        The array of evaluations corresponding to the provided indices."""
     if mps_indices.ndim == 1:
         mps_indices = mps_indices[np.newaxis, :]
     reduced_mps = mps[0][0, mps_indices[:, 0], :]
     for i in range(1, len(mps)):
-        # TODO: Replace einsum by something more efficient
+        # TODO: Replace einsum with matmul
         reduced_mps = np.einsum(
             "kq,qkr->kr", reduced_mps, mps[i][:, mps_indices[:, i], :]
         )
-    samples = reduced_mps[:, 0]
-    return samples
+    return reduced_mps[:, 0]
 
 
 def random_mps_indices(
@@ -63,7 +61,7 @@ def infinity_norm(tensor_network: Union[MPS, MPO], k_vals: int = 100) -> float:
     """
     Finds the infinity norm of a given tensor network.
     For a MPS, it corresponds to its largest element in absolute value.
-    For a MPO, it corresponds to its operator norm (how much it 'lengthens' MPS).
+    For a MPO, it corresponds to its largest eigenvalue in absolute value.
 
     Parameters
     ----------
@@ -100,6 +98,6 @@ def infinity_norm(tensor_network: Union[MPS, MPO], k_vals: int = 100) -> float:
         I = I[candidates, :]
         reduced_site = reduced_site[candidates, :] * 2**scale_factor
     largest_idx = I[0]
-    largest_value = sample_mps(mps, largest_idx)[0]
+    largest_value = evaluate_mps(mps, largest_idx)[0]
     norm = abs(largest_value)
     return norm
