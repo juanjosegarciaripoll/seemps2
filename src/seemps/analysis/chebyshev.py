@@ -17,7 +17,7 @@ from ..tools import log
 # the actual error. This should be migrated to DEFAULT_STRATEGY, maybe
 # strengthening the tolerance
 DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
-    method=Truncation.RELATIVE_NORM_SQUARED_ERROR,
+    method=Truncation.RELATIVE_SINGULAR_VALUE,
     tolerance=1e-8,
     simplify=Simplification.VARIATIONAL,
     simplification_tolerance=1e-8,
