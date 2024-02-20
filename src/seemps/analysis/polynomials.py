@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from numpy.polynomial.polynomial import Polynomial
-import scipy.special
+import scipy.special  # type: ignore
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..truncate import simplify
 from typing import Optional
@@ -61,7 +61,7 @@ def _mps_x_tensor(
 
 
 def mps_from_polynomial(
-    p: np.polynomials.Polynomial | np.ndarray,
+    p: Polynomial | np.ndarray,
     domain: Interval,
     first: bool = False,
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -99,6 +99,6 @@ def mps_from_polynomial(
         A = xm_mps[-1]
         A = np.einsum("aib,b", A, p.coef).reshape(A.shape[0], A.shape[1], 1)
         xm_mps[-1] = A
-    if strategy.get_simplify_flag:
+    if strategy.get_simplify_flag():
         return simplify(xm_mps, strategy=strategy)
     return xm_mps
