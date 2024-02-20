@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from ..typing import *
+from typing import Optional
+from ..typing import Weight, Operator, Tensor3, Tensor4, Environment, MPOEnvironment
 
 
 def begin_environment(χ: int = 1) -> Environment:

@@ -2,8 +2,9 @@ from __future__ import annotations
 import math
 import warnings
 import numpy as np
+from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
-from ..typing import *
+from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
 from .schmidt import vector2mps
@@ -480,4 +481,11 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
 
 
 from .mpssum import MPSSum  # noqa: E402
-from .environments import *  # noqa: E402
+from .environments import (  # noqa: E402
+    Environment,
+    begin_environment,
+    update_left_environment,
+    update_right_environment,
+    join_environments,
+    scprod,
+)

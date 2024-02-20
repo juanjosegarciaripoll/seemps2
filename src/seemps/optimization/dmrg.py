@@ -1,12 +1,10 @@
 from __future__ import annotations
-from typing import Callable
-
+from typing import Callable, Optional, Union
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
 from opt_einsum import contract  # type: ignore
-
-from ..hamiltonians import NNHamiltonian
-from ..mpo import MPO
+from .. import tools
+from ..typing import Tensor4, Vector
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, random_mps
 from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
@@ -15,8 +13,8 @@ from ..state.environments import (
     update_left_mpo_environment,
     update_right_mpo_environment,
 )
-from .. import tools
-from ..typing import Optional, Tensor4, Union, Vector
+from ..mpo import MPO
+from ..hamiltonians import NNHamiltonian
 from .descent import OptimizeResults
 
 

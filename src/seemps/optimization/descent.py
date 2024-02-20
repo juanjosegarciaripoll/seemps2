@@ -10,7 +10,6 @@ from ..state import (
     DEFAULT_STRATEGY,
     MPS,
     MPSSum,
-    CanonicalMPS,
     Simplification,
     Strategy,
 )

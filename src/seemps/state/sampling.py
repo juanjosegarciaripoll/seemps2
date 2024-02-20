@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
+from numpy.typing import NDArray
 from numpy.random import Generator, default_rng
 from .mps import MPS
 from .canonical_mps import CanonicalMPS
-from ..typing import *
 
 
 def sample_mps(mps: MPS, size: int = 1, rng: Generator = default_rng()) -> NDArray:

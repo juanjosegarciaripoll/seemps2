@@ -1,7 +1,5 @@
-from typing import Optional, Union
-
+from typing import Union
 import numpy as np
-
 from seemps.operators import MPO
 from seemps.state import MPS
 

@@ -1,6 +1,7 @@
+from __future__ import annotations
 import numpy as np
-from typing import Optional
-from ..typing import *
+from typing import Optional, Union
+from ..typing import Operator, Vector
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..state._contractions import _contract_nrjl_ijk_klm
 from abc import abstractmethod

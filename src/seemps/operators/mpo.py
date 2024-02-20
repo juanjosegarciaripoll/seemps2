@@ -1,13 +1,17 @@
 from __future__ import annotations
-from typing import overload
+from typing import overload, Union, Optional, Sequence
 import numpy as np
 import opt_einsum  # type: ignore
-
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, Weight, array
-from ..state.environments import *
-from ..state.environments import scprod
 from ..tools import InvalidOperation
 from ..typing import Tensor4, Operator, Weight
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, array
+from ..state.environments import (
+    scprod,
+    begin_mpo_environment,
+    update_left_mpo_environment,
+    update_right_mpo_environment,
+    join_mpo_environments,
+)
 
 
 def _mpo_multiply_tensor(A, B):

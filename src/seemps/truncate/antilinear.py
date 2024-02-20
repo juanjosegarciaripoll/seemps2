@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from ..typing import *
+from ..typing import Tensor3, Tensor4
 from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
     begin_environment,

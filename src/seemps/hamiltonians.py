@@ -1,11 +1,12 @@
 import numpy as np
-from .typing import *
+from typing import Optional, Union
 from math import sqrt
-from .tools import σx, σy, σz
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod
 from .mpo import MPO
 from .state import schmidt, core, DEFAULT_STRATEGY, Strategy
+from .typing import Operator, Vector
+from .tools import σx, σy, σz
 
 
 class NNHamiltonian(object):

@@ -1,8 +1,7 @@
 from __future__ import annotations
-
 import numpy as np
-
-from ..typing import *
+from typing import Optional, Sequence, Iterable
+from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
 from . import environments, schmidt
 from ._contractions import _contract_last_and_first
 from .core import DEFAULT_STRATEGY, Strategy

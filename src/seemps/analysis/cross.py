@@ -1,3 +1,4 @@
+from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from time import perf_counter
@@ -9,7 +10,8 @@ from scipy.linalg import lu, solve_triangular  # type: ignore
 from ..state import MPS, Strategy, Truncation, Simplification
 from ..tools import DEBUG, log
 from ..truncate import SIMPLIFICATION_STRATEGY, simplify
-from ..typing import *
+
+from ..typing import VectorLike
 from .integrals import integrate_mps
 from .mesh import Mesh
 from .sampling import random_mps_indices, sample_mps
@@ -22,6 +24,10 @@ DEFAULT_CROSS_STRATEGY = Strategy(
     simplification_tolerance=1e-8,
     normalize=False,
 )
+
+
+def _ones(x):
+    return np.ones((x, 1), dtype=int)
 
 
 def maxvol_square(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -233,7 +239,6 @@ def sample_initial_indices(state: MPS) -> list[np.ndarray]:
     I_s = [np.array([[0], [1]]) for _ in range(sites)]
     I_le = [np.array([], dtype=int)] * (sites + 1)
     I_g = [np.array([], dtype=int)] * (sites + 1)
-    _ones = lambda x: np.ones((x, 1), dtype=int)
 
     # Forward pass
     R = np.ones((1, 1))
@@ -274,7 +279,7 @@ def sample_tensor_fiber(
     i_s: np.ndarray,
     i_g: np.ndarray,
 ) -> np.ndarray:
-    """
+    r"""
     Samples the k-th tensor fiber of the underlying MPS representation
     of a function from a collection of multi-indices centered at a
     given site k. I.e, samples $A\left(J_{\le k-1}, i_k, J_{\g
@@ -306,7 +311,6 @@ def sample_tensor_fiber(
     fiber : np.ndarray
         The sampled tensor fiber.
     """
-    _ones = lambda x: np.ones((x, 1), dtype=int)
     r_le = i_le.shape[0] if i_le.size > 0 else 1
     r_g = i_g.shape[0] if i_g.size > 0 else 1
     s = i_s.shape[0]
@@ -474,7 +478,6 @@ def cross_interpolation(
 
     converged = False
     message = f"Maximum number of sweeps {cross_strategy.maxiter} reached"
-    _ones = lambda x: np.ones((x, 1), dtype=int)
 
     for sweep in range(cross_strategy.maxiter):
         start_time = perf_counter()

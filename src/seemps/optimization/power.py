@@ -1,14 +1,11 @@
 from __future__ import annotations
 from typing import Callable, Union, Optional, Any
 import dataclasses
-
 import numpy as np
-
-from ..expectation import scprod
-from ..mpo import MPO, MPOList, MPOSum
-from ..state import MPS, CanonicalMPS, Strategy, random_mps
 from .. import tools
+from ..state import MPS, CanonicalMPS, Strategy, random_mps
 from ..truncate import simplify
+from ..mpo import MPO, MPOList, MPOSum
 from .descent import DESCENT_STRATEGY, OptimizeResults
 from ..cgs import cgs
 

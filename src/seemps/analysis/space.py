@@ -3,6 +3,8 @@ import numpy as np
 from ..operators import MPO, MPOList, MPOSum
 
 
+# TODO: This might not be the place to have this function
+# It should be under operators or in qft.
 def mpo_flip(operator):
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform."""

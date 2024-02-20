@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Union, Optional, Callable
-from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
+from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
 from ..truncate import simplify
 from ..typing import Vector

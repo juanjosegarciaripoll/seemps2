@@ -1,5 +1,6 @@
 import numpy as np
-from ..typing import *
+from numpy.typing import NDArray
+from typing import overload, TypeVar, Sequence, Iterable, Union, Iterator
 
 _T = TypeVar("_T", bound="TensorArray")
 

@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import pi as π
-from .typing import *
+from typing import Union, Optional
+from .typing import Vector
 from .state import MPS, MPSSum
 from .mpo import MPO, MPOList
 

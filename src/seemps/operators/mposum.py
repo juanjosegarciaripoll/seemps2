@@ -1,9 +1,10 @@
 from __future__ import annotations
 import numpy as np
-from .. import truncate
+from typing import Union, Sequence, Optional
+from ..typing import Weight, Operator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
-from ..typing import *
 from .mpo import MPO, MPOList
+from .. import truncate
 
 
 class MPOSum(object):

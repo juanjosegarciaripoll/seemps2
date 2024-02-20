@@ -3,7 +3,6 @@ from typing import Callable, Optional
 
 import numpy as np
 from scipy.fft import dct  # type: ignore
-from typing import Callable, Optional
 
 from .mesh import ChebyshevZerosInterval, Interval
 from .factories import mps_interval

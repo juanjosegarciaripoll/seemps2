@@ -1,5 +1,5 @@
 import numpy as np
-from ..typing import *
+from typing import Optional, Iterable
 from ..mpo import MPO
 
 

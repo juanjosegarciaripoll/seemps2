@@ -3,9 +3,10 @@ import copy
 import numpy as np
 from ..qft import qft_mpo
 from ..state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
+from ..operators import MPO
 from ..truncate import simplify
 from .finite_differences import mpo_combined
-from .space import *
+from .space import Space, mpo_flip
 
 
 def twoscomplement(L, **kwdargs):

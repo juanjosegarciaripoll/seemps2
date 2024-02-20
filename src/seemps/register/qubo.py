@@ -1,5 +1,7 @@
+from __future__ import annotations
 import numpy as np
-from ..typing import *
+from typing import Union, Optional
+from ..typing import Vector, Operator
 from ..mpo import MPOList, MPO
 
 
@@ -69,7 +71,7 @@ def qubo_exponential_mpo(
     J: Optional[Operator] = None,
     h: Optional[Vector] = None,
     beta: float = -1.0,
-    **kwdargs
+    **kwdargs,
 ) -> Union[MPO, MPOList]:
     """Return the MPO associated to the exponential $\\exp(\\beta H)$ of
     a QUBO operator.

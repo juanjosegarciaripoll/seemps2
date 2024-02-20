@@ -1,5 +1,4 @@
 from typing import Optional, Callable, Any, Union
-from .expectation import scprod
 from .state import (
     MPS,
     MPSSum,

@@ -1,5 +1,6 @@
 import numpy as np
-from ..typing import *
+from numpy.typing import NDArray
+from ..typing import Unitary, Tensor3, Tensor4
 
 
 def _contract_nrjl_ijk_klm2(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4:
@@ -24,7 +25,7 @@ def _contract_last_and_first2(A: NDArray, B: NDArray) -> NDArray:
 
 try:
     from .core import _contract_last_and_first, _contract_nrjl_ijk_klm
-except:
-    raise Exception()
+except Exception:
+    raise Exception("Missing contractions from core.pyx")
     _contract_last_and_first = _contract_last_and_first2
     _contract_nrjl_ijk_klm = _contract_nrjl_ijk_klm2

@@ -8,11 +8,6 @@ from ..optimization.descent import DESCENT_STRATEGY
 from ..state import MPS, CanonicalMPS, MPSSum, Strategy
 from ..operators import MPO, MPOList, MPOSum
 from ..truncate import simplify
-from ..typing import VectorLike
-
-import warnings
-
-warnings.filterwarnings("error")
 
 
 @dataclasses.dataclass

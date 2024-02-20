@@ -1,6 +1,8 @@
 import numpy as np
 import math
-from ..typing import *
+from typing import Sequence
+from numpy.typing import NDArray
+from ..typing import VectorLike, Tensor3
 from . import core
 from .core import Strategy, truncate_vector, DEFAULT_STRATEGY
 from scipy.linalg import svd  # type: ignore

@@ -1,15 +1,13 @@
 from __future__ import annotations
-from typing import Callable, Optional, Union, Optional, Any
-
+from typing import Callable, Union, Any, Optional
 import numpy as np
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
-
+from ..tools import log
 from ..expectation import scprod
-from ..mpo import MPO
 from ..state import MPS, CanonicalMPS, MPSSum, random_mps, Strategy, NO_TRUNCATION
 from ..truncate.simplify import simplify
-from ..tools import log
+from ..mpo import MPO
 from .descent import DESCENT_STRATEGY, OptimizeResults
 
 
