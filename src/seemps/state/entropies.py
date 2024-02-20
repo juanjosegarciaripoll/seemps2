@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from .mps import MPS
 from .canonical_mps import CanonicalMPS

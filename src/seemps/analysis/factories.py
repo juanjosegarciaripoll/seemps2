@@ -1,6 +1,5 @@
+from __future__ import annotations
 import numpy as np
-from typing import List
-
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .mesh import (
@@ -168,13 +167,13 @@ def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
 
-def mps_tensor_product(mps_list: List[MPS]) -> MPS:
+def mps_tensor_product(mps_list: list[MPS]) -> MPS:
     """
     Returns the tensor product of a list of MPS.
 
     Parameters
     ----------
-    mps_list : List[MPS]
+    mps_list : list[MPS]
         The list of MPS objects to multiply.
 
     Returns
@@ -187,13 +186,13 @@ def mps_tensor_product(mps_list: List[MPS]) -> MPS:
     return MPS(flattened_sites)
 
 
-def mps_tensor_sum(mps_list: List[MPS], strategy: Strategy = DEFAULT_STRATEGY) -> MPS:
+def mps_tensor_sum(mps_list: list[MPS], strategy: Strategy = DEFAULT_STRATEGY) -> MPS:
     """
     Returns the tensor sum of a list of MPS.
 
     Parameters
     ----------
-    mps_list : List[MPS]
+    mps_list : list[MPS]
         The list of MPS objects to sum.
     strategy : Strategy, default = DEFAULT_STRATEGY
         The MPS simplification strategy to apply.

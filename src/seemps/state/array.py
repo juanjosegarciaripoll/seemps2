@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 from typing import overload, TypeVar, Sequence, Iterable, Union, Iterator

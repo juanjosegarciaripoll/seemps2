@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from numpy import pi as π
 from typing import Union, Optional
@@ -56,7 +57,7 @@ def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:
             MPO(fix_last([noop] * n + [Hop] + rots[: N - n - 1]), **kwargs)
             for n in range(0, N)
         ],
-        **kwargs
+        **kwargs,
     )
 
 

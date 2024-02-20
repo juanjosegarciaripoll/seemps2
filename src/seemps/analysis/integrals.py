@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from scipy.fftpack import ifft  # type: ignore
 from typing import Callable, Union
