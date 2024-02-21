@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import Union, Sequence, Iterator
+from typing import Union, Sequence, Iterator, overload
 from ..typing import Vector
 
 import numpy as np
@@ -29,8 +29,26 @@ class Interval(ABC):
     def __len__(self) -> int:
         return self.size
 
-    @abstractmethod
+    def _validate_index(self, idx):
+        if isinstance(idx, int):
+            if not (0 <= idx < self.size):
+                raise IndexError("Index out of range")
+        elif isinstance(idx, np.ndarray):
+            if not np.all((0 <= idx) & (idx < self.size)):
+                raise IndexError("Index out of range")
+        else:
+            raise TypeError("Index must be an integer or a NumPy array")
+
+    @overload
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
     def __getitem__(self, idx: int) -> float:
+        ...
+
+    @abstractmethod
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         ...
 
     def to_vector(self) -> np.ndarray:
@@ -53,9 +71,16 @@ class RegularClosedInterval(Interval):
         super().__init__(start, stop, size)
         self.step = (stop - start) / (size - 1)
 
+    @overload
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
     def __getitem__(self, idx: int) -> float:
-        if not (0 <= idx < self.size):
-            raise IndexError("Index out of range")
+        ...
+
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+        super()._validate_index(idx)
         return idx * self.step + self.start
 
 
@@ -66,9 +91,16 @@ class RegularHalfOpenInterval(Interval):
         super().__init__(start, stop, size)
         self.step = (stop - start) / size
 
+    @overload
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
     def __getitem__(self, idx: int) -> float:
-        if not (0 <= idx < self.size):
-            raise IndexError("Index out of range")
+        ...
+
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+        super()._validate_index(idx)
         return idx * self.step + self.start
 
 
@@ -79,9 +111,16 @@ class ChebyshevZerosInterval(Interval):
     def __init__(self, start: float, stop: float, size: int):
         super().__init__(start, stop, size)
 
+    @overload
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
     def __getitem__(self, idx: int) -> float:
-        if not (0 <= idx < self.size):
-            raise IndexError("Index out of range")
+        ...
+
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+        super()._validate_index(idx)
         zero = np.cos(np.pi * (2 * (self.size - idx) - 1) / (2 * self.size))
         return (self.stop - self.start) * (zero + 1) / 2 + self.start
 
@@ -114,29 +153,11 @@ class Mesh:
     dimension: int
     shape: tuple[int, ...]
     dimensions: tuple[int, ...]
-    _v: list[np.ndarray]
 
     def __init__(self, intervals: list[Interval]):
-        def unit_vector(n: int, L: int):
-            v = np.zeros(L)
-            v[n] = 1.0
-            return v
-
         self.intervals = intervals
         self.dimension = len(intervals)
         self.dimensions = tuple(interval.size for interval in self.intervals)
-        #
-        # The field _v contains a list of arrays, each with size Ni x d
-        # where Ni is the size of the i-th interval, and d is the dimension
-        # of the mesh. The _v[i] array only has components in _v[i][:,i]
-        # This way, we can construct points in the mesh going from integers
-        # (i1, i2, ..., id) to vectors (x1, x2, ..., x2) as
-        #   x = _v[0][i1,:] + _v[1][i2,:] + ... + _v[d-1][id,:]
-        #
-        self._v = [
-            interval.to_vector().reshape(-1, 1) * unit_vector(i, self.dimension)
-            for i, interval in enumerate(intervals)
-        ]
 
     def __getitem__(
         self, indices: Union[Sequence[int], np.ndarray]
@@ -163,43 +184,41 @@ class Mesh:
             Coordinates of one or more points.
         """
         if isinstance(indices, int):
-            if self.dimension == 1:
-                return self._v[0][indices]
-            raise IndexError("Invalid index into a Mesh")
+            if self.dimension > 1:
+                raise IndexError("Invalid index into a Mesh")
+            indices = [indices]
         indices = np.asarray(indices)
-        if indices.shape[-1] != self.dimension:
-            raise IndexError("Invalid index into a Mesh")
-        else:
-            return sum(self._v[n][indices[..., n]] for n in range(self.dimension))
-
-    def mps_to_mesh_matrix(self, order="A", base=2) -> np.ndarray:
-        """
-        Returns a matrix that transforms an array of MPS indices
-        to an array of Mesh indices based on the specified order and base.
-        """
-        sites = [int(np.emath.logn(base, s)) for s in self.dimensions]
-        if order == "A":
-            T = np.zeros((sum(sites), len(sites)), dtype=int)
-            start = 0
-            for m, n in enumerate(sites):
-                T[start : start + n, m] = 2 ** np.arange(n)[::-1]
-                start += n
-            return T
-        elif order == "B":
-            # Strategy: stack diagonal matrices and remove unwanted rows.
-            # TODO: Improve this logic.
-            T = np.vstack(
-                [
-                    np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites])
-                    for i in range(max(sites))
-                ]
-            )
-            T = T[~np.all(T <= 0, axis=1)]
-            return T
-        else:
-            raise ValueError("Invalid MPS order")
+        # TODO: Type checker complains about the type of this
+        return np.stack(
+            [self.intervals[n][indices[..., n]] for n in range(self.dimension)], axis=-1
+        )
 
     def to_tensor(self):
         return np.array(list(product(*self.intervals))).reshape(
             *self.dimensions, self.dimension
         )
+
+
+def mps_to_mesh_matrix(sites_per_dimension: list[int], order: str = "A") -> np.ndarray:
+    """
+    Returns a matrix that transforms an array of MPS indices
+    to an array of Mesh indices based on the specified order and base.
+    """
+    if order == "A":
+        T = np.zeros((sum(sites_per_dimension), len(sites_per_dimension)), dtype=int)
+        start = 0
+        for m, n in enumerate(sites_per_dimension):
+            T[start : start + n, m] = 2 ** np.arange(n)[::-1]
+            start += n
+        return T
+    elif order == "B":
+        T = np.vstack(
+            [
+                np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites_per_dimension])
+                for i in range(max(sites_per_dimension))
+            ]
+        )
+        T = T[~np.all(T <= 0, axis=1)]
+        return T
+    else:
+        raise ValueError("Invalid MPS order")
