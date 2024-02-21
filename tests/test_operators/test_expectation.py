@@ -1,6 +1,5 @@
 from seemps.expectation import *
-from seemps.state import CanonicalMPS
-
+from seemps.state import CanonicalMPS, scprod
 from ..tools import *
 
 
@@ -46,7 +45,9 @@ class TestExpectation(TestCase):
                     seemps.state.AKLT(nbits).norm_squared(), 1.0, places=10
                 )
                 self.assertAlmostEqual(
-                    seemps.state.graph(nbits).norm_squared(), 1.0, places=10
+                    seemps.state.factories.graph_state(nbits).norm_squared(),
+                    1.0,
+                    places=10,
                 )
 
     def test_norm_random(self):
@@ -131,7 +132,7 @@ class TestExpectation(TestCase):
                 ψ = ϕ.copy()
                 ψ[n - 1] = np.einsum("ij,kjl->kil", O1, ψ[n - 1])
                 ψ[n] = np.einsum("ij,kjl->kil", O2, ψ[n])
-                desired = seemps.expectation.scprod(ϕ, ψ)
+                desired = scprod(ϕ, ψ)
                 self.assertAlmostEqual(
                     desired / nrm2, expectation2(ϕ, O1, O2, n - 1) / nrm2
                 )

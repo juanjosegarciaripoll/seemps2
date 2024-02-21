@@ -3,9 +3,8 @@ from typing import Union, Callable, Optional, Any
 import numpy as np
 import dataclasses
 
-from ..expectation import scprod
 from ..optimization.descent import DESCENT_STRATEGY
-from ..state import MPS, CanonicalMPS, MPSSum, Strategy
+from ..state import MPS, CanonicalMPS, MPSSum, Strategy, scprod
 from ..operators import MPO, MPOList, MPOSum
 from ..truncate import simplify
 

@@ -1,8 +1,7 @@
 import numpy as np
 from seemps.analysis.finite_differences import *
 from seemps.analysis.space import Space
-from seemps.state import MPS
-from seemps.state.core import DEFAULT_STRATEGY, NO_TRUNCATION
+from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION
 
 from ..tools import *
 

@@ -4,8 +4,15 @@ import numpy as np
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
 from ..tools import log
-from ..expectation import scprod
-from ..state import MPS, CanonicalMPS, MPSSum, random_mps, Strategy, NO_TRUNCATION
+from ..state import (
+    MPS,
+    CanonicalMPS,
+    MPSSum,
+    random_mps,
+    Strategy,
+    NO_TRUNCATION,
+    scprod,
+)
 from ..truncate.simplify import simplify
 from ..mpo import MPO
 from .descent import DESCENT_STRATEGY, OptimizeResults

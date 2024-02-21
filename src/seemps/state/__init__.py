@@ -7,19 +7,43 @@ from .core import (
     NO_TRUNCATION,
     MAX_BOND_DIMENSION,
 )
-from .mps import MPS, MPSSum, Weight
+from .mps import MPS, MPSSum
+from .canonical_mps import CanonicalMPS
 from .factories import (
-    product_state,
-    GHZ,
-    W,
-    spin_wave,
-    graph,
     AKLT,
+    GHZ,
+    graph_state,
+    product_state,
     random,
     random_mps,
     random_uniform_mps,
-    gaussian,
+    spin_wave,
+    W,
 )
-from .canonical_mps import CanonicalMPS
-from .entropies import all_entanglement_entropies, all_Renyi_entropies
-from .sampling import sample_mps
+from . import entropies, sampling
+from .environments import scprod
+
+__all__ = [
+    "Strategy",
+    "Truncation",
+    "Simplification",
+    "DEFAULT_STRATEGY",
+    "DEFAULT_TOLERANCE",
+    "NO_TRUNCATION",
+    "MAX_BOND_DIMENSION",
+    "MPS",
+    "MPSSum",
+    "CanonicalMPS",
+    "entropies",
+    "sampling",
+    "AKLT",
+    "GHZ",
+    "graph_state",
+    "product_state",
+    "random",
+    "random_mps",
+    "random_uniform_mps",
+    "spin_wave",
+    "W",
+    "scprod",
+]

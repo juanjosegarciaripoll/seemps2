@@ -1,5 +1,6 @@
 from seemps.expectation import mpo_expectation
-from seemps import MPO, σx, σy
+from seemps.operators import MPO
+from seemps.tools import σx, σy
 from seemps.qft import qft_mpo
 from ..tools import *
 

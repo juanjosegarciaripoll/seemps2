@@ -1,6 +1,7 @@
 import numpy as np
 from ..tools import *
-from seemps.state import sample_mps, product_state
+from seemps.state.sampling import sample_mps
+from seemps.state import product_state
 
 
 class TestSampling(TestCase):

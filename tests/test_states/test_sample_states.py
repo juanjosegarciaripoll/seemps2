@@ -1,6 +1,7 @@
 import numpy as np
 from seemps.tools import *
 from seemps.state import *
+from seemps.state.factories import graph_state
 from ..tools import *
 
 
@@ -109,12 +110,12 @@ class TestSampleStates(TestCase):
     def test_graph(self):
         GR = np.ones(2**2) / np.sqrt(2**2)
         GR[-1] = -GR[-1]
-        self.assertTrue(np.array_equal(graph(2).to_vector(), GR))
+        self.assertTrue(np.array_equal(graph_state(2).to_vector(), GR))
 
         GR = np.ones(2**3) / np.sqrt(2**3)
         GR[3] = -GR[3]
         GR[-2] = -GR[-2]
-        self.assertTrue(np.array_equal(graph(3).to_vector(), GR))
+        self.assertTrue(np.array_equal(graph_state(3).to_vector(), GR))
 
         for i in range(1, 2):
             Ψ = W(i)

@@ -1,7 +1,6 @@
 import numpy as np
-from seemps.analysis import (
-    Mesh,
-    RegularHalfOpenInterval,
+from seemps.analysis.mesh import Mesh, RegularHalfOpenInterval
+from seemps.analysis.cross import (
     cross_interpolation,
     CrossStrategy,
     sample_initial_indices,

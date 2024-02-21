@@ -1,14 +1,13 @@
 from __future__ import annotations
 from typing import Optional, Union
-from .mpo import MPO
+from .typing import Operator, Weight, Vector
 from .state.environments import (
-    scprod,
     begin_environment,
     end_environment,
     update_left_environment,
 )
 from .state.mps import MPS
-from .typing import Operator, Weight, Vector
+from .mpo import MPO
 
 
 def expectation1(state: MPS, O: Operator, i: int) -> Weight:

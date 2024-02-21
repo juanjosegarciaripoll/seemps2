@@ -86,7 +86,7 @@ def spin_wave(state: VectorLike) -> MPS:
     return MPS(data)
 
 
-def graph(n: int) -> MPS:
+def graph_state(n: int) -> MPS:
     """Create an :class:`MPS` for a one-dimensional graph state with `n` qubits."""
     # Choose entangled pair state as : |00>+|11>
     # Apply Hadamard H on the left virtual spins

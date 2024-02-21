@@ -2,9 +2,9 @@ from __future__ import annotations
 import numpy as np
 from scipy.fftpack import ifft  # type: ignore
 from typing import Callable, Union
-from seemps.analysis import Mesh, mps_tensor_product
-from seemps.expectation import scprod
-from seemps.state import DEFAULT_TOLERANCE, MPS, Strategy
+from seemps.analysis.mesh import Mesh
+from seemps.analysis.factories import mps_tensor_product
+from seemps.state import DEFAULT_TOLERANCE, MPS, Strategy, scprod
 
 QUADRATURE_STRATEGY = Strategy(tolerance=DEFAULT_TOLERANCE)
 

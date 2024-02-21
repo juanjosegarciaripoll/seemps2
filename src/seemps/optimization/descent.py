@@ -3,18 +3,10 @@ from typing import Callable, Union, Any, Optional
 import scipy.linalg  # type: ignore
 import dataclasses
 import numpy as np
-
-from ..expectation import scprod
-from ..mpo import MPO, MPOList, MPOSum
-from ..state import (
-    DEFAULT_STRATEGY,
-    MPS,
-    MPSSum,
-    Simplification,
-    Strategy,
-)
 from .. import tools
+from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Simplification, Strategy, scprod
 from ..truncate.simplify import simplify
+from ..mpo import MPO, MPOList, MPOSum
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 

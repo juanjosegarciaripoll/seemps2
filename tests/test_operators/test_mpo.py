@@ -1,7 +1,13 @@
 import numpy as np
-from seemps import MPO, random_uniform_mps, σx, MPOList
-from seemps.state import MPSSum
-from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
+from seemps.tools import σx
+from seemps.state import (
+    random_uniform_mps,
+    MPSSum,
+    DEFAULT_STRATEGY,
+    Simplification,
+    Strategy,
+)
+from seemps.operators import MPO, MPOList
 
 from ..tools import *
 

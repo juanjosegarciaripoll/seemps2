@@ -1,9 +1,9 @@
-from seemps.expectation import scprod
 from seemps.state import (
     DEFAULT_STRATEGY,
     Simplification,
     Truncation,
     random_uniform_mps,
+    scprod,
 )
 from seemps.truncate import simplify
 

@@ -1,15 +1,17 @@
 import numpy as np
-from seemps.analysis import (
+from seemps.analysis.factories import (
     mps_equispaced,
     mps_exponential,
     mps_sine,
     mps_cosine,
-    RegularHalfOpenInterval,
-    RegularClosedInterval,
-    ChebyshevZerosInterval,
     mps_interval,
     mps_tensor_sum,
     mps_tensor_product,
+)
+from seemps.analysis.mesh import (
+    RegularHalfOpenInterval,
+    RegularClosedInterval,
+    ChebyshevZerosInterval,
 )
 
 from ..tools import TestCase

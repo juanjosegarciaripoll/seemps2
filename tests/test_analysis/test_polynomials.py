@@ -2,7 +2,7 @@ import numpy as np
 from numpy.polynomial.polynomial import Polynomial
 from seemps.state import MPS
 from seemps.analysis.polynomials import _mps_x_tensor, mps_from_polynomial
-from seemps.analysis import RegularClosedInterval, Interval
+from seemps.analysis.mesh import RegularClosedInterval, Interval
 from ..tools import TestCase
 
 

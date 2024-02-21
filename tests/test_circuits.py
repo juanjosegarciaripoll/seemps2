@@ -2,7 +2,7 @@ import numpy as np
 
 from seemps.state.mps import MPS
 from .tools import TestCase
-from seemps import random_uniform_mps, CanonicalMPS
+from seemps.state import random_uniform_mps, CanonicalMPS
 from seemps.register.circuit import (
     ParameterizedCircuit,
     LocalRotationsLayer,

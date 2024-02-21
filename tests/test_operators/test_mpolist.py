@@ -1,7 +1,14 @@
 import numpy as np
-from seemps import MPO, NO_TRUNCATION, MPOList, random_uniform_mps, σx, σy, σz
-from seemps.state import MPSSum
-from seemps.state.core import DEFAULT_STRATEGY, Simplification, Strategy
+from seemps.tools import σx, σy, σz
+from seemps.state import (
+    MPSSum,
+    random_uniform_mps,
+    DEFAULT_STRATEGY,
+    NO_TRUNCATION,
+    Simplification,
+    Strategy,
+)
+from seemps.operators import MPO, MPOList
 
 from ..tools import TestCase, contain_same_objects
 

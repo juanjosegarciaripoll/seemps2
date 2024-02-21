@@ -2,15 +2,14 @@ import numpy as np
 from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
-from seemps.analysis import (
-    RegularHalfOpenInterval,
+from seemps.analysis.mesh import RegularHalfOpenInterval
+from seemps.analysis.factories import mps_tensor_sum, mps_interval
+from seemps.analysis.chebyshev import (
+    DEFAULT_CHEBYSHEV_STRATEGY,
     chebyshev_coefficients,
     chebyshev_approximation,
     cheb2mps,
-    mps_tensor_sum,
-    mps_interval,
 )
-from seemps.analysis.chebyshev import DEFAULT_CHEBYSHEV_STRATEGY
 
 from ..tools import TestCase
 
