@@ -1,7 +1,48 @@
 from __future__ import annotations
 import numpy as np
 from typing import Optional, Iterable
+from ..typing import VectorLike
 from ..mpo import MPO
+
+
+def mpo_weighted_shifts(
+    L: int,
+    weights: VectorLike,
+    shifts: tuple[int, int] | list[int],
+    periodic: bool = False,
+    base: int = 2,
+) -> MPO:
+    r"""Return an MPO that implements a linear combination of arithmetic displacements.
+
+    This function creates a matrix product operator that implements
+
+    .. math::
+       O |s\rangle \to \sum_i w_i |s + i\rangle
+
+    The operator is very useful to implement finite difference approximations.
+
+    Arguments
+    ---------
+    L : int
+        Number of qubits in the quantum register
+    weights : VectorLike
+        List or array of weights to apply to each displacement
+    shifts : list[int] | tuple[int,int]
+        Range of displacements to be applied
+    periodic : bool, default = False
+        Whether to wrap around integers when shifting.
+    base : int, default = 2
+        Encoding of the quantum register elements. By default `base=2`
+        meaning we work with qubits.
+
+    Returns
+    -------
+    MPO
+        Matrix product operator for `O` above.
+    """
+    O = mpo_shifts(L, shifts, periodic, base)
+    O[L - 1] = np.einsum("aijb,jk", O[-1], np.reshape(weights, -1, 1))
+    return O
 
 
 def mpo_shifts(
