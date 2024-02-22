@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.state import MPS
 from seemps.register import *
-from .tools import *
+from ..tools import TestCase
 
 
 class TestAlgebraic(TestCase):
