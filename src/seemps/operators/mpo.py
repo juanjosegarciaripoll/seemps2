@@ -58,7 +58,6 @@ class MPO(array.TensorArray):
 
     def __init__(self, data: list[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
         super().__init__(data)
-        assert data[0].shape[0] == data[-1].shape[-1] == 1
         self.strategy = strategy
 
     def copy(self) -> MPO:

@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sp  # type: ignore
-from seemps.register.transforms import mpo_shifts
+from seemps.register.transforms import mpo_weighted_shifts, mpo_shifts
 from ..tools import TestCase
 
 
@@ -14,6 +14,13 @@ class TestShifts(TestCase):
             elif 0 <= j < L:
                 S[j, i] = 1.0
         return S.todense()
+
+    def weighted_shift_matrix(
+        self, L: int, weights: np.ndarray, shifts: np.ndarray, periodic: bool
+    ):
+        return sum(
+            w * self.shift_matrix(L, d, periodic) for w, d in zip(weights, shifts)
+        )
 
     def test_shift_by_one(self):
         S = mpo_shifts(3, shifts=[1])
@@ -147,4 +154,15 @@ class TestShifts(TestCase):
             for d in range(-(2**N), 2**N + 1):
                 S = mpo_shifts(N, shifts=[d], periodic=True)
                 target = self.shift_matrix(2**N, d, periodic=True)
+                self.assertSimilar(S.tomatrix(), target)
+
+    def test_weighted_shifts_by_all_integers(self):
+        for N in range(1, 4):
+            for d in range(1, 2**N + 1):
+                shifts = np.arange(-d, d + 1)
+                weights = self.rng.normal(size=shifts.shape)
+                S = mpo_weighted_shifts(N, weights, shifts, periodic=False)
+                target = self.weighted_shift_matrix(
+                    2**N, weights, shifts, periodic=False
+                )
                 self.assertSimilar(S.tomatrix(), target)

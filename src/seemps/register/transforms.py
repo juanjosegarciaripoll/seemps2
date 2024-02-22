@@ -41,7 +41,7 @@ def mpo_weighted_shifts(
         Matrix product operator for `O` above.
     """
     O = mpo_shifts(L, shifts, periodic, base)
-    O[L - 1] = np.einsum("aijb,jk", O[-1], np.reshape(weights, -1, 1))
+    O[L - 1] = np.einsum("aijb,bc->aijc", O[-1], np.reshape(weights, (-1, 1)))
     return O
 
 
