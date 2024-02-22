@@ -5,7 +5,7 @@ from ..mpo import MPO
 
 
 def mpo_shifts(
-    L: int, shifts: tuple[int, int] | list[int], periodic: bool = False
+    L: int, shifts: tuple[int, int] | list[int], periodic: bool = False, base: int = 2
 ) -> MPO:
     r"""Return an MPO with a free index, capable of displacing a quantum
     register by a range of integers.
@@ -26,6 +26,9 @@ def mpo_shifts(
         Range of displacements to be applied
     periodic : bool, default = False
         Whether to wrap around integers when shifting.
+    base : int, default = 2
+        Encoding of the quantum register elements. By default `base=2`
+        meaning we work with qubits.
 
     Returns
     -------
@@ -37,7 +40,7 @@ def mpo_shifts(
     else:
         r = np.asarray(shifts, dtype=int)
     tensors = []
-    bits = np.reshape([0, 1], (2, 1))
+    bits = np.arange(base).reshape(base, 1)
     for i in reversed(range(L)):
         #
         # The shift r[j] adds to the current bit s[i], producing
@@ -45,23 +48,26 @@ def mpo_shifts(
         # value of the bit s[i]' and a carry displacement r' for
         # the new site
         #
-        newr = (bits + r) >> 1
-        news = (bits + r) & 1
-        newr_ndx = np.sort(np.unique(newr.reshape(-1)))
-        b = r.size
-        a = newr_ndx.size
-        A = np.zeros((a, 2, 2, b))
-        for s in (0, 1):
-            for a, ra in enumerate(r):
-                A[newr[s, a] - newr_ndx[0], news[s, a], s, a] = 1.0
+        # These are the carry-on values
+        newr_matrix = (bits + r) // base
+        # These are the indices that the qudit states are mapped to
+        news_matrix = (bits + r) % base
+        # A vector with all carry-on values
+        newr = np.sort(np.unique(newr_matrix.reshape(-1)))
+        # and a matrix with the positions of the carry-on values into
+        # this vector. This transforms carry-on-values to bond dimension
+        # indices
+        newr_matrix = np.searchsorted(newr, newr_matrix)
+        A = np.zeros((newr.size, base, base, r.size))
+        A[newr_matrix, news_matrix, bits, np.arange(r.size)] = 1.0
         tensors.append(A)
-        r = newr_ndx
+        r = newr
     if periodic:
         tensors[-1] = np.sum(A, 0).reshape((1,) + A.shape[1:])
     else:
-        ndx = np.argmin(np.abs(r))
-        if r[ndx] == 0:
-            tensors[-1] = A[[ndx], :, :, :]
+        ndx = np.nonzero(r == 0)[0]
+        if ndx.size:
+            tensors[-1] = A[ndx, :, :, :]
         else:
             tensors[-1] = A[[0], :, :, :] * 0.0
     return MPO(list(reversed(tensors)))
