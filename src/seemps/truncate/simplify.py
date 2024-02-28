@@ -167,21 +167,21 @@ def guess_combine_state(weights: list, states: list[MPS]) -> MPS:
         DL, d, DR = sumA.shape
         a, d, b = A.shape
         if idx == 0:
-            new_A = np.zeros((d, DR + b))
+            new_A = np.zeros((d, DR + b), dtype=sumA.dtype)
             for d_i in range(d):
                 new_A[d_i, :] = np.concatenate(
                     (sumA.reshape(d, DR)[d_i, :], A.reshape(d, b)[d_i, :])
                 )
             new_A = new_A.reshape(1, d, DR + b)
         elif idx == -1:
-            new_A = np.zeros((DL + a, d))
+            new_A = np.zeros((DL + a, d), dtype=sumA.dtype)
             for d_i in range(d):
                 new_A[:, d_i] = np.concatenate(
                     (sumA.reshape(DL, d)[:, d_i], A.reshape(a, d)[:, d_i])
                 )
             new_A = new_A.reshape(DL + a, d, 1)
         else:
-            new_A = np.zeros((DL + a, d, DR + b))
+            new_A = np.zeros((DL + a, d, DR + b), dtype=sumA.dtype)
             for d_i in range(d):
                 new_A[:, d_i, :] = scipy.linalg.block_diag(
                     sumA[:, d_i, :], A[:, d_i, :]
