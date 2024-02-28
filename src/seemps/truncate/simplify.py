@@ -53,8 +53,6 @@ def simplify(
     CanonicalMPS
         Approximation :math:`\\xi` to the state.
     """
-    if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-        raise ValueError("Not valid simplification method.")
     if isinstance(state, MPSSum):
         return combine(
             state.weights,
