@@ -237,6 +237,8 @@ def combine(
     if guess is None:
         if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
             mps = guess_combine_state(weights, states)
+        elif strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
+            mps = guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
             mps = crappy_guess_combine_state(weights, states)
     else:
