@@ -1,0 +1,14 @@
+[flake8]
+extend-ignore = E741,E203,C901,W503
+exclude =
+	.git,
+	__pycache__,
+	setup.py,
+	build,
+	docs,
+    scripts,
+    benchmark,
+	# TODO: Eventually fix errors in tests
+    tests
+max-complexity = 10
+max-line-length = 150
