@@ -1,8 +1,13 @@
 from __future__ import annotations
+
+from typing import Callable, Optional, Union
+
 import numpy as np
-from typing import Union, Optional, Callable
-from ..state import MPS, Strategy, DEFAULT_STRATEGY
-from ..operators import MPO
+
+from ..analysis.operators import id_mpo
+from ..cgs import cgs
+from ..operators import MPO, MPOSum
+from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..truncate import simplify
 from ..typing import Vector
 
@@ -154,6 +159,78 @@ def euler2(
             idt = factor * (t - last_t)
             xi = simplify(2.0 * state - idt * (H @ state), strategy=strategy)
             state = simplify(state - (0.5 * idt) * (H @ xi), strategy=strategy)
+        if callback is not None:
+            output.append(callback(t, state))
+        last_t = t
+    if callback is None:
+        return state
+    else:
+        return output
+
+
+def implicit_euler(
+    H: MPO,
+    t_span: Union[float, tuple[float, float], Vector],
+    state: MPS,
+    steps: int = 1000,
+    strategy: Strategy = DEFAULT_STRATEGY,
+    callback: Optional[Callable] = None,
+    itime: bool = False,
+    tolerance: float = DEFAULT_TOLERANCE,
+):
+    r"""Solve a Schrodinger equation using a second order implicit Euler method.
+
+    See :function:`seemps.evolution.euler` for a description of the
+    function arguments.
+
+    Parameters
+    ----------
+    H : MPO
+        Hamiltonian in MPO form.
+    t_span : float | tuple[float, float] | Vector
+        Integration interval, or sequence of time steps.
+    state : MPS
+        Initial guess of the ground state.
+    steps : int, default = 1000
+        Integration steps, if not defined by `t_span`.
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        Truncation strategy for MPO and MPS algebra.
+    callback : Optional[Callable[[float, MPS], Any]]
+        A callable called after each iteration (defaults to None).
+    itime : bool, default = False
+        Whether to solve the imaginary time evolution problem.
+
+    Results
+    -------
+    result : MPS | list[Any]
+        Final state after evolution or values collected by callback
+    """
+    if isinstance(t_span, (int, float)):
+        t_span = (0.0, t_span)
+    if len(t_span) == 2:
+        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
+    factor: float | complex
+    if itime:
+        factor = 1
+        normalize_strategy = strategy.replace(normalize=True)
+    else:
+        factor = 1j
+        normalize_strategy = strategy
+    last_t = t_span[0]
+    output = []
+    id = id_mpo(state.size, strategy=strategy)
+    for t in t_span:
+        if t != last_t:
+            idt = factor * (t - last_t)
+            A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt], strategy=strategy).join(
+                strategy=strategy
+            )
+            B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt], strategy=strategy).join(
+                strategy=strategy
+            )
+            state, _ = cgs(
+                A, B @ state, strategy=normalize_strategy, tolerance=tolerance
+            )
         if callback is not None:
             output.append(callback(t, state))
         last_t = t
