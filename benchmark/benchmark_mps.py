@@ -29,7 +29,7 @@ def make_two_ghz(size):
 
 
 def scalar_product(A, B):
-    seemps.expectation.scprod(A, B)
+    seemps.state.scprod(A, B)
 
 
 def run_all():

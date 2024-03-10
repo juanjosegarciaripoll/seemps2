@@ -54,7 +54,6 @@ offer some functions to create convenience states
     ~seemps.state.MPS.from_tensor
     ~seemps.state.AKLT
     ~seemps.state.GHZ
-    ~seemps.state.graph
     ~seemps.state.product_state
     ~seemps.state.random_uniform_mps
     ~seemps.state.W
@@ -101,9 +100,9 @@ values in a convenient way.
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.expectation.scprod
-    ~seemps.expectation.MPS.norm
-    ~seemps.expectation.MPS.norm_squared
+    ~seemps.state.scprod
+    ~seemps.state.MPS.norm
+    ~seemps.state.MPS.norm_squared
     ~seemps.expectation.expectation1
     ~seemps.expectation.expectation2
     ~seemps.expectation.all_expectation1

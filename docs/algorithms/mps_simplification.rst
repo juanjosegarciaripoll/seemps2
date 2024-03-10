@@ -25,11 +25,10 @@ one approximates a linear combination of states and weights :math:`\psi_i` and
 
 This second algorithm is the one used to convert :class:`seemps.state.MPSSum`
 objects into ordinary :class:`seemps.state.MPS` states (see
-:doc:`MPS combination <../seemps_objects_sum>`) 
+:doc:`MPS combination <../seemps_objects_sum>`). Both are implemented using the
+same front-end function.
 
 .. autosummary::
    :toctree: ../generated/
 
    ~seemps.truncate.simplify
-   ~seemps.truncate.combine
-   ~seemps.state.MPSSum.toMPS

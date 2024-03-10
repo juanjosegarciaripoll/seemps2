@@ -36,17 +36,17 @@ offer modules offer specific operators for implementing quantum
 MPO's and their aggregates also can be scaled by a scalar, creating new objects
 with transformed tensors. And finally, MPO's can be enlarged to include new
 quantum subsystems---for instance, when you wish to implement a QFT onto a
-set of qubits, the :py:meth:`~seemps.MPO.extend` function allows you to do it.
+set of qubits, the :py:meth:`~seemps.operators.MPO.extend` function allows you to do it.
 
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.MPO
-    ~seemps.MPOList
-    ~seemps.MPO.__mul__
-    ~seemps.MPOList.__mul__
-    ~seemps.MPO.extend
-    ~seemps.MPOList.extend
+    ~seemps.operators.MPO
+    ~seemps.operators.MPOList
+    ~seemps.operators.MPO.__mul__
+    ~seemps.operators.MPOList.__mul__
+    ~seemps.operators.MPO.extend
+    ~seemps.operators.MPOList.extend
 
 .. _mpo_application:
 
@@ -67,7 +67,7 @@ Indeed, in the example above, a trivial contraction will create an MPS with
 tensors of size :math:`dD\times d\times dD`.
 
 We offer two functions to apply MPO's onto MPS'. The first one is the
-:py:meth:`seemps.MPO.apply`, which offers a lot of control on the contraction
+:py:meth:`seemps.operators.MPO.apply`, which offers a lot of control on the contraction
 and later simplification of the MPS (see
 :doc:`simplification algorithm <algorithms/mps_simplification>`). The other alternative
 is the matrix multiplication operator `@`, which relies on the strategy
@@ -76,11 +76,11 @@ stored in the state for contraction and simplification.
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.MPO.apply
-    ~seemps.MPOList.apply
-    ~seemps.MPO.__matmul__
-    ~seemps.MPOList.__matmul__
-    ~seemps.MPO.expectation
+    ~seemps.operators.MPO.apply
+    ~seemps.operators.MPOList.apply
+    ~seemps.operators.MPO.__matmul__
+    ~seemps.operators.MPOList.__matmul__
+    ~seemps.operators.MPO.expectation
 
 .. highlight:: python
 

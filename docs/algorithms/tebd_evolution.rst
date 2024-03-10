@@ -23,8 +23,8 @@ the bond dimension does not grow too much.
 .. autosummary::
    :toctree: ../generated/
 
-   ~seemps.evolution.Trotter2ndOrder
-   ~seemps.evolution.Trotter3rdOrder
+   ~seemps.evolution.trotter.Trotter2ndOrder
+   ~seemps.evolution.trotter.Trotter3rdOrder
 
 The following is an example evolving a matrix-product state with 20 qubits
 under a spin-1/2 Heisenberg Hamiltonian::
@@ -33,8 +33,8 @@ under a spin-1/2 Heisenberg Hamiltonian::
    >>> mps = seemps.random_uniform_mps(2, 20)
    >>> H = seemps.hamiltonians.HeisenbergHamiltonian(20)
    >>> dt = 0.1
-   >>> U = seemps.Trotter2ndOrder(H, dt)
-   >>> strategy = seemps.DEFAULT_STRATEGY.replace(tolerance = 1e-8)
+   >>> U = seemps.evolution.trotter.Trotter2ndOrder(H, dt)
+   >>> strategy = seemps.state.DEFAULT_STRATEGY.replace(tolerance = 1e-8)
    >>> t = 0.0
    >>> for steps in range(0, 50):
    ...   mps = U.apply_inplace(mps)

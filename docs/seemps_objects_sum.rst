@@ -43,10 +43,10 @@ Conversions
 An :class:`MPSSum` can be approximated by a matrix-product state through an
 algorithm known as "simplification", explained in
 :doc:`the algorithms section <algorithms/mps_simplification>`. It can also be converted
-to standard wavefunctions.
+to an MPS (with possibly quite large bond dimensions) and to standard wavefunctions.
 
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.state.MPSSum.toMPS
+    ~seemps.state.MPSSum.join
     ~seemps.state.MPSSum.to_vector
