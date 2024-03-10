@@ -104,24 +104,13 @@ def gradient_descent(
             | <ψ|H*H|ψ>  <ψ|H*H*H|ψ> | | b |     | <ψ|H|ψ>  <ψ|H*H|ψ> |
 
         """
-        if step > 0:
-            avg_H3 = H.expectation(H_state).real
-            A = np.array([[E, avg_H2], [avg_H2, avg_H3]])
-            B = np.array([[1, E], [E, avg_H2]])
-            w, v = scipy.linalg.eig(A, B)
-            v = v[:, np.argmin(w)]
-            v /= np.linalg.norm(v)
-            state = simplify(
-                MPSSum(v, [state, H_state]), strategy=normalization_strategy
-            )
         E = H.expectation(state).real
         H_state = H.apply(state)  # type: ignore
         avg_H2 = scprod(H_state, H_state).real
         variance = avg_H2 - scprod(state, H_state).real ** 2
         if callback is not None:
             callback(state, results)
-        if tools.DEBUG:
-            tools.log(f"step = {step:5d}, energy = {E}, variance = {variance}")
+        tools.log(f"step = {step:5d}, energy = {E}, variance = {variance}")
         results.trajectory.append(E)
         results.variances.append(variance)
         if E < results.energy:
@@ -142,4 +131,17 @@ def gradient_descent(
             )
             results.converged = True
             break
+        if step <= maxiter:
+            avg_H3 = H.expectation(H_state).real
+            A = [[E, avg_H2], [avg_H2, avg_H3]]
+            B = [[1, E], [E, avg_H2]]
+            w, v = scipy.linalg.eig(A, B)
+            v = v[:, np.argmin(w)]
+            v /= np.linalg.norm(v)
+            state = simplify(
+                MPSSum(v, [state, H_state]), strategy=normalization_strategy
+            )
+    tools.log(
+        f"Algorithm finished with:\nmessage={results.message}\nconverged = {results.converged}"
+    )
     return results
