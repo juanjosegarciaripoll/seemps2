@@ -24,7 +24,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_one(self):
         S = mpo_shifts(3, shifts=[1])
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [1, 0, 0, 0, 0, 0, 0, 0],
@@ -39,7 +39,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_two(self):
         S = mpo_shifts(3, shifts=[2])
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -54,7 +54,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_minus_one(self):
         S = mpo_shifts(3, shifts=[-1])
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 1, 0, 0, 0, 0, 0, 0],
             [0, 0, 1, 0, 0, 0, 0, 0],
@@ -69,7 +69,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_minus_two(self):
         S = mpo_shifts(3, shifts=[-2])
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 0, 1, 0, 0, 0, 0, 0],
             [0, 0, 0, 1, 0, 0, 0, 0],
@@ -84,7 +84,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_one_periodic(self):
         S = mpo_shifts(3, shifts=[1], periodic=True)
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 0, 0, 0, 0, 0, 0, 1],
             [1, 0, 0, 0, 0, 0, 0, 0],
@@ -99,7 +99,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_two_periodic(self):
         S = mpo_shifts(3, shifts=[2], periodic=True)
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 0, 0, 0, 0, 0, 1, 0],
             [0, 0, 0, 0, 0, 0, 0, 1],
@@ -114,7 +114,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_minus_one_periodic(self):
         S = mpo_shifts(3, shifts=[-1], periodic=True)
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 1, 0, 0, 0, 0, 0, 0],
             [0, 0, 1, 0, 0, 0, 0, 0],
@@ -129,7 +129,7 @@ class TestShifts(TestCase):
 
     def test_shift_by_minus_two_periodic(self):
         S = mpo_shifts(3, shifts=[-2], periodic=True)
-        matrix = S.tomatrix()
+        matrix = S.to_matrix()
         target = [
             [0, 0, 1, 0, 0, 0, 0, 0],
             [0, 0, 0, 1, 0, 0, 0, 0],
@@ -147,14 +147,14 @@ class TestShifts(TestCase):
             for d in range(-(2**N), 2**N + 1):
                 S = mpo_shifts(N, shifts=[d], periodic=False)
                 target = self.shift_matrix(2**N, d, periodic=False)
-                self.assertSimilar(S.tomatrix(), target)
+                self.assertSimilar(S.to_matrix(), target)
 
     def test_shift_by_all_integers_periodic(self):
         for N in range(1, 4):
             for d in range(-(2**N), 2**N + 1):
                 S = mpo_shifts(N, shifts=[d], periodic=True)
                 target = self.shift_matrix(2**N, d, periodic=True)
-                self.assertSimilar(S.tomatrix(), target)
+                self.assertSimilar(S.to_matrix(), target)
 
     def test_weighted_shifts_by_all_integers(self):
         for N in range(1, 4):
@@ -165,4 +165,4 @@ class TestShifts(TestCase):
                 target = self.weighted_shift_matrix(
                     2**N, weights, shifts, periodic=False
                 )
-                self.assertSimilar(S.tomatrix(), target)
+                self.assertSimilar(S.to_matrix(), target)

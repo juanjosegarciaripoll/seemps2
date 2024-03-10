@@ -32,19 +32,19 @@ class TestHamiltonians(TestCase):
     def test_sparse_matrix(self):
         H2 = ConstantNNHamiltonian(2, 2)
         H2.add_interaction_term(0, σz, σz)
-        M2 = H2.tomatrix()
+        M2 = H2.to_matrix()
         A2 = sp.kron(σz, σz)
         self.assertSimilar(M2, A2)
 
         H2 = ConstantNNHamiltonian(2, 2)
         H2.add_local_term(0, 3.5 * σx)
-        M2 = H2.tomatrix()
+        M2 = H2.to_matrix()
         A2 = sp.kron(3.5 * σx, i2)
         self.assertSimilar(M2, A2)
 
         H2 = ConstantNNHamiltonian(2, 2)
         H2.add_local_term(1, -2.5 * σy)
-        M2 = H2.tomatrix()
+        M2 = H2.to_matrix()
         A2 = sp.kron(i2, -2.5 * σy)
         self.assertSimilar(M2, A2)
 
@@ -52,17 +52,17 @@ class TestHamiltonians(TestCase):
         H2.add_local_term(0, 3.5 * σx)
         H2.add_local_term(1, -2.5 * σy)
         H2.add_interaction_term(0, σz, σz)
-        M2 = H2.tomatrix()
+        M2 = H2.to_matrix()
         A2 = sp.kron(i2, -2.5 * σy) + sp.kron(σz, σz) + sp.kron(3.5 * σx, i2)
         self.assertSimilar(M2, A2)
 
     def test_hamiltonian_to_mpo(self):
         """Check conversion to MPO is accurate by comparing matrices."""
         H2 = HeisenbergHamiltonian(2)
-        self.assertSimilar(H2.tomatrix().toarray(), H2.to_mpo().tomatrix())
+        self.assertSimilar(H2.to_matrix().toarray(), H2.to_mpo().to_matrix())
 
         H3 = HeisenbergHamiltonian(3)
-        self.assertSimilar(H3.tomatrix().toarray(), H3.to_mpo().tomatrix())
+        self.assertSimilar(H3.to_matrix().toarray(), H3.to_mpo().to_matrix())
 
         H4 = HeisenbergHamiltonian(4)
-        self.assertSimilar(H4.tomatrix().toarray(), H4.to_mpo().tomatrix())
+        self.assertSimilar(H4.to_matrix().toarray(), H4.to_mpo().to_matrix())

@@ -45,7 +45,7 @@ class TestQuadraticForm(TestCase):
         exact_expected = Hmpo.expectation(state)
         self.assertAlmostEqual(expected, exact_expected)
 
-        HAB = H.tomatrix() @ AB.reshape(-1)
+        HAB = H.to_matrix() @ AB.reshape(-1)
         self.assertSimilar(HAB, HopAB)
 
     def test_quadratic_form_three_sites_start_zero(self):
@@ -108,7 +108,7 @@ class TestDMRG(TestCase):
         H = HeisenbergHamiltonian(size=5, field=[0.0, 0.0, 0.1])
         Hmpo = H.to_mpo()
         result = dmrg(Hmpo, guess=self.random_uniform_mps(2, 5))
-        E, exact_v = scipy.sparse.linalg.eigsh(H.tomatrix(), k=1, which="SA")
+        E, exact_v = scipy.sparse.linalg.eigsh(H.to_matrix(), k=1, which="SA")
         self.assertAlmostEqual(result.energy, E[0])
         v = result.state.to_vector()
         self.assertAlmostEqual(abs(np.vdot(v, exact_v)), 1.0)

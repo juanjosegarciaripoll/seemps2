@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+import warnings
 from typing import Union, Sequence, Optional
 from ..typing import Weight, Operator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
@@ -109,9 +110,14 @@ class MPOSum(object):
 
     def tomatrix(self) -> Operator:
         """Return the matrix representation of this MPO."""
-        A = self.weights[0] * self.mpos[0].tomatrix()
+        warnings.warn("MPOSum.tomatrix() has been renamed to to_matrix()")
+        return self.to_matrix()
+
+    def to_matrix(self) -> Operator:
+        """Return the matrix representation of this MPO."""
+        A = self.weights[0] * self.mpos[0].to_matrix()
         for i, mpo in enumerate(self.mpos[1:]):
-            A = A + self.weights[i + 1] * mpo.tomatrix()
+            A = A + self.weights[i + 1] * mpo.to_matrix()
         return A
 
     def set_strategy(self, strategy, strategy_components=None) -> MPOSum:
@@ -130,17 +136,17 @@ class MPOSum(object):
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication A @ state between an MPOSum 'A' and
         a Matrix Product State 'state'."""
+        output = MPSSum(
+            [1] * len(self.weights),
+            [w * O.apply(state) for w, O in zip(self.weights, self.mpos)],
+        )
         # TODO: Is this really needed?
         if strategy is None:
             strategy = self.strategy
         if simplify is None:
             simplify = strategy.get_simplify_flag()
-        output: Union[MPS, MPSSum]
-        for i, (w, O) in enumerate(zip(self.weights, self.mpos)):
-            Ostate = w * O.apply(state)
-            output = Ostate if i == 0 else output + Ostate
         if simplify:
-            output = truncate.simplify(output, strategy=strategy)
+            return truncate.simplify(output, strategy=strategy)
         return output
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:

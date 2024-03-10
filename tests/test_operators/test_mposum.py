@@ -100,7 +100,7 @@ class TestMPOSum(TestCase):
         mposum = self.mpoA + self.mpoB
         self.assertSimilar(
             (self.mpoA + self.mpoB).apply(state, strategy=TEST_STRATEGY).to_vector(),
-            (self.mpoA + self.mpoB).tomatrix() @ state.to_vector(),
+            (self.mpoA + self.mpoB).to_matrix() @ state.to_vector(),
         )
 
     def test_mpo_set_strategy(self):
@@ -135,5 +135,5 @@ class TestMPOSum(TestCase):
     def test_mposum_T_is_transpose(self):
         mposum = MPOSum([self.mpoA, self.mpoB], [1, 1j])
         self.assertSimilar(
-            mposum.T.tomatrix(), self.mpoA.tomatrix().T + 1j * self.mpoB.tomatrix().T
+            mposum.T.to_matrix(), self.mpoA.to_matrix().T + 1j * self.mpoB.to_matrix().T
         )

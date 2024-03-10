@@ -32,13 +32,13 @@ class TestAlgebraic(TestCase):
         np.random.seed(1022)
         for N in range(1, 10):
             h = np.random.rand(N) - 0.5
-            self.assertSimilar(qubo_mpo(h=h).tomatrix(), self.linear_operator(h))
+            self.assertSimilar(qubo_mpo(h=h).to_matrix(), self.linear_operator(h))
 
     def test_qubo_quadratic(self):
         np.random.seed(1022)
         for N in range(1, 10):
             J = np.random.rand(N, N) - 0.5
-            self.assertSimilar(qubo_mpo(J=J).tomatrix(), self.quadratic_operator(J))
+            self.assertSimilar(qubo_mpo(J=J).to_matrix(), self.quadratic_operator(J))
 
     def test_product(self):
         np.random.seed(1034)

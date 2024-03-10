@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import overload, Union, Optional, Sequence
+import warnings
 import numpy as np
 import opt_einsum  # type: ignore
 from ..tools import InvalidOperation
@@ -139,8 +140,12 @@ class MPO(array.TensorArray):
         output._data = [A.transpose(0, 2, 1, 3) for A in output._data]
         return output
 
-    # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:
+        """Convert this MPO to a dense or sparse matrix."""
+        warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
+        return self.to_matrix()
+
+    def to_matrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""
         Di = 1  # Total physical dimension so far
         Dj = 1
@@ -418,12 +423,16 @@ class MPOList(object):
         """Return the physical dimensions of the MPOList."""
         return self.mpos[0].dimensions()
 
-    # TODO: Rename to to_matrix()
     def tomatrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""
-        A = self.mpos[0].tomatrix()
+        warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
+        return self.to_matrix()
+
+    def to_matrix(self) -> Operator:
+        """Convert this MPO to a dense or sparse matrix."""
+        A = self.mpos[0].to_matrix()
         for mpo in self.mpos[1:]:
-            A = mpo.tomatrix() @ A
+            A = mpo.to_matrix() @ A
         return A
 
     def set_strategy(self, strategy, strategy_components=None) -> MPOList:

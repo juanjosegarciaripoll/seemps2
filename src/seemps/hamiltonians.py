@@ -1,4 +1,5 @@
 from __future__ import annotations
+import warnings
 import numpy as np
 from typing import Optional, Union
 from math import sqrt
@@ -61,6 +62,10 @@ class NNHamiltonian(object):
         return 0
 
     def tomatrix(self, t: float = 0.0) -> Operator:
+        warnings.warn("Method Hamiltonian.tomatrix() has been renamed to_matrix()")
+        return self.to_matrix(t)
+
+    def to_matrix(self, t: float = 0.0) -> Operator:
         """Compute the sparse matrix for this Hamiltonian at time `t`.
 
         Parameters

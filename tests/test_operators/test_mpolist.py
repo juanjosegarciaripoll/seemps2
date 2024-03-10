@@ -55,7 +55,7 @@ class TestMPOList(TestCase):
         mps = random_uniform_mps(2, 3, D=2)
         self.assertSimilar(
             UV.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
-            (UV.tomatrix() @ mps.to_vector()),
+            (UV.to_matrix() @ mps.to_vector()),
         )
 
     def test_mpo_set_strategy(self):
@@ -86,18 +86,19 @@ class TestMPOList(TestCase):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        self.assertSimilar(UV.tomatrix(), V.tomatrix() @ U.tomatrix())
+        self.assertSimilar(UV.to_matrix(), V.to_matrix() @ U.to_matrix())
         state = random_uniform_mps(2, 3, rng=self.rng)
         self.assertSimilar(
-            UV.apply(state).to_vector(), V.tomatrix() @ U.tomatrix() @ state.to_vector()
+            UV.apply(state).to_vector(),
+            V.to_matrix() @ U.to_matrix() @ state.to_vector(),
         )
 
     def test_mpolist_can_be_rescaled(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        self.assertSimilar(UV.tomatrix() * (-3), (UV * (-3)).tomatrix())
-        self.assertSimilar(UV.tomatrix() * (-3), ((-3) * UV).tomatrix())
+        self.assertSimilar(UV.to_matrix() * (-3), (UV * (-3)).to_matrix())
+        self.assertSimilar(UV.to_matrix() * (-3), ((-3) * UV).to_matrix())
 
     def test_mpolist_raises_error_when_rescaling_by_non_number(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
@@ -115,28 +116,28 @@ class TestMPOList(TestCase):
         ex_U = U.extend(4, dimensions=[3])
         ex_V = V.extend(4, dimensions=[3])
         ex_UV = UV.extend(4, dimensions=[3])
-        self.assertSimilar(ex_UV.tomatrix(), ex_V.tomatrix() @ ex_U.tomatrix())
+        self.assertSimilar(ex_UV.to_matrix(), ex_V.to_matrix() @ ex_U.to_matrix())
 
     def test_mpolist_join_real_mpos(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
         UV_join = UV.join()
-        self.assertSimilar(UV.tomatrix(), UV_join.tomatrix())
+        self.assertSimilar(UV.to_matrix(), UV_join.to_matrix())
 
     def test_mpolist_join_complex_mpos(self):
         U = MPO([σy.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
         UV_join = UV.join()
-        self.assertSimilar(UV.tomatrix(), UV_join.tomatrix())
+        self.assertSimilar(UV.to_matrix(), UV_join.to_matrix())
 
     def test_mpolist_T_returns_transpose(self):
         U = MPO([σy.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
         UVT = UV.T
-        self.assertSimilar(UV.tomatrix().T, UVT.tomatrix())
+        self.assertSimilar(UV.to_matrix().T, UVT.to_matrix())
 
     def test_mpolist_dimensions_returns_those_of_first_mpo(self):
         U = MPO([self.rng.random(size=(1, 3, 2, 1))] * 3)

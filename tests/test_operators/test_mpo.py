@@ -32,8 +32,8 @@ class TestMPO(TestCase):
 
     def test_mpo_multiplies_by_number(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
-        self.assertSimilar(mpo.tomatrix() * (-3.0), (mpo * (-3)).tomatrix())
-        self.assertSimilar((-3.0) * mpo.tomatrix(), ((-3) * mpo).tomatrix())
+        self.assertSimilar(mpo.to_matrix() * (-3.0), (mpo * (-3)).to_matrix())
+        self.assertSimilar((-3.0) * mpo.to_matrix(), ((-3) * mpo).to_matrix())
 
     def test_mpo_rejects_multiplication_by_non_numbers(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
@@ -46,9 +46,9 @@ class TestMPO(TestCase):
     def test_mpo_apply_is_matrix_multiplication(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         mps = random_uniform_mps(2, mpo.size, D=2)
-        self.assertSimilar((mpo @ mps).to_vector(), (mpo.tomatrix() @ mps.to_vector()))
+        self.assertSimilar((mpo @ mps).to_vector(), (mpo.to_matrix() @ mps.to_vector()))
         self.assertSimilar(
-            mpo.apply(mps).to_vector(), (mpo.tomatrix() @ mps.to_vector())
+            mpo.apply(mps).to_vector(), (mpo.to_matrix() @ mps.to_vector())
         )
 
     def test_mpo_apply_can_simplify(self):
@@ -56,7 +56,7 @@ class TestMPO(TestCase):
         mps = random_uniform_mps(2, mpo.size, D=2)
         self.assertSimilar(
             mpo.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
-            (mpo.tomatrix() @ mps.to_vector()),
+            (mpo.to_matrix() @ mps.to_vector()),
         )
 
     def test_mpo_set_strategy(self):
@@ -70,7 +70,7 @@ class TestMPO(TestCase):
         self.assertIsInstance(mpo.apply(mps + mps, simplify=False), MPSSum)
         self.assertSimilar(
             mpo.apply(mps + mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
-            2 * (mpo.tomatrix() @ mps.to_vector()),
+            2 * (mpo.to_matrix() @ mps.to_vector()),
         )
 
     def test_mpo_apply_rejects_non_mps(self):
@@ -114,4 +114,4 @@ class TestMPO(TestCase):
     def test_mpo_T_returns_transpose(self):
         mpo = MPO([self.rng.normal(size=(1, 2, 3, 1)) for _ in range(5)])
         mpoT = mpo.T
-        self.assertSimilar(mpo.tomatrix().T, mpoT.tomatrix())
+        self.assertSimilar(mpo.to_matrix().T, mpoT.to_matrix())

@@ -49,7 +49,7 @@ class TestMPOExpectation(TestCase):
         state = CanonicalMPS(
             random_uniform_mps(2, 10, truncate=True, rng=self.rng), center=0
         )
-        O = H.tomatrix()
+        O = H.to_matrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
 
@@ -58,7 +58,7 @@ class TestMPOExpectation(TestCase):
         state = CanonicalMPS(
             random_uniform_mps(2, 10, truncate=True, rng=self.rng), center=9
         )
-        O = H.tomatrix()
+        O = H.to_matrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
 
@@ -67,7 +67,7 @@ class TestMPOExpectation(TestCase):
         state = CanonicalMPS(
             random_uniform_mps(2, 10, truncate=True, rng=self.rng), center=4
         )
-        O = H.tomatrix()
+        O = H.to_matrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
 
@@ -75,7 +75,7 @@ class TestMPOExpectation(TestCase):
         H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
         bra = random_uniform_mps(2, 10, complex=True, rng=self.rng)
         ket = random_uniform_mps(2, 10, complex=True, rng=self.rng)
-        O = H.tomatrix()
+        O = H.to_matrix()
         vbra = bra.to_vector()
         vket = ket.to_vector()
         self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
@@ -84,7 +84,7 @@ class TestMPOExpectation(TestCase):
         H = qft_mpo(10)
         bra = random_uniform_mps(2, 10, complex=True, rng=self.rng)
         ket = random_uniform_mps(2, 10, complex=True, rng=self.rng)
-        O = H.tomatrix()
+        O = H.to_matrix()
         vbra = bra.to_vector()
         vket = ket.to_vector()
         self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
@@ -95,7 +95,7 @@ class TestMPOExpectation(TestCase):
         H = H1 + H2
         bra = random_uniform_mps(2, 10, complex=True, rng=self.rng)
         ket = random_uniform_mps(2, 10, complex=True, rng=self.rng)
-        O = H.tomatrix()
+        O = H.to_matrix()
         vbra = bra.to_vector()
         vket = ket.to_vector()
         self.assertSimilar(H.expectation(bra, ket), np.vdot(vbra, O @ vket))
