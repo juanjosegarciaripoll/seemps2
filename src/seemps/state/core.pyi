@@ -1,6 +1,5 @@
 from typing import Optional
 from ..typing import Vector, Unitary, Tensor3, Tensor4
-from enum import Enum
 import numpy as np
 
 MAX_BOND_DIMENSION: int
