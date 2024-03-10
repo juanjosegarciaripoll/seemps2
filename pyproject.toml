@@ -32,6 +32,10 @@ exclude = [
 line-length = 88
 indent-width = 4
 
+[tool.ruff.lint]
+# Checks to ignore or add
+ignore = ["E741"]
+
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
