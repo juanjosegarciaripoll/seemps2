@@ -7,21 +7,31 @@ from ..tools import TestCase
 
 
 class TestMonomialsCollection(TestCase):
-    def assertContainsMonomials(self, L: int, mps: MPS, domain: Interval):
+    def assertContainsMonomials(self, L: int, mps: MPS, domain: Interval, first: bool):
         x = domain.to_vector()
         for m in range(L):
             xm_mps: MPS = mps.copy()
-            xm_mps[-1] = xm_mps[-1][:, :, [m]]
+            if first:
+                xm_mps[0] = xm_mps[0][[m], :, :]
+            else:
+                xm_mps[-1] = xm_mps[-1][:, :, [m]]
             if np.all(np.isclose(xm_mps.to_vector(), x**m)):
                 continue
             raise AssertionError(f"MPS fails to reproduce monomial of order {m}")
 
-    def test_all_monomials_up_to_fourth_order(self):
+    def test_all_monomials_up_to_fourth_order_from_end(self):
         N = 5  # qubits
         L = 5  # one plust the last order
         domain = RegularClosedInterval(0, 1, 2**N)
-        xL_mps = _mps_x_tensor(L, domain)
-        self.assertContainsMonomials(L, xL_mps, domain)
+        xL_mps = _mps_x_tensor(L, domain, first=False)
+        self.assertContainsMonomials(L, xL_mps, domain, first=False)
+
+    def test_all_monomials_up_to_fourth_order_from_start(self):
+        N = 5  # qubits
+        L = 5  # one plust the last order
+        domain = RegularClosedInterval(0, 1, 2**N)
+        xL_mps = _mps_x_tensor(L, domain, first=True)
+        self.assertContainsMonomials(L, xL_mps, domain, first=True)
 
 
 class TestPolynomialFunction(TestCase):
@@ -45,4 +55,19 @@ class TestPolynomialFunction(TestCase):
     def test_third_order_polynomial_mps(self):
         p = Polynomial([1, -2, 0.4, -0.25])
         p_mps = mps_from_polynomial(p, self.domain)
+        self.assertSimilarPolynomial(p, p_mps)
+
+    def test_constant_polynomial_mps_first_true(self):
+        p = Polynomial([1])
+        p_mps = mps_from_polynomial(p, self.domain, first=True)
+        self.assertSimilarPolynomial(p, p_mps)
+
+    def test_first_order_polynomial_mps_first_true(self):
+        p = Polynomial([1, -3])
+        p_mps = mps_from_polynomial(p, self.domain, first=True)
+        self.assertSimilarPolynomial(p, p_mps)
+
+    def test_third_order_polynomial_mps_first_true(self):
+        p = Polynomial([1, -2, 0.4, -0.25])
+        p_mps = mps_from_polynomial(p, self.domain, first=True)
         self.assertSimilarPolynomial(p, p_mps)

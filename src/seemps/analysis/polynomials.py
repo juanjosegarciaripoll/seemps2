@@ -45,11 +45,24 @@ def _mps_x_tensor(
         # position carried by this qubit (see `mps_equispaced()`)
         On = x_mps[n]
         On = On[0, :, min(1, On.shape[2] - 1)]
+        ndx = np.where(On != 0)
+        On_sign = np.sign(On[ndx])
+        On_abs = np.abs(On[ndx])
         d = len(On)
         An = np.zeros((L, d, L))
         for m in range(L):
             for r in range(m):
-                An[r, :, m] = scipy.special.binom(m, r) * On ** (m - r)
+                # An[r, :, m] = scipy.special.binom(m, r) * On ** (m - r)
+                aux = np.exp(
+                    (m - r) * np.log(On_abs)
+                    + scipy.special.gammaln(m + 1)
+                    - scipy.special.gammaln(r + 1)
+                    - scipy.special.gammaln(m - r + 1)
+                ) * (On_sign ** (m - r))
+                if first:
+                    An[m, ndx, r] = aux
+                else:
+                    An[r, ndx, m] = aux
             An[m, :, m] = 1.0
         x_mps[n] = An
     if first:
@@ -91,13 +104,9 @@ def mps_from_polynomial(
         p = Polynomial(p)
     xm_mps = _mps_x_tensor(p.degree(), domain, first)
     if first:
-        A = xm_mps[0]
-        A = np.einsum("a,aib", p.coef, A).reshape(1, A.shape[1], A.shape[2])
-        xm_mps[0] = A
+        xm_mps[0] = np.einsum("a,aib->ib", p.coef, xm_mps[0])[np.newaxis, :, :]
     else:
-        A = xm_mps[-1]
-        A = np.einsum("aib,b", A, p.coef).reshape(A.shape[0], A.shape[1], 1)
-        xm_mps[-1] = A
+        xm_mps[-1] = np.einsum("aib,b->ai", xm_mps[-1], p.coef)[:, :, np.newaxis]
     if strategy.get_simplify_flag():
         return simplify(xm_mps, strategy=strategy)
     return xm_mps
