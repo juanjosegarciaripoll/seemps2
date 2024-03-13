@@ -147,7 +147,7 @@ def crappy_guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
             newA = sumA.copy()
         dt = type(A[0, 0, 0] + sumA[0, 0, 0])
         if sumA.dtype != dt:
-            newA = sumA.astype(dt)
+            newA = newA.astype(dt)
         else:
             newA[:a, :, :b] += A
         return newA
