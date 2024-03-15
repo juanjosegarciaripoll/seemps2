@@ -13,6 +13,7 @@ cdef enum SimplificationCEnum:
     SIMPLIFICATION_CANONICAL_FORM = 1
     SIMPLIFICATION_VARIATIONAL = 2
     SIMPLIFICATION_LAST_CODE = 2
+    SIMPLIFICATION_VARIATIONAL_EXACT = 3
 
 cdef class Strategy:
     cdef int method

@@ -238,9 +238,11 @@ def combine(
         if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
             mps = guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-            mps = guess_combine_state(weights, states)
+            return guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
             mps = crappy_guess_combine_state(weights, states)
+        elif strategy.get_simplification_method() == Simplification.VARIATIONAL_EXACT:
+            mps = guess_combine_state(weights, states)
     else:
         mps = guess
     normalize = strategy.get_normalize_flag()

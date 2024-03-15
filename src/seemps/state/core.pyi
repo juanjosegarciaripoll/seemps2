@@ -14,6 +14,7 @@ class Simplification:
     DO_NOT_SIMPLIFY = 0
     CANONICAL_FORM = 1
     VARIATIONAL = 2
+    VARIATIONAL_EXACT = 3
 
 class Strategy:
     def __init__(
