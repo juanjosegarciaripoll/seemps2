@@ -241,7 +241,7 @@ def combine(
             return guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
             mps = crappy_guess_combine_state(weights, states)
-        elif strategy.get_simplification_method() == Simplification.VARIATIONAL_EXACT:
+        elif strategy.get_simplification_method() == Simplification.VARIATIONAL_EXACT_GUESS:
             mps = guess_combine_state(weights, states)
     else:
         mps = guess

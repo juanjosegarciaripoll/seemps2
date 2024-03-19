@@ -15,7 +15,7 @@ class Simplification:
     DO_NOT_SIMPLIFY = SIMPLIFICATION_DO_NOT_SIMPLIFY
     CANONICAL_FORM = SIMPLIFICATION_CANONICAL_FORM
     VARIATIONAL = SIMPLIFICATION_VARIATIONAL
-    VARIATIONAL_EXACT = SIMPLIFICATION_VARIATIONAL_EXACT
+    VARIATIONAL_EXACT_GUESS = SIMPLIFICATION_VARIATIONAL_EXACT_GUESS
 
 DEFAULT_TOLERANCE = np.finfo(np.float64).eps
 
@@ -115,7 +115,7 @@ cdef class Strategy:
             simplification_method="CanonicalForm"
         elif self.simplify == SIMPLIFICATION_VARIATIONAL:
             simplification_method="Variational"
-        elif self.simplify == SIMPLIFICATION_VARIATIONAL_EXACT:
+        elif self.simplify == SIMPLIFICATION_VARIATIONAL_EXACT_GUESS:
             simplification_method="Variational (exact guess)"
         else:
             raise ValueError("Invalid simplification method found in Strategy")
