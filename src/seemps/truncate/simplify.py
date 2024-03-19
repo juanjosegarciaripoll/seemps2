@@ -38,7 +38,7 @@ def simplify(
     state: Union[MPS, MPSSum],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-) -> CanonicalMPS:
+) -> Union[MPS, CanonicalMPS]:
     """Simplify an MPS state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
 
