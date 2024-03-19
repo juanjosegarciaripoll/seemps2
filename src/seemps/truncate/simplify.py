@@ -38,7 +38,7 @@ def simplify(
     state: Union[MPS, MPSSum],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-) -> Union[MPS, CanonicalMPS]:
+) -> CanonicalMPS:
     """Simplify an MPS state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
 
@@ -213,7 +213,7 @@ def combine(
     guess: Optional[MPS] = None,
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-) -> Union[MPS, CanonicalMPS]:
+) -> CanonicalMPS:
     """Approximate a linear combination of MPS :math:`\\sum_i w_i \\psi_i` by
     another one with a smaller bond dimension, sweeping until convergence is achieved.
 
@@ -241,7 +241,7 @@ def combine(
         if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
             mps = guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-            return guess_combine_state(weights, states)
+            return CanonicalMPS(guess_combine_state(weights, states), strategy=strategy)
         elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
             mps = crappy_guess_combine_state(weights, states)
         elif (
