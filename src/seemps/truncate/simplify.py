@@ -1,7 +1,11 @@
 from __future__ import annotations
+
+from typing import Optional, Union
+
 import numpy as np
-from typing import Union, Optional
 import scipy.linalg  # type: ignore # scipy does not provide type declarations
+
+from .. import tools
 from ..state import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
@@ -13,9 +17,8 @@ from ..state import (
     Truncation,
 )
 from ..state.environments import scprod
-from .. import tools
+from ..typing import Tensor3, Weight
 from .antilinear import AntilinearForm
-from ..typing import Weight, Tensor3
 
 # TODO: We have to rationalize all this about directions. The user should
 # not really care about it and we can guess the direction from the canonical
@@ -238,9 +241,14 @@ def combine(
         if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
             mps = guess_combine_state(weights, states)
         elif strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-            mps = guess_combine_state(weights, states)
+            return CanonicalMPS(guess_combine_state(weights, states), strategy=strategy)
         elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
             mps = crappy_guess_combine_state(weights, states)
+        elif (
+            strategy.get_simplification_method()
+            == Simplification.VARIATIONAL_EXACT_GUESS
+        ):
+            mps = guess_combine_state(weights, states)
     else:
         mps = guess
     normalize = strategy.get_normalize_flag()
