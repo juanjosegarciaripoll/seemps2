@@ -18,7 +18,7 @@ The project can be installed directly from a cloned folder::
 
 Or it can also be installed directly from the internet::
 
-  pip install https://github.com/juanjosegarciaripoll/seemps2.github
+  pip install git+https://github.com/juanjosegarciaripoll/seemps2.git
 
 This will install the required dependencies, compile the library and install it
 in your current python environment.
