@@ -69,6 +69,10 @@ class TestCase(unittest.TestCase):
             random_uniform_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
         )
 
+    def assertApproximateIsometry(self, A, direction, places=7) -> None:
+        if not approximateIsometry(A, direction, places):
+            raise self.failureException(f"Tensor is not isometry:\nA={A}")
+
 
 def similar(A, B, **kwdargs):
     if sp.issparse(A):
