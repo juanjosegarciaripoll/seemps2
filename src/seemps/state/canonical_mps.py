@@ -90,6 +90,7 @@ class CanonicalMPS(MPS):
         center: Optional[int] = None,
         normalize: bool = False,
         strategy: Strategy = DEFAULT_STRATEGY,
+        is_canonical: bool = False,
         **kwdargs,
     ):
         super().__init__(data, **kwdargs)
@@ -105,7 +106,10 @@ class CanonicalMPS(MPS):
             self.center = actual_center = self._interpret_center(
                 0 if center is None else center
             )
-            self.update_error(_canonicalize(self._data, actual_center, self.strategy))
+            if not is_canonical:
+                self.update_error(
+                    _canonicalize(self._data, actual_center, self.strategy)
+                )
         if normalize or self.strategy.get_normalize_flag():
             A = self[actual_center]
             self[actual_center] = A / np.linalg.norm(A)
@@ -117,6 +121,7 @@ class CanonicalMPS(MPS):
         dimensions: Sequence[int],
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
+        center: int = 0,
         **kwdargs,
     ) -> CanonicalMPS:
         """Create an MPS in canonical form starting from a state vector.
@@ -132,6 +137,8 @@ class CanonicalMPS(MPS):
             Default truncation strategy for algorithms working on this state.
         normalize : bool, default = True
             Whether the state is normalized to compensate truncation errors.
+        center : int, default = 0
+            Center for the canonical form of this decomposition.
 
         Returns
         -------
@@ -142,10 +149,12 @@ class CanonicalMPS(MPS):
         --------
         :py:meth:`~seemps.state.MPS.from_vector`
         """
+        data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
         return CanonicalMPS(
-            schmidt.vector2mps(ψ, dimensions, strategy, normalize),
-            center=kwdargs.get("center", 0),
-            strategy=strategy,
+            data,
+            error=error,
+            center=center,
+            is_canonical=True,
         )
 
     def norm_squared(self) -> float:

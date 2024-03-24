@@ -94,6 +94,7 @@ class MPS(array.TensorArray):
         dimensions: Sequence[int],
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
+        center: int = -1,
         **kwdargs,
     ) -> MPS:
         """Create a matrix-product state from a state vector.
@@ -115,7 +116,8 @@ class MPS(array.TensorArray):
         MPS
             A valid matrix-product state approximating this state vector.
         """
-        return MPS(vector2mps(ψ, dimensions, strategy, normalize))
+        data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
+        return MPS(data, error)
 
     @classmethod
     def from_tensor(
