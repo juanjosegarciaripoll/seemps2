@@ -1,3 +1,4 @@
+import numpy as np
 from seemps.state import (
     DEFAULT_STRATEGY,
     CanonicalMPS,
@@ -9,10 +10,11 @@ from seemps.state.canonical_mps import (
     _update_in_canonical_form_right,
     _canonicalize,
 )
+from ..fixture_mps_states import MPSStatesFixture
 from ..tools import *
 
 
-class TestCanonicalForm(TestCase):
+class TestCanonicalForm(MPSStatesFixture):
     def test_local_update_canonical(self):
         #
         # We verify that _update_in_canonical_form() leaves a tensor that
@@ -176,3 +178,16 @@ class TestCanonicalForm(TestCase):
         state /= np.linalg.norm(state)
         mps = CanonicalMPS.from_vector(state, [2] * 8)
         self.assertSimilar(state, mps.to_vector())
+
+    def test_multiplying_by_zero_returns_zero_state(self):
+        A = CanonicalMPS(self.inhomogeneous_state)
+        for factor in [0, 0.0, 0.0j]:
+            B = 0.0 * A
+            self.assertIsInstance(B, CanonicalMPS)
+            self.assertTrue(B is not A)
+            for Ai, Bi in zip(A, B):
+                self.assertTrue(Ai is not Bi)
+                self.assertTrue(np.all(Bi == 0))
+                self.assertEqual(Bi.shape[0], 1)
+                self.assertEqual(Bi.shape[2], 1)
+            self.assertEqual(A.physical_dimensions(), B.physical_dimensions())

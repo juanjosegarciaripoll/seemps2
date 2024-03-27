@@ -173,6 +173,8 @@ class MPS(array.TensorArray):
     def __mul__(self, n: Union[Weight, MPS]) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
         if isinstance(n, (int, float, complex)):
+            if n == 0:
+                return self.zero_state()
             mps_mult = self.copy()
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
@@ -184,6 +186,8 @@ class MPS(array.TensorArray):
     def __rmul__(self, n: Weight) -> MPS:
         """Compute `self * n`, where `n` is a scalar."""
         if isinstance(n, (int, float, complex)):
+            if n == 0:
+                return self.zero_state()
             mps_mult = self.copy()
             mps_mult._data[0] = n * mps_mult._data[0]
             mps_mult._error = np.abs(n) ** 2 * mps_mult._error
@@ -204,6 +208,10 @@ class MPS(array.TensorArray):
     def norm(self) -> float:
         """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
         return np.sqrt(abs(scprod(self, self)))
+
+    def zero_state(self) -> MPS:
+        """Return a zero wavefunction with the same physical dimensions."""
+        return MPS([np.zeros((1, A.shape[1], 1)) for A in self._data])
 
     def expectation1(self, O: Operator, site: int) -> Weight:
         """Compute the expectation value :math:`\\langle\\psi|O_i|\\psi\\rangle`

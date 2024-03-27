@@ -157,6 +157,15 @@ class CanonicalMPS(MPS):
             is_canonical=True,
         )
 
+    def zero_state(self) -> CanonicalMPS:
+        """Return a zero wavefunction with the same physical dimensions."""
+        return CanonicalMPS(
+            [np.zeros((1, A.shape[1], 1)) for A in self._data],
+            error=0.0,
+            center=0,
+            is_canonical=True,
+        )
+
     def norm_squared(self) -> float:
         """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
         A = self._data[self.center]

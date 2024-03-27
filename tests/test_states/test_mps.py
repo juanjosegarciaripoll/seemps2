@@ -122,6 +122,19 @@ class TestMPSOperations(MPSStatesFixture):
         self.assertTrue(B is not A)
         self.assertTrue(contain_different_objects(B[0], A[0]))
 
+    def test_multiplying_by_zero_returns_zero_state(self):
+        A = MPS(self.inhomogeneous_state)
+        for factor in [0, 0.0, 0.0j]:
+            B = 0.0 * A
+            self.assertIsInstance(B, MPS)
+            self.assertTrue(B is not A)
+            for Ai, Bi in zip(A, B):
+                self.assertTrue(Ai is not Bi)
+                self.assertTrue(np.all(Bi == 0))
+                self.assertEqual(Bi.shape[0], 1)
+                self.assertEqual(Bi.shape[2], 1)
+            self.assertEqual(A.physical_dimensions(), B.physical_dimensions())
+
     def test_multiplying_mps_by_non_scalar_raises_exception(self):
         A = MPS(self.inhomogeneous_state)
         with self.assertRaises(TypeError):
