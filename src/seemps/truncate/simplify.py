@@ -124,15 +124,24 @@ def simplify(
     return mps
 
 
-def multi_norm_squared(weights: list[Weight], states: list[MPS]) -> float:
+def select_nonzero_mps_components(
+    weights: list[Weight], states: list[MPS]
+) -> tuple[float, list[Weight], list[MPS]]:
     """Compute the norm-squared of the linear combination of weights and
-    states."""
+    states and eliminate states that are zero or have zero weight."""
     c: float = 0.0
-    for i, wi in enumerate(weights):
-        for j in range(i):
-            c += 2 * (wi.conjugate() * weights[j] * scprod(states[i], states[j])).real
-        c += np.abs(wi) ** 2 * scprod(states[i], states[i]).real
-    return abs(c)
+    final_states: list[float] = []
+    final_weights: list[CanonicalMPS] = []
+    for wi, si in zip(weights, states):
+        wic = wi.conjugate()
+        ni = (wic * wi).real * scprod(si, si).real
+        if ni:
+            for wj, sj in zip(final_weights, final_states):
+                c += 2 * (wic * wj * scprod(si, sj)).real
+            final_states.append(si)
+            final_weights.append(wi)
+            c += ni
+    return abs(c), final_weights, final_states
 
 
 def crappy_guess_combine_state(weights: list[Weight], states: list[MPS]) -> MPS:
@@ -264,7 +273,15 @@ def combine(
         return mps
 
     simplification_tolerance = strategy.get_simplification_tolerance()
-    norm_state_sqr = multi_norm_squared(weights, states)
+    # Compute norm of output and eliminate zero states
+    orig_states = states
+    norm_state_sqr, weights, states = select_nonzero_mps_components(weights, states)
+    if not weights:
+        tools.log(
+            f"COMBINE state with |state|=0. Returning zero state.",
+            debug_level=2,
+        )
+        return orig_states[0].zero_state()
     tools.log(
         f"COMBINE state with |state|={norm_state_sqr**0.5} for strategy.get_max_sweeps()) "
         f"sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}",
