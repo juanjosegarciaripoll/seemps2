@@ -321,4 +321,3 @@ def mps_tensor_sum(
     for idx, mps in enumerate(terms[1:]):
         result = (result + mps).join(canonical=False)
     return simplify(result, strategy=strategy)
-                        
