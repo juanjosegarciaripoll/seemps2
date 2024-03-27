@@ -9,7 +9,6 @@ from ..state import (
     Simplification,
 )
 from ..truncate import simplify
-from ..tools import log
 from .mesh import (
     Interval,
     RegularClosedInterval,
@@ -293,9 +292,6 @@ def mps_tensor_product(
         result = terms[0]
         for idx, mps in enumerate(terms[1:]):
             result = result * mps
-            log(
-                f"MPS tensor product idx {idx} with maxbond {max(result.bond_dimensions())}"
-            )
     return simplify(result, strategy=strategy)
 
 
@@ -324,5 +320,5 @@ def mps_tensor_sum(
     result = terms[0]
     for idx, mps in enumerate(terms[1:]):
         result = (result + mps).join(canonical=False)
-        log(f"MPS tensor sum idx {idx} with maxbond {max(result.bond_dimensions())}")
     return simplify(result, strategy=strategy)
+                        
