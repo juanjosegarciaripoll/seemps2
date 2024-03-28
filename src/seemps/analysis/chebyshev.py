@@ -107,15 +107,18 @@ def cheb2mps(
     else:
         raise Exception("In cheb2mps, either domain or an MPS must be provided.")
 
+    log("Clenshaw evaluation started")
     coef = c.coef
     I = MPS([np.ones((1, 2, 1))] * len(x_mps))
-    y = [MPS([np.zeros((1, 2, 1))] * len(x_mps))] * (len(coef) + 2)
+    y = [I.zero_state()] * (len(coef) + 2)
     for i in range(len(y) - 3, -1, -1):
         y[i] = simplify(
-            coef[i] * I - y[i + 2] + 2 * x_mps * y[i + 1],
+            coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
             strategy=strategy,
         )
-        log(f"Clenshaw step {i} with maxbond {max(y[i].bond_dimensions())}")
+        log(
+            f"Clenshaw step {i} with maxbond {max(y[i].bond_dimensions())} and error {y[i].error()}"
+        )
     return simplify(y[0] - x_mps * y[1], strategy=strategy)
 
 
