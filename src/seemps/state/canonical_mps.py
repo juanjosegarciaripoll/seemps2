@@ -72,7 +72,7 @@ class CanonicalMPS(MPS):
         `center = 0`.
     normalize : bool, optional
         Whether to normalize the state to compensate for truncation errors.
-        Defaults to `False`.
+        Defaults to the value set by `strategy`.
     strategy : Strategy, optional
         The truncation strategy for the orthogonalization and later
         algorithms. Defaults to `DEFAULT_STRATEGY`.
@@ -88,7 +88,7 @@ class CanonicalMPS(MPS):
         self,
         data: Iterable[Tensor3],
         center: Optional[int] = None,
-        normalize: bool = False,
+        normalize: Optional[bool] = None,
         strategy: Strategy = DEFAULT_STRATEGY,
         is_canonical: bool = False,
         **kwdargs,
@@ -110,7 +110,9 @@ class CanonicalMPS(MPS):
                 self.update_error(
                     _canonicalize(self._data, actual_center, self.strategy)
                 )
-        if normalize or self.strategy.get_normalize_flag():
+        if normalize is True or (
+            normalize is None and self.strategy.get_normalize_flag()
+        ):
             A = self[actual_center]
             N = np.linalg.norm(A)
             if N:
