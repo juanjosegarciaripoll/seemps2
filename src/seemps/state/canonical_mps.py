@@ -112,7 +112,9 @@ class CanonicalMPS(MPS):
                 )
         if normalize or self.strategy.get_normalize_flag():
             A = self[actual_center]
-            self[actual_center] = A / np.linalg.norm(A)
+            N = np.linalg.norm(A)
+            if N:
+                self[actual_center] = A / np.linalg.norm(A)
 
     @classmethod
     def from_vector(
