@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 from ..state import (
     MPS,
+    MPSSum,
     Strategy,
     DEFAULT_STRATEGY,
     Truncation,
@@ -316,8 +317,9 @@ def mps_tensor_sum(
     MPS
         The resulting MPS from the tensor sum of the input list.
     """
-    terms = mps_tensor_terms(mps_list, mps_order)
-    result = terms[0]
-    for idx, mps in enumerate(terms[1:]):
-        result = (result + mps).join(canonical=False)
-    return simplify(result, strategy=strategy)
+    result = MPSSum([1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)).join(
+        canonical=False
+    )
+    if strategy.get_simplify_flag():
+        return simplify(result, strategy=strategy)
+    return result
