@@ -73,14 +73,11 @@ def simplify(
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
-        if normalize:
-            mps.normalize_inplace()
-        return mps
+        return CanonicalMPS(mps, center=-1 - start, strategy=strategy)
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_state_sqr = scprod(state, state).real
-    if norm_state_sqr == 0:
+    if not norm_state_sqr:
         return state.zero_state()
     form = AntilinearForm(mps, state, center=start)
     err = 2.0
@@ -121,7 +118,7 @@ def simplify(
     mps._error = 0.0
     mps.update_error(state.error())
     mps.update_error(err)
-    if normalize:
+    if normalize and norm_mps_sqr:
         last_tensor /= norm_mps_sqr
     return mps
 
@@ -246,47 +243,60 @@ def combine(
     CanonicalMPS
         Approximation to the linear combination in canonical form
     """
-    #
-    # Prepare initial guess
-    if guess is None:
-        if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-            mps = guess_combine_state(weights, states)
-        elif strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-            return CanonicalMPS(guess_combine_state(weights, states), strategy=strategy)
-        elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
-            mps = crappy_guess_combine_state(weights, states)
-        elif (
-            strategy.get_simplification_method()
-            == Simplification.VARIATIONAL_EXACT_GUESS
-        ):
-            mps = guess_combine_state(weights, states)
-    else:
-        mps = guess
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else mps.size - 1
-    mps = CanonicalMPS(mps, center=start, strategy=strategy)
-
-    # If we only do canonical forms, not variational optimization, a second
-    # pass on that initial guess suffices
+    # CANONICAL_FORM implements a simplification based on two passes
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
+        mps = CanonicalMPS(
+            guess_combine_state(weights, states), center=start, strategy=strategy
+        )
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
-        if normalize:
-            mps.normalize_inplace()
-        return mps
+        if tools.DEBUG >= 2:
+            tools.log(
+                f"SIMPLIFY state with |state|={state.norm():5e}\nusing two-pass "
+                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                f"produces error {mps.error():5e}",
+                debug_level=2,
+            )
 
-    simplification_tolerance = strategy.get_simplification_tolerance()
+    # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
+    # output is expected to be a CanonicalMPS, we must use the
+    # strategy to construct it.
+    if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
+        mps = CanonicalMPS(
+            guess_combine_state(weights, states), center=-1 - start, strategy=strategy
+        )
+        if tools.DEBUG >= 2:
+            tools.log(
+                f"SIMPLIFY state with |state|={state.norm():5e}\nusing single-pass "
+                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                f"produces error {mps.error():5e}",
+                debug_level=2,
+            )
+
     # Compute norm of output and eliminate zero states
-    orig_states = states
+    orig_state_0 = states[0]
     norm_state_sqr, weights, states = select_nonzero_mps_components(weights, states)
-    if norm_state_sqr == 0:
+    if not norm_state_sqr:
         tools.log(
             f"COMBINE state with |state|=0. Returning zero state.",
             debug_level=2,
         )
-        return orig_states[0].zero_state()
+        return orig_state_0.zero_state()
+
+    # Prepare initial guess
+    if guess is not None:
+        mps = guess
+    elif strategy.get_simplification_method() == Simplification.VARIATIONAL:
+        mps = crappy_guess_combine_state(weights, states)
+    else:  # Simplification.VARIATIONAL_EXACT_GUESS:
+        mps = guess_combine_state(weights, states)
+    mps = CanonicalMPS(mps, center=start, strategy=strategy)
+    simplification_tolerance = strategy.get_simplification_tolerance()
+
     tools.log(
-        f"COMBINE state with |state|={norm_state_sqr**0.5} for strategy.get_max_sweeps()) "
-        f"sweeps with tolerance {simplification_tolerance}.\nWeights: {weights}",
+        f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
+        f"sweeps with tolerance {simplification_tolerance:5e}.\nWeights: {weights}",
         debug_level=2,
     )
     size = mps.size
@@ -341,6 +351,6 @@ def combine(
     )
     mps.update_error(base_error**2)
     mps.update_error(err)
-    if normalize:
+    if normalize and norm_mps_sqr:
         last_tensor /= norm_mps_sqr
     return mps
