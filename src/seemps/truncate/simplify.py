@@ -80,6 +80,8 @@ def simplify(
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     norm_state_sqr = scprod(state, state).real
+    if norm_state_sqr == 0:
+        return state.zero_state()
     form = AntilinearForm(mps, state, center=start)
     err = 2.0
     tools.log(
@@ -276,7 +278,7 @@ def combine(
     # Compute norm of output and eliminate zero states
     orig_states = states
     norm_state_sqr, weights, states = select_nonzero_mps_components(weights, states)
-    if not weights:
+    if norm_state_sqr == 0:
         tools.log(
             f"COMBINE state with |state|=0. Returning zero state.",
             debug_level=2,
