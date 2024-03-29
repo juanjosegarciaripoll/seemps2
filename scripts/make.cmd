@@ -1,5 +1,6 @@
 @echo off
 if "x%1"=="xclean" goto :clean
+if "x%1"=="xcheck" goto :check
 if "x%1"=="xinstall" goto :install
 echo Unrecognized option %1
 goto :eof
