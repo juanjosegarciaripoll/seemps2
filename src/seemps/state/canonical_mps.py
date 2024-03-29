@@ -1,4 +1,5 @@
 from __future__ import annotations
+import warnings
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
@@ -394,7 +395,11 @@ class CanonicalMPS(MPS):
         """Normalize the state by updating the central tensor."""
         n = self.center
         A = self._data[n]
-        self._data[n] = A / np.linalg.norm(A)
+        N = np.linalg.norm(A)
+        if N == 0:
+            warnings.warn("Refusing to normalize zero vector")
+        else:
+            self._data[n] = A / N
         return self
 
     def __copy__(self):
