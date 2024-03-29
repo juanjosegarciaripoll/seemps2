@@ -108,7 +108,6 @@ class TestTrotter(EvolutionTestCase):
         mps = self.random_initial_state(2)
         U = Trotter()
         p.stop()
-        print(Trotter.__abstractmethods__)
         with self.assertRaises(Exception):
             U.apply(mps)
         with self.assertRaises(Exception):

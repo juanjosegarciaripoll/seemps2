@@ -28,7 +28,6 @@ class TestRandomUniformMPSStates(TestCase):
 
     def test_random_uniform_mps_complex_numbers(self):
         mps = random_uniform_mps(2, 3, D=1, complex=False)
-        print([A.dtype for A in mps])
         self.assertTrue(all(A.dtype == np.float64 for A in mps))
 
         mps = random_uniform_mps(2, 3, D=1, complex=True)
@@ -78,7 +77,6 @@ class TestRandomMPSStates(TestCase):
 
     def test_random_mps_complex_numbers(self):
         mps = random_mps([2, 3, 2], D=1, complex=False)
-        print([A.dtype for A in mps])
         self.assertTrue(all(A.dtype == np.float64 for A in mps))
 
         mps = random_mps([2, 3, 2], D=1, complex=True)
