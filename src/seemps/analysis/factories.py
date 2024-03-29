@@ -317,9 +317,39 @@ def mps_tensor_sum(
     MPS
         The resulting MPS from the tensor sum of the input list.
     """
-    result = MPSSum([1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)).join(
-        canonical=False
-    )
+    if mps_order == "A":
+        result = _mps_tensor_sum_serial_order(mps_list)
+    else:
+        result = MPSSum(
+            [1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)
+        ).join(canonical=False)
     if strategy.get_simplify_flag():
         return simplify(result, strategy=strategy)
     return result
+
+
+def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> list[MPS]:
+    def extend_tensor(A: Tensor3, first: bool, last: bool) -> Tensor3:
+        a, d, b = A.shape
+        output = np.zeros((a + 2, d, b + 2), dtype=A.dtype)
+        output[0, :, 0] = np.ones(d)  # No MPS applied
+        output[1, :, 1] = np.ones(d)  # One MPS applied
+        if first:
+            if last:
+                output[[0], :, [1]] = A
+            else:
+                output[[0], :, 2:] = A
+        elif last:
+            output[2:, :, [1]] = A
+        else:
+            output[2:, :, 2:] = A
+        return output
+
+    output = [
+        extend_tensor(Ai, i == 0, i == len(A) - 1)
+        for n, A in enumerate(mps_list)
+        for i, Ai in enumerate(A)
+    ]
+    output[0] = output[0][[0], :, :]
+    output[-1] = output[-1][:, :, [1]]
+    return MPS(output)
