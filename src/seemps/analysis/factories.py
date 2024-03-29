@@ -213,6 +213,31 @@ def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_FACTORY_STRATE
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
 
+def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[MPS, Tensor3]]:
+    """Create a vector that lists which MPS and which tensor is
+    associated to which position in the joint Hilbert space.
+    """
+    tensors = [None] * sum(len(mps) for mps in mps_list)
+    if mps_order == "A":
+        k = 0
+        for mps_id, mps in enumerate(mps_list):
+            for i, Ai in enumerate(mps):
+                tensors[k] = (mps_id, Ai)
+                k += 1
+    elif mps_order == "B":
+        k = 0
+        i = 0
+        while k < len(tensors):
+            for mps_id, mps in enumerate(mps_list):
+                if i < mps.size:
+                    tensors[k] = (mps_id, mps[i])
+                    k += 1
+            i += 1
+    else:
+        raise ValueError(f"Invalid mps order {mps_order}")
+    return tensors
+
+
 def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
     """
     Extends each MPS of a given input list by appending identity tensors to it
@@ -233,32 +258,20 @@ def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
         The resulting list of MPS terms.
     """
 
-    terms = []
-    for idx, mps in enumerate(mps_list):
-        sites = []
-        if mps_order == "A":
-            # Extend each MPS with identities at the two ends
-            num_I_left = sum([len(m) for m in mps_list[:idx]])
-            num_I_right = sum([len(m) for m in mps_list[idx + 1 :]])
-            sites.extend([np.ones((1, 2, 1))] * num_I_left)
-            sites.extend(mps._data)
-            sites.extend([np.ones((1, 2, 1))] * num_I_right)
-        elif mps_order == "B":
-            # Interleave each MPS with identities
-            # TODO: Fix for MPS of different length
-            num_I_left = idx
-            num_I_right = len(mps_list) - 1 - idx
-            for site in mps._data:
-                r_left, s, r_right = site.shape
-                I_left = np.stack([np.eye(r_left)] * s, axis=1)
-                I_right = np.stack([np.eye(r_right)] * s, axis=1)
-                sites.extend([I_left] * num_I_left)
-                sites.append(site)
-                sites.extend([I_right] * num_I_right)
-        else:
-            raise ValueError("Invalid mps_order")
-        terms.append(MPS(sites))
-    return terms
+    def extend_mps(mps_id: int, mps_map: list[tuple[MPS, Tensor3]]) -> MPS:
+        D = 1
+        output = [None] * len(mps_map)
+        for k, (site_mps, site_tensor) in enumerate(mps_map):
+            if mps_id == site_mps:
+                output[k] = site_tensor
+                D = site_tensor.shape[-1]
+            else:
+                site_dimension = site_tensor.shape[1]
+                output[k] = np.eye(D).reshape(D, 1, D) * np.ones((1, site_dimension, 1))
+        return MPS(output)
+
+    mps_map = map_mps_locations(mps_list, mps_order)
+    return [extend_mps(mps_id, mps_map) for mps_id, _ in enumerate(mps_list)]
 
 
 def mps_tensor_product(

@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import scipy.sparse as sp  # type: ignore
 import seemps.state
-from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps
+from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
 
 
 class TestCase(unittest.TestCase):
@@ -67,6 +67,18 @@ class TestCase(unittest.TestCase):
     ) -> CanonicalMPS:
         return CanonicalMPS(
             random_uniform_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
+        )
+
+    def random_mps(
+        self,
+        dimensions: list[int],
+        truncate: bool = False,
+        complex: bool = False,
+        **kwdargs,
+    ) -> CanonicalMPS:
+        return CanonicalMPS(
+            random_mps(dimensions, truncate=truncate, rng=self.rng, complex=complex),
+            **kwdargs,
         )
 
     def assertApproximateIsometry(self, A, direction, places=7) -> None:
