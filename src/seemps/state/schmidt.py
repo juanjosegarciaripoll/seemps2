@@ -152,27 +152,24 @@ def vector2mps(
     L = len(dimensions)
     if math.prod(dimensions) != ψ.size:
         raise Exception("Wrong dimensions specified when converting a vector to MPS")
-    output = [None] * L
-    Da = 1
+    output = [ψ] * L
     if center < 0:
         center = L + center
     if center < 0 or center >= L:
         raise Exception("Invalid value of center in vector2mps")
     err = 0.0
     for i in range(center):
-        s = ψ.shape
         output[i], ψ, new_err = left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
         )
         err += np.sqrt(new_err)
     for i in range(L - 1, center, -1):
-        s = ψ.shape
         ψ, output[i], new_err = right_orth_2site(
             ψ.reshape(ψ.shape[0], -1, dimensions[i], ψ.shape[-1]), strategy
         )
         err += np.sqrt(new_err)
     if normalize:
-        N = np.linalg.norm(ψ.reshape(-1))
+        N: float = np.linalg.norm(ψ.reshape(-1))  # type: ignore
         ψ /= N
         err /= N
     output[center] = ψ

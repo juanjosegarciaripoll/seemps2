@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from ..operators import MPO
+from ..register.transforms import mpo_weighted_shifts
 
 
 def mpo_combined(n, a, b, c, closed=True, **kwdargs):
@@ -29,8 +30,6 @@ def finite_differences_mpo(n, Δx, closed=True, **kwdargs):
         raise Exception("finite_differences_mpo() does not work with length 1")
     return (1 / Δx**2) * mpo_combined(n, -2, 1, 1, closed=closed, **kwdargs)
 
-
-from ..register.transforms import mpo_weighted_shifts
 
 _filtered_differences = {
     # First order derivatives
@@ -120,7 +119,7 @@ def smooth_finite_differences_mpo(
     """
     key = (order, filter)
     weights, shifts = _filtered_differences.get(key, (None, None))
-    if weights is None:
+    if shifts is None:
         raise ValueError(
             "Unknown finite difference derivative of order {order} with noise filter of size {filter}"
         )

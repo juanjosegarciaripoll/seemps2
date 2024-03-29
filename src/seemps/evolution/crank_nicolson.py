@@ -7,9 +7,9 @@ import numpy as np
 from ..analysis.operators import id_mpo
 from ..cgs import cgs
 from ..operators import MPO, MPOSum
-from ..state import DEFAULT_STRATEGY, DEFAULT_TOLERANCE, MPS, Strategy
-from ..truncate import simplify
+from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..typing import Vector
+
 
 def crank_nicolson(
     H: MPO,
@@ -68,11 +68,22 @@ def crank_nicolson(
     output = []
     idt = factor * (t_span[1] - last_t)
     id = id_mpo(state.size, strategy=strategy)
-    A = MPOSum(mpos=[id, H], weights=[1, 0.5*idt], strategy=strategy).join(strategy=strategy)
-    B = MPOSum(mpos=[id, H], weights=[1, -0.5*idt], strategy=strategy).join(strategy=strategy)
+    A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt], strategy=strategy).join(
+        strategy=strategy
+    )
+    B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt], strategy=strategy).join(
+        strategy=strategy
+    )
     for t in t_span:
         if t != last_t:
-            state, _ = cgs(A, B @ state, guess=state, tolerance=tol_cgs, strategy=normalize_strategy, maxiter=maxiter_cgs)
+            state, _ = cgs(
+                A,
+                B @ state,
+                guess=state,
+                tolerance=tol_cgs,
+                strategy=normalize_strategy,
+                maxiter=maxiter_cgs,
+            )
         if callback is not None:
             output.append(callback(t, state))
         last_t = t

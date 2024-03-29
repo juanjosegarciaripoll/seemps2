@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from ..typing import Tensor3
 from ..state import (
     MPS,
     MPSSum,
@@ -213,11 +214,11 @@ def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_FACTORY_STRATE
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
 
-def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[MPS, Tensor3]]:
+def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Tensor3]]:
     """Create a vector that lists which MPS and which tensor is
     associated to which position in the joint Hilbert space.
     """
-    tensors = [None] * sum(len(mps) for mps in mps_list)
+    tensors = [(0, mps_list[0][0])] * sum(len(mps) for mps in mps_list)
     if mps_order == "A":
         k = 0
         for mps_id, mps in enumerate(mps_list):
@@ -258,9 +259,9 @@ def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
         The resulting list of MPS terms.
     """
 
-    def extend_mps(mps_id: int, mps_map: list[tuple[MPS, Tensor3]]) -> MPS:
+    def extend_mps(mps_id: int, mps_map: list[tuple[int, Tensor3]]) -> MPS:
         D = 1
-        output = [None] * len(mps_map)
+        output = [mps_map[0][1]] * len(mps_map)
         for k, (site_mps, site_tensor) in enumerate(mps_map):
             if mps_id == site_mps:
                 output[k] = site_tensor
@@ -341,7 +342,7 @@ def mps_tensor_sum(
     return result
 
 
-def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> list[MPS]:
+def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> MPS:
     def extend_tensor(A: Tensor3, first: bool, last: bool) -> Tensor3:
         a, d, b = A.shape
         output = np.zeros((a + 2, d, b + 2), dtype=A.dtype)
