@@ -76,8 +76,7 @@ def simplify(
         return CanonicalMPS(mps, center=-1 - start, strategy=strategy)
 
     simplification_tolerance = strategy.get_simplification_tolerance()
-    norm_state_sqr = scprod(state, state).real
-    if not norm_state_sqr:
+    if not (norm_state_sqr := state.norm_squared()):
         return CanonicalMPS(state.zero_state(), is_canonical=True)
     form = AntilinearForm(mps, state, center=start)
     err = 2.0
@@ -133,7 +132,7 @@ def select_nonzero_mps_components(
     final_states: list[MPS] = []
     for wi, si in zip(weights, states):
         wic = wi.conjugate()
-        ni = (wic * wi).real * scprod(si, si).real
+        ni = (wic * wi).real * si.norm_squared()
         if ni:
             for wj, sj in zip(final_weights, final_states):
                 c += 2 * (wic * wj * scprod(si, sj)).real
