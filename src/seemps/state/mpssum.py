@@ -184,10 +184,13 @@ class MPSSum:
         w = self.weights
         s = self.states
         L = len(w)
-        return sum(
-            (w[i].conjugate() * w[j] * scprod(s[i], s[j])).real * (1 if i == j else 2)
-            for i in range(L)
-            for j in range(i, L)
+        return abs(
+            sum(
+                (w[i].conjugate() * w[j] * scprod(s[i], s[j])).real
+                * (1 if i == j else 2)
+                for i in range(L)
+                for j in range(i, L)
+            )
         )
 
     def norm(self) -> float:
