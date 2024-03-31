@@ -39,21 +39,25 @@ class MPSSum:
         self,
         weights: Iterable[Weight],
         states: Iterable[Union[MPS, MPSSum]],
+        check_args: bool = True,
     ):
-        new_weights = []
-        new_states = []
-        for w, s in zip(weights, states):
-            if isinstance(s, MPS):
-                new_weights.append(w)
-                new_states.append(s)
-            elif isinstance(s, MPSSum):
-                new_weights += [w * wi for wi in s.weights]
-                new_states += s.states
-            else:
-                raise ValueError(s)
-        self.weights = new_weights
-        self.states = new_states
-        self.size = new_states[0].size
+        if check_args:
+            self.weights = new_weights = []
+            self.states = new_states = []
+            for w, s in zip(weights, states):
+                if isinstance(s, MPS):
+                    new_weights.append(w)
+                    new_states.append(s)
+                elif isinstance(s, MPSSum):
+                    new_weights += [w * wi for wi in s.weights]
+                    new_states += s.states
+                else:
+                    raise ValueError(s)
+            self.size = new_states[0].size
+        else:
+            self.weights = weights  # type: ignore
+            self.states = states  # type: ignore
+            self.size = len(weights)  # type: ignore
 
     def as_mps(self) -> MPS:
         return self.join()
