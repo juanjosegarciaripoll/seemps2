@@ -6,11 +6,10 @@ from seemps.state import (
     scprod,
 )
 from seemps.truncate import simplify
+from .. import tools
 
-from .tools import *
 
-
-class TestSimplify(TestCase):
+class TestSimplify(tools.TestCase):
     def test_no_truncation(self):
         d = 2
         strategy = DEFAULT_STRATEGY.replace(

@@ -1,8 +1,9 @@
+import numpy as np
 from seemps.state.core import Truncation, Strategy, truncate_vector
-from .tools import *
+from .. import tools
 
 
-class TestStrategy(TestCase):
+class TestStrategy(tools.TestCase):
     def test_strategy_no_truncation(self):
         s = np.array([1.0, 0.2, 0.01, 0.005, 0.0005])
         strategy = Strategy(method=Truncation.DO_NOT_TRUNCATE)
