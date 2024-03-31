@@ -3,7 +3,7 @@ from typing import Callable, Optional
 import numpy as np
 from scipy.fft import dct  # type: ignore
 from ..tools import log
-from ..state import MPS, Strategy, Truncation, Simplification
+from ..state import CanonicalMPS, MPS, MPSSum, Strategy, Truncation, Simplification
 from ..truncate import simplify
 from ..operators import MPO
 from .mesh import ChebyshevZerosInterval, Interval
@@ -109,11 +109,17 @@ def cheb2mps(
 
     log("Clenshaw evaluation started")
     coef = c.coef
-    I = MPS([np.ones((1, 2, 1))] * len(x_mps))
-    y = [I.zero_state()] * (len(coef) + 2)
+    I_norm = 2 ** (x_mps.size / 2)
+    normalized_I = CanonicalMPS(
+        [np.ones((1, 2, 1)) / np.sqrt(2.0)] * x_mps.size, center=0, is_canonical=True
+    )
+    y = [normalized_I.zero_state()] * (len(coef) + 2)
     for i in range(len(y) - 3, -1, -1):
         y[i] = simplify(
-            coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
+            # coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
+            MPSSum(
+                [I_norm * coef[i], -1, 2], [normalized_I, y[i + 2], x_mps * y[i + 1]]
+            ),
             strategy=strategy,
         )
         log(
