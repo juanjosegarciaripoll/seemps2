@@ -49,15 +49,15 @@ class MPSSum:
                     new_weights.append(w)
                     new_states.append(s)
                 elif isinstance(s, MPSSum):
-                    new_weights += [w * wi for wi in s.weights]
-                    new_states += s.states
+                    new_weights.extend(w * wi for wi in s.weights)
+                    new_states.extend(s.states)
                 else:
                     raise ValueError(s)
             self.size = new_states[0].size
         else:
             self.weights = weights  # type: ignore
             self.states = states  # type: ignore
-            self.size = len(weights)  # type: ignore
+            self.size = states[0].size  # type: ignore
 
     def as_mps(self) -> MPS:
         return self.join()
