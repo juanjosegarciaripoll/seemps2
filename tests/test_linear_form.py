@@ -1,7 +1,7 @@
 import numpy as np
 from .tools import *
 from seemps.state import CanonicalMPS, MPS
-from seemps.truncate import simplify, combine, AntilinearForm
+from seemps.truncate import simplify, AntilinearForm
 from seemps.expectation import expectation1, expectation2
 
 
