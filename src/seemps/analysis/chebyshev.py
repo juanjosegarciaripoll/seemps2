@@ -109,25 +109,27 @@ def cheb2mps(
 
     if tools.DEBUG:
         tools.log("Clenshaw evaluation started")
-    coef = c.coef
     I_norm = 2 ** (x_mps.size / 2)
     normalized_I = CanonicalMPS(
         [np.ones((1, 2, 1)) / np.sqrt(2.0)] * x_mps.size, center=0, is_canonical=True
     )
-    y = [normalized_I.zero_state()] * (len(coef) + 2)
-    for i in range(len(y) - 3, -1, -1):
-        y[i] = simplify(
+    y_i = y_i_plus_1 = normalized_I.zero_state()
+    for i, c_i in enumerate(reversed(c.coef)):
+        y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
+        y_i = simplify(
             # coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
             MPSSum(
-                [I_norm * coef[i], -1, 2], [normalized_I, y[i + 2], x_mps * y[i + 1]]
+                [I_norm * c_i, -1, 2],
+                [normalized_I, y_i_plus_2, x_mps * y_i_plus_1],
+                check_args=False,
             ),
             strategy=strategy,
         )
         if tools.DEBUG:
             tools.log(
-                f"Clenshaw step {i} with maxbond {max(y[i].bond_dimensions())} and error {y[i].error()}"
+                f"Clenshaw step {i} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
             )
-    return simplify(y[0] - x_mps * y[1], strategy=strategy)
+    return simplify(y_i - x_mps * y_i_plus_1, strategy=strategy)
 
 
 # TODO: Implement
