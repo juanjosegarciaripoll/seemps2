@@ -135,8 +135,7 @@ class CrossStrategy:
             self.previous_data = deepcopy(cross.state._data)  # Expensive
             return np.Inf
         previous_state = MPS(self.previous_data)
-        state_variation = (cross.state - previous_state).join()
-        variation = abs(state_variation.norm()) / previous_state.norm()
+        variation = (cross.state - previous_state).norm() / previous_state.norm()
         self.previous_data = deepcopy(cross.state._data)
         return variation
 
