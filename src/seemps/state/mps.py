@@ -203,7 +203,7 @@ class MPS(array.TensorArray):
 
     def norm_squared(self) -> float:
         """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        return abs(scprod(self, self))
+        return abs(scprod(self, self).real)
 
     def norm(self) -> float:
         """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
