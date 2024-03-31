@@ -190,6 +190,10 @@ class MPSSum:
             for j in range(i, L)
         )
 
+    def norm(self) -> float:
+        """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
+        return np.sqrt(self.norm_squared())
+
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402
