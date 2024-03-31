@@ -136,10 +136,13 @@ def select_nonzero_mps_components(state: MPSSum) -> tuple[float, MPSSum]:
             final_states.append(si)
             final_weights.append(wi)
             c += ni
-    if len(final_weights) < state.size:
+    L = len(final_weights)
+    if L == state.size:
+        return abs(c), state
+    elif L:
         return abs(c), MPSSum(final_weights, final_states, check_args=False)
     else:
-        return abs(c), state
+        return 0.0, state
 
 
 # TODO: We have to rationalize all this about directions. The user should
