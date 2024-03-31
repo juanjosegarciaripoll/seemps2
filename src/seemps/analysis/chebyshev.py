@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 import numpy as np
 from scipy.fft import dct  # type: ignore
-from ..tools import log
+from .. import tools
 from ..state import CanonicalMPS, MPS, MPSSum, Strategy, Truncation, Simplification
 from ..truncate import simplify
 from ..operators import MPO
@@ -107,7 +107,8 @@ def cheb2mps(
     else:
         raise Exception("In cheb2mps, either domain or an MPS must be provided.")
 
-    log("Clenshaw evaluation started")
+    if tools.DEBUG:
+        tools.log("Clenshaw evaluation started")
     coef = c.coef
     I_norm = 2 ** (x_mps.size / 2)
     normalized_I = CanonicalMPS(
@@ -122,9 +123,10 @@ def cheb2mps(
             ),
             strategy=strategy,
         )
-        log(
-            f"Clenshaw step {i} with maxbond {max(y[i].bond_dimensions())} and error {y[i].error()}"
-        )
+        if tools.DEBUG:
+            tools.log(
+                f"Clenshaw step {i} with maxbond {max(y[i].bond_dimensions())} and error {y[i].error()}"
+            )
     return simplify(y[0] - x_mps * y[1], strategy=strategy)
 
 
