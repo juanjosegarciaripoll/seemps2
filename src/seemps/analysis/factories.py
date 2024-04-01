@@ -336,7 +336,7 @@ def mps_tensor_sum(
     else:
         result = MPSSum(
             [1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)
-        ).join(canonical=False)
+        ).join()
     if strategy.get_simplify_flag():
         return simplify(result, strategy=strategy)
     return result

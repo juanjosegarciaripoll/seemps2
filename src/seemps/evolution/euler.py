@@ -222,12 +222,8 @@ def implicit_euler(
     for t in t_span:
         if t != last_t:
             idt = factor * (t - last_t)
-            A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt], strategy=strategy).join(
-                strategy=strategy
-            )
-            B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt], strategy=strategy).join(
-                strategy=strategy
-            )
+            A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt]).join(strategy=strategy)
+            B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt]).join(strategy=strategy)
             state, _ = cgs(
                 A, B @ state, strategy=normalize_strategy, tolerance=tolerance
             )

@@ -99,7 +99,7 @@ class TestMPSSum(MPSStatesFixture):
     def test_mpssum_join_produces_right_size_tensors(self):
         A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
-        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(canonical=False)
+        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join()
         for i, A in enumerate(C):
             if i > 0:
                 self.assertEqual(A.shape[0], 2)
@@ -110,13 +110,7 @@ class TestMPSSum(MPSStatesFixture):
     def test_mpssum_join_produces_sum(self):
         A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
-        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(canonical=False)
-        self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
-
-    def test_mpssum_join_produces_canonical_form_sum(self):
-        A = MPS(self.product_state)
-        B = MPS(self.product_state.copy())
-        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join(strategy=NO_TRUNCATION)
+        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join()
         self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
 
     def test_mpssum_norm_squared(self):

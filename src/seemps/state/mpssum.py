@@ -72,39 +72,40 @@ class MPSSum:
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""
-        if isinstance(state, MPS):
-            return MPSSum(
-                self.weights + [1.0],
-                self.states + [state],
-            )
-        elif isinstance(state, MPSSum):
-            return MPSSum(
-                self.weights + state.weights,
-                self.states + state.states,
-            )
-        raise InvalidOperation("+", self, state)
+        match state:
+            case MPS():
+                return MPSSum(
+                    self.weights + [1.0], self.states + [state], check_args=False
+                )
+            case MPSSum(weights=w, states=s):
+                return MPSSum(self.weights + w, self.states + s, check_args=False)
+            case _:
+                raise InvalidOperation("+", self, state)
 
     def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Subtract `self - state`, incorporating it to the lists."""
-        if isinstance(state, MPS):
-            return MPSSum(self.weights + [-1], self.states + [state])
-        if isinstance(state, MPSSum):
-            return MPSSum(
-                self.weights + [-w for w in state.weights],
-                self.states + state.states,
-            )
-        raise InvalidOperation("-", self, state)
+        match state:
+            case MPS():
+                return MPSSum(
+                    self.weights + [-1], self.states + [state], check_args=False
+                )
+            case MPSSum(weights=w, states=s):
+                return MPSSum(
+                    self.weights + [-wi for wi in w], self.states + s, check_args=False
+                )
+            case _:
+                raise InvalidOperation("-", self, state)
 
     def __mul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `n * self` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self.weights], self.states)
+            return MPSSum([n * w for w in self.weights], self.states, check_args=False)
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPSSum:
         """Rescale the linear combination `self * n` for scalar `n`."""
         if isinstance(n, (int, float, complex)):
-            return MPSSum([n * w for w in self.weights], self.states)
+            return MPSSum([n * w for w in self.weights], self.states, check_args=False)
         raise InvalidOperation("*", n, self)
 
     def to_vector(self) -> Vector:
@@ -138,40 +139,21 @@ class MPSSum:
             DR += b
         return B
 
-    def join(
-        self,
-        canonical: bool = True,
-        center: Optional[int] = None,
-        strategy: Strategy = DEFAULT_STRATEGY,
-    ):
-        """Create an `MPS` or `CanonicalMPS` state by combining all tensors
-        from all states in the linear combination.
-
-        Parameters
-        ----------
-        canonical: bool
-            Whether to create the state in canonical form. Defaults to `True`.
-        center: Optional[int]
-            Center for the `CanonicalMPS`, if `canonical` is true.
-        strategy: Strategy, default = DEFAULT_STRATEGY
-            Parameters for the truncation algorithms used when creating the
-            `CanonicalMPS`. Only used if `canonical` is `True`.
+    def join(self) -> MPS:
+        """Create an `MPS` by combining all tensors from all states in
+        the linear combination.
 
         Returns
         -------
-        MPS | CanonicalMPS
+        MPS
             Quantum state approximating this sum.
         """
         L = self.size
-        data = [self._joined_tensors(i, L) for i in range(L)]
-        if canonical:
-            return CanonicalMPS(
-                data,
-                center=center,
-                strategy=strategy,
-            )
-        else:
-            return MPS(data)
+        return MPS([self._joined_tensors(i, L) for i in range(L)])
+
+    def join_canonical(self, *args, **kwdargs) -> CanonicalMPS:
+        """Similar to join() but return canonical form"""
+        return CanonicalMPS(self.join(), *args, **kwdargs)
 
     def conj(self) -> MPSSum:
         """Return the complex-conjugate of this quantum state."""
