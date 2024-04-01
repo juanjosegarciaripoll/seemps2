@@ -153,46 +153,59 @@ class MPS(array.TensorArray):
 
     def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
-        if isinstance(state, MPS):
-            return MPSSum([1.0, 1.0], [self, state])
-        if isinstance(state, MPSSum):
-            return MPSSum([1.0] + state.weights, [self] + state.states)
-        raise InvalidOperation("+", self, state)
+        match state:
+            case MPS():
+                return MPSSum([1.0, 1.0], [self, state], check_args=False)
+            case MPSSum(weights=w, states=s):
+                return MPSSum([1.0] + w, [self] + s, check_args=False)
+            case _:
+                raise InvalidOperation("+", self, state)
 
     def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
         """Represent `self - state` as :class:`.MPSSum`"""
-        if isinstance(state, MPS):
-            return MPSSum([1, -1], [self, state])
-        if isinstance(state, MPSSum):
-            return MPSSum(
-                [1] + list((-1) * np.asarray(state.weights)),
-                [self] + state.states,
-            )
-        raise InvalidOperation("-", self, state)
+        match state:
+            case MPS():
+                return MPSSum([1, -1], [self, state], check_args=False)
+            case MPSSum(weights=w, states=s):
+                return MPSSum([1] + [-wi for wi in w], [self] + s, check_args=False)
+            case _:
+                raise InvalidOperation("-", self, state)
 
     def __mul__(self, n: Union[Weight, MPS]) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
-        if isinstance(n, (int, float, complex)):
-            if n == 0:
+        match n:
+            case int() | float() | complex():
+                if n:
+                    mps_mult = self.copy()
+                    mps_mult._data[0] = n * mps_mult._data[0]
+                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    return mps_mult
                 return self.zero_state()
-            mps_mult = self.copy()
-            mps_mult._data[0] = n * mps_mult._data[0]
-            mps_mult._error = np.abs(n) ** 2 * mps_mult._error
-            return mps_mult
-        if isinstance(n, MPS):
-            return self.wavefunction_product(n)
-        raise InvalidOperation("*", self, n)
+            case MPS():
+                return MPS(
+                    [
+                        # np.einsum('aib,cid->acibd', A, B)
+                        (
+                            A[:, np.newaxis, :, :, np.newaxis] * B[:, :, np.newaxis, :]
+                        ).reshape(A.shape[0] * B.shape[0], A.shape[1], -1)
+                        for A, B in zip(self._data, n._data)
+                    ]
+                )
+            case _:
+                raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPS:
         """Compute `self * n`, where `n` is a scalar."""
-        if isinstance(n, (int, float, complex)):
-            if n == 0:
+        match n:
+            case int() | float() | complex():
+                if n:
+                    mps_mult = self.copy()
+                    mps_mult._data[0] = n * mps_mult._data[0]
+                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    return mps_mult
                 return self.zero_state()
-            mps_mult = self.copy()
-            mps_mult._data[0] = n * mps_mult._data[0]
-            mps_mult._error = np.abs(n) ** 2 * mps_mult._error
-            return mps_mult
-        raise InvalidOperation("*", n, self)
+            case _:
+                raise InvalidOperation("*", n, self)
 
     def norm2(self) -> float:
         """Deprecated alias for :py:meth:`norm_squared`."""
@@ -429,39 +442,6 @@ class MPS(array.TensorArray):
             else:
                 D = A.shape[-1]
         return MPS(data)
-
-    def wavefunction_product(self, other: MPS) -> MPS:
-        """Elementwise product of the wavefunctions of two quantum states.
-
-        Given two MPS `self` and `other, return another MPS whose
-        wavefunction is the element-wise product of those. This
-        product grows the bond dimensions, combining the tensors
-        `A[a,i,b]` and `B[c,i,d]` of both states into the composite
-        `C[a*c,i,b*d]`. Naturally, the physical dimensions of `self`
-        and `other` must be identical.
-
-        Parameters
-        ----------
-        other : MPS
-            Another quantum state.
-
-        Returns
-        -------
-        MPS
-            The state that results from the `self .* other`
-        """
-
-        def combine(A, B):
-            # Combine both tensors
-            a, d, b = A.shape
-            c, db, e = B.shape
-            if d != db:
-                raise Exception("Non matching MPS physical dimensions.")
-            # np.einsum('adb,cde->acdbe', A, B)
-            C = A.reshape(a, 1, d, b, 1) * B.reshape(1, c, d, 1, e)
-            return C.reshape(a * c, d, b * e)
-
-        return MPS([combine(A, B) for A, B in zip(self, other)])
 
     def conj(self) -> MPS:
         """Return the complex-conjugate of this quantum state."""

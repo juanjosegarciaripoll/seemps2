@@ -162,11 +162,6 @@ class TestMPSOperations(MPSStatesFixture):
     def test_multiplying_two_mps_produces_product_wavefunction(self):
         A = MPS(self.inhomogeneous_state)
         self.assertSimilar(A.to_vector() * A.to_vector(), (A * A).to_vector())
-        self.assertSimilar(
-            A.to_vector() * A.to_vector(), A.wavefunction_product(A).to_vector()
-        )
-        with self.assertRaises(Exception):
-            A.wavefunction_product([2])
         with self.assertRaises(Exception):
             random_uniform_mps(2, 3) * random_uniform_mps(3, 3)
 
