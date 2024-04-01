@@ -1,9 +1,8 @@
 from __future__ import annotations
 import numpy as np
-from typing import Optional, Union, Iterable
+from typing import Union, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, Tensor3
-from .core import DEFAULT_STRATEGY, Strategy
 from .environments import scprod
 
 

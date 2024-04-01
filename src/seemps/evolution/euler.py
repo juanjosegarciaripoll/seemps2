@@ -7,7 +7,7 @@ import numpy as np
 from ..analysis.operators import id_mpo
 from ..cgs import cgs
 from ..operators import MPO, MPOSum
-from ..state import DEFAULT_STRATEGY, DEFAULT_TOLERANCE, MPS, Strategy
+from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..truncate import simplify
 from ..typing import Vector
 
