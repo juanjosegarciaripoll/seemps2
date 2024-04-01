@@ -176,7 +176,7 @@ def implicit_euler(
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: Optional[Callable] = None,
     itime: bool = False,
-    tolerance: float = DEFAULT_TOLERANCE,
+    tolerance: float = 1e-10,
 ):
     r"""Solve a Schrodinger equation using a second order implicit Euler method.
 
@@ -197,7 +197,7 @@ def implicit_euler(
         Truncation strategy for MPO and MPS algebra.
     callback : Optional[Callable[[float, MPS], Any]]
         A callable called after each iteration (defaults to None).
-    itime : bool, default = False
+    itime : bool, default = 1e-10
         Whether to solve the imaginary time evolution problem.
 
     Results
