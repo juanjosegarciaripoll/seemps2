@@ -4,9 +4,9 @@ import math
 from typing import Sequence
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3
-from . import core
 from .core import Strategy, truncate_vector, DEFAULT_STRATEGY
-from scipy.linalg import svd  # type: ignore
+from scipy.linalg import svd, LinAlgError  # type: ignore
+from scipy.linalg.lapack import get_lapack_funcs, _compute_lwork
 
 #
 # Type of LAPACK driver used for solving singular value decompositions.
@@ -15,28 +15,56 @@ from scipy.linalg import svd  # type: ignore
 #
 SVD_LAPACK_DRIVER = "gesdd"
 
+_lapack_svd_driver: dict[str, tuple] = dict()
 
-def _schmidt_split(ψ, strategy, overwrite):
-    U, s, V = svd(
-        ψ,
+
+def set_svd_driver(driver: str) -> None:
+    global _lapack_svd_driver
+    _lapack_svd_driver = {
+        dtype: get_lapack_funcs(
+            (driver, driver + "_lwork"),
+            [np.zeros((10, 10), dtype=dtype)],
+            ilp64="preferred",
+        )
+        for dtype in (np.float64, np.complex128)
+    }
+
+
+set_svd_driver("gesdd")
+
+
+def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    _lapack_svd, _lapack_svd_lwork = _lapack_svd_driver[type(A[0, 0])]
+
+    # compute optimal lwork
+    lwork, flag = _lapack_svd_lwork(
+        A.shape[0],
+        A.shape[1],
+        compute_uv=True,
         full_matrices=False,
-        overwrite_a=overwrite,
-        check_finite=False,
-        lapack_driver=SVD_LAPACK_DRIVER,
     )
-    s, _ = core.truncate_vector(s, strategy)
-    D = s.size
-    return U[:, :D], s.reshape(D, 1) * V[:D, :]
+    if flag != 0:
+        raise ValueError("Internal work array size computation failed: %d" % flag)
+
+    # perform decomposition
+    u, s, v, info = _lapack_svd(
+        A,
+        compute_uv=True,
+        lwork=int(lwork.real),
+        full_matrices=False,
+        overwrite_a=True,
+    )
+    if info == 0:
+        return u, s, v
+    elif info > 0:
+        raise LinAlgError("SVD did not converge")
+    else:
+        raise ValueError("illegal value in %dth argument of internal gesdd" % -info)
 
 
 def ortho_right(A, strategy: Strategy):
     α, i, β = A.shape
-    U, s, V = svd(
-        A.reshape(α * i, β),
-        full_matrices=False,
-        check_finite=False,
-        lapack_driver=SVD_LAPACK_DRIVER,
-    )
+    U, s, V = _our_svd(A.reshape(α * i, β).copy())
     s, err = truncate_vector(s, strategy)
     D = s.size
     return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
@@ -44,12 +72,7 @@ def ortho_right(A, strategy: Strategy):
 
 def ortho_left(A, strategy: Strategy):
     α, i, β = A.shape
-    U, s, V = svd(
-        A.reshape(α, i * β),
-        full_matrices=False,
-        check_finite=False,
-        lapack_driver=SVD_LAPACK_DRIVER,
-    )
+    U, s, V = _our_svd(A.reshape(α, i * β).copy())
     s, err = truncate_vector(s, strategy)
     D = s.size
     return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
@@ -60,14 +83,8 @@ def left_orth_2site(AA, strategy: Strategy):
     that 'B' is a left-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
-    U, S, V = svd(
-        AA.reshape(α * d1, β * d2),
-        full_matrices=False,
-        overwrite_a=True,
-        check_finite=False,
-        lapack_driver=SVD_LAPACK_DRIVER,
-    )
-    S, err = core.truncate_vector(S, strategy)
+    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
+    S, err = truncate_vector(S, strategy)
     D = S.size
     return (
         U[:, :D].reshape(α, d1, D),
@@ -81,54 +98,10 @@ def right_orth_2site(AA, strategy: Strategy):
     that 'C' is a right-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
-    U, S, V = svd(
-        AA.reshape(α * d1, β * d2),
-        full_matrices=False,
-        overwrite_a=True,
-        lapack_driver=SVD_LAPACK_DRIVER,
-        check_finite=False,
-    )
+    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
     S, err = truncate_vector(S, strategy)
     D = S.size
     return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
-
-
-def old_vector2mps(
-    state: VectorLike,
-    dimensions: Sequence[int],
-    strategy: Strategy = DEFAULT_STRATEGY,
-    normalize: bool = True,
-) -> list[Tensor3]:
-    """Construct a list of tensors for an MPS that approximates the state ψ
-    represented as a complex vector in a Hilbert space.
-
-    Parameters
-    ----------
-    ψ         -- wavefunction with \\prod_i dimensions[i] elements
-    dimensions -- list of dimensions of the Hilbert spaces that build ψ
-    tolerance -- truncation criterion for dropping Schmidt numbers
-    normalize -- boolean to determine if the MPS is normalized
-    """
-    ψ: NDArray = np.asarray(state)
-    if math.prod(dimensions) != ψ.size:
-        raise Exception("Wrong dimensions specified when converting a vector to MPS")
-    output = [ψ] * len(dimensions)
-    Da = 1
-    for i, d in enumerate(dimensions[:-1]):
-        # We split a new subsystem and group the left bond dimension
-        # and the physical index into a large index.
-        # We then split the state using the Schmidt decomposition. This
-        # produces a tensor for the site we are looking at and leaves
-        # us with a (hopefully) smaller state for the rest
-        A, ψ = _schmidt_split(ψ.reshape(Da * d, -1), strategy, overwrite=(i > 0))
-        output[i] = A.reshape(Da, d, -1)
-        Da = ψ.shape[0]
-
-    if normalize is True:
-        ψ /= np.linalg.norm(ψ)
-    output[-1] = ψ.reshape(Da, dimensions[-1], 1)
-
-    return output
 
 
 def vector2mps(
