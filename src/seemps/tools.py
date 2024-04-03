@@ -1,5 +1,5 @@
 from __future__ import annotations
-from math import cos, sin
+from math import cos, sin, sqrt
 import numpy as np
 
 
@@ -80,9 +80,9 @@ def random_Pauli():
 
 def creation(d):
     """Bosonic creation operator for a Hilbert space with occupations 0 to `d-1`."""
-    return np.diag(np.sqrt(np.arange(1, d)), -1).astype(complex)
+    return np.diag(sqrt(np.arange(1, d)), -1).astype(complex)
 
 
 def annihilation(d):
     """Bosonic annihilation operator for a Hilbert space with occupations 0 to `d-1`."""
-    return np.diag(np.sqrt(np.arange(1, d)), 1).astype(complex)
+    return np.diag(sqrt(np.arange(1, d)), 1).astype(complex)

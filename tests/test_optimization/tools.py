@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 import unittest
 from abc import abstractmethod
+from math import sqrt
 from seemps.state import MPS, product_state
 from seemps.operators import MPO
 from seemps.analysis.evolution import EvolutionResults
@@ -34,7 +35,7 @@ class TestItimeCase(TestCase):
         def callback_func(state: MPS, results: EvolutionResults):
             self.assertIsInstance(results, EvolutionResults)
             self.assertIsInstance(state, MPS)
-            norms.append(np.sqrt(state.norm_squared()))
+            norms.append(sqrt(state.norm_squared()))
             return None
 
         return callback_func, norms
@@ -46,7 +47,7 @@ class TestItimeCase(TestCase):
     def test_eigenvalue_solver_with_local_field(self):
         N = 4
         H, exact = self.make_problem_and_solution(N)
-        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         result = self.solve(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
         self.assertSimilarStates(result.state, exact, atol=1e-4)
@@ -54,7 +55,7 @@ class TestItimeCase(TestCase):
     def test_eigenvalue_solver_with_callback(self):
         N = 4
         H, exact = self.make_problem_and_solution(N)
-        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         callback_func, norms = self.make_callback()
         result = self.solve(H, guess, maxiter=10, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
@@ -85,7 +86,7 @@ class TestOptimizeCase(TestItimeCase):
         def callback_func(state: MPS, results: OptimizeResults):
             self.assertIsInstance(results, OptimizeResults)
             self.assertIsInstance(state, MPS)
-            norms.append(np.sqrt(state.norm_squared()))
+            norms.append(sqrt(state.norm_squared()))
             return None
 
         return callback_func, norms
@@ -97,7 +98,7 @@ class TestOptimizeCase(TestItimeCase):
     def test_eigenvalue_solver_with_local_field(self):
         N = 4
         H, exact = self.make_problem_and_solution(N)
-        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         result = self.solve(H, guess)
         self.assertAlmostEqual(result.energy, H.expectation(exact))
         self.assertSimilarStates(result.state, exact, atol=1e-4)
@@ -105,7 +106,7 @@ class TestOptimizeCase(TestItimeCase):
     def test_eigenvalue_solver_with_callback(self):
         N = 4
         H, exact = self.make_problem_and_solution(N)
-        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         callback_func, norms = self.make_callback()
         result = self.solve(H, guess, maxiter=10, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
@@ -115,7 +116,7 @@ class TestOptimizeCase(TestItimeCase):
         N = 4
         tol = 1e-5
         H, _ = self.make_problem_and_solution(4)
-        guess = product_state(np.asarray([1, 1]) / np.sqrt(2.0), N)
+        guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         result = self.solve(H, guess, tol=tol)
         self.assertTrue(result.converged)
         self.assertTrue(abs(result.trajectory[-1] - result.trajectory[-2]) < tol)

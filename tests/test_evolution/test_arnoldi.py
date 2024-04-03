@@ -1,4 +1,5 @@
 import numpy as np
+from math import sqrt
 from seemps.state import CanonicalMPS, DEFAULT_STRATEGY, product_state
 from seemps.operators import MPO
 from seemps.evolution.arnoldi import arnoldi
@@ -10,7 +11,7 @@ class TestArnoldi(EvolutionTestCase):
     def test_arnoldi_time_steps_and_callback(self):
         """Check the integration times used by the algorithm"""
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
         H = HeisenbergHamiltonian(nqubits).to_mpo()
 
         final = arnoldi(H, 1.0, mps, steps=10, callback=lambda t, state: t)
@@ -30,7 +31,7 @@ class TestArnoldi(EvolutionTestCase):
         steps = 1
         dt = T / steps
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
 
         H = HeisenbergHamiltonian(nqubits).to_mpo()
         final = arnoldi(H, T, mps, steps=steps)

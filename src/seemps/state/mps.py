@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 import warnings
 import numpy as np
+from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
@@ -220,7 +221,7 @@ class MPS(array.TensorArray):
 
     def norm(self) -> float:
         """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        return np.sqrt(abs(scprod(self, self)))
+        return sqrt(abs(scprod(self, self)))
 
     def zero_state(self) -> MPS:
         """Return a zero wavefunction with the same physical dimensions."""
@@ -373,7 +374,7 @@ class MPS(array.TensorArray):
         --------
         :py:meth:`error` : Total accumulated error after this update.
         """
-        self._error = (np.sqrt(self._error) + np.sqrt(delta)) ** 2
+        self._error = (sqrt(self._error) + sqrt(delta)) ** 2
         return self._error
 
     # TODO: We have to change the signature and working of this function, so that

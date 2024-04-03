@@ -214,18 +214,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        A = self._data[site]
-        d1, d2, d3 = A.shape
-        s = schmidt.svd(
-            A.reshape(d1 * d2, d3),
-            full_matrices=False,
-            compute_uv=False,
-            check_finite=False,
-            lapack_driver=schmidt.SVD_LAPACK_DRIVER,
-        )
-        s *= s
-        s /= np.sum(s)
-        return s
+        return schmidt.schmidt_weights(self._data[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition

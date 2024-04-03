@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Union
+from math import sqrt
 import numpy as np
 from .. import tools
 from ..state import (
@@ -101,9 +102,7 @@ def simplify(
         norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
         mps_state_scprod = np.vdot(last_tensor, form.tensor1site())
         old_err = err
-        err = 2 * abs(
-            1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
-        )
+        err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         tools.log(
             f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
             f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
@@ -255,9 +254,7 @@ def simplify_mps_sum(
             sum(w * f.tensor1site() for w, f in zip(weights, forms)),
         )
         old_err = err
-        err = 2 * abs(
-            1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
-        )
+        err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         tools.log(
             f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
             f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
@@ -269,8 +266,7 @@ def simplify_mps_sum(
         direction = -direction
     mps._error = 0.0
     base_error = sum(
-        np.abs(weights) * np.sqrt(state.error())
-        for weights, state in zip(weights, states)
+        np.abs(weights) * sqrt(state.error()) for weights, state in zip(weights, states)
     )
     mps.update_error(base_error**2)
     mps.update_error(err)

@@ -1,4 +1,5 @@
 import numpy as np
+from math import sqrt
 from ..tools import *
 from seemps.state.sampling import sample_mps
 from seemps.state import product_state
@@ -29,7 +30,7 @@ class TestSampling(TestCase):
         self.assertTrue(np.all(instances == 1))
 
     def test_sample_mps_Hadamard_state(self):
-        mps = product_state(np.ones(2) / np.sqrt(2), 10)
+        mps = product_state(np.ones(2) / sqrt(2), 10)
         instances = sample_mps(mps, size=10000, rng=self.rng)
         ones = np.sum(instances)
         self.assertTrue((ones / instances.size - 0.5) < 0.01)

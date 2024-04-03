@@ -1,12 +1,13 @@
 from __future__ import annotations
 import numpy as np
 import math
-from typing import Sequence
+from math import sqrt
+from typing import Sequence, Any, Callable
 from numpy.typing import NDArray
-from ..typing import VectorLike, Tensor3
+from ..typing import VectorLike, Tensor3, Vector
 from .core import Strategy, truncate_vector, DEFAULT_STRATEGY
 from scipy.linalg import svd, LinAlgError  # type: ignore
-from scipy.linalg.lapack import get_lapack_funcs, _compute_lwork
+from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 
 #
 # Type of LAPACK driver used for solving singular value decompositions.
@@ -15,11 +16,12 @@ from scipy.linalg.lapack import get_lapack_funcs, _compute_lwork
 #
 SVD_LAPACK_DRIVER = "gesdd"
 
-_lapack_svd_driver: dict[str, tuple] = dict()
+_lapack_svd_driver: dict[Any, tuple[Callable, Callable]] = dict()
 
 
 def set_svd_driver(driver: str) -> None:
-    global _lapack_svd_driver
+    global _lapack_svd_driver, SVD_LAPACK_DRIVER
+    SVD_LAPACK_DRIVER = driver
     _lapack_svd_driver = {
         dtype: get_lapack_funcs(
             (driver, driver + "_lwork"),
@@ -60,6 +62,20 @@ def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         raise LinAlgError("SVD did not converge")
     else:
         raise ValueError("illegal value in %dth argument of internal gesdd" % -info)
+
+
+def schmidt_weights(A: Tensor3) -> Vector:
+    d1, d2, d3 = A.shape
+    s = svd(
+        A.reshape(d1 * d2, d3),
+        full_matrices=False,
+        compute_uv=False,
+        check_finite=False,
+        lapack_driver=SVD_LAPACK_DRIVER,
+    )
+    s *= s
+    s /= np.sum(s)
+    return s
 
 
 def ortho_right(A, strategy: Strategy):
@@ -135,12 +151,12 @@ def vector2mps(
         output[i], ψ, new_err = left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
         )
-        err += np.sqrt(new_err)
+        err += sqrt(new_err)
     for i in range(L - 1, center, -1):
         ψ, output[i], new_err = right_orth_2site(
             ψ.reshape(ψ.shape[0], -1, dimensions[i], ψ.shape[-1]), strategy
         )
-        err += np.sqrt(new_err)
+        err += sqrt(new_err)
     if normalize:
         N: float = np.linalg.norm(ψ.reshape(-1))  # type: ignore
         ψ /= N

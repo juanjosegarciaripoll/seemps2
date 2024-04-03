@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Callable, Optional
+from math import sqrt
 import numpy as np
 from scipy.fft import dct  # type: ignore
 from .. import tools
@@ -111,7 +112,7 @@ def cheb2mps(
         tools.log("Clenshaw evaluation started")
     I_norm = 2 ** (x_mps.size / 2)
     normalized_I = CanonicalMPS(
-        [np.ones((1, 2, 1)) / np.sqrt(2.0)] * x_mps.size, center=0, is_canonical=True
+        [np.ones((1, 2, 1)) / sqrt(2.0)] * x_mps.size, center=0, is_canonical=True
     )
     y_i = y_i_plus_1 = normalized_I.zero_state()
     for i, c_i in enumerate(reversed(c.coef)):

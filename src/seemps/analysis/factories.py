@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from typing import TypeVar, Union
 from ..typing import Tensor3
 from ..state import (
     MPS,
@@ -150,7 +151,10 @@ def mps_cos(
     return simplify(0.5 * (mps_1 + mps_2), strategy=strategy)
 
 
-def mps_affine_transformation(mps: MPS, orig: tuple, dest: tuple):
+_State = TypeVar("_State", bound=Union[MPS, MPSSum])
+
+
+def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
     """
     Applies an affine transformation to an MPS, mapping it from one interval [x0, x1] to another [u0, u1].
     This is a transformation u = a * x + b, with u0 = a * x0 + b and and  u1 = a * x1 + b.
@@ -177,7 +181,10 @@ def mps_affine_transformation(mps: MPS, orig: tuple, dest: tuple):
     mps_affine = a * mps
     if np.abs(b) > np.finfo(np.float64).eps:
         I = MPS([np.ones((1, 2, 1))] * len(mps_affine))
-        mps_affine = (mps_affine + b * I).join()
+        mps_affine = mps_affine + b * I
+        # Preserve the input type
+        if isinstance(mps, MPS):
+            return mps_affine.join()
     return mps_affine
 
 

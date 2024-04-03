@@ -1,4 +1,5 @@
 import numpy as np
+from math import sqrt
 from seemps.analysis.mesh import *
 from ..tools import TestCase
 
@@ -35,8 +36,8 @@ class TestIntervals(TestCase):
         self.assertEqual(I.stop, 1)
         self.assertEqual(I.size, 2)
         self.assertEqual(len(I), 2)
-        self.assertAlmostEqual(I[0], -np.sqrt(2.0) / 2.0)
-        self.assertAlmostEqual(I[1], np.sqrt(2.0) / 2.0)
+        self.assertAlmostEqual(I[0], -sqrt(2.0) / 2.0)
+        self.assertAlmostEqual(I[1], sqrt(2.0) / 2.0)
 
         self.assertEqual([I[0], I[1]], list(I))
         self.assertEqual([I[0], I[1]], [x for x in I])
@@ -46,8 +47,8 @@ class TestIntervals(TestCase):
         I = ChebyshevZerosInterval(f(-1), f(1), 2)
         self.assertEqual(I.start, f(-1))
         self.assertEqual(I.stop, f(1))
-        self.assertAlmostEqual(I[0], f(-np.sqrt(2.0) / 2.0))
-        self.assertAlmostEqual(I[1], f(np.sqrt(2.0) / 2.0))
+        self.assertAlmostEqual(I[0], f(-sqrt(2.0) / 2.0))
+        self.assertAlmostEqual(I[1], f(sqrt(2.0) / 2.0))
 
 
 class TestMesh(TestCase):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from math import sqrt
 from numpy import pi as π
 from typing import Union, Optional
 from .typing import Vector
@@ -37,7 +38,7 @@ def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:
     noop = np.eye(2).reshape(1, 2, 2, 1)
     #
     # Beginning Hadamard
-    H = np.array([[1, 1], [1, -1]]) / np.sqrt(2.0)
+    H = np.array([[1, 1], [1, -1]]) / sqrt(2.0)
     Hop = np.zeros((1, 2, 2, 2))
     Hop[0, 1, :, 1] = H[1, :]
     Hop[0, 0, :, 0] = H[0, :]
@@ -157,7 +158,7 @@ def qft_wavefunction(Ψ: Vector) -> Vector:
     Vector
         Transformed state.
     """
-    return np.fft.fft(Ψ) / np.sqrt(Ψ.size)
+    return np.fft.fft(Ψ) / sqrt(Ψ.size)
 
 
 def qft_nd_mpo(
@@ -191,7 +192,7 @@ def qft_nd_mpo(
     noop = np.eye(2).reshape(2, 1, 1, 2) * small_noop
     #
     # Beginning Hadamard
-    H = np.array([[1, 1], [1, -1]]) / np.sqrt(2.0)
+    H = np.array([[1, 1], [1, -1]]) / sqrt(2.0)
     Hop = np.zeros((2, 2, 2, 2))
     Hop[1, 1, :, 1] = H[1, :]
     Hop[0, 0, :, 0] = H[0, :]

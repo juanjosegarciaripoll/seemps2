@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from math import sqrt
 from typing import Optional, Union
 from ..typing import Operator, Vector
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
@@ -61,8 +62,7 @@ class UnitaryCircuit:
     @abstractmethod
     def apply_inplace(
         self, state: MPS, parameters: Optional[Vector] = None
-    ) -> CanonicalMPS:
-        ...
+    ) -> CanonicalMPS: ...
 
     def __matmul__(self, state: MPS) -> CanonicalMPS:
         return self.apply(state)
@@ -162,7 +162,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
         # rotation angles.
         #
         factor = np.abs(np.linalg.det(O))
-        self.factor = np.sqrt(abs(factor))
+        self.factor = sqrt(abs(factor))
         self.operator = O / self.factor
 
     def apply_inplace(
