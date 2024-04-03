@@ -1,6 +1,8 @@
 import numpy as np
 cimport numpy as cnp
+cimport cpython
 from libc.math cimport sqrt
+from ..typing  import Environment, Tensor3
 
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
@@ -272,6 +274,11 @@ def _contract_last_and_first(A, B) -> cnp.ndarray:
 
 cdef _matmul = np.matmul
 
+cdef cnp.ndarray _as_2tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j):
+    cdef cnp.npy_intp *dims_data = [i, j]
+    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 2)
+    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
+
 cdef cnp.ndarray _as_3tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j, Py_ssize_t k):
     cdef cnp.npy_intp *dims_data = [i, j, k]
     cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 3)
@@ -282,6 +289,17 @@ cdef cnp.ndarray _as_4tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j,
     cdef cnp.npy_intp *dims_data = [i, j, k, l]
     cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 4)
     return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
+
+cdef cnp.ndarray _copy_array(cnp.ndarray A):
+    return <cnp.ndarray>cnp.PyArray_SimpleNew(cnp.PyArray_NDIM(A),
+                                              cnp.PyArray_DIMS(A),
+                                              cnp.PyArray_TYPE(A))
+
+cdef cnp.ndarray _adjoint(cnp.ndarray A):
+    cdef cnp.ndarray a = cnp.PyArray_SwapAxes(A, 0, 1)
+    if cnp.PyArray_ISCOMPLEX(A):
+        a = cnp.PyArray_Conjugate(a, _copy_array(a))
+    return <cnp.ndarray>a
 
 def _contract_nrjl_ijk_klm(U, A, B) -> cnp.ndarray:
     #
@@ -314,3 +332,114 @@ def _contract_nrjl_ijk_klm(U, A, B) -> cnp.ndarray:
                 a, d*e, c)
         ),
         a, d, e, c)
+
+cdef _eye = np.eye
+cdef _empty_environment = _eye(1)
+
+def _begin_environment(int D = 1) -> cnp.ndarray:
+    """Initiate the computation of a left environment from two MPS."""
+    if D == 1:
+        return _empty_environment
+    return _eye(D)
+
+cdef cnp.ndarray __update_left_environment(object B, object A, object rho):
+    if (cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_Check(B) == 0 or
+        cnp.PyArray_Check(rho) == 0 or
+        cnp.PyArray_NDIM(<cnp.ndarray>A) != 3 or
+        cnp.PyArray_NDIM(<cnp.ndarray>B) != 3 or
+        cnp.PyArray_NDIM(<cnp.ndarray>rho) != 2):
+        raise ValueError("Invalid arguments to _update_left_environment")
+    cdef:
+        # i, j, k = A.shape[0]
+        # l, j, n = B.shape[0]
+        Py_ssize_t i = cnp.PyArray_DIM(<cnp.ndarray>A, 0)
+        Py_ssize_t j = cnp.PyArray_DIM(<cnp.ndarray>A, 1)
+        Py_ssize_t k = cnp.PyArray_DIM(<cnp.ndarray>A, 2)
+        Py_ssize_t l = cnp.PyArray_DIM(<cnp.ndarray>B, 0)
+        Py_ssize_t n = cnp.PyArray_DIM(<cnp.ndarray>B, 2)
+    # np.einsum("li,ijk->ljk")
+    rho = _matmul(rho, _as_2tensor(A, i, j *k))
+    return _matmul(_adjoint(_as_2tensor(B, l*j, n)), _as_2tensor(rho, l*j, k))
+
+def _update_left_environment(object B, object A, object rho) -> cnp.ndarray :
+    """Extend the left environment with two new tensors, 'B' and 'A' coming
+    from the bra and ket of a scalar product."""
+    return __update_left_environment(B, A, rho)
+
+cdef cnp.ndarray __update_right_environment(object B, object A, object rho):
+    """Extend the left environment with two new tensors, 'B' and 'A' coming
+    from the bra and ket of a scalar product."""
+    if (cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_Check(B) == 0 or
+        cnp.PyArray_Check(rho) == 0 or
+        cnp.PyArray_NDIM(<cnp.ndarray>A) != 3 or
+        cnp.PyArray_NDIM(<cnp.ndarray>B) != 3 or
+        cnp.PyArray_NDIM(<cnp.ndarray>rho) != 2):
+        raise ValueError("Invalid arguments to _update_left_environment")
+    cdef:
+        # i, j, k = A.shape[0]
+        # l, j, n = B.shape[0]
+        Py_ssize_t i = cnp.PyArray_DIM(<cnp.ndarray>A, 0)
+        Py_ssize_t j = cnp.PyArray_DIM(<cnp.ndarray>A, 1)
+        Py_ssize_t k = cnp.PyArray_DIM(<cnp.ndarray>A, 2)
+        Py_ssize_t l = cnp.PyArray_DIM(<cnp.ndarray>B, 0)
+        Py_ssize_t n = cnp.PyArray_DIM(<cnp.ndarray>B, 2)
+    # np.einsum("li,ijk->ljk")
+    rho = _matmul(_as_2tensor(A, i * j, k), rho)
+    return _matmul(_as_2tensor(rho, i, j * n), _adjoint(_as_2tensor(B, l, j * n)))
+
+def _update_right_environment(object B, object A, object rho) ->  cnp.ndarray:
+    """Extend the left environment with two new tensors, 'B' and 'A' coming
+    from the bra and ket of a scalar product."""
+    return __update_right_environment(B, A, rho)
+
+cdef __end_environment(cnp.ndarray rho):
+    return cnp.PyArray_GETITEM(rho, cnp.PyArray_DATA(rho))
+
+def _end_environment(object rho) -> Weight:
+    """Extract the scalar product from the last environment."""
+    return __end_environment(rho)
+
+# TODO: Separate formats for left- and right- environments so that we
+# can replace this with a simple np.dot(ρL.reshape(-1), ρR.reshape(-1))
+# This involves ρR -> ρR.T with respect to current conventions
+def _join_environments(rhoL: Environment, rhoR: Environment) -> Weight:
+    """Join left and right environments to produce a scalar."""
+    if cnp.PyArray_DIM(<cnp.ndarray>rhoL, 0) == 1:
+        return _end_environment(rhoL) * _end_environment(rhoR)
+    return cnp.PyArray_InnerProduct(cnp.PyArray_Ravel(rhoL, cnp.NPY_CORDER),
+                                    cnp.PyArray_Ravel(cnp.PyArray_SwapAxes(rhoR, 0, 1),
+                                                      cnp.NPY_CORDER))
+
+cpdef scprod(object bra, object ket) -> Weight:
+    """Compute the scalar product between matrix product states
+    :math:`\\langle\\xi|\\psi\\rangle`.
+
+    Parameters
+    ----------
+    bra : MPS
+        Matrix-product state for the bra :math:`\\xi`
+    ket : MPS
+        Matrix-product state for the ket :math:`\\psi`
+
+    Returns
+    -------
+    float | complex
+        Scalar product.
+    """
+    cdef:
+        list A = bra._data
+        list B = ket._data
+        Py_ssize_t i
+        Py_ssize_t Lbra = cpython.PyList_GET_SIZE(A)
+        Py_ssize_t Lket = cpython.PyList_GET_SIZE(B)
+    if Lbra != Lket:
+        raise ValueError("Invalid arguments to scprod")
+    rho = _empty_environment
+    for i in range(Lbra):
+        rho = __update_left_environment(<cnp.ndarray>cpython.PyList_GET_ITEM(A, i),
+                                        <cnp.ndarray>cpython.PyList_GET_ITEM(B, i), rho)
+    # TODO: Verify if the order of Ai and Bi matches being bra and ket
+    # Add tests for that
+    return __end_environment(rho)

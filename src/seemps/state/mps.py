@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
+from ..typing import Environment
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
@@ -469,7 +470,6 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
 
 from .mpssum import MPSSum  # noqa: E402
 from .environments import (  # noqa: E402
-    Environment,
     _begin_environment,
     _update_left_environment,
     _update_right_environment,
