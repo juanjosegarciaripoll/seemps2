@@ -1,25 +1,18 @@
 from __future__ import annotations
 import numpy as np
-from typing import Optional
-from ..typing import Weight, Operator, Tensor3, Tensor4, Environment, MPOEnvironment
+from ..typing import Weight, Tensor3, Tensor4, Environment, MPOEnvironment
 
 
-def begin_environment(χ: int = 1) -> Environment:
+def _begin_environment(χ: int = 1) -> Environment:
     """Initiate the computation of a left environment from two MPS. The bond
     dimension χ defaults to 1. Other values are used for states in canonical
     form that we know how to open and close."""
     return np.eye(χ, dtype=np.float64)
 
 
-def update_left_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, operator: Optional[Operator] = None
-) -> Environment:
+def _update_left_environment(B: Tensor3, A: Tensor3, rho: Environment) -> Environment:
     """Extend the left environment with two new tensors, 'B' and 'A' coming
-    from the bra and ket of a scalar product. If an operator is provided, it
-    is contracted with the ket."""
-    if operator is not None:
-        # A = np.einsum("ji,aib->ajb", operator, A)
-        A = np.matmul(operator, A)
+    from the bra and ket of a scalar product."""
     # np.einsum("ijk,li,ljk->nk", A, rho, B.conj())
     i, j, k = A.shape
     l, j, n = B.shape
@@ -29,15 +22,9 @@ def update_left_environment(
     return np.matmul(B.reshape(l * j, n).T.conj(), rho.reshape(l * j, k))
 
 
-def update_right_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, operator: Optional[Operator] = None
-) -> Environment:
+def _update_right_environment(B: Tensor3, A: Tensor3, rho: Environment) -> Environment:
     """Extend the left environment with two new tensors, 'B' and 'A' coming
-    from the bra and ket of a scalar product. If an operator is provided, it
-    is contracted with the ket."""
-    if operator is not None:
-        # A = np.einsum("ji,aib->ajb", operator, A)
-        A = np.matmul(operator, A)
+    from the bra and ket of a scalar product."""
     # np.einsum("ijk,kn,ljn->il", A, rho, B.conj())
     i, j, k = A.shape
     l, j, n = B.shape
@@ -46,7 +33,7 @@ def update_right_environment(
     return np.matmul(rho.reshape(i, j * n), B.reshape(l, j * n).T.conj())
 
 
-def end_environment(ρ: Environment) -> Weight:
+def _end_environment(ρ: Environment) -> Weight:
     """Extract the scalar product from the last environment."""
     return ρ[0, 0]
 
@@ -54,7 +41,7 @@ def end_environment(ρ: Environment) -> Weight:
 # TODO: Separate formats for left- and right- environments so that we
 # can replace this with a simple np.dot(ρL.reshape(-1), ρR.reshape(-1))
 # This involves ρR -> ρR.T with respect to current conventions
-def join_environments(ρL: Environment, ρR: Environment) -> Weight:
+def _join_environments(ρL: Environment, ρR: Environment) -> Weight:
     """Join left and right environments to produce a scalar."""
     # np.einsum("ij,ji", ρL, ρR)
     # return np.trace(np.dot(ρL, ρR))
@@ -77,12 +64,12 @@ def scprod(bra: MPS, ket: MPS) -> Weight:
     float | complex
         Scalar product.
     """
-    ρ: Environment = begin_environment()
+    ρ: Environment = _begin_environment()
     # TODO: Verify if the order of Ai and Bi matches being bra and ket
     # Add tests for that
     for Ai, Bi in zip(bra, ket):
-        ρ = update_left_environment(Ai, Bi, ρ)
-    return end_environment(ρ)
+        ρ = _update_left_environment(Ai, Bi, ρ)
+    return _end_environment(ρ)
 
 
 def begin_mpo_environment() -> MPOEnvironment:

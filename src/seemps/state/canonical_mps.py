@@ -3,7 +3,12 @@ import warnings
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
-from . import environments, schmidt
+from . import schmidt
+from .environments import (
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+)
 from ._contractions import _contract_last_and_first
 from .core import DEFAULT_STRATEGY, Strategy
 from .mps import MPS
@@ -179,17 +184,17 @@ class CanonicalMPS(MPS):
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
         start = min(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[0])
+        ρ = _begin_environment(self[start].shape[0])
         for A in self._data[start:site]:
-            ρ = environments.update_left_environment(A, A, ρ)
+            ρ = _update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
         start = max(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[-1])
+        ρ = _begin_environment(self[start].shape[-1])
         for A in self._data[start:site:-1]:
-            ρ = environments.update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
         return ρ
 
     def Schmidt_weights(self, site: Optional[int] = None) -> Vector:
