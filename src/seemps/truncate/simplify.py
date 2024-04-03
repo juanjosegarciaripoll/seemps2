@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from typing import Optional, Union
+
 import numpy as np
+
 from .. import tools
 from ..state import (
     DEFAULT_TOLERANCE,
@@ -196,6 +199,7 @@ def simplify_mps_sum(
                 f"produces error {mps.error():5e}",
                 debug_level=2,
             )
+        return mps
 
     # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
     # output is expected to be a CanonicalMPS, we must use the
@@ -209,6 +213,7 @@ def simplify_mps_sum(
                 f"produces error {mps.error():5e}",
                 debug_level=2,
             )
+        return mps
 
     # Prepare initial guess
     if guess is None:
