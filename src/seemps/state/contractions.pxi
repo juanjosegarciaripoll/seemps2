@@ -7,24 +7,31 @@ def _contract_last_and_first(A, B) -> cnp.ndarray:
     """Contract last index of `A` and first from `B`"""
     if (cnp.PyArray_Check(A) == 0 or cnp.PyArray_Check(B) == 0):
         raise ValueError("_contract_last_and_first expects tensors")
-
     cdef:
         cnp.ndarray Aarray = <cnp.ndarray>A
         cnp.ndarray Barray = <cnp.ndarray>B
-        int ndimA = cnp.PyArray_NDIM(Aarray)
-        Py_ssize_t Alast = cnp.PyArray_DIM(Aarray, ndimA - 1)
+        int ndimA = cnp.PyArray_NDIM(Aarray) - 1
+        int ndimB = cnp.PyArray_NDIM(Barray) - 1
+        Py_ssize_t Alast = cnp.PyArray_DIM(Aarray, ndimA)
         Py_ssize_t Bfirst = cnp.PyArray_DIM(Barray, 0)
-    #
-    # By reshaping the two tensors to matrices, we ensure Numpy
-    # will always use the CBLAS path (provided the tensors have
-    # the same type, of course)
-    #
-    return <cnp.ndarray>cnp.PyArray_Reshape(
-        <cnp.ndarray>cnp.PyArray_MatrixProduct(
+        #
+        # By reshaping the two tensors to matrices, we ensure Numpy
+        # will always use the CBLAS path (provided the tensors have
+        # the same type, of course)
+        #
+        cnp.ndarray C = __gemm(
             _as_matrix(Aarray, cnp.PyArray_SIZE(Aarray) / Alast, Alast),
-            _as_matrix(Barray, Bfirst, cnp.PyArray_SIZE(Barray) / Bfirst)
-        ),
-        A.shape[:-1] + B.shape[1:])
+            GEMM_NORMAL,
+            _as_matrix(Barray, Bfirst, cnp.PyArray_SIZE(Barray) / Bfirst),
+            GEMM_NORMAL
+        )
+        #return <cnp.ndarray>cnp.PyArray_Reshape(C, A.shape[:-1] + B.shape[1:])
+        cnp.npy_intp dims_data[32]
+    memcpy(dims_data, Aarray.shape, ndimA * sizeof(cnp.npy_intp))
+    memcpy(&dims_data[ndimA], Barray.shape+1, ndimB * sizeof(cnp.npy_intp))
+    cdef:
+        cnp.PyArray_Dims dims = cnp.PyArray_Dims(&dims_data[0], ndimA + ndimB)
+    return <cnp.ndarray>cnp.PyArray_Newshape(C, &dims, cnp.NPY_CORDER)
 
 
 cdef _matmul = np.matmul

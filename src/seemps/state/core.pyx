@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as cnp
 cimport cpython
 from libc.math cimport sqrt
+from libc.string cimport memcpy
 from ..typing  import Environment, Tensor3
 
 MAX_BOND_DIMENSION = 0x7fffffff
