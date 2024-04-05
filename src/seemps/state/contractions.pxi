@@ -50,6 +50,10 @@ cdef cnp.ndarray _copy_array(cnp.ndarray A):
                                               cnp.PyArray_DIMS(A),
                                               cnp.PyArray_TYPE(A))
 
+cdef cnp.ndarray _empty_matrix(Py_ssize_t rows, Py_ssize_t cols, int dtype):
+    cdef cnp.npy_intp *dims_data = [rows, cols]
+    return <cnp.ndarray>cnp.PyArray_SimpleNew(2, dims_data, dtype)
+
 cdef cnp.ndarray _adjoint(cnp.ndarray A):
     cdef cnp.ndarray a = cnp.PyArray_SwapAxes(A, 0, 1)
     if cnp.PyArray_ISCOMPLEX(A):

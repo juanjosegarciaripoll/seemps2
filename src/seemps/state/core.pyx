@@ -243,5 +243,6 @@ def truncate_vector(s, Strategy strategy):
         raise ValueError("truncate_vector() requires float vector")
     return strategy._truncate(<cnp.ndarray>s, strategy)
 
+include "gemm.pxi"
 include "contractions.pxi"
 include "environments.pxi"

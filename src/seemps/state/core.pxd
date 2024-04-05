@@ -15,6 +15,11 @@ cdef enum SimplificationCEnum:
     SIMPLIFICATION_VARIATIONAL_EXACT_GUESS = 3
     SIMPLIFICATION_LAST_CODE = 3
 
+cdef enum GemmFlags:
+    GEMM_NORMAL_ORDER = 0
+    GEMM_TRANSPOSE = 1
+    GEMM_ADJOINT = 2
+
 cdef class Strategy:
     cdef int method
     cdef double tolerance
