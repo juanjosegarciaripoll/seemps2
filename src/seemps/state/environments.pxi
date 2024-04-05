@@ -24,8 +24,12 @@ cdef cnp.ndarray __update_left_environment(object B, object A, object rho):
         Py_ssize_t l = cnp.PyArray_DIM(<cnp.ndarray>B, 0)
         Py_ssize_t n = cnp.PyArray_DIM(<cnp.ndarray>B, 2)
     # np.einsum("li,ijk->ljk")
-    rho = _matmul(rho, _as_2tensor(A, i, j *k))
-    return _matmul(_adjoint(_as_2tensor(B, l*j, n)), _as_2tensor(rho, l*j, k))
+    return __gemm(_as_2tensor(<cnp.ndarray>B, l*j, n), GEMM_ADJOINT,
+                  _as_2tensor(__gemm(<cnp.ndarray>rho, GEMM_NORMAL,
+                                     _as_2tensor(<cnp.ndarray>A, i, j *k),
+                                     GEMM_NORMAL),
+                              l*j, k),
+                  GEMM_NORMAL)
 
 def _update_left_environment(object B, object A, object rho) -> cnp.ndarray :
     """Extend the left environment with two new tensors, 'B' and 'A' coming
@@ -51,8 +55,11 @@ cdef cnp.ndarray __update_right_environment(object B, object A, object rho):
         Py_ssize_t l = cnp.PyArray_DIM(<cnp.ndarray>B, 0)
         Py_ssize_t n = cnp.PyArray_DIM(<cnp.ndarray>B, 2)
     # np.einsum("li,ijk->ljk")
-    rho = _matmul(_as_2tensor(A, i * j, k), rho)
-    return _matmul(_as_2tensor(rho, i, j * n), _adjoint(_as_2tensor(B, l, j * n)))
+    return __gemm(_as_2tensor(__gemm(_as_2tensor(<cnp.ndarray>A, i * j, k),
+                                     GEMM_NORMAL,
+                                     <cnp.ndarray>rho, GEMM_NORMAL), i, j * n),
+                  GEMM_NORMAL,
+                  _as_2tensor(<cnp.ndarray>B, l, j * n), GEMM_ADJOINT)
 
 def _update_right_environment(object B, object A, object rho) ->  cnp.ndarray:
     """Extend the left environment with two new tensors, 'B' and 'A' coming

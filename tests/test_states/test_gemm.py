@@ -4,19 +4,21 @@ from .. import tools
 
 
 class TestGEMM(tools.TestCase):
-    def size_range(self, max_size: int = 5):
+    def size_range(self, max_size: int = 6):
         for m in range(1, max_size):
             for k in range(1, max_size):
                 for n in range(1, max_size):
                     yield (m, n, k)
 
-    def _test_real_product(self):
+    def test_real_product(self):
         for m, k, n in self.size_range():
             A = self.rng.normal(size=(m, k))
             B = self.rng.normal(size=(k, n))
             self.assertSimilar(
                 np.matmul(A, B),
-                _gemm(A, GemmOrder.NORMAL_ORDER, B, GemmOrder.NORMAL_ORDER),
+                _gemm(A, GemmOrder.NORMAL, B, GemmOrder.NORMAL),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def test_real_product_transpose_first(self):
@@ -25,7 +27,9 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(k, n))
             self.assertSimilar(
                 np.matmul(A.T, B),
-                _gemm(A, GemmOrder.TRANSPOSE, B, GemmOrder.NORMAL_ORDER),
+                _gemm(A, GemmOrder.TRANSPOSE, B, GemmOrder.NORMAL),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def test_real_product_transpose_second(self):
@@ -34,7 +38,9 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(n, k))
             self.assertSimilar(
                 np.matmul(A, B.T),
-                _gemm(A, GemmOrder.NORMAL_ORDER, B, GemmOrder.TRANSPOSE),
+                _gemm(A, GemmOrder.NORMAL, B, GemmOrder.TRANSPOSE),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def _test_complex_product(self):
@@ -43,7 +49,9 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(k, n)) + 1j * self.rng.normal(size=(k, n))
             self.assertSimilar(
                 np.matmul(A, B),
-                _gemm(A, GemmOrder.NORMAL_ORDER, B, GemmOrder.NORMAL_ORDER),
+                _gemm(A, GemmOrder.NORMAL, B, GemmOrder.NORMAL),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def test_complex_product_transpose_first(self):
@@ -52,7 +60,9 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(k, n)) + 1j * self.rng.normal(size=(k, n))
             self.assertSimilar(
                 np.matmul(A.T, B),
-                _gemm(A, GemmOrder.TRANSPOSE, B, GemmOrder.NORMAL_ORDER),
+                _gemm(A, GemmOrder.TRANSPOSE, B, GemmOrder.NORMAL),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def test_complex_product_transpose_second(self):
@@ -61,7 +71,9 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(n, k)) + 1j * self.rng.normal(size=(n, k))
             self.assertSimilar(
                 np.matmul(A, B.T),
-                _gemm(A, GemmOrder.NORMAL_ORDER, B, GemmOrder.TRANSPOSE),
+                _gemm(A, GemmOrder.NORMAL, B, GemmOrder.TRANSPOSE),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def test_complex_product_adjoint_first(self):
@@ -70,7 +82,9 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(k, n)) + 1j * self.rng.normal(size=(k, n))
             self.assertSimilar(
                 np.matmul(A.T.conj(), B),
-                _gemm(A, GemmOrder.ADJOINT, B, GemmOrder.NORMAL_ORDER),
+                _gemm(A, GemmOrder.ADJOINT, B, GemmOrder.NORMAL),
+                rtol=1e-10,
+                atol=1e-15,
             )
 
     def test_complex_product_adjoint_second(self):
@@ -79,5 +93,20 @@ class TestGEMM(tools.TestCase):
             B = self.rng.normal(size=(n, k)) + 1j * self.rng.normal(size=(n, k))
             self.assertSimilar(
                 np.matmul(A, B.T.conj()),
-                _gemm(A, GemmOrder.NORMAL_ORDER, B, GemmOrder.ADJOINT),
+                _gemm(A, GemmOrder.NORMAL, B, GemmOrder.ADJOINT),
+                rtol=1e-10,
+                atol=1e-15,
             )
+
+    def test_gemm_works_with_views(self):
+        A = self.rng.normal(size=(4, 4))
+        B = self.rng.normal(size=(4, 4))
+        self.assertSimilar(
+            np.matmul(A, B.T), _gemm(A, GemmOrder.NORMAL, B.T, GemmOrder.NORMAL)
+        )
+        self.assertSimilar(
+            np.matmul(A.T, B), _gemm(A.T, GemmOrder.NORMAL, B, GemmOrder.NORMAL)
+        )
+        self.assertSimilar(
+            np.matmul(A.T, B.T), _gemm(A.T, GemmOrder.NORMAL, B.T, GemmOrder.NORMAL)
+        )

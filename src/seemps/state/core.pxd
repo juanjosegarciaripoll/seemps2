@@ -16,7 +16,7 @@ cdef enum SimplificationCEnum:
     SIMPLIFICATION_LAST_CODE = 3
 
 cdef enum GemmFlags:
-    GEMM_NORMAL_ORDER = 0
+    GEMM_NORMAL = 0
     GEMM_TRANSPOSE = 1
     GEMM_ADJOINT = 2
 
