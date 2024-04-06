@@ -52,7 +52,7 @@ cdef cnp.ndarray _as_4tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j,
     cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 4)
     return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
 
-cdef cnp.ndarray _copy_array(cnp.ndarray A):
+cdef cnp.ndarray _empty_as_array(cnp.ndarray A):
     return <cnp.ndarray>cnp.PyArray_SimpleNew(cnp.PyArray_NDIM(A),
                                               cnp.PyArray_DIMS(A),
                                               cnp.PyArray_TYPE(A))
@@ -61,10 +61,14 @@ cdef cnp.ndarray _empty_matrix(Py_ssize_t rows, Py_ssize_t cols, int dtype):
     cdef cnp.npy_intp *dims_data = [rows, cols]
     return <cnp.ndarray>cnp.PyArray_SimpleNew(2, dims_data, dtype)
 
+cdef cnp.ndarray _empty_vector(Py_ssize_t size, int dtype):
+    cdef cnp.npy_intp *dims_data = [size]
+    return <cnp.ndarray>cnp.PyArray_SimpleNew(1, dims_data, dtype)
+
 cdef cnp.ndarray _adjoint(cnp.ndarray A):
     cdef cnp.ndarray a = cnp.PyArray_SwapAxes(A, 0, 1)
     if cnp.PyArray_ISCOMPLEX(A):
-        a = cnp.PyArray_Conjugate(a, _copy_array(a))
+        a = cnp.PyArray_Conjugate(a, _empty_as_array(a))
     return <cnp.ndarray>a
 
 def _contract_nrjl_ijk_klm(U, A, B) -> cnp.ndarray:

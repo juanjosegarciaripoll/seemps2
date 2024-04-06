@@ -247,3 +247,4 @@ def truncate_vector(s, Strategy strategy):
 include "gemm.pxi"
 include "contractions.pxi"
 include "environments.pxi"
+include "svd.pxi"
