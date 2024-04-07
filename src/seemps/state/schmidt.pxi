@@ -1,4 +1,4 @@
-def ortho_right(object A, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
+cpdef tuple[np.ndarray, np.ndarray, float] ortho_right(object A, Strategy strategy):
     if (cnp.PyArray_Check(A) == 0 or
         cnp.PyArray_NDIM(A) != 3):
         raise ValueError()
@@ -15,7 +15,7 @@ def ortho_right(object A, Strategy strategy) -> tuple[np.ndarray, np.ndarray, fl
     return _as_3tensor(U[:, :D], a, i, D), _as_2tensor(s, D, 1) * V[:D, :], err
 
 
-def ortho_left(object A, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
+cpdef tuple[np.ndarray, np.ndarray, float] ortho_left(object A, Strategy strategy):
     if (cnp.PyArray_Check(A) == 0 or
         cnp.PyArray_NDIM(A) != 3):
         raise ValueError()
@@ -30,6 +30,59 @@ def ortho_left(object A, Strategy strategy) -> tuple[np.ndarray, np.ndarray, flo
     s, err = strategy._truncate(s, strategy)
     D = cnp.PyArray_SIZE(s)
     return _as_3tensor(V[:D, :], D, i, b), U[:, :D] * s, err
+
+# TODO: Replace einsum by a more efficient form
+def _update_in_canonical_form_right(
+    state: list[Tensor3], A: Tensor3, Py_ssize_t site, Strategy truncation
+) -> tuple[int, float]:
+    """Insert a tensor in canonical form into the MPS state at the given site.
+    Update the neighboring sites in the process."""
+    if (cpython.PyList_Check(state) == 0):
+        raise ValueError()
+    cdef:
+        Py_ssize_t L = cpython.PyList_GET_SIZE(state)
+    if site + 1 == L:
+        state[site] = A
+        return site, 0.0
+    state[site], sV, err = ortho_right(A, truncation)
+    site += 1
+    # np.einsum("ab,bic->aic", sV, state[site])
+    state[site] = _contract_last_and_first(sV, state[site])
+    return site, err
+
+
+# TODO: Replace einsum by a more efficient form
+def _update_in_canonical_form_left(
+    state: list[Tensor3], A: Tensor3, site: int, truncation: Strategy
+) -> tuple[int, float]:
+    """Insert a tensor in canonical form into the MPS state at the given site.
+    Update the neighboring sites in the process."""
+    if (cpython.PyList_Check(state) == 0):
+        raise ValueError()
+    if site == 0:
+        state[site] = A
+        return site, 0.0
+    state[site], Us, err = ortho_left(A, truncation)
+    site -= 1
+    # np.einsum("aib,bc->aic", state[site], Us)
+    state[site] = np.matmul(state[site], Us)
+    return site, err
+
+
+def _canonicalize(state: list[Tensor3], center: int, truncation: Strategy) -> float:
+    """Update a list of `Tensor3` objects to be in canonical form
+    with respect to `center`."""
+    # TODO: Revise the cumulative error update. Does it follow update_error()?
+    cdef:
+        Py_ssize_t i, L = cpython.PyList_GET_SIZE(state)
+        double err = 0.0, errk
+    for i in range(0, center):
+        _, errk = _update_in_canonical_form_right(state, state[i], i, truncation)
+        err += errk
+    for i in range(L - 1, center, -1):
+        _, errk = _update_in_canonical_form_left(state, state[i], i, truncation)
+        err += errk
+    return err
 
 
 def left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
