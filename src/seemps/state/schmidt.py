@@ -17,7 +17,7 @@ from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 SVD_LAPACK_DRIVER = "gesvd"
 
 from seemps.state.core import _svd as _our_svd
-from seemps.state.core import ortho_right, ortho_left, left_orth_2site, right_orth_2site
+from seemps.state.core import left_orth_2site, right_orth_2site
 
 
 def schmidt_weights(A: Tensor3) -> Vector:
