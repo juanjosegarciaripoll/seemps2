@@ -1,9 +1,6 @@
-cpdef tuple[np.ndarray, np.ndarray, float] ortho_right(object A, Strategy strategy):
-    if (cnp.PyArray_Check(A) == 0 or
-        cnp.PyArray_NDIM(A) != 3):
-        raise ValueError()
+cdef tuple[np.ndarray, np.ndarray, float] _ortho_right(cnp.ndarray A, Strategy strategy):
     cdef:
-        cnp.ndarray Aarray = _copy_array(<cnp.ndarray>A)
+        cnp.ndarray Aarray = _copy_array(A)
         Py_ssize_t a = cnp.PyArray_DIM(Aarray, 0)
         Py_ssize_t i = cnp.PyArray_DIM(Aarray, 1)
         Py_ssize_t b = cnp.PyArray_DIM(Aarray, 2)
@@ -15,12 +12,9 @@ cpdef tuple[np.ndarray, np.ndarray, float] ortho_right(object A, Strategy strate
     return _as_3tensor(U[:, :D], a, i, D), _as_2tensor(s, D, 1) * V[:D, :], err
 
 
-cpdef tuple[np.ndarray, np.ndarray, float] ortho_left(object A, Strategy strategy):
-    if (cnp.PyArray_Check(A) == 0 or
-        cnp.PyArray_NDIM(A) != 3):
-        raise ValueError()
+cdef tuple[np.ndarray, np.ndarray, float] _ortho_left(cnp.ndarray A, Strategy strategy):
     cdef:
-        cnp.ndarray Aarray = _copy_array(<cnp.ndarray>A)
+        cnp.ndarray Aarray = _copy_array(A)
         Py_ssize_t a = cnp.PyArray_DIM(Aarray, 0)
         Py_ssize_t i = cnp.PyArray_DIM(Aarray, 1)
         Py_ssize_t b = cnp.PyArray_DIM(Aarray, 2)
@@ -37,14 +31,16 @@ def _update_in_canonical_form_right(
 ) -> tuple[int, float]:
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    if (cpython.PyList_Check(state) == 0):
+    if (cpython.PyList_Check(state) == 0 or
+        cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_NDIM(A) != 3):
         raise ValueError()
     cdef:
         Py_ssize_t L = cpython.PyList_GET_SIZE(state)
     if site + 1 == L:
         state[site] = A
         return site, 0.0
-    state[site], sV, err = ortho_right(A, truncation)
+    state[site], sV, err = _ortho_right(A, truncation)
     site += 1
     # np.einsum("ab,bic->aic", sV, state[site])
     state[site] = _contract_last_and_first(sV, state[site])
@@ -57,12 +53,14 @@ def _update_in_canonical_form_left(
 ) -> tuple[int, float]:
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    if (cpython.PyList_Check(state) == 0):
+    if (cpython.PyList_Check(state) == 0 or
+        cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_NDIM(A) != 3):
         raise ValueError()
     if site == 0:
         state[site] = A
         return site, 0.0
-    state[site], Us, err = ortho_left(A, truncation)
+    state[site], Us, err = _ortho_left(A, truncation)
     site -= 1
     # np.einsum("aib,bc->aic", state[site], Us)
     state[site] = np.matmul(state[site], Us)
