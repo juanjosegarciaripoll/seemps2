@@ -195,6 +195,7 @@ def simplify_mps_sum(
                 f"produces error {mps.error():5e}",
                 debug_level=2,
             )
+        return mps
 
     # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
     # output is expected to be a CanonicalMPS, we must use the
@@ -208,6 +209,7 @@ def simplify_mps_sum(
                 f"produces error {mps.error():5e}",
                 debug_level=2,
             )
+        return mps
 
     # Prepare initial guess
     if guess is None:
