@@ -28,4 +28,4 @@ cdef class Strategy:
     cdef int max_sweeps
     cdef bint normalize
     cdef int simplify
-    cdef tuple (*_truncate)(cnp.ndarray s, Strategy)
+    cdef double (*_truncate)(cnp.ndarray s, Strategy)

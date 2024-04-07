@@ -8,7 +8,7 @@ from cpython cimport (
     )
 
 
-cdef tuple[int, float] __update_in_canonical_form_right(
+cdef (int, double) __update_in_canonical_form_right(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
 ):
     assert PyArray_Check(someA) and (PyArray_NDIM(someA) == 3)
@@ -24,19 +24,18 @@ cdef tuple[int, float] __update_in_canonical_form_right(
         # Split tensor
         tuple svd = __svd(_as_2tensor(A, a * i, b))
         cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
         cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
         #
         # Truncate and store in state
-        new_s_and_err = truncation._truncate(<cnp.ndarray>PyTuple_GET_ITEM(svd, 1),
-                                             truncation)
-        cnp.ndarray new_s = <cnp.ndarray>PyTuple_GET_ITEM(new_s_and_err, 0)
-        Py_ssize_t D = PyArray_SIZE(new_s)
+        double err = truncation._truncate(s, truncation)
+        Py_ssize_t D = PyArray_SIZE(s)
     state[site] = _as_3tensor(_resize_matrix(U, -1, D), a, i, D)
     site += 1
     # np.einsum("ab,bic->aic", sV, state[site])
     state[site] = __contract_last_and_first(
-        _as_2tensor(new_s, D, 1) * _resize_matrix(V, D, -1), state[site])
-    return site, <object>PyTuple_GET_ITEM(new_s_and_err, 1)
+        _as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), state[site])
+    return site, err
 
 
 def _update_in_canonical_form_right(state, A, site, truncation):
@@ -46,7 +45,7 @@ def _update_in_canonical_form_right(state, A, site, truncation):
     return __update_in_canonical_form_right(state, <cnp.ndarray>A, site, truncation)
 
 
-cdef tuple[int, float] __update_in_canonical_form_left(
+cdef (int, double) __update_in_canonical_form_left(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
 ):
     """Insert a tensor in canonical form into the MPS state at the given site.
@@ -64,17 +63,16 @@ cdef tuple[int, float] __update_in_canonical_form_left(
         #
         # Split tensor
         cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
         cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
         #
         # Truncate and store in state
-        new_s_and_err = truncation._truncate(<cnp.ndarray>PyTuple_GET_ITEM(svd, 1),
-                                             truncation)
-        cnp.ndarray new_s = <cnp.ndarray>PyTuple_GET_ITEM(new_s_and_err, 0)
-        Py_ssize_t D = PyArray_SIZE(new_s)
+        double err = truncation._truncate(s, truncation)
+        Py_ssize_t D = PyArray_SIZE(s)
     state[site] = _as_3tensor(_resize_matrix(V, D, -1), D, i, b)
     site -= 1
-    state[site] = __contract_last_and_first(state[site], _resize_matrix(U, -1, D) * new_s)
-    return site, <object>PyTuple_GET_ITEM(new_s_and_err, 1)
+    state[site] = __contract_last_and_first(state[site], _resize_matrix(U, -1, D) * s)
+    return site, err
 
 def _update_in_canonical_form_left(state, A, site, truncation):
     assert PyList_Check(state)
@@ -118,16 +116,15 @@ def left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarra
         svd = __svd(_as_2tensor(A, a*d1, d2*b))
         cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
         cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
-        cnp.ndarray S = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
         #
         # Truncate tensor
-        new_S_and_err = strategy._truncate(S, strategy)
-        cnp.ndarray new_S = <cnp.ndarray>PyTuple_GET_ITEM(new_S_and_err, 0)
-        Py_ssize_t D = PyArray_SIZE(new_S)
+        double err = strategy._truncate(s, strategy)
+        Py_ssize_t D = PyArray_SIZE(s)
     return (
         _as_3tensor(_resize_matrix(U, -1, D), a, d1, D),
-        _as_3tensor(_as_2tensor(new_S, D, 1) * _resize_matrix(V, D, -1), D, d2, b),
-        <object>PyTuple_GET_ITEM(new_S_and_err, 1),
+        _as_3tensor(_as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), D, d2, b),
+        err,
     )
 
 
@@ -148,14 +145,13 @@ def right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarr
         svd = __svd(_as_2tensor(A, a*d1, d2*b))
         cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
         cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
         #
         # Truncate tensor
-        new_S_and_err = strategy._truncate(<cnp.ndarray>PyTuple_GET_ITEM(svd, 1),
-                                           strategy)
-        cnp.ndarray new_S = <cnp.ndarray>PyTuple_GET_ITEM(new_S_and_err, 0)
-        Py_ssize_t D = PyArray_SIZE(new_S)
+        double err = strategy._truncate(s, strategy)
+        Py_ssize_t D = PyArray_SIZE(s)
     return (
-        _as_3tensor(_resize_matrix(U, -1, D) * new_S, a, d1, D),
+        _as_3tensor(_resize_matrix(U, -1, D) * s, a, d1, D),
         _as_3tensor(_resize_matrix(V, D, -1), D, d2, b),
-        <object>PyTuple_GET_ITEM(new_S_and_err, 1)
+        err,
     )
