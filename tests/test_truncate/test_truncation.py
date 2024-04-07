@@ -19,7 +19,7 @@ class TestStrategy(tools.TestCase):
             tolerance=0.5,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0]))
         self.assertAlmostEqual(err, np.sum(s[1:] ** 2))
 
@@ -28,7 +28,7 @@ class TestStrategy(tools.TestCase):
             tolerance=0.05,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0, 0.1]))
         self.assertAlmostEqual(err, np.sum(s[2:] ** 2))
 
@@ -37,7 +37,7 @@ class TestStrategy(tools.TestCase):
             tolerance=0.005,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0, 0.1, 0.01]))
         self.assertAlmostEqual(err, np.sum(s[3:] ** 2))
 
@@ -46,7 +46,7 @@ class TestStrategy(tools.TestCase):
             tolerance=0.0005,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0, 0.1, 0.01, 0.001]))
         self.assertAlmostEqual(err, np.sum(s[4:] ** 2))
 
@@ -55,7 +55,7 @@ class TestStrategy(tools.TestCase):
             tolerance=0.00005,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, s)
         self.assertAlmostEqual(err, 0.0)
 
@@ -74,7 +74,7 @@ class TestStrategy(tools.TestCase):
             tolerance=0.1,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0]))
         self.assertAlmostEqual(err, norm_errors[0])
 
@@ -83,7 +83,7 @@ class TestStrategy(tools.TestCase):
             tolerance=1e-3,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0, 0.1]))
         self.assertAlmostEqual(err, norm_errors[1])
 
@@ -92,7 +92,7 @@ class TestStrategy(tools.TestCase):
             tolerance=1e-5,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0, 0.1, 0.01]))
         self.assertAlmostEqual(err, norm_errors[2])
 
@@ -101,7 +101,7 @@ class TestStrategy(tools.TestCase):
             tolerance=1e-7,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, np.array([1.0, 0.1, 0.01, 0.001]))
         self.assertAlmostEqual(err, norm_errors[3])
 
@@ -110,6 +110,6 @@ class TestStrategy(tools.TestCase):
             tolerance=1e-9,
             normalize=False,
         )
-        news, err = truncate_vector(s, strategy)
+        news, err = truncate_vector(s.copy(), strategy)
         self.assertSimilar(news, s)
         self.assertAlmostEqual(err, norm_errors[4])
