@@ -6,6 +6,7 @@ from cpython cimport (
     PyList_GET_ITEM
     )
 
+
 cdef tuple[np.ndarray, np.ndarray, float] _ortho_right(cnp.ndarray A, Strategy strategy):
     cdef:
         cnp.ndarray Aarray = _copy_array(A)
@@ -17,7 +18,11 @@ cdef tuple[np.ndarray, np.ndarray, float] _ortho_right(cnp.ndarray A, Strategy s
     U, s, V, = __svd(_as_2tensor(Aarray, a*i, b))
     s, err = strategy._truncate(s, strategy)
     D = cnp.PyArray_SIZE(s)
-    return _as_3tensor(U[:, :D], a, i, D), _as_2tensor(s, D, 1) * V[:D, :], err
+    return (
+        _as_3tensor(_resize_matrix(U, -1, D), a, i, D),
+        _as_2tensor(s, D, 1) * _resize_matrix(V, D, -1),
+        err
+        )
 
 
 cdef tuple[np.ndarray, np.ndarray, float] _ortho_left(cnp.ndarray A, Strategy strategy):
@@ -31,7 +36,11 @@ cdef tuple[np.ndarray, np.ndarray, float] _ortho_left(cnp.ndarray A, Strategy st
     U, s, V = __svd(_as_2tensor(Aarray, a, i * b).copy())
     s, err = strategy._truncate(s, strategy)
     D = cnp.PyArray_SIZE(s)
-    return _as_3tensor(V[:D, :], D, i, b), U[:, :D] * s, err
+    return (
+        _as_3tensor(_resize_matrix(V, D, -1), D, i, b),
+        _resize_matrix(U, -1, D) * s,
+        err
+        )
 
 
 cdef tuple[int, float] __update_in_canonical_form_right(
@@ -126,8 +135,8 @@ def left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarra
     S, err = strategy._truncate(S, strategy)
     D = cnp.PyArray_SIZE(S)
     return (
-        _as_3tensor(U[:, :D], a, d1, D),
-        _as_3tensor(_as_2tensor(S, D, 1) * V[:D,:], D, d2, b),
+        _as_3tensor(_resize_matrix(U, -1, D), a, d1, D),
+        _as_3tensor(_as_2tensor(S, D, 1) * _resize_matrix(V, D, -1), D, d2, b),
         err,
     )
 
@@ -150,7 +159,7 @@ def right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarr
     S, err = strategy._truncate(S, strategy)
     D = cnp.PyArray_SIZE(S)
     return (
-        _as_3tensor(U[:, :D] * S, a, d1, D),
-        _as_3tensor(V[:D, :], D, d2, b),
+        _as_3tensor(_resize_matrix(U, -1, D) * S, a, d1, D),
+        _as_3tensor(_resize_matrix(V, D, -1), D, d2, b),
         err
     )

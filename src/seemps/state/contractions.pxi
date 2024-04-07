@@ -74,6 +74,25 @@ cdef cnp.ndarray _copy_array(cnp.ndarray A):
                                             cnp.NPY_ARRAY_ENSURECOPY |
                                             cnp.NPY_ARRAY_C_CONTIGUOUS)
 
+cdef cnp.ndarray _resize_matrix(cnp.ndarray A, cnp.npy_intp rows, cnp.npy_intp cols):
+    """Equivalent of A[:rows,:cols], creating a fresh new array."""
+    cdef:
+        cnp.npy_intp old_rows = cnp.PyArray_DIM(A, 0)
+        cnp.npy_intp old_cols = cnp.PyArray_DIM(A, 1)
+    if rows < 0:
+        rows = old_rows
+    if cols < 0:
+        cols = old_cols
+    if rows == old_rows and cols == old_cols:
+        return A
+    cdef:
+        cnp.ndarray output = _empty_matrix(rows, cols, cnp.PyArray_TYPE(A))
+        cdef cnp.npy_intp *dims = cnp.PyArray_DIMS(A)
+    dims[0] = rows
+    dims[1] = cols
+    cnp.PyArray_CopyInto(output, A)
+    return output
+
 cdef cnp.ndarray _adjoint(cnp.ndarray A):
     cdef cnp.ndarray a = cnp.PyArray_SwapAxes(A, 0, 1)
     if cnp.PyArray_ISCOMPLEX(A):
