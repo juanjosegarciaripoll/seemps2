@@ -4,6 +4,13 @@ cimport cpython
 from libc.math cimport sqrt
 from libc.string cimport memcpy
 from ..typing  import Environment, Tensor3
+from numpy cimport (
+    PyArray_Check,
+    PyArray_DIM,
+    PyArray_NDIM,
+    PyArray_SIZE,
+    PyArray_DATA
+    )
 
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
