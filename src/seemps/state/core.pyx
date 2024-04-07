@@ -245,6 +245,7 @@ def truncate_vector(s, Strategy strategy):
     return strategy._truncate(<cnp.ndarray>s, strategy)
 
 include "gemm.pxi"
+include "svd.pxi"
 include "contractions.pxi"
 include "environments.pxi"
-include "svd.pxi"
+include "schmidt.pxi"

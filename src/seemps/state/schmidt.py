@@ -17,6 +17,7 @@ from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 SVD_LAPACK_DRIVER = "gesvd"
 
 from seemps.state.core import _svd as _our_svd
+from seemps.state.core import ortho_right, ortho_left, left_orth_2site, right_orth_2site
 
 
 def schmidt_weights(A: Tensor3) -> Vector:
@@ -31,48 +32,6 @@ def schmidt_weights(A: Tensor3) -> Vector:
     s *= s
     s /= np.sum(s)
     return s
-
-
-def ortho_right(A, strategy: Strategy):
-    α, i, β = A.shape
-    U, s, V = _our_svd(A.reshape(α * i, β).copy())
-    s, err = truncate_vector(s, strategy)
-    D = s.size
-    return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
-
-
-def ortho_left(A, strategy: Strategy):
-    α, i, β = A.shape
-    U, s, V = _our_svd(A.reshape(α, i * β).copy())
-    s, err = truncate_vector(s, strategy)
-    D = s.size
-    return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
-
-
-def left_orth_2site(AA, strategy: Strategy):
-    """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
-    that 'B' is a left-isometry, truncating the size 'r' according
-    to the given 'strategy'. Tensor 'AA' may be overwritten."""
-    α, d1, d2, β = AA.shape
-    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
-    S, err = truncate_vector(S, strategy)
-    D = S.size
-    return (
-        U[:, :D].reshape(α, d1, D),
-        (S.reshape(D, 1) * V[:D, :]).reshape(D, d2, β),
-        err,
-    )
-
-
-def right_orth_2site(AA, strategy: Strategy):
-    """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
-    that 'C' is a right-isometry, truncating the size 'r' according
-    to the given 'strategy'. Tensor 'AA' may be overwritten."""
-    α, d1, d2, β = AA.shape
-    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
-    S, err = truncate_vector(S, strategy)
-    D = S.size
-    return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
 
 
 def vector2mps(

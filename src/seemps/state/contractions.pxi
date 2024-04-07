@@ -65,6 +65,11 @@ cdef cnp.ndarray _empty_vector(Py_ssize_t size, int dtype):
     cdef cnp.npy_intp *dims_data = [size]
     return <cnp.ndarray>cnp.PyArray_SimpleNew(1, dims_data, dtype)
 
+cdef cnp.ndarray _copy_array(cnp.ndarray A):
+    return <cnp.ndarray>cnp.PyArray_FROM_OF(A,
+                                            cnp.NPY_ARRAY_ENSURECOPY |
+                                            cnp.NPY_ARRAY_C_CONTIGUOUS)
+
 cdef cnp.ndarray _adjoint(cnp.ndarray A):
     cdef cnp.ndarray a = cnp.PyArray_SwapAxes(A, 0, 1)
     if cnp.PyArray_ISCOMPLEX(A):
