@@ -172,14 +172,9 @@ cdef void _normalize(cnp.float64_t *data, Py_ssize_t N) noexcept nogil:
 
 cdef void _resize_vector_in_place(cnp.ndarray s, Py_ssize_t N):
    cdef:
-       cnp.ndarray aux = s[:N]
        cnp.npy_intp size = N
        cnp.PyArray_Dims dims = cnp.PyArray_Dims(&size, 1)
    PyArray_Resize(s, &dims, 0, cnp.NPY_CORDER)
-   if s.size != aux.size:
-       print(s)
-       print(aux)
-       print(N)
 
 cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
     global _errors_buffer

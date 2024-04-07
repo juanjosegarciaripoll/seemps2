@@ -3,8 +3,6 @@ import scipy.linalg
 from seemps.state.core import _svd
 from .. import tools
 
-print("LOADED TESTS")
-
 
 class TestSVD(tools.TestCase):
     def size_iterator(self, max_size: int = 6):
