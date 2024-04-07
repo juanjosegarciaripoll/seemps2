@@ -3,10 +3,8 @@ cdef cnp.ndarray _as_matrix(cnp.ndarray A, Py_ssize_t rows, Py_ssize_t cols):
     cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 2)
     return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
 
-def _contract_last_and_first(A, B) -> cnp.ndarray:
+cdef cnp.ndarray __contract_last_and_first(cnp.ndarray A, cnp.ndarray B):
     """Contract last index of `A` and first from `B`"""
-    if (cnp.PyArray_Check(A) == 0 or cnp.PyArray_Check(B) == 0):
-        raise ValueError("_contract_last_and_first expects tensors")
     cdef:
         cnp.ndarray Aarray = <cnp.ndarray>A
         cnp.ndarray Barray = <cnp.ndarray>B
@@ -32,6 +30,12 @@ def _contract_last_and_first(A, B) -> cnp.ndarray:
     cdef:
         cnp.PyArray_Dims dims = cnp.PyArray_Dims(&dims_data[0], ndimA + ndimB)
     return <cnp.ndarray>cnp.PyArray_Newshape(C, &dims, cnp.NPY_CORDER)
+
+def _contract_last_and_first(A, B) ->  cnp.ndarray:
+    """Contract last index of `A` and first from `B`"""
+    if (cnp.PyArray_Check(A) == 0 or cnp.PyArray_Check(B) == 0):
+        raise ValueError("_contract_last_and_first expects tensors")
+    return __contract_last_and_first(A, B)
 
 
 cdef _matmul = np.matmul
