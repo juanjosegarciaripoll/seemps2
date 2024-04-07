@@ -11,6 +11,7 @@ from numpy cimport (
     PyArray_SIZE,
     PyArray_DATA,
     PyArray_Resize,
+    PyArray_DIMS,
     )
 
 MAX_BOND_DIMENSION = 0x7fffffff
@@ -171,10 +172,7 @@ cdef void _normalize(cnp.float64_t *data, Py_ssize_t N) noexcept nogil:
     _rescale_if_not_zero(data, _norm(data, N), N)
 
 cdef void _resize_vector_in_place(cnp.ndarray s, Py_ssize_t N):
-   cdef:
-       cnp.npy_intp size = N
-       cnp.PyArray_Dims dims = cnp.PyArray_Dims(&size, 1)
-   PyArray_Resize(s, &dims, 0, cnp.NPY_CORDER)
+   PyArray_DIMS(s)[0] = N
 
 cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
     global _errors_buffer
@@ -183,11 +181,11 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
         double max_error, new_norm, final_error
         double total = 0.0
         cnp.float64_t *errors
-        cnp.float64_t *s_start = (<cnp.float64_t*>cnp.PyArray_DATA(s))
+        cnp.float64_t *s_start = (<cnp.float64_t*>PyArray_DATA(s))
         cnp.float64_t *data = &s_start[N-1]
     if cnp.PyArray_SIZE(_errors_buffer) <= N:
         _errors_buffer = _make_empty_float64_vector(2 * N)
-    errors = <cnp.float64_t*>cnp.PyArray_DATA(_errors_buffer)
+    errors = <cnp.float64_t*>PyArray_DATA(_errors_buffer)
     #
     # Compute the cumulative sum of the reduced density matrix eigen values
     # in reversed order. Thus errors[i] is the error we make when we drop
@@ -210,12 +208,14 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
     if strategy.normalize:
         _rescale_if_not_zero(s_start, sqrt(total - max_error), final_size)
     if final_size < N:
-        _resize_vector_in_place(s, final_size)
+        # _resize_vector_in_place(s, final_size)
+        # TODO: HACK! This is fast, but unsafe
+        PyArray_DIMS(s)[0] = final_size
     return max_error
 
 cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
     cdef:
-        cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
+        cnp.float64_t *data = <cnp.float64_t*>PyArray_DATA(s)
         double max_error = strategy.tolerance * data[0]
         Py_ssize_t i, N = s.size
         Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
@@ -229,12 +229,14 @@ cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
     if strategy.normalize:
         _normalize(data, final_size)
     if final_size < N:
-        _resize_vector_in_place(s, final_size)
+        # _resize_vector_in_place(s, final_size)
+        # TODO: HACK! This is fast, but unsafe
+        PyArray_DIMS(s)[0] = final_size
     return max_error
 
 cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     cdef:
-        cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
+        cnp.float64_t *data = <cnp.float64_t*>PyArray_DATA(s)
         double max_error = strategy.tolerance
         Py_ssize_t i, N = s.size
         Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
@@ -248,17 +250,16 @@ cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     if strategy.normalize:
         _normalize(data, final_size)
     if final_size < N:
-        _resize_vector_in_place(s, final_size)
+        # _resize_vector_in_place(s, final_size)
+        # TODO: HACK! This is fast, but unsafe
+        PyArray_DIMS(s)[0] = final_size
     return max_error
 
-# TODO: Make truncate_vector() return the only value that changes, as
-# 's' is destructively modified
-def truncate_vector(s, Strategy strategy):
-    if (cnp.PyArray_Check(s) == 0 or
-        cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or
-        cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):
-        raise ValueError("truncate_vector() requires float vector")
-    return s, strategy._truncate(<cnp.ndarray>s, strategy)
+def destructively_truncate_vector(s, Strategy strategy) -> float:
+    assert (cnp.PyArray_Check(s) and
+            cnp.PyArray_TYPE(<cnp.ndarray>s) == cnp.NPY_FLOAT64 or
+            cnp.PyArray_NDIM(<cnp.ndarray>s) == 1)
+    return strategy._truncate(<cnp.ndarray>s, strategy)
 
 include "gemm.pxi"
 include "svd.pxi"

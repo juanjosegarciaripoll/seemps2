@@ -5,7 +5,7 @@ from math import sqrt
 from typing import Sequence, Any, Callable
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
-from .core import Strategy, truncate_vector, DEFAULT_STRATEGY
+from .core import Strategy, DEFAULT_STRATEGY
 from scipy.linalg import svd, LinAlgError  # type: ignore
 from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 
