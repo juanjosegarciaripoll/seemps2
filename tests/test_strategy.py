@@ -48,10 +48,11 @@ class TestStrategyAbsoluteSingularValue(TestStrategy):
             tolerance=0.5e-4,
         )
         values = self.logarithmic_values()
+        orig_values = values.copy()
         s, err = truncate_vector(values, strategy)
         self.assertEqual(s.size, 4)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[4:] ** 2))
+        self.assertTrue(s is values)
+        self.assertEqual(err, np.sum(orig_values[4:] ** 2))
 
     def test_strategy_absolute_singular_value_respects_max_bond_dimension(self):
         values = np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
@@ -61,18 +62,21 @@ class TestStrategyAbsoluteSingularValue(TestStrategy):
             max_bond_dimension=2,
         )
         values = self.logarithmic_values()
+        orig_values = values.copy()
         s, err = truncate_vector(values, strategy)
         self.assertEqual(s.size, 2)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[2:] ** 2))
+        self.assertTrue(s is values)
+        self.assertEqual(err, np.sum(orig_values[2:] ** 2))
 
     def test_strategy_absolute_singular_value_zero_tolerance_behavior(self):
         values = np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
         strategy = Strategy(method=Truncation.ABSOLUTE_SINGULAR_VALUE, tolerance=0.0)
         values = self.logarithmic_values()
+        orig_values = values.copy()
         s, err = truncate_vector(values, strategy)
         self.assertEqual(s.size, values.size)
         self.assertTrue(s is values)
+        self.assertSimilar(s, orig_values)
         self.assertEqual(err, 0.0)
 
     def test_strategy_zero_tolerance_changes_method(self):
@@ -94,10 +98,11 @@ class TestStrategyRelativeSingularValue(TestStrategy):
             tolerance=0.5e-4,
         )
         values = self.logarithmic_values()
+        orig_values = values.copy()
         s, err = truncate_vector(values, strategy)
         self.assertEqual(s.size, 5)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[5:] ** 2))
+        self.assertTrue(s is values)
+        self.assertEqual(err, np.sum(orig_values[5:] ** 2))
 
     def test_strategy_relative_singular_value_respects_max_bond_dimension(self):
         values = np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
@@ -107,7 +112,8 @@ class TestStrategyRelativeSingularValue(TestStrategy):
             max_bond_dimension=2,
         )
         values = self.logarithmic_values()
+        orig_values = values.copy()
         s, err = truncate_vector(values, strategy)
         self.assertEqual(s.size, 2)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[2:] ** 2))
+        self.assertTrue(s is values)
+        self.assertEqual(err, np.sum(orig_values[2:] ** 2))
