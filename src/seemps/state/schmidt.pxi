@@ -1,3 +1,11 @@
+from cpython cimport (
+    PyList_Check,
+    PyList_GET_SIZE,
+    PyList_SetItem,
+    PyList_SetItem,
+    PyList_GET_ITEM
+    )
+
 cdef tuple[np.ndarray, np.ndarray, float] _ortho_right(cnp.ndarray A, Strategy strategy):
     cdef:
         cnp.ndarray Aarray = _copy_array(A)
@@ -25,60 +33,77 @@ cdef tuple[np.ndarray, np.ndarray, float] _ortho_left(cnp.ndarray A, Strategy st
     D = cnp.PyArray_SIZE(s)
     return _as_3tensor(V[:D, :], D, i, b), U[:, :D] * s, err
 
-# TODO: Replace einsum by a more efficient form
-def _update_in_canonical_form_right(
-    state: list[Tensor3], A: Tensor3, Py_ssize_t site, Strategy truncation
-) -> tuple[int, float]:
+
+cdef tuple[int, float] __update_in_canonical_form_right(
+    list[Tensor3] state, cnp.ndarray A, Py_ssize_t site, Strategy truncation
+):
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    if (cpython.PyList_Check(state) == 0 or
-        cnp.PyArray_Check(A) == 0 or
-        cnp.PyArray_NDIM(A) != 3):
-        raise ValueError()
     cdef:
-        Py_ssize_t L = cpython.PyList_GET_SIZE(state)
+        Py_ssize_t L = PyList_GET_SIZE(state)
     if site + 1 == L:
-        state[site] = A
+        PyList_SetItem(state, site, A)
         return site, 0.0
-    state[site], sV, err = _ortho_right(A, truncation)
+    A, sV, err = _ortho_right(<cnp.ndarray>A, truncation)
+    state[site] = A
     site += 1
     # np.einsum("ab,bic->aic", sV, state[site])
-    state[site] = _contract_last_and_first(sV, state[site])
+    state[site] = __contract_last_and_first(<cnp.ndarray>sV, state[site])
     return site, err
 
 
-# TODO: Replace einsum by a more efficient form
-def _update_in_canonical_form_left(
-    state: list[Tensor3], A: Tensor3, site: int, truncation: Strategy
-) -> tuple[int, float]:
+def _update_in_canonical_form_right(state, A, site, truncation):
+    if (PyList_Check(state) == 0 or
+        cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_NDIM(A) != 3):
+        raise ValueError()
+    return __update_in_canonical_form_right(state, <cnp.ndarray>A, site, truncation)
+
+
+cdef tuple[int, float] __update_in_canonical_form_left(
+    list[Tensor3] state, cnp.ndarray A, Py_ssize_t site, Strategy truncation
+):
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    if (cpython.PyList_Check(state) == 0 or
+    if (PyList_Check(state) == 0 or
         cnp.PyArray_Check(A) == 0 or
         cnp.PyArray_NDIM(A) != 3):
         raise ValueError()
     if site == 0:
-        state[site] = A
+        PyList_SetItem(state, 0, A)
         return site, 0.0
-    state[site], Us, err = _ortho_left(A, truncation)
+    A, Us, err = _ortho_left(<cnp.ndarray>A, truncation)
+    state[site] = A
     site -= 1
     # np.einsum("aib,bc->aic", state[site], Us)
-    state[site] = np.matmul(state[site], Us)
+    state[site] = __contract_last_and_first(state[site], <cnp.ndarray>Us)
     return site, err
 
+def _update_in_canonical_form_left(state, A, site, truncation):
+    if (PyList_Check(state) == 0 or
+        cnp.PyArray_Check(A) == 0 or
+        cnp.PyArray_NDIM(A) != 3):
+        raise ValueError()
+    return __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
 
-def _canonicalize(state: list[Tensor3], center: int, truncation: Strategy) -> float:
+
+def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float:
     """Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`."""
     # TODO: Revise the cumulative error update. Does it follow update_error()?
+    if (PyList_Check(state) == 0):
+        raise ValueError()
     cdef:
-        Py_ssize_t i, L = cpython.PyList_GET_SIZE(state)
+        Py_ssize_t i, L = PyList_GET_SIZE(state)
         double err = 0.0, errk
+        cnp.ndarray A
     for i in range(0, center):
-        _, errk = _update_in_canonical_form_right(state, state[i], i, truncation)
+        A = state[i]
+        _, errk = __update_in_canonical_form_right(state, A, i, truncation)
         err += errk
     for i in range(L - 1, center, -1):
-        _, errk = _update_in_canonical_form_left(state, state[i], i, truncation)
+        A = state[i]
+        _, errk = __update_in_canonical_form_left(state, A, i, truncation)
         err += errk
     return err
 
