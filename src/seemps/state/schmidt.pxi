@@ -3,7 +3,8 @@ from cpython cimport (
     PyList_GET_SIZE,
     PyList_SetItem,
     PyList_SetItem,
-    PyList_GET_ITEM
+    PyList_GET_ITEM,
+    PyTuple_GET_ITEM
     )
 
 
@@ -14,8 +15,10 @@ cdef tuple[np.ndarray, np.ndarray, float] _ortho_right(cnp.ndarray A, Strategy s
         Py_ssize_t i = cnp.PyArray_DIM(Aarray, 1)
         Py_ssize_t b = cnp.PyArray_DIM(Aarray, 2)
         Py_ssize_t D
-        cnp.ndarray U, s, V
-    U, s, V, = __svd(_as_2tensor(Aarray, a*i, b))
+        tuple svd = __svd(_as_2tensor(Aarray, a*i, b))
+        cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
+        cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
     s, err = strategy._truncate(s, strategy)
     D = cnp.PyArray_SIZE(s)
     return (
@@ -32,8 +35,10 @@ cdef tuple[np.ndarray, np.ndarray, float] _ortho_left(cnp.ndarray A, Strategy st
         Py_ssize_t i = cnp.PyArray_DIM(Aarray, 1)
         Py_ssize_t b = cnp.PyArray_DIM(Aarray, 2)
         Py_ssize_t D
-        cnp.ndarray U, s, V
-    U, s, V = __svd(_as_2tensor(Aarray, a, i * b).copy())
+        tuple svd = __svd(_as_2tensor(Aarray, a, i * b))
+        cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
+        cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
     s, err = strategy._truncate(s, strategy)
     D = cnp.PyArray_SIZE(s)
     return (
