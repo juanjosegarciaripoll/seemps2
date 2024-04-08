@@ -39,6 +39,10 @@ inline auto array_dims(const py::object &a) {
   return PyArray_DIMS(to_array(a));
 }
 
+inline auto vector_resize_in_place(const py::object &a, size_t new_size) {
+  array_dims(a)[0] = new_size;
+}
+
 template <typename elt> inline elt *array_data(const py::object &a) {
   return const_cast<elt *>(static_cast<elt *>(PyArray_DATA(to_array(a))));
 }

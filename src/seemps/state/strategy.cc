@@ -5,13 +5,8 @@
 
 namespace seemps {
 
-static std::tuple<py::array_t<double>, double>
-_truncate_do_not_truncate(const py::object &a, const Strategy &s) {
-  return {a, 0.0};
-}
-
-static std::tuple<py::object, double>
-_truncate_relative_norm_squared(const py::object &a, const Strategy &s) {
+static double _truncate_relative_norm_squared(const py::object &a,
+                                              const Strategy &s) {
   static std::vector<double> buffer(1024, 0.0);
   size_t N = array_size(a);
   buffer.resize(N + 1);
@@ -43,15 +38,14 @@ _truncate_relative_norm_squared(const py::object &a, const Strategy &s) {
     _normalize(data_start, final_size, std::sqrt(total - max_error));
   }
   if (final_size < N) {
-    return {a[py::slice(py::int_(0), py::int_(final_size), py::int_(1))],
-            max_error};
+    vector_resize_in_place(a, final_size);
   }
-  return {a, max_error};
+  return max_error;
 }
 
-static std::tuple<py::object, double>
-_truncate_absolute_singular_value(const py::object &a, const Strategy &s,
-                                  double max_error) {
+static double _truncate_absolute_singular_value(const py::object &a,
+                                                const Strategy &s,
+                                                double max_error) {
   double *data = array_data<double>(a);
   size_t N = seemps::array_size(a);
 
@@ -75,14 +69,12 @@ _truncate_absolute_singular_value(const py::object &a, const Strategy &s,
     _normalize(data, final_size);
   }
   if (final_size < N) {
-    return {a[py::slice(py::int_(0), py::int_(final_size), py::int_(1))],
-            max_error};
+    vector_resize_in_place(a, final_size);
   }
-  return {a, max_error};
+  return max_error;
 }
 
-std::tuple<py::object, double> truncate_vector(const py::object a,
-                                               const Strategy &s) {
+double destructively_truncate_vector(const py::object a, const Strategy &s) {
   if (!PyArray_Check(a.ptr())) {
     throw std::invalid_argument("truncate_vector expected an ndarray");
   }
@@ -97,7 +89,7 @@ std::tuple<py::object, double> truncate_vector(const py::object a,
     return _truncate_absolute_singular_value(a, s, s.get_tolerance());
   case Truncation::DO_NOT_TRUNCATE:
   default:
-    return _truncate_do_not_truncate(a, s);
+    return 0.0;
   }
 }
 

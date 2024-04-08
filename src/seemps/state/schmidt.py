@@ -5,14 +5,14 @@ from math import sqrt
 from typing import Sequence, Any, Callable
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
-from .core import Strategy, truncate_vector, DEFAULT_STRATEGY
+from .core import Strategy, destructively_truncate_vector, DEFAULT_STRATEGY
 from scipy.linalg import svd, LinAlgError  # type: ignore
 from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 
 #
-# Type of LAPACK driver used for solving singular value decompositions.
-# The "gesdd" algorithm is the default in Python and is faster, but it
-# may produced wrong results, specially in ill-conditioned matrices.
+#Type of LAPACK driver used for solving singular value decompositions.
+#The "gesdd" algorithm is the default in Python and is faster, but it
+#may produced wrong results, specially in ill - conditioned matrices.
 #
 SVD_LAPACK_DRIVER = "gesdd"
 
@@ -38,7 +38,7 @@ set_svd_driver("gesdd")
 def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     _lapack_svd, _lapack_svd_lwork = _lapack_svd_driver[type(A[0, 0])]
 
-    # compute optimal lwork
+#compute optimal lwork
     lwork, flag = _lapack_svd_lwork(
         A.shape[0],
         A.shape[1],
@@ -48,7 +48,7 @@ def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     if flag != 0:
         raise ValueError("Internal work array size computation failed: %d" % flag)
 
-    # perform decomposition
+#perform decomposition
     u, s, v, info = _lapack_svd(
         A,
         compute_uv=True,
@@ -81,7 +81,7 @@ def schmidt_weights(A: Tensor3) -> Vector:
 def ortho_right(A, strategy: Strategy):
     α, i, β = A.shape
     U, s, V = _our_svd(A.reshape(α * i, β).copy())
-    s, err = truncate_vector(s, strategy)
+    err = destructively_truncate_vector(s, strategy)
     D = s.size
     return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
 
@@ -89,7 +89,7 @@ def ortho_right(A, strategy: Strategy):
 def ortho_left(A, strategy: Strategy):
     α, i, β = A.shape
     U, s, V = _our_svd(A.reshape(α, i * β).copy())
-    s, err = truncate_vector(s, strategy)
+    err = destructively_truncate_vector(s, strategy)
     D = s.size
     return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
 
@@ -100,7 +100,7 @@ def left_orth_2site(AA, strategy: Strategy):
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
     U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
-    S, err = truncate_vector(S, strategy)
+    err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (
         U[:, :D].reshape(α, d1, D),
@@ -115,7 +115,7 @@ def right_orth_2site(AA, strategy: Strategy):
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
     U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
-    S, err = truncate_vector(S, strategy)
+    err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
 

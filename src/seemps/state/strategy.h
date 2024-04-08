@@ -204,7 +204,6 @@ private:
   }
 };
 
-std::tuple<py::object, double> truncate_vector(const py::object a,
-                                               const Strategy &s);
+double destructively_truncate_vector(const py::object a, const Strategy &s);
 
 } // namespace seemps

@@ -19,8 +19,9 @@ static int ok_loaded() {
 PYBIND11_MODULE(core, m) {
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
-  m.def("truncate_vector", &truncate_vector,
-        "Truncate singular values according to specified criteria");
+  m.def("destructively_truncate_vector", &destructively_truncate_vector,
+        "Truncate singular values according to specified criteria, modifying "
+        "the array.");
 
   m.def("_contract_last_and_first", &contract_last_and_first);
 
