@@ -11,21 +11,31 @@ static int ok_loaded() {
   if (PyErr_Occurred()) {
     throw std::runtime_error("Failed to import numpy Python module(s)");
   }
-  numpy = py::module::import("numpy");
-  _matmul = numpy.attr("matmul");
   return 1;
 }
 
 PYBIND11_MODULE(core, m) {
+  load_scipy_wrappers();
+
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
   m.def("destructively_truncate_vector", &destructively_truncate_vector,
         "Truncate singular values according to specified criteria, modifying "
         "the array.");
 
+  py::enum_<Gemm>(m, "GemmOrder")
+      .value("NORMAL", GEMM_NORMAL)
+      .value("TRANSPOSE", GEMM_TRANSPOSE)
+      .value("ADJOINT", GEMM_ADJOINT);
+  m.def("_gemm", &gemm);
+
   m.def("_contract_last_and_first", &contract_last_and_first);
 
   m.def("_contract_nrjl_ijk_klm", &contract_nrjl_ijk_klm);
+
+  py::object OK_LOADED = py::cast(ok_loaded());
+
+  m.attr("STATUS") = OK_LOADED;
 
   py::class_<Strategy>(m, "Strategy")
       .def(py::init<int, double, int, double, size_t, int, bool>(),
@@ -54,9 +64,6 @@ PYBIND11_MODULE(core, m) {
       .def("get_normalize_flag", &Strategy::get_normalize_flag)
       .def("get_simplify_flag", &Strategy::get_simplify_flag)
       .def("__str__", &Strategy::str);
-
-  py::object OK_LOADED = py::cast(ok_loaded());
-  m.attr("STATUS") = OK_LOADED;
 
   py::object DEFAULT_STRATEGY = py::cast(Strategy());
   m.attr("DEFAULT_STRATEGY") = DEFAULT_STRATEGY;

@@ -1,4 +1,5 @@
 import seemps.state
+from seemps.state.core import _gemm, GemmOrder
 from benchmark import BenchmarkSet, BenchmarkGroup
 import numpy as np
 import sys
@@ -32,12 +33,32 @@ def scalar_product(A, B):
     seemps.state.scprod(A, B)
 
 
+def make_two_real_matrices(size):
+    return (np.random.normal(size=(size, size)), np.random.normal(size=(size, size)))
+
+
+def numpy_mmult(A, B):
+    return np.matmul(A, B)
+
+
+def seemps_mmult(A, B):
+    return _gemm(A, GemmOrder.NORMAL, B, GemmOrder.NORMAL)
+
+
 def run_all():
     warmup(64 * 10 * 2 * 10)
+    matrix_sizes = [2, 4, 8, 16, 32, 128, 256, 512]
     data = BenchmarkSet(
         name="Numpy",
         environment=system_version(),
         groups=[
+            BenchmarkGroup.run(
+                name="RMatrix",
+                items=[
+                    ("matmul", numpy_mmult, make_two_real_matrices, matrix_sizes),
+                    ("gemm", seemps_mmult, make_two_real_matrices, matrix_sizes),
+                ],
+            ),
             BenchmarkGroup.run(
                 name="MPS",
                 items=[

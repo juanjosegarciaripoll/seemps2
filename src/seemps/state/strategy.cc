@@ -93,8 +93,6 @@ double destructively_truncate_vector(const py::object a, const Strategy &s) {
   }
 }
 
-py::object numpy, _matmul;
-
 static py::object contract_nrjl_ijk_klm(py::object U, py::object A,
                                         py::object B) {
   if (PyArray_Check(A.ptr()) == 0 || PyArray_Check(B.ptr()) == 0 ||

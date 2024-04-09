@@ -3,22 +3,24 @@
 
 namespace seemps {
 
-double _norm(const double *data, size_t size) {
-  double output = 0.0;
-  for (; size; --size, ++data) {
-    output += (*data) * (*data);
-  }
-  return std::sqrt(output);
+void (*dgemm_ptr)(char *, char *, int *, int *, int *, double *, double *,
+                  int *, double *, int *, double *, double *, int *);
+void (*zgemm_ptr)(char *, char *, int *, int *, int *, std::complex<double> *,
+                  std::complex<double> *, int *, std::complex<double> *, int *,
+                  std::complex<double> *, std::complex<double> *, int *);
+
+template <class f>
+static void load_wrapper(py::dict &__pyx_capi__, const char *name,
+                         f *&pointer) {
+  py::capsule wrapper = __pyx_capi__[name];
+  pointer = wrapper.get_pointer<f>();
 }
 
-void _normalize(double *data, size_t size, double norm) {
-  for (; size; --size, ++data) {
-    *data /= norm;
-  }
-}
-
-void _normalize(double *data, size_t size) {
-  return _normalize(data, size, _norm(data, size));
+void load_scipy_wrappers() {
+  auto cython_blas = py::module_::import("scipy.linalg.cython_blas");
+  py::dict __pyx_capi__ = cython_blas.attr("__pyx_capi__");
+  load_wrapper(__pyx_capi__, "dgemm", dgemm_ptr);
+  load_wrapper(__pyx_capi__, "zgemm", zgemm_ptr);
 }
 
 } // namespace seemps

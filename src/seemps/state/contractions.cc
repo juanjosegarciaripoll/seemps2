@@ -4,6 +4,12 @@
 
 namespace seemps {
 
+py::object _matmul(py::object &A, py::object &B) {
+  auto numpy = py::module_::import("numpy");
+  auto matmul = numpy.attr("matmul");
+  return matmul(A, B);
+}
+
 py::object contract_nrjl_ijk_klm(py::object U, py::object A, py::object B) {
   if (PyArray_Check(A.ptr()) == 0 || PyArray_Check(B.ptr()) == 0 ||
       PyArray_Check(U.ptr()) == 0 || array_ndim(A) != 3 || array_ndim(B) != 3 ||
