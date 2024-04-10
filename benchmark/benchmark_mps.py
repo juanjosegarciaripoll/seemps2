@@ -1,6 +1,7 @@
 import seemps.state
-from seemps.state.core import _gemm, GemmOrder
+from seemps.state.core import _gemm, GemmOrder, _destructive_svd
 from benchmark import BenchmarkSet, BenchmarkGroup
+import scipy.linalg
 import numpy as np
 import sys
 
@@ -33,8 +34,16 @@ def scalar_product(A, B):
     seemps.state.scprod(A, B)
 
 
-def make_two_real_matrices(size):
-    return (np.random.normal(size=(size, size)), np.random.normal(size=(size, size)))
+def make_real_matrix(size, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0x23211)
+    return (rng.normal(size=(size, size)),)
+
+
+def make_two_real_matrices(size, rng=None):
+    if rng is None:
+        rng = np.random.default_rng(0x23211)
+    return make_real_matrix(size, rng=rng) + make_real_matrix(size, rng=rng)
 
 
 def numpy_mmult(A, B):
@@ -43,6 +52,16 @@ def numpy_mmult(A, B):
 
 def seemps_mmult(A, B):
     return _gemm(A, GemmOrder.NORMAL, B, GemmOrder.NORMAL)
+
+
+def scipy_svd(A):
+    return scipy.linalg.svd(
+        A.copy(), full_matrices=False, compute_uv=True, overwrite_a=True
+    )
+
+
+def seemps_svd(A):
+    return _destructive_svd(A.copy())
 
 
 def run_all():
@@ -55,6 +74,8 @@ def run_all():
             BenchmarkGroup.run(
                 name="RMatrix",
                 items=[
+                    ("scipy_svd", scipy_svd, make_real_matrix, matrix_sizes),
+                    ("seemps_svd", seemps_svd, make_real_matrix, matrix_sizes),
                     ("matmul", numpy_mmult, make_two_real_matrices, matrix_sizes),
                     ("gemm", seemps_mmult, make_two_real_matrices, matrix_sizes),
                 ],
