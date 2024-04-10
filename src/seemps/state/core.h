@@ -24,4 +24,6 @@ namespace seemps {
 
 namespace py = pybind11;
 
-}
+using namespace pybind11::literals;
+
+} // namespace seemps

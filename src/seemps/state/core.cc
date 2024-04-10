@@ -37,6 +37,8 @@ PYBIND11_MODULE(core, m) {
 
   m.def("_contract_nrjl_ijk_klm", &contract_nrjl_ijk_klm);
 
+    m.def("_destructive_svd", &destructive_svd);
+
   py::object OK_LOADED = py::cast(ok_loaded());
 
   m.attr("STATUS") = OK_LOADED;

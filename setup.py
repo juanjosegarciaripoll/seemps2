@@ -74,6 +74,7 @@ pybind11_modules = [
         "seemps.state.core",
         [
             "src/seemps/state/blas.cc",
+            "src/seemps/state/svd.cc",
             "src/seemps/state/tensors.cc",
             "src/seemps/state/contractions.cc",
             "src/seemps/state/strategy.cc",

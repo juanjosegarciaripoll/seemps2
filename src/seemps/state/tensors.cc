@@ -3,8 +3,6 @@
 
 namespace seemps {
 
-using namespace pybind11::literals;
-
 /*
  * BLAS Operations
  */
