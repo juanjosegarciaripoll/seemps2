@@ -247,7 +247,7 @@ class MPS(array.TensorArray):
         """
         ρL = self.left_environment(site)
         A = self[site]
-        OL = update_left_environment(A, A, ρL, operator=O)
+        OL = update_left_environment(A, np.matmul(O, A), ρL)
         ρR = self.right_environment(site)
         return join_environments(OL, ρR)
 
@@ -283,9 +283,9 @@ class MPS(array.TensorArray):
         for ndx in range(i, j + 1):
             A = self[ndx]
             if ndx == i:
-                OQL = update_left_environment(A, A, OQL, operator=Opi)
+                OQL = update_left_environment(A, np.matmul(Opi, A), OQL)
             elif ndx == j:
-                OQL = update_left_environment(A, A, OQL, operator=Opj)
+                OQL = update_left_environment(A, np.matmul(Opj, A), OQL)
             else:
                 OQL = update_left_environment(A, A, OQL)
         return join_environments(OQL, self.right_environment(j))
@@ -319,12 +319,8 @@ class MPS(array.TensorArray):
         for i in range(L):
             A = self[i]
             ρR = allρR[i]
-            OρL = update_left_environment(
-                A,
-                A,
-                ρL,
-                operator=operator[i] if isinstance(operator, list) else operator,
-            )
+            opi = operator[i] if isinstance(operator, list) else operator
+            OρL = update_left_environment(A, np.matmul(opi, A), ρL)
             output[i] = join_environments(OρL, ρR)
             ρL = update_left_environment(A, A, ρL)
         return np.array(output)

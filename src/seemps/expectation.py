@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional, Union
 from .typing import Operator, Weight, Vector
+import numpy as np
 from .state.environments import (
     begin_environment,
     end_environment,
@@ -97,7 +98,7 @@ def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     # in a given canonical order or another
     rho = begin_environment()
     for Ai, opi in zip(state, operator_list):
-        rho = update_left_environment(Ai.conj(), Ai, rho, operator=opi)
+        rho = update_left_environment(Ai.conj(), np.matmul(opi, Ai), rho)
     return end_environment(rho)
 
 

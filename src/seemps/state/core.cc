@@ -3,6 +3,7 @@
 #include "core.h"
 #include "tensors.h"
 #include "strategy.h"
+#include "mps.h"
 
 using namespace seemps;
 
@@ -16,6 +17,9 @@ static int ok_loaded() {
 
 PYBIND11_MODULE(core, m) {
   load_scipy_wrappers();
+
+  py::options options;
+  options.disable_function_signatures();
 
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
@@ -90,4 +94,40 @@ PYBIND11_MODULE(core, m) {
       .value("CANONICAL_FORM", Simplification::CANONICAL_FORM)
       .value("VARIATIONAL", Simplification::VARIATIONAL)
       .export_values();
+
+  m.def("scprod", &scprod,
+        R"doc(Compute the scalar product between matrix product states
+    :math:`\langle\xi|\psi\rangle`.
+
+    Parameters
+    ----------
+    bra : MPS
+        Matrix-product state for the bra :math:`\xi`
+    ket : MPS
+        Matrix-product state for the ket :math:`\psi`
+
+    Returns
+    -------
+    float | complex
+        Scalar product.
+		 )doc");
+  m.def(
+      "begin_environment", &_begin_environment, py::arg("D") = int(1),
+      R"doc(Initiate the computation of a left environment from two MPS. The bond
+    dimension χ defaults to 1. Other values are used for states in canonical
+    form that we know how to open and close)doc");
+  m.def(
+      "update_left_environment", &_update_left_environment,
+      R"doc(Extend the left environment with two new tensors, 'B' and 'A' coming
+    from the bra and ket of a scalar product. If an operator is provided, it
+    is contracted with the ket.)doc");
+  m.def(
+      "update_right_environment", &_update_right_environment,
+      R"doc(Extend the left environment with two new tensors, 'B' and 'A' coming
+    from the bra and ket of a scalar product. If an operator is provided, it
+    is contracted with the ket.)doc");
+  m.def("end_environment", &_end_environment,
+        R"doc(Extract the scalar product from the last environment.)doc");
+  m.def("join_environments", &_join_environments,
+        R"doc(Join left and right environments to produce a scalar.)doc");
 }

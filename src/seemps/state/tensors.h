@@ -38,6 +38,10 @@ inline PyArrayObject *to_array(const py::object &a) {
   return reinterpret_cast<PyArrayObject *>(a.ptr());
 }
 
+inline auto is_array(const py::object &a) {
+  return static_cast<bool>(PyArray_Check(a.ptr()) != 0);
+}
+
 inline auto array_size(const py::object &a) {
   return static_cast<size_t>(PyArray_SIZE(to_array(a)));
 }
@@ -105,6 +109,15 @@ inline py::object empty_matrix(npy_intp rows, npy_intp cols, int type) {
   const npy_intp dims[2] = {rows, cols};
   return py::reinterpret_steal<py::object>(PyArray_SimpleNew(2, dims, type));
 }
+
+inline py::object zero_matrix(npy_intp rows, npy_intp cols,
+                              int type = NPY_DOUBLE) {
+  const npy_intp dims[2] = {rows, cols};
+  return py::reinterpret_steal<py::object>(PyArray_ZEROS(2, dims, type, 0));
+}
+
+py::object eye(npy_intp rows, npy_intp cols);
+inline py::object eye(npy_intp rows) { return eye(rows, rows); }
 
 /*
  * Advanced contractions
