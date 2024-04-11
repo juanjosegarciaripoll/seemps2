@@ -77,13 +77,13 @@ std::tuple<py::object, py::object, py::object> destructive_svd(py::object A) {
   A = array_getcontiguous(A);
   if (r == n) {
     // U matrix is destructively overwritten into A
-    VT = zero_matrix(n, r, type);
+    VT = empty_matrix(n, r, type);
     U = A;
   } else {
-    U = zero_matrix(r, m, type);
+    U = empty_matrix(r, m, type);
     VT = A;
   }
-  s = zero_vector(r, NPY_DOUBLE);
+  s = empty_vector(r, NPY_DOUBLE);
   switch (type) {
   case NPY_DOUBLE:
     err = _dgesvd(array_data<double>(A), array_data<double>(U),
@@ -100,7 +100,7 @@ std::tuple<py::object, py::object, py::object> destructive_svd(py::object A) {
     return destructive_svd(array_cast(A, NPY_DOUBLE));
   }
   if (err == 0) {
-    return {VT, s, U};
+    return {std::move(VT), std::move(s), std::move(U)};
   } else if (err < 0) {
     throw std::runtime_error("Wrong argument passed to LAPACK SVD.");
   } else {
