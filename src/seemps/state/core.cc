@@ -133,6 +133,7 @@ PYBIND11_MODULE(core, m) {
   m.def("join_environments", &_join_environments,
         R"doc(Join left and right environments to produce a scalar.)doc");
 
+  m.def("schmidt_weights", &schmidt_weights);
   m.def(
       "_update_in_canonical_form_right", &_update_in_canonical_form_right,
       py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),

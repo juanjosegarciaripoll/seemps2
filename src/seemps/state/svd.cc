@@ -3,6 +3,22 @@
 
 namespace seemps {
 
+py::object schmidt_weights(py::object A) {
+  if (!is_array(A) || array_ndim(A) != 3) {
+    throw std::invalid_argument(
+        "schmidt_weights() only operates on 3-D tensors");
+  }
+  auto d1 = array_dim(A, 0);
+  auto d2 = array_dim(A, 1);
+  auto d3 = array_dim(A, 2);
+  auto [U, s, V] =
+      destructive_svd(array_reshape(array_copy(A), array_dims_t{d1, d2 * d3}));
+  _normalize(array_data<double>(s), array_size(s));
+  return s * s;
+}
+
+// TODO: Add set_svd_driver()
+
 static int _dgesvd(double *A, double *U, double *s, double *VT, int m, int n,
                    int r) {
   int lwork, info;

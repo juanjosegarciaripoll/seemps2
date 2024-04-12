@@ -5,93 +5,15 @@ from math import sqrt
 from typing import Sequence, Any, Callable
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
-from .core import Strategy, destructively_truncate_vector, DEFAULT_STRATEGY
+from .core import (
+    Strategy,
+    destructively_truncate_vector,
+    DEFAULT_STRATEGY,
+    _destructive_svd,
+    schmidt_weights,
+)
 from scipy.linalg import svd, LinAlgError  # type: ignore
 from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
-
-#
-#Type of LAPACK driver used for solving singular value decompositions.
-#The "gesdd" algorithm is the default in Python and is faster, but it
-#may produced wrong results, specially in ill - conditioned matrices.
-#
-SVD_LAPACK_DRIVER = "gesdd"
-
-_lapack_svd_driver: dict[Any, tuple[Callable, Callable]] = dict()
-
-
-def set_svd_driver(driver: str) -> None:
-    global _lapack_svd_driver, SVD_LAPACK_DRIVER
-    SVD_LAPACK_DRIVER = driver
-    _lapack_svd_driver = {
-        dtype: get_lapack_funcs(
-            (driver, driver + "_lwork"),
-            [np.zeros((10, 10), dtype=dtype)],
-            ilp64="preferred",
-        )
-        for dtype in (np.float64, np.complex128)
-    }
-
-
-set_svd_driver("gesdd")
-
-
-def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    _lapack_svd, _lapack_svd_lwork = _lapack_svd_driver[type(A[0, 0])]
-
-#compute optimal lwork
-    lwork, flag = _lapack_svd_lwork(
-        A.shape[0],
-        A.shape[1],
-        compute_uv=True,
-        full_matrices=False,
-    )
-    if flag != 0:
-        raise ValueError("Internal work array size computation failed: %d" % flag)
-
-#perform decomposition
-    u, s, v, info = _lapack_svd(
-        A,
-        compute_uv=True,
-        lwork=int(lwork.real),
-        full_matrices=False,
-        overwrite_a=True,
-    )
-    if info == 0:
-        return u, s, v
-    elif info > 0:
-        raise LinAlgError("SVD did not converge")
-    else:
-        raise ValueError("illegal value in %dth argument of internal gesdd" % -info)
-
-
-def schmidt_weights(A: Tensor3) -> Vector:
-    d1, d2, d3 = A.shape
-    s = svd(
-        A.reshape(d1 * d2, d3),
-        full_matrices=False,
-        compute_uv=False,
-        check_finite=False,
-        lapack_driver=SVD_LAPACK_DRIVER,
-    )
-    s *= s
-    s /= np.sum(s)
-    return s
-
-
-def ortho_right(A, strategy: Strategy):
-    α, i, β = A.shape
-    U, s, V = _our_svd(A.reshape(α * i, β).copy())
-    err = destructively_truncate_vector(s, strategy)
-    D = s.size
-    return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
-
-
-def ortho_left(A, strategy: Strategy):
-    α, i, β = A.shape
-    U, s, V = _our_svd(A.reshape(α, i * β).copy())
-    err = destructively_truncate_vector(s, strategy)
-    D = s.size
-    return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
 
 
 def left_orth_2site(AA, strategy: Strategy):
@@ -99,7 +21,7 @@ def left_orth_2site(AA, strategy: Strategy):
     that 'B' is a left-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
-    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
+    U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
     err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (
@@ -114,7 +36,7 @@ def right_orth_2site(AA, strategy: Strategy):
     that 'C' is a right-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
-    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
+    U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
     err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err

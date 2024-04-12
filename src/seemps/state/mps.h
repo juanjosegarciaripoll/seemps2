@@ -15,6 +15,8 @@ Weight _join_environments(py::object rhoL, py::object rhoR);
 
 Weight scprod(py::object A, py::object B);
 
+py::object schmidt_weights(py::object A);
+
 std::tuple<int, double>
 _update_in_canonical_form_right(py::list state, py::object A, int site,
                                 const Strategy &truncation,
