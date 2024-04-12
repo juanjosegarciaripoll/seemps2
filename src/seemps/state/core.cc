@@ -37,7 +37,7 @@ PYBIND11_MODULE(core, m) {
 
   m.def("_contract_nrjl_ijk_klm", &contract_nrjl_ijk_klm);
 
-    m.def("_destructive_svd", &destructive_svd);
+  m.def("_destructive_svd", &destructive_svd);
 
   py::object OK_LOADED = py::cast(ok_loaded());
 
@@ -132,4 +132,20 @@ PYBIND11_MODULE(core, m) {
         R"doc(Extract the scalar product from the last environment.)doc");
   m.def("join_environments", &_join_environments,
         R"doc(Join left and right environments to produce a scalar.)doc");
+
+  m.def(
+      "_update_in_canonical_form_right", &_update_in_canonical_form_right,
+      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
+      py::arg("overwrite") = false,
+      R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
+    Update the neighboring sites in the process)doc");
+  m.def(
+      "_update_in_canonical_form_left", &_update_in_canonical_form_left,
+      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
+      py::arg("overwrite") = false,
+      R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
+    Update the neighboring sites in the process)doc");
+  m.def("_canonicalize", &_canonicalize,
+        R"doc(Update a list of `Tensor3` objects to be in canonical form
+    with respect to `center`.)doc");
 }

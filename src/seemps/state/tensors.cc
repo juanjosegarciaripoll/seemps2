@@ -4,6 +4,30 @@
 namespace seemps {
 
 /*
+ * Equivalent to A[:rows,:cols]
+ */
+py::object matrix_resize(py::object A, npy_intp rows, npy_intp cols) {
+  auto old_rows = array_dim(A, 0);
+  auto old_cols = array_dim(A, 1);
+  if (rows < 0) {
+    rows = old_rows;
+  }
+  if (cols < 0) {
+    cols = old_cols;
+  }
+  if (rows == old_rows && cols == old_cols) {
+    return A;
+  }
+  auto dims = array_dims(A);
+  std::swap(dims[0], rows);
+  std::swap(dims[1], cols);
+  auto output = array_copy(A);
+  std::swap(dims[0], rows);
+  std::swap(dims[1], cols);
+  return output;
+}
+
+/*
  * BLAS Operations
  */
 

@@ -56,7 +56,7 @@ inline auto is_array(const py::object &a) {
 }
 
 inline auto array_size(const py::object &a) {
-  return static_cast<size_t>(PyArray_SIZE(to_array(a)));
+  return PyArray_SIZE(to_array(a));
 }
 
 inline auto array_type(const py::object &a) {
@@ -101,16 +101,28 @@ template <typename elt> inline elt *array_data(const py::object &a) {
   return const_cast<elt *>(static_cast<elt *>(PyArray_DATA(to_array(a))));
 }
 
+using array_dims_t = std::initializer_list<npy_intp>;
+
 template <class Dimensions>
 inline py::object array_reshape(const py::object &a, Dimensions &d) {
-  PyArray_Dims dims = {&d[0], static_cast<int>(std::size(d))};
+  PyArray_Dims dims = {const_cast<npy_intp *>(&(*std::begin(d))),
+                       static_cast<int>(std::size(d))};
   return py::reinterpret_steal<py::object>(
       PyArray_Newshape(to_array(a), &dims, NPY_CORDER));
 }
 
+// TODO: Make this more general
+py::object matrix_resize(py::object A, npy_intp rows, npy_intp cols);
+
 inline auto as_matrix(const py::object &a, npy_intp rows, npy_intp cols) {
   npy_intp d[2] = {rows, cols};
   return array_reshape(a, d);
+}
+
+inline auto array_copy(const py::object &A) {
+  return py::reinterpret_steal<py::object>(
+      PyArray_FROM_OF(A.ptr(), NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED |
+                                   NPY_ARRAY_ENSURECOPY));
 }
 
 inline auto matrix_product(const py::object &a, const py::object &b) {

@@ -1,5 +1,6 @@
 #pragma once
 #include "core.h"
+#include "strategy.h"
 
 namespace seemps {
 
@@ -13,5 +14,15 @@ Weight _end_environment(py::object rho);
 Weight _join_environments(py::object rhoL, py::object rhoR);
 
 Weight scprod(py::object A, py::object B);
+
+std::tuple<int, double>
+_update_in_canonical_form_right(py::list state, py::object A, int site,
+                                const Strategy &truncation,
+                                bool overwrite = false);
+std::tuple<int, double>
+_update_in_canonical_form_left(py::list state, py::object A, int site,
+                               const Strategy &truncation,
+                               bool overwrite = false);
+double _canonicalize(py::list state, int center, const Strategy &truncation);
 
 } // namespace seemps
