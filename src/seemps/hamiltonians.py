@@ -6,7 +6,7 @@ from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod
 from .mpo import MPO
-from .state import schmidt, DEFAULT_STRATEGY, Strategy
+from .state import DEFAULT_STRATEGY, Strategy
 from .state.core import _destructive_svd, destructively_truncate_vector
 from .typing import Operator, Vector
 from .tools import σx, σy, σz

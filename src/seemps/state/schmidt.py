@@ -2,20 +2,18 @@ from __future__ import annotations
 import numpy as np
 import math
 from math import sqrt
-from typing import Sequence, Any, Callable
+from typing import Sequence
 from numpy.typing import NDArray
-from ..typing import VectorLike, Tensor3, Vector
+from ..typing import VectorLike, Tensor3
 from .core import (
     Strategy,
-    destructively_truncate_vector,
     DEFAULT_STRATEGY,
-    _destructive_svd,
     schmidt_weights,
     left_orth_2site,
     right_orth_2site,
 )
-from scipy.linalg import svd, LinAlgError  # type: ignore
-from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
+
+__all__ = ["schmidt_weights", "left_orth_2site", "right_orth_2site", "vector2mps"]
 
 
 def vector2mps(
