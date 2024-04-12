@@ -7,8 +7,8 @@ from seemps.state import (
     random_uniform_mps,
 )
 from seemps.state.canonical_mps import (
-    _update_in_canonical_form_left,
-    _update_in_canonical_form_right,
+    _update_canonical_left,
+    _update_canonical_right,
     _canonicalize,
 )
 from ..fixture_mps_states import MPSStatesFixture
@@ -18,18 +18,18 @@ from ..tools import *
 class TestCanonicalForm(MPSStatesFixture):
     def test_local_update_canonical(self):
         #
-        # We verify that _update_in_canonical_form() leaves a tensor that
+        # We verify that _update_canonical() leaves a tensor that
         # is an approximate isometry.
         #
         def ok(Ψ, normalization=False):
             strategy = DEFAULT_STRATEGY.replace(normalize=normalization)
             for i in range(Ψ.size - 1):
                 ξ = Ψ.copy()
-                _update_in_canonical_form_right(ξ._data, ξ[i], i, strategy)
+                _update_canonical_right(ξ._data, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], +1))
             for i in range(1, Ψ.size):
                 ξ = Ψ.copy()
-                _update_in_canonical_form_left(ξ._data, ξ[i], i, strategy)
+                _update_canonical_left(ξ._data, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], -1))
 
         run_over_random_uniform_mps(ok)

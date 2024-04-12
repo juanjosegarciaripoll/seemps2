@@ -7,8 +7,8 @@ from . import environments, schmidt
 from seemps.state.core import (
     DEFAULT_STRATEGY,
     Strategy,
-    _update_in_canonical_form_right,
-    _update_in_canonical_form_left,
+    _update_canonical_right,
+    _update_canonical_left,
     _update_canonical_2site_left,
     _update_canonical_2site_right,
     _canonicalize,
@@ -244,11 +244,11 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, err = _update_in_canonical_form_right(
+            self.center, err = _update_canonical_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, err = _update_in_canonical_form_left(
+            self.center, err = _update_canonical_left(
                 self._data, A, self.center, truncation
             )
         self.update_error(err)

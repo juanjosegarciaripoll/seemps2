@@ -135,14 +135,14 @@ PYBIND11_MODULE(core, m) {
 
   m.def("schmidt_weights", &schmidt_weights);
   m.def(
-      "_update_in_canonical_form_right", &_update_in_canonical_form_right,
-      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
+      "_update_canonical_right", &_update_canonical_right, py::arg("state"),
+      py::arg("tensor"), py::arg("site"), py::arg("strategy"),
       py::arg("overwrite") = false,
       R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process)doc");
   m.def(
-      "_update_in_canonical_form_left", &_update_in_canonical_form_left,
-      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
+      "_update_canonical_left", &_update_canonical_left, py::arg("state"),
+      py::arg("tensor"), py::arg("site"), py::arg("strategy"),
       py::arg("overwrite") = false,
       R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process)doc");
