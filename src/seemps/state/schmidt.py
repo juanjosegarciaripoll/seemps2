@@ -13,7 +13,7 @@ from .core import (
     right_orth_2site,
 )
 
-__all__ = ["schmidt_weights", "left_orth_2site", "right_orth_2site", "vector2mps"]
+__all__ = ["schmidt_weights", "vector2mps"]
 
 
 def vector2mps(

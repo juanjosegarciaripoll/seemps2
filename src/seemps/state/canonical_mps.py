@@ -9,6 +9,8 @@ from seemps.state.core import (
     Strategy,
     _update_in_canonical_form_right,
     _update_in_canonical_form_left,
+    _update_canonical_2site_left,
+    _update_canonical_2site_right,
     _canonicalize,
 )
 from .mps import MPS
@@ -270,9 +272,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], err = schmidt.left_orth_2site(
-            AA, strategy
-        )
+        err = _update_canonical_2site_left(self._data, AA, site, strategy)
         self.center = site + 1
         self.update_error(err)
 
@@ -293,9 +293,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], err = schmidt.right_orth_2site(
-            AA, strategy
-        )
+        err = _update_canonical_2site_right(self._data, AA, site, strategy)
         self.center = site
         self.update_error(err)
 

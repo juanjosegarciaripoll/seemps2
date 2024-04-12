@@ -104,36 +104,51 @@ right_orth_2site(py::object AA, const Strategy &strategy) {
           as_3tensor(matrix_resize(V, D, -1), D, d2, b), err};
 }
 
-/*
+double _update_canonical_2site_left(py::list state, py::object A, int site,
+                                    const Strategy &strategy) {
+  if (!is_array(A) || array_ndim(A) != 4) {
+    throw std::invalid_argument(
+        "Invalid tensor passed to _update_canonical_2site_left");
+  }
+  py::object tensor = array_getcontiguous(A);
+  auto a = array_dim(tensor, 0);
+  auto d1 = array_dim(tensor, 1);
+  auto d2 = array_dim(tensor, 2);
+  auto b = array_dim(tensor, 3);
 
+  // Split tensor
+  auto [U, s, V] =
+      destructive_svd(array_reshape(tensor, array_dims_t{a * d1, d2 * b}));
+  auto err = destructively_truncate_vector(s, strategy);
+  auto D = array_size(s);
 
+  state[site] = as_3tensor(matrix_resize(U, -1, D), a, d1, D);
+  state[site + 1] =
+      as_3tensor(as_matrix(s, D, 1) * matrix_resize(V, D, -1), D, d2, b);
+  return err;
+}
 
+double _update_canonical_2site_right(py::list state, py::object A, int site,
+                                     const Strategy &strategy) {
+  if (!is_array(A) || array_ndim(A) != 4) {
+    throw std::invalid_argument(
+        "Invalid tensor passed to _update_canonical_2site_left");
+  }
+  py::object tensor = array_getcontiguous(A);
+  auto a = array_dim(tensor, 0);
+  auto d1 = array_dim(tensor, 1);
+  auto d2 = array_dim(tensor, 2);
+  auto b = array_dim(tensor, 3);
 
-def left_orth_2site(AA, strategy: Strategy):
-  """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
-  that 'B' is a left-isometry, truncating the size 'r' according
-  to the given 'strategy'. Tensor 'AA' may be overwritten."""
-  α, d1, d2, β = AA.shape
-  U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
-  err = destructively_truncate_vector(S, strategy)
-  D = S.size
-  return (
-      U[:, :D].reshape(α, d1, D),
-      (S.reshape(D, 1) * V[:D, :]).reshape(D, d2, β),
-      err,
-  )
+  // Split tensor
+  auto [U, s, V] =
+      destructive_svd(array_reshape(tensor, array_dims_t{a * d1, d2 * b}));
+  auto err = destructively_truncate_vector(s, strategy);
+  auto D = array_size(s);
 
-
-def right_orth_2site(AA, strategy: Strategy):
-  """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
-  that 'C' is a right-isometry, truncating the size 'r' according
-  to the given 'strategy'. Tensor 'AA' may be overwritten."""
-  α, d1, d2, β = AA.shape
-  U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
-  err = destructively_truncate_vector(S, strategy)
-  D = S.size
-  return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
-
- */
+  state[site] = as_3tensor(matrix_resize(U, -1, D) * s, a, d1, D);
+  state[site + 1] = as_3tensor(matrix_resize(V, D, -1), D, d2, b);
+  return err;
+}
 
 } // namespace seemps
