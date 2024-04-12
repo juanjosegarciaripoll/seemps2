@@ -266,7 +266,7 @@ def simplify_mps_sum(
         direction = -direction
     mps._error = 0.0
     base_error = sum(
-        np.abs(weights) * sqrt(state.error()) for weights, state in zip(weights, states)
+        abs(weight) * sqrt(state.error()) for weight, state in zip(weights, states)
     )
     mps.update_error(base_error**2)
     mps.update_error(err)

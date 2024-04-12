@@ -179,7 +179,7 @@ class MPS(array.TensorArray):
                 if n:
                     mps_mult = self.copy()
                     mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult._error *= abs(n * n)
                     return mps_mult
                 return self.zero_state()
             case MPS():
@@ -202,7 +202,7 @@ class MPS(array.TensorArray):
                 if n:
                     mps_mult = self.copy()
                     mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult._error *= abs(n * n)
                     return mps_mult
                 return self.zero_state()
             case _:
