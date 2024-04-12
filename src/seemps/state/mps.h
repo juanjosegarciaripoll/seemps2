@@ -26,5 +26,9 @@ _update_in_canonical_form_left(py::list state, py::object A, int site,
                                const Strategy &truncation,
                                bool overwrite = false);
 double _canonicalize(py::list state, int center, const Strategy &truncation);
+std::tuple<py::object, py::object, double>
+left_orth_2site(py::object AA, const Strategy &strategy);
+std::tuple<py::object, py::object, double>
+right_orth_2site(py::object AA, const Strategy &strategy);
 
 } // namespace seemps

@@ -11,35 +11,11 @@ from .core import (
     DEFAULT_STRATEGY,
     _destructive_svd,
     schmidt_weights,
+    left_orth_2site,
+    right_orth_2site,
 )
 from scipy.linalg import svd, LinAlgError  # type: ignore
 from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
-
-
-def left_orth_2site(AA, strategy: Strategy):
-    """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
-    that 'B' is a left-isometry, truncating the size 'r' according
-    to the given 'strategy'. Tensor 'AA' may be overwritten."""
-    α, d1, d2, β = AA.shape
-    U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
-    err = destructively_truncate_vector(S, strategy)
-    D = S.size
-    return (
-        U[:, :D].reshape(α, d1, D),
-        (S.reshape(D, 1) * V[:D, :]).reshape(D, d2, β),
-        err,
-    )
-
-
-def right_orth_2site(AA, strategy: Strategy):
-    """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
-    that 'C' is a right-isometry, truncating the size 'r' according
-    to the given 'strategy'. Tensor 'AA' may be overwritten."""
-    α, d1, d2, β = AA.shape
-    U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
-    err = destructively_truncate_vector(S, strategy)
-    D = S.size
-    return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
 
 
 def vector2mps(

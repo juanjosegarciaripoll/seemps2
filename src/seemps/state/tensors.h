@@ -119,6 +119,12 @@ inline auto as_matrix(const py::object &a, npy_intp rows, npy_intp cols) {
   return array_reshape(a, d);
 }
 
+inline auto as_3tensor(const py::object &A, npy_intp a, npy_intp b,
+                       npy_intp c) {
+  npy_intp d[3] = {a, b, c};
+  return array_reshape(A, d);
+}
+
 inline auto array_copy(const py::object &A) {
   return py::reinterpret_steal<py::object>(
       PyArray_FROM_OF(A.ptr(), NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED |
