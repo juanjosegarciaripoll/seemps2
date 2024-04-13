@@ -48,7 +48,7 @@ public:
 
   py::object operator[](int k) const { return getitem(k); }
 
-  py::object setitem(int k, py::object A) {
+  void setitem(int k, py::object A) {
     check_array(A);
     auto L = len();
     if (k < 0) {
@@ -69,7 +69,6 @@ public:
     default:
       data_[k] = array_cast(A, NPY_DOUBLE);
     }
-    return py::none();
   }
 
   py::object __getitem__(py::object site) const {
@@ -79,36 +78,40 @@ public:
     } else if (PyLong_Check(object)) {
       return getitem(PyLong_AsLong(object));
     } else if (PySlice_Check(object)) {
-      throw std::invalid_argument("Invalid index into TensorArray");
-      size_t length = data_.size(), start, stop, step, slicelength;
+      Py_ssize_t length = len(), start, stop, step, slicelength;
       py::slice slice = site;
-      slice.compute(length, &start, &stop, &step, &slicelength);
-      py::list output(length);
-      for (size_t i = 0; start < stop; ++i) {
+      auto ok = PySlice_GetIndicesEx(site.ptr(), length, &start, &stop, &step,
+                                     &slicelength);
+      if (ok < 0) {
+        throw std::out_of_range("Invalide slize into TensorArray");
+      }
+      py::list output(slicelength);
+      for (Py_ssize_t i = 0; i < slicelength; ++i) {
         output[i] = data_[start];
         start += step;
       }
-      return output;
+      c return output;
     }
     throw std::invalid_argument("Invalid index into TensorArray");
   }
 
   py::object __setitem__(py::object site, py::object A) {
     auto object = site.ptr();
-    if (object == NULL) {
-      //
-    } else if (PyLong_Check(object)) {
-      return setitem(PyLong_AsLong(object), A);
-    } else if (PySlice_Check(object)) {
-      size_t length = data_.size(), start, stop, step, slicelength;
-      py::slice slice = site;
-      py::sequence new_data = A;
-      slice.compute(length, &start, &stop, &step, &slicelength);
-      for (size_t i = 0; start < stop; ++i) {
-        setitem(start, new_data[i]);
-        start += step;
+    if (object != NULL) {
+      if (PyLong_Check(object)) {
+        setitem(PyLong_AsLong(object), A);
+        return py::none();
+      } else if (PySlice_Check(object)) {
+        size_t length = data_.size(), start, stop, step, slicelength;
+        py::slice slice = site;
+        py::sequence new_data = A;
+        slice.compute(length, &start, &stop, &step, &slicelength);
+        for (size_t i = 0; start < stop; ++i) {
+          setitem(start, new_data[i]);
+          start += step;
+        }
+        return py::none();
       }
-      return py::none();
     }
     throw std::invalid_argument("Invalid index into TensorArray");
   }

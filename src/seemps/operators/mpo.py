@@ -94,12 +94,13 @@ class MPO(TensorArray):
             else:
                 phase = 0.0
                 factor = 0.0
-            mpo_mult = self.copy()
-            mpo_mult._data = [
-                (factor if i > 0 else (factor * phase)) * A
-                for i, A in enumerate(mpo_mult._data)
-            ]
-            return mpo_mult
+            return MPO(
+                [
+                    (factor if i > 0 else (factor * phase)) * A
+                    for i, A in enumerate(self)
+                ],
+                self.strategy,
+            )
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPO:
@@ -113,11 +114,13 @@ class MPO(TensorArray):
                 phase = 0.0
                 factor = 0.0
             mpo_mult = self.copy()
-            mpo_mult._data = [
-                (factor if i > 0 else (factor * phase)) * A
-                for i, A in enumerate(mpo_mult._data)
-            ]
-            return mpo_mult
+            return MPO(
+                [
+                    (factor if i > 0 else (factor * phase)) * A
+                    for i, A in enumerate(mpo_mult)
+                ],
+                self.strategy,
+            )
         raise InvalidOperation("*", n, self)
 
     def __pow__(self, n: int) -> MPOList:
@@ -129,17 +132,15 @@ class MPO(TensorArray):
     # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPO."""
-        return [A.shape[2] for A in self._data]
+        return [A.shape[2] for A in self]
 
     def bond_dimensions(self) -> list[int]:
         """Return the bond dimensions of the MPO."""
-        return [A.shape[-1] for A in self._data][:-1]
+        return [A.shape[-1] for A in self][:-1]
 
     @property
     def T(self) -> MPO:
-        output = self.copy()
-        output._data = [A.transpose(0, 2, 1, 3) for A in output._data]
-        return output
+        return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
 
     def tomatrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""
@@ -151,7 +152,7 @@ class MPO(TensorArray):
         Di = 1  # Total physical dimension so far
         Dj = 1
         out = np.array([[[1.0]]])
-        for A in self._data:
+        for A in self:
             _, i, j, b = A.shape
             out = np.einsum("lma,aijb->limjb", out, A)
             Di *= i
@@ -212,14 +213,14 @@ class MPO(TensorArray):
             assert self.size == state.size
             for i, (w, mps) in enumerate(zip(state.weights, state.states)):
                 Ostate = w * MPS(
-                    [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, mps._data)],
+                    [_mpo_multiply_tensor(A, B) for A, B in zip(self, mps)],
                     error=mps.error(),
                 )
                 state = Ostate if i == 0 else state + Ostate
         elif isinstance(state, MPS):
             assert self.size == state.size
             state = MPS(
-                [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
+                [_mpo_multiply_tensor(A, B) for A, B in zip(self, state)],
                 error=state.error(),
             )
         else:
@@ -326,15 +327,10 @@ class MPO(TensorArray):
         elif not isinstance(ket, MPS):
             raise Exception("MPS required")
         left = right = begin_mpo_environment()
-        operators = self._data
         for i in range(0, center):
-            left = update_left_mpo_environment(
-                left, bra[i].conj(), operators[i], ket[i]
-            )
+            left = update_left_mpo_environment(left, bra[i].conj(), self[i], ket[i])
         for i in range(self.size - 1, center - 1, -1):
-            right = update_right_mpo_environment(
-                right, bra[i].conj(), operators[i], ket[i]
-            )
+            right = update_right_mpo_environment(right, bra[i].conj(), self[i], ket[i])
         return join_mpo_environments(left, right)
 
 

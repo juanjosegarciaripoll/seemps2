@@ -58,7 +58,7 @@ class MPS(array.TensorArray):
 
     def physical_dimensions(self) -> list[int]:
         """List of physical dimensions for the quantum subsystems."""
-        return list(a.shape[1] for a in self._data)
+        return list(a.shape[1] for a in self)
 
     def bond_dimensions(self) -> list[int]:
         """List of bond dimensions for the matrix product state.
@@ -82,11 +82,11 @@ class MPS(array.TensorArray):
         >>> mps.bond_dimensions()
         [1, 3, 1]
         """
-        return list(a.shape[0] for a in self._data) + [self._data[-1].shape[-1]]
+        return list(a.shape[0] for a in self) + [self[-1].shape[-1]]
 
     def to_vector(self) -> Vector:
         """Convert this MPS to a state vector."""
-        return _mps2vector(self._data)
+        return _mps2vector(self)
 
     @classmethod
     def from_vector(
@@ -178,8 +178,8 @@ class MPS(array.TensorArray):
             case int() | float() | complex():
                 if n:
                     mps_mult = self.copy()
-                    mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult[0] = n * mps_mult[0]
+                    mps_mult._error = np.abs(n) * mps_mult._error
                     return mps_mult
                 return self.zero_state()
             case MPS():
@@ -189,7 +189,7 @@ class MPS(array.TensorArray):
                         (
                             A[:, np.newaxis, :, :, np.newaxis] * B[:, :, np.newaxis, :]
                         ).reshape(A.shape[0] * B.shape[0], A.shape[1], -1)
-                        for A, B in zip(self._data, n._data)
+                        for A, B in zip(self, n)
                     ]
                 )
             case _:
@@ -225,7 +225,7 @@ class MPS(array.TensorArray):
 
     def zero_state(self) -> MPS:
         """Return a zero wavefunction with the same physical dimensions."""
-        return MPS([np.zeros((1, A.shape[1], 1)) for A in self._data])
+        return MPS([np.zeros((1, A.shape[1], 1)) for A in self])
 
     def expectation1(self, O: Operator, site: int) -> Weight:
         """Compute the expectation value :math:`\\langle\\psi|O_i|\\psi\\rangle`
@@ -328,14 +328,14 @@ class MPS(array.TensorArray):
     def left_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the left of `site`."""
         ρ = begin_environment()
-        for A in self._data[:site]:
+        for A in self[:site]:
             ρ = update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the right of `site`."""
         ρ = begin_environment()
-        for A in self._data[-1:site:-1]:
+        for A in self[-1:site:-1]:
             ρ = update_right_environment(A, A, ρ)
         return ρ
 
@@ -443,12 +443,12 @@ class MPS(array.TensorArray):
     def conj(self) -> MPS:
         """Return the complex-conjugate of this quantum state."""
         output = self.copy()
-        for i, A in enumerate(output._data):
-            output._data[i] = A.conj()
+        for i, A in enumerate(output):
+            output[i] = A.conj()
         return output
 
 
-def _mps2vector(data: list[Tensor3]) -> Vector:
+def _mps2vector(data: MPS) -> Vector:
     #
     # Input:
     #  - data: list of tensors for the MPS (unchecked)

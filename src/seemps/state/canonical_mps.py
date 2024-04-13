@@ -123,7 +123,7 @@ class CanonicalMPS(MPS):
     def zero_state(self) -> CanonicalMPS:
         """Return a zero wavefunction with the same physical dimensions."""
         return CanonicalMPS(
-            [np.zeros((1, A.shape[1], 1)) for A in self._data],
+            [np.zeros((1, A.shape[1], 1)) for A in self],
             error=0.0,
             center=0,
             is_canonical=True,
@@ -131,14 +131,14 @@ class CanonicalMPS(MPS):
 
     def norm_squared(self) -> float:
         """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        A = self._data[self.center]
+        A = self[self.center]
         return np.vdot(A, A).real
 
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
         start = min(site, self.center)
         ρ = environments.begin_environment(self[start].shape[0])
-        for A in self._data[start:site]:
+        for A in self[start:site]:
             ρ = environments.update_left_environment(A, A, ρ)
         return ρ
 
@@ -146,7 +146,7 @@ class CanonicalMPS(MPS):
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
         start = max(site, self.center)
         ρ = environments.begin_environment(self[start].shape[-1])
-        for A in self._data[start:site:-1]:
+        for A in self[start:site:-1]:
             ρ = environments.update_right_environment(A, A, ρ)
         return ρ
 
@@ -172,7 +172,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        return schmidt.schmidt_weights(self._data[site])
+        return schmidt.schmidt_weights(self[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
@@ -337,12 +337,12 @@ class CanonicalMPS(MPS):
     def normalize_inplace(self) -> CanonicalMPS:
         """Normalize the state by updating the central tensor."""
         n = self.center
-        A = self._data[n]
+        A = self[n]
         N = np.linalg.norm(A)
         if N == 0:
             warnings.warn("Refusing to normalize zero vector")
         else:
-            self._data[n] = A / N
+            self[n] = A / N
         return self
 
     def __copy__(self):

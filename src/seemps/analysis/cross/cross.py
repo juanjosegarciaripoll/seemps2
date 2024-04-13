@@ -1,5 +1,4 @@
 import numpy as np
-from copy import deepcopy
 from typing import Callable, Optional
 from time import perf_counter
 import dataclasses
@@ -132,11 +131,12 @@ class CrossStrategy:
         By default, compares the norm-2 of the difference between the two states.
         """
         if not hasattr(self, "previous_data"):
-            self.previous_data = deepcopy(cross.state._data)  # Expensive
-            return np.Inf
-        previous_state = MPS(self.previous_data)
-        variation = (cross.state - previous_state).norm() / previous_state.norm()
-        self.previous_data = deepcopy(cross.state._data)
+            variation = np.Inf
+        else:
+            variation = (
+                cross.state - self.previous_state
+            ).norm() / previous_state.norm()
+        self.previous_state = cross.state.copy()
         return variation
 
     def bond_update_strategy(self, cross: Cross, ltr: bool) -> tuple:

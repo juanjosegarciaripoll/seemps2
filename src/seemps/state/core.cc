@@ -43,7 +43,21 @@ PYBIND11_MODULE(core, m) {
 
   m.attr("STATUS") = OK_LOADED;
 
-  py::class_<TensorArray3>(m, "TensorArray")
+  py::class_<TensorArray3>(m, "TensorArray",
+                           R"doc(TensorArray class.
+
+    This class provides the basis for all tensor networks. The class abstracts
+    a one-dimensional array of tensors that is freshly copied whenever the
+    object is cloned. Two TensorArray's can share the same tensors and be
+    destructively modified.
+
+    Parameters
+    ----------
+    data: Iterable[NDArray]
+        Any sequence of tensors that can be stored in this object. They are
+        not checked to have the right number of dimensions. This sequence is
+        cloned to avoid nasty side effects when destructively modifying it.
+    )doc")
       .def(py::init<py::object>())
       .def("__getitem__", &TensorArray3::__getitem__)
       .def("__setitem__", &TensorArray3::__setitem__)

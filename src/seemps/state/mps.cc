@@ -50,7 +50,6 @@ template <int n> py::object TensorArray<n>::__getitem__(py::object site) const {
   } else if (PyLong_Check(object)) {
     return getitem(PyLong_AsLong(object));
   } else if (PySlice_Check(object)) {
-    throw std::invalid_argument("Invalid index into TensorArray");
     size_t length = data_.size(), start, stop, step, slicelength;
     py::slice slice = site;
     slice.compute(length, &start, &stop, &step, &slicelength);
