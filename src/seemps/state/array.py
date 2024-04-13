@@ -30,12 +30,10 @@ class TensorArray(Sequence[NDArray]):
         self.size = len(self._data)
 
     @overload
-    def __getitem__(self, k: int) -> NDArray:
-        ...
+    def __getitem__(self, k: int) -> NDArray: ...
 
     @overload
-    def __getitem__(self, k: slice) -> Sequence[NDArray]:
-        ...
+    def __getitem__(self, k: slice) -> Sequence[NDArray]: ...
 
     def __getitem__(self, k: Union[int, slice]) -> Union[NDArray, Sequence[NDArray]]:
         #
@@ -57,3 +55,6 @@ class TensorArray(Sequence[NDArray]):
 
     def __len__(self) -> int:
         return self.size
+
+
+from .core import TensorArray

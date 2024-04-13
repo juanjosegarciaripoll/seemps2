@@ -5,7 +5,8 @@ import numpy as np
 import opt_einsum  # type: ignore
 from ..tools import InvalidOperation
 from ..typing import Tensor4, Operator, Weight
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, array
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy
+from ..state.core import TensorArray
 from ..state.environments import (
     scprod,
     begin_mpo_environment,
@@ -37,7 +38,7 @@ def _mpo_multiply_tensor(A, B):
     ).reshape(c * a, i, d * b)
 
 
-class MPO(array.TensorArray):
+class MPO(TensorArray):
     """Matrix Product Operator class.
 
     This implements a bare-bones Matrix Product Operator object with open
@@ -64,7 +65,7 @@ class MPO(array.TensorArray):
     def copy(self) -> MPO:
         """Return a shallow copy of the MPO, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        return MPO(self._data, self.strategy)
+        return MPO(self._data.copy(), self.strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
@@ -168,8 +169,7 @@ class MPO(array.TensorArray):
         state: MPS,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
-        ...
+    ) -> MPS: ...
 
     @overload
     def apply(
@@ -177,8 +177,7 @@ class MPO(array.TensorArray):
         state: MPSSum,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
-        ...
+    ) -> MPS: ...
 
     def apply(
         self,
@@ -231,12 +230,10 @@ class MPO(array.TensorArray):
         return state
 
     @overload
-    def __matmul__(self, b: MPS) -> MPS:
-        ...
+    def __matmul__(self, b: MPS) -> MPS: ...
 
     @overload
-    def __matmul__(self, b: MPSSum) -> MPS | MPSSum:
-        ...
+    def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""
@@ -449,8 +446,7 @@ class MPOList(object):
         state: MPS,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
-        ...
+    ) -> MPS: ...
 
     @overload
     def apply(
@@ -458,8 +454,7 @@ class MPOList(object):
         state: MPSSum,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS | MPSSum:
-        ...
+    ) -> MPS | MPSSum: ...
 
     # TODO: Describe how `strategy` and simplify act as compared to
     # the values provided by individual operators.
@@ -500,12 +495,10 @@ class MPOList(object):
         return state
 
     @overload
-    def __matmul__(self, b: MPS) -> MPS:
-        ...
+    def __matmul__(self, b: MPS) -> MPS: ...
 
     @overload
-    def __matmul__(self, b: MPSSum) -> MPS | MPSSum:
-        ...
+    def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""

@@ -15,11 +15,10 @@ TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
 class TestMPO(TestCase):
-    def test_initial_data_is_copied(self):
+    def test_initial_data_is_not_copied(self):
         data = [np.zeros((1, 2, 2, 1))] * 10
         A = MPO(data)
-        self.assertFalse(A._data is data)
-        self.assertEqual(A._data, data)
+        self.assertTrue(identical_lists(A._data, data))
 
     def test_copy_is_shallow(self):
         A = MPO([np.zeros((1, 2, 2, 1))] * 10, Strategy())
@@ -27,7 +26,7 @@ class TestMPO(TestCase):
         self.assertTrue(A._data is not B._data)
         self.assertTrue(contain_same_objects(A._data, B._data))
         self.assertTrue(A.strategy is B.strategy)
-        A[::] = np.ones((1, 2, 2, 1))
+        A[::] = [np.ones((1, 2, 2, 1))] * 10
         self.assertTrue(contain_different_objects(A, B))
 
     def test_mpo_multiplies_by_number(self):

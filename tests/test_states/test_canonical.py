@@ -67,7 +67,7 @@ class TestCanonicalForm(MPSStatesFixture):
         #
         def ok(Ψ):
             for center in range(Ψ.size):
-                ξ = CanonicalMPS(Ψ._data, center=center)
+                ξ = CanonicalMPS(Ψ._data.copy(), center=center)
                 #
                 # All sites to the left and to the right are isometries
                 #

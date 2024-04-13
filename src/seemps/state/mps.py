@@ -47,7 +47,7 @@ class MPS(array.TensorArray):
     def copy(self) -> MPS:
         """Return a shallow copy of the MPS, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        return MPS(self._data, self._error)
+        return MPS(self._data.copy(), self._error)
 
     def as_mps(self) -> MPS:
         return self

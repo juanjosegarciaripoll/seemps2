@@ -6,21 +6,13 @@ from ..fixture_mps_states import MPSStatesFixture
 from ..tools import *
 
 
-class TestTensorArray(MPSStatesFixture):
-    def test_initial_data_is_copied(self):
-        data = [np.zeros((1, 2, 1))] * 10
-        A = TensorArray(data)
-        self.assertFalse(A._data is data)
-        A[::] = self.other_tensor
-        self.assertTrue(contain_different_objects(A, data))
-
-
 class TestMPS(MPSStatesFixture):
-    def test_initial_data_is_copied(self):
+    def test_initial_data_is_not_copied(self):
         data = [np.zeros((1, 2, 1))] * 10
+        old_data = data.copy()
         A = MPS(data)
-        self.assertFalse(A._data is data)
-        self.assertEqual(A._data, data)
+        data[0] = np.ones((1, 2, 1))
+        self.assertTrue(identical_lists(A._data, data))
 
     def test_copy_is_shallow(self):
         A = MPS(self.product_state.copy(), 0.1)
@@ -28,7 +20,7 @@ class TestMPS(MPSStatesFixture):
         self.assertTrue(A._data is not B._data)
         self.assertEqual(A._error, B._error)
         self.assertTrue(contain_same_objects(A._data, B._data))
-        A[::] = self.other_tensor
+        A[::] = [self.other_tensor] * len(A)
         self.assertTrue(contain_different_objects(A, B))
 
     def test_total_dimension_is_product_of_physical_dimensions(self):

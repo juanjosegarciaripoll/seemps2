@@ -6,6 +6,21 @@ import seemps.state
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
 
 
+def identical_lists(l1, l2):
+    old_l1 = l1.copy()
+    if len(l1) != len(l2):
+        return False
+    for i in range(len(l1)):
+        l1[i] = np.random.normal(1, 2, 1)
+        if l1[i] is not l2[i]:
+            return False
+        if l1[i] is old_l1[i]:
+            return False
+        if l2[i] is old_l1[i]:
+            return False
+    return True
+
+
 class TestCase(unittest.TestCase):
     rng = np.random.default_rng(seed=0x1232388472)
 

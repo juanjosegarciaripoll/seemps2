@@ -43,6 +43,15 @@ PYBIND11_MODULE(core, m) {
 
   m.attr("STATUS") = OK_LOADED;
 
+  py::class_<TensorArray3>(m, "TensorArray")
+      .def(py::init<py::object>())
+      .def("__getitem__", &TensorArray3::__getitem__)
+      .def("__setitem__", &TensorArray3::__setitem__)
+      .def("__iter__", &TensorArray3::__iter__)
+      .def("__len__", &TensorArray3::len)
+      .def_property("_data", &TensorArray3::data, &TensorArray3::set_data)
+      .def_property_readonly("size", &TensorArray3::len);
+
   py::class_<Strategy>(m, "Strategy")
       .def(py::init<int, double, int, double, size_t, int, bool>(),
            py::arg("method") =

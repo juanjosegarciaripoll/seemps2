@@ -55,26 +55,23 @@ class CanonicalMPS(MPS):
         is_canonical: bool = False,
         **kwdargs,
     ):
-        super().__init__(data, **kwdargs)
         actual_center: int
         self.strategy = strategy
         if isinstance(data, CanonicalMPS):
+            super().__init__(data._data.copy(), **kwdargs)
             actual_center = self.center = data.center
             self._error = data._error
             if center is not None:
                 actual_center = center
                 self.recenter(actual_center)
         else:
+            super().__init__(data, **kwdargs)
             self.center = actual_center = self._interpret_center(
                 0 if center is None else center
             )
             if not is_canonical:
-                self.update_error(
-                    _canonicalize(self._data, actual_center, self.strategy)
-                )
-        if normalize is True or (
-            normalize is None and self.strategy.get_normalize_flag()
-        ):
+                self.update_error(_canonicalize(self._data, actual_center, strategy))
+        if normalize is True or (normalize is None and strategy.get_normalize_flag()):
             A = self[actual_center]
             N = np.linalg.norm(A)
             if N:

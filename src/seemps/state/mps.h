@@ -1,8 +1,125 @@
 #pragma once
+#include <vector>
 #include "core.h"
+#include "tensors.h"
 #include "strategy.h"
 
 namespace seemps {
+
+template <int rank> class TensorArray {
+
+  static void check_array(py::object A) {
+    if (!is_array(A)) {
+      throw std::invalid_argument("TensorArray did not get a tensor");
+    }
+#if 0
+    if (array_ndim(A) != rank) {
+      throw std::invalid_argument(
+          "TensorArray passed tensor of incorrect rank");
+    }
+#endif
+  }
+
+public:
+  py::list data_;
+
+  TensorArray(py::object data) : data_(std::move(data)) {}
+
+  py::object data() const { return data_; }
+
+  py::object set_data(py::list data) {
+    data_ = std::move(data);
+    for (size_t i = 0, L = len(); i < L; ++i) {
+      check_array(data_[i]);
+    }
+  }
+
+  py::object getitem(int k) const {
+    auto L = len();
+    if (k < 0) {
+      k = L + k;
+    }
+    if (k >= 0 && k < L) {
+      return data_[k];
+    } else {
+      throw std::out_of_range("Wrong index into TensorArray");
+    }
+  }
+
+  py::object operator[](int k) const { return getitem(k); }
+
+  py::object setitem(int k, py::object A) {
+    check_array(A);
+    auto L = len();
+    if (k < 0) {
+      k = L + k;
+    }
+    if (k < 0 || k >= L) {
+      throw std::out_of_range("Wrong index into TensorArray");
+    }
+    auto type = array_type(A);
+    switch (type) {
+    case NPY_DOUBLE:
+    case NPY_COMPLEX128:
+      data_[k] = A;
+      break;
+    case NPY_COMPLEX64:
+      data_[k] = array_cast(A, NPY_COMPLEX128);
+      break;
+    default:
+      data_[k] = array_cast(A, NPY_DOUBLE);
+    }
+    return py::none();
+  }
+
+  py::object __getitem__(py::object site) const {
+    auto object = site.ptr();
+    if (object == NULL) {
+      //
+    } else if (PyLong_Check(object)) {
+      return getitem(PyLong_AsLong(object));
+    } else if (PySlice_Check(object)) {
+      throw std::invalid_argument("Invalid index into TensorArray");
+      size_t length = data_.size(), start, stop, step, slicelength;
+      py::slice slice = site;
+      slice.compute(length, &start, &stop, &step, &slicelength);
+      py::list output(length);
+      for (size_t i = 0; start < stop; ++i) {
+        output[i] = data_[start];
+        start += step;
+      }
+      return output;
+    }
+    throw std::invalid_argument("Invalid index into TensorArray");
+  }
+
+  py::object __setitem__(py::object site, py::object A) {
+    auto object = site.ptr();
+    if (object == NULL) {
+      //
+    } else if (PyLong_Check(object)) {
+      return setitem(PyLong_AsLong(object), A);
+    } else if (PySlice_Check(object)) {
+      size_t length = data_.size(), start, stop, step, slicelength;
+      py::slice slice = site;
+      py::sequence new_data = A;
+      slice.compute(length, &start, &stop, &step, &slicelength);
+      for (size_t i = 0; start < stop; ++i) {
+        setitem(start, new_data[i]);
+        start += step;
+      }
+      return py::none();
+    }
+    throw std::invalid_argument("Invalid index into TensorArray");
+  }
+
+  py::object __iter__() const { return py::iter(data_); }
+
+  size_t len() const { return data_.size(); }
+};
+
+using TensorArray3 = TensorArray<3>;
+using TensorArray4 = TensorArray<4>;
 
 using Weight = py::object;
 

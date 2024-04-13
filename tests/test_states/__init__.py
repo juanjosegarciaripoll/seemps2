@@ -1,4 +1,5 @@
 from . import (
+    test_array,
     test_canonical,
     test_mps,
     test_mpssum,
