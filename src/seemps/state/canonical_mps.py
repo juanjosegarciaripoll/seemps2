@@ -70,7 +70,7 @@ class CanonicalMPS(MPS):
                 0 if center is None else center
             )
             if not is_canonical:
-                self.update_error(_canonicalize(self._data, actual_center, strategy))
+                self.update_error(_canonicalize(self, actual_center, strategy))
         if normalize is True or (normalize is None and strategy.get_normalize_flag()):
             A = self[actual_center]
             N = np.linalg.norm(A)
@@ -241,13 +241,9 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, err = _update_canonical_right(
-                self._data, A, self.center, truncation
-            )
+            self.center, err = _update_canonical_right(self, A, self.center, truncation)
         else:
-            self.center, err = _update_canonical_left(
-                self._data, A, self.center, truncation
-            )
+            self.center, err = _update_canonical_left(self, A, self.center, truncation)
         self.update_error(err)
         return err
 
@@ -269,7 +265,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        err = _update_canonical_2site_left(self._data, AA, site, strategy)
+        err = _update_canonical_2site_left(self, AA, site, strategy)
         self.center = site + 1
         self.update_error(err)
 
@@ -290,7 +286,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        err = _update_canonical_2site_right(self._data, AA, site, strategy)
+        err = _update_canonical_2site_right(self, AA, site, strategy)
         self.center = site
         self.update_error(err)
 
