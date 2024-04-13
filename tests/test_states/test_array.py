@@ -1,6 +1,6 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
-from seemps.state.array import TensorArray
+from seemps.state.core import TensorArray
 from .. import tools
 
 

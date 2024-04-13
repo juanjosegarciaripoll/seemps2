@@ -6,12 +6,11 @@ from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
-from . import array
-from .core import DEFAULT_STRATEGY, Strategy
+from .core import DEFAULT_STRATEGY, Strategy, TensorArray
 from .schmidt import vector2mps
 
 
-class MPS(array.TensorArray):
+class MPS(TensorArray):
     """MPS (Matrix Product State) class.
 
     This implements a bare-bones Matrix Product State object with open

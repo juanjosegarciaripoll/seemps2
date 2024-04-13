@@ -1,7 +1,5 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
-from seemps.state.array import TensorArray
-
 from ..fixture_mps_states import MPSStatesFixture
 from ..tools import *
 
