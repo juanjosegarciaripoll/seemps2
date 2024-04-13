@@ -20,17 +20,30 @@ template <int rank> class TensorArray {
 #endif
   }
 
+  std::vector<py::object> data_;
+
 public:
-  py::list data_;
+  TensorArray(const TensorArray<rank> &other) : data_(other.data_) {}
 
-  TensorArray(py::object data) : data_(std::move(data)) {}
+  TensorArray(py::list data) : data_(data.size()) {
+    for (size_t i = 0; i < data.size(); ++i) {
+      data_[i] = data[i];
+    }
+  }
 
-  py::object data() const { return data_; }
+  py::object data() const {
+    py::list output(size());
+    for (size_t i = 0; i < size(); ++i) {
+      output[i] = data_[i];
+    }
+    return output;
+  }
 
-  py::object set_data(py::list data) {
-    data_ = std::move(data);
-    for (size_t i = 0, L = len(); i < L; ++i) {
-      check_array(data_[i]);
+  void set_data(py::list new_data) {
+    auto L = new_data.size();
+    data_.resize(L);
+    for (size_t i = 0; i < L; ++i) {
+      data_[i] = new_data[i];
     }
   }
 
@@ -116,7 +129,7 @@ public:
     throw std::invalid_argument("Invalid index into TensorArray");
   }
 
-  py::object __iter__() const { return py::iter(data_); }
+  py::object __iter__() const { return py::iter(data()); }
 
   size_t len() const { return data_.size(); }
   size_t size() const { return data_.size(); }

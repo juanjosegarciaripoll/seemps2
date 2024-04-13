@@ -9,10 +9,16 @@ class TestTensorArray(tools.TestCase):
         with self.assertRaises(Exception):
             TensorArray()
 
-    def test_tensor_array_list_is_not_copied(self):
+    def test_tensor_array_list_is_copied(self):
         data = [np.zeros((1, 2, 1))] * 3
         state = TensorArray(data)
-        self.assertTrue(data is state._data)
+        self.assertTrue(data is not state._data)
+
+    def test_tensor_array_initial_data_is_not_copied(self):
+        data = [self.rng.random(size=(1, 2, 1)) for _ in range(3)]
+        state = TensorArray(data)
+        for A, B in zip(data, state):
+            self.assertTrue(A is B)
 
     def test_tensor_array_can_get_items(self):
         data = [self.rng.normal(size=(1, 2, 1)) for _ in range(3)]
@@ -104,7 +110,7 @@ class TestTensorArray(tools.TestCase):
     def test_tensor_array_data_property(self):
         data = [self.rng.random(size=(1, 2, 1)) for _ in range(13)]
         state = TensorArray(data)
-        self.assertTrue(state._data is data)
+        self.assertTrue(state._data is not data)
         state._data = data.copy()
         self.assertTrue(state._data is not data)
         for A, B in zip(data, state):

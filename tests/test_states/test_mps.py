@@ -5,19 +5,11 @@ from ..tools import *
 
 
 class TestMPS(MPSStatesFixture):
-    def test_initial_data_is_not_copied(self):
-        data = [np.zeros((1, 2, 1))] * 10
-        old_data = data.copy()
-        A = MPS(data)
-        data[0] = np.ones((1, 2, 1))
-        self.assertTrue(identical_lists(A._data, data))
-
     def test_copy_is_shallow(self):
         A = MPS(self.product_state.copy(), 0.1)
         B = A.copy()
-        self.assertTrue(A._data is not B._data)
-        self.assertEqual(A._error, B._error)
-        self.assertTrue(contain_same_objects(A._data, B._data))
+        self.assertEqual(A.error(), B.error())
+        self.assertTrue(contain_same_objects(A, B))
         A[::] = [self.other_tensor] * len(A)
         self.assertTrue(contain_different_objects(A, B))
 

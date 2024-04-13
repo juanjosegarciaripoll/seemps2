@@ -58,7 +58,8 @@ PYBIND11_MODULE(core, m) {
         not checked to have the right number of dimensions. This sequence is
         cloned to avoid nasty side effects when destructively modifying it.
     )doc")
-      .def(py::init<py::object>())
+      .def(py::init<TensorArray3>())
+      .def(py::init<py::list>())
       .def("__getitem__", &TensorArray3::__getitem__)
       .def("__setitem__", &TensorArray3::__setitem__)
       .def("__iter__", &TensorArray3::__iter__)

@@ -57,15 +57,14 @@ class CanonicalMPS(MPS):
     ):
         actual_center: int
         self.strategy = strategy
+        super().__init__(data, **kwdargs)
         if isinstance(data, CanonicalMPS):
-            super().__init__(data._data.copy(), **kwdargs)
             actual_center = self.center = data.center
             self._error = data._error
             if center is not None:
                 actual_center = center
                 self.recenter(actual_center)
         else:
-            super().__init__(data, **kwdargs)
             self.center = actual_center = self._interpret_center(
                 0 if center is None else center
             )
@@ -327,7 +326,7 @@ class CanonicalMPS(MPS):
         if center != old:
             dr = +1 if center > old else -1
             for i in range(old, center, dr):
-                self.update_canonical(self._data[i], dr, strategy)
+                self.update_canonical(self[i], dr, strategy)
         return self
 
     def normalize_inplace(self) -> CanonicalMPS:

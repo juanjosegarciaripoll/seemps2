@@ -46,7 +46,7 @@ class MPS(TensorArray):
     def copy(self) -> MPS:
         """Return a shallow copy of the MPS, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        return MPS(self._data.copy(), self._error)
+        return MPS(self, self._error)
 
     def as_mps(self) -> MPS:
         return self
@@ -200,8 +200,8 @@ class MPS(TensorArray):
             case int() | float() | complex():
                 if n:
                     mps_mult = self.copy()
-                    mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult[0] = n * mps_mult[0]
+                    mps_mult._error = abs(n) * mps_mult._error
                     return mps_mult
                 return self.zero_state()
             case _:

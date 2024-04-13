@@ -65,7 +65,7 @@ class MPO(TensorArray):
     def copy(self) -> MPO:
         """Return a shallow copy of the MPO, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        return MPO(self._data.copy(), self.strategy)
+        return MPO(self, self.strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
@@ -162,7 +162,7 @@ class MPO(TensorArray):
 
     def set_strategy(self, strategy) -> MPO:
         """Return MPO with the given strategy."""
-        return MPO(data=self._data, strategy=strategy)
+        return MPO(self, strategy)
 
     @overload
     def apply(

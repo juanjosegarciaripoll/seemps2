@@ -85,6 +85,11 @@ pybind11_modules = [
         extra_compile_args=extra_compile_args,
         include_dirs=[np.get_include()],
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+        depends=[
+            "src/seemps/state/mps.h",
+            "src/seemps/state/strategy.h",
+            "src/seemps/state/tensors.h",
+        ],
         cxx_std=17,
     ),
 ]
