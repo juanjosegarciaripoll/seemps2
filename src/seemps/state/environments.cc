@@ -88,9 +88,7 @@ Weight _join_environments(py::object rhoL, py::object rhoR) {
                     NPY_CORDER)));
 }
 
-Weight scprod(py::object bra, py::object ket) {
-  py::list A = bra.attr("_data");
-  py::list B = ket.attr("_data");
+Weight scprod(const TensorArray3 &A, const TensorArray3 &B) {
   auto Lbra = A.size();
   auto Lket = B.size();
   if (Lbra != Lket) {

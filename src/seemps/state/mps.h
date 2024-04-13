@@ -134,7 +134,7 @@ py::object _update_right_environment(py::object A, py::object B,
 Weight _end_environment(py::object rho);
 Weight _join_environments(py::object rhoL, py::object rhoR);
 
-Weight scprod(py::object A, py::object B);
+Weight scprod(const TensorArray3 &A, const TensorArray3 &B);
 
 py::object schmidt_weights(py::object A);
 
