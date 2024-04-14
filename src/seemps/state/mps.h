@@ -1,8 +1,10 @@
 #pragma once
 #include <vector>
+#include <algorithm>
 #include "core.h"
 #include "tensors.h"
 #include "strategy.h"
+#include "tools.h"
 
 namespace seemps {
 
@@ -25,26 +27,25 @@ template <int rank> class TensorArray {
 public:
   TensorArray(const TensorArray<rank> &other) : data_(other.data_) {}
 
-  TensorArray(py::list data) : data_(data.size()) {
-    for (size_t i = 0; i < data.size(); ++i) {
-      data_[i] = data[i];
-    }
+  TensorArray(const py::list &data) : data_(data.size()) {
+    std::copy(py::begin(data), py::end(data), this->begin());
   }
+
+  auto begin() const { return data_.begin(); }
+  auto end() const { return data_.end(); }
+  auto begin() { return data_.begin(); }
+  auto end() { return data_.end(); }
 
   py::object data() const {
     py::list output(size());
-    for (size_t i = 0; i < size(); ++i) {
-      output[i] = data_[i];
-    }
+    std::copy(data_.begin(), data_.end(), py::begin(output));
     return output;
   }
 
   void set_data(py::list new_data) {
     auto L = new_data.size();
     data_.resize(L);
-    for (size_t i = 0; i < L; ++i) {
-      data_[i] = new_data[i];
-    }
+    std::copy(py::begin(new_data), py::end(new_data), data_.begin());
   }
 
   py::object getitem(int k) const {

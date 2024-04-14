@@ -89,6 +89,7 @@ pybind11_modules = [
             "src/seemps/state/mps.h",
             "src/seemps/state/strategy.h",
             "src/seemps/state/tensors.h",
+            "src/seemps/state/tools.h",
         ],
         cxx_std=17,
     ),
