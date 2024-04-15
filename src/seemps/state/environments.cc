@@ -4,8 +4,6 @@
 
 namespace seemps {
 
-double abs(const Weight &w) { return std::abs(w.cast<std::complex<double>>()); }
-
 template <class elt = double> py::object eye(int D) {
   auto A = zero_matrix(D, D);
   auto base = array_data<elt>(A);

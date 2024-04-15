@@ -73,6 +73,7 @@ pybind11_modules = [
     Pybind11Extension(
         "seemps.state.core",
         [
+            "src/seemps/state/tools.cc",
             "src/seemps/state/blas.cc",
             "src/seemps/state/svd.cc",
             "src/seemps/state/tensors.cc",

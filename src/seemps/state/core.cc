@@ -322,6 +322,39 @@ PYBIND11_MODULE(core, m) {
       .def("normalize_inplace", &CanonicalMPS::normalize_in_place)
       .def("copy", &CanonicalMPS::copy);
 
+  py::class_<MPSSum>(
+      m, "MPSSum",
+      R"doc(Class representing a weighted sum (or difference) of two or more :class:`MPS`.
+
+    This class is an intermediate representation for the linear combination of
+    MPS quantum states. Assume that :math:`\\psi, \\phi` and :math:`\\xi` are
+    MPS and :math:`a, b, c` some real or complex numbers. The addition
+    :math:`a \\psi - b \\phi + c \\xi` can be stored as
+    `MPSSum([a, -b, c], [ψ, ϕ, ξ])`.
+
+
+    Parameters
+    ----------
+    weights : list[Weight]
+        Real or complex numbers representing the weights of the linear combination.
+    states : list[MPS]
+        List of matrix product states weighted.
+	   )doc")
+      .def(py::init<py::object, py::object, bool>(), py::arg("weights"),
+           py::arg("states"), py::arg("check_args") = true)
+      .def_property_readonly("weights", &MPSSum::weights)
+      .def_property_readonly("states", &MPSSum::states)
+      .def_property_readonly("size", &MPSSum::size)
+      .def("copy", &MPSSum::copy)
+      .def("conj", &MPSSum::conj)
+      .def("norm_squared", &MPSSum::norm_squared,
+           R"doc(Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
+      .def("norm", &MPSSum::norm,
+           R"doc(Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
+      .def("physical_dimensions", &MPSSum::physical_dimensions)
+      .def("bond_dimensions", &MPSSum::bond_dimensions)
+      .def("dimension", &MPSSum::dimension);
+
   m.def("scprod", &scprod,
         R"doc(Compute the scalar product between matrix product states
     :math:`\langle\xi|\psi\rangle`.

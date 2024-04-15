@@ -6,7 +6,7 @@ from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
-from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS
+from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum
 from .schmidt import vector2mps
 
 #
@@ -341,7 +341,6 @@ MPS.all_expectation1 = all_expectation1
 MPS.expectation1 = expectation1
 MPS.expectation2 = expectation2
 
-from .mpssum import MPSSum  # noqa: E402
 from .environments import (  # noqa: E402
     Environment,
     begin_environment,

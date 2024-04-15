@@ -214,7 +214,7 @@ public:
     return output;
   }
 
-  double norm_squared() const { return abs(scprod(*this, *this)); }
+  double norm_squared() const { return py::abs(scprod(*this, *this)); }
   double norm() const { return std::sqrt(norm_squared()); }
 
   MPS zero_state() {
@@ -247,11 +247,105 @@ public:
 
   auto set_error(double new_value) { return error_ = new_value; }
 
-  auto conj() const {
-    MPS output = copy();
-    std::transform(output.begin(), output.end(), output.begin(),
-                   array_conjugate);
-    return output;
+  auto conj_in_place() {
+    std::transform(begin(), end(), begin(), array_conjugate);
+    return *this;
+  }
+
+  auto conj() const { return copy().conj_in_place(); }
+};
+
+class MPSSum {
+  py::list weights_;
+  py::list mps_;
+  size_t size_;
+
+public:
+  auto size() const { return size_; }
+  auto weights() const { return weights_; }
+  auto states() const { return mps_; }
+  auto sum_size() const { return mps_.size(); }
+
+  MPSSum(py::object weights, py::object states, bool check_args) {
+    auto L = py::len(weights);
+    if (L != py::len(states)) {
+      throw std::invalid_argument(
+          "Lists of weights does not match list of states in MPSSum");
+    }
+    if (L == 0) {
+      throw std::invalid_argument("MPSSum requires a non-empty list of states");
+    }
+    if (!check_args) {
+      weights_ = weights;
+      mps_ = states;
+    }
+    weights_ = py::list();
+    mps_ = py::list();
+    for (int i = 0; i < L; ++i) {
+      auto wi = weights[py::int_(i)];
+      auto si = states[py::int_(i)];
+      if (py::isinstance<MPSSum>(si)) {
+        append(wi, si.cast<MPSSum>());
+      } else if (py::isinstance<MPS>(si)) {
+        append(wi, si);
+      } else {
+        throw std::invalid_argument(
+            "MPSSum argument did not contain a valid MPS");
+      }
+    }
+    size_ = mps(0).size();
+  }
+
+  auto physical_dimensions() const { return mps(0).physical_dimensions(); }
+
+  auto bond_dimensions() const { return mps(0).bond_dimensions(); }
+
+  auto dimension() const { return mps(0).dimension(); }
+
+  MPSSum copy() const {
+    return MPSSum(py::copy(weights_), py::copy(mps_), false);
+  }
+
+  MPSSum conj() const {
+    auto output = copy();
+    for (size_t i = 0; i < sum_size(); ++i) {
+      output.weights_[i] = py::conj(output.weights_[i]);
+      output.mps_[i].cast<MPS &>().conj_in_place();
+    }
+  }
+
+  double norm_squared() const {
+    double output = 0.0;
+    for (size_t i = 0; i < sum_size(); ++i) {
+      auto wi_conj = std::conj(weight(i).cast<std::complex<double>>());
+      const auto &si = mps(i);
+      for (size_t j = i; j < sum_size(); ++j) {
+        auto wj = weight(j).cast<std::complex<double>>();
+        auto sij = scprod(si, mps(j)).cast<std::complex<double>>();
+        auto s = (wi_conj * wj * sij).real() * ((i == j) ? 1 : 2);
+        output += s;
+      }
+    }
+    return std::abs(output);
+  }
+
+  Weight weight(int site) const { return weights_[site]; }
+  MPS &mps(int site) const { return mps_[site].cast<MPS &>(); }
+
+  double norm() const { return std::sqrt(norm_squared()); }
+
+private:
+  void append(const Weight &weight, const py::object &mps) {
+    weights_.append(weight);
+    mps_.append(mps);
+  }
+
+  void append(const Weight &factor, const MPSSum &states) {
+    const auto &weights = states.weights_;
+    const auto &mps = states.mps_;
+    for (size_t i = 0; i < states.sum_size(); ++i) {
+      append(factor * weights[i], mps[i]);
+    }
   }
 };
 
@@ -423,6 +517,7 @@ public:
     } else {
       auto [new_center, error_squared] =
           _update_canonical_left(*this, A, center_, truncation);
+
       center_ = new_center;
       return update_error(error_squared);
     }
@@ -449,6 +544,7 @@ public:
   }
 
   const CanonicalMPS &recenter(int new_center, const Strategy &strategy) {
+
     new_center = interpret_center(new_center);
     auto old_center = center();
     while (center() < new_center) {

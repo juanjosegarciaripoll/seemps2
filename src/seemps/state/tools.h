@@ -1,6 +1,7 @@
 #pragma once
 #include <iterator>
 #include "core.h"
+#include <pybind11/complex.h>
 
 namespace pybind11 {
 
@@ -118,4 +119,13 @@ inline auto begin_const(list &l) { return python_list_const_iterator(l, 0); }
 inline auto end_const(list &l) {
   return python_list_const_iterator(l, l.size());
 }
+
+list copy(const list &l);
+
+object conj(const object &w);
+
+object real(const object &w);
+
+double abs(const object &w);
+
 } // namespace pybind11

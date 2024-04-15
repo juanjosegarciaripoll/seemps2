@@ -6,6 +6,15 @@ from ..fixture_mps_states import MPSStatesFixture
 
 
 class TestMPSSum(MPSStatesFixture):
+    def test_mpssum_requires_non_empty_list(self):
+        with self.assertRaises(Exception):
+            B = MPSSum([], [])
+
+    def test_mpssum_size(self):
+        A = MPS(self.product_state)
+        B = MPSSum([1], [A])
+        self.assertEqual(B.size, A.size)
+
     def make_simple_sum(self):
         A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
