@@ -2,88 +2,57 @@
 
 namespace seemps {
 
-template <int n> py::object TensorArray<n>::getitem(int k) const {
-  auto L = len();
-  if (k < 0) {
-    k = L + k;
-  }
-  if (k >= 0 && k < L) {
-    py::print("data[k] with k =", k, "flush"_a = true);
-    return data_[k];
-  } else {
-    throw std::out_of_range("Wrong index into TensorArray");
-  }
+py::int_ MPS::dimension() const {
+  return std::accumulate(
+      begin(), end(), py::int_(1),
+      [](py::int_ total_dimension, const py::object &tensor) {
+        return total_dimension * py::int_(array_dim(tensor, 1));
+      });
 }
 
-template <int n> py::object TensorArray<n>::setitem(int k, py::object) {
-  if (!is_array(A)) {
-    throw std::invalid_argument("TensorArray did not get a tensor");
-  }
-  if (array_ndim(A) != rank) {
-    throw std::invalid_argument("TensorArray passed tensor of incorrect rank");
-  }
-  if (k < 0) {
-    k = L + k;
-  }
-  if (k < 0 || k >= L) {
-    throw std::out_of_range("Wrong index into TensorArray");
-  }
-  auto type = array_type(A);
-  switch (type) {
-  case NPY_DOUBLE:
-  case NPY_COMPLEX128:
-    data_[k] = A;
-    break;
-  case NPY_COMPLEX64:
-    data_[k] = array_cast(A, NPY_COMPLEX128);
-    break;
-  default:
-    data_[k] = array_cast(A, NPY_DOUBLE);
-  }
-  return py::none();
+py::list MPS::physical_dimensions() const {
+  py::list output(size());
+  std::transform(
+      begin(), end(), py::begin(output),
+      [](const py::object &a) -> auto { return py::int_(array_dim(a, 1)); });
+  return output;
 }
 
-template <int n> py::object TensorArray<n>::__getitem__(py::object site) const {
-  auto object = site.ptr();
-  if (object == NULL) {
-    //
-  } else if (PyLong_Check(object)) {
-    return getitem(PyLong_AsLong(object));
-  } else if (PySlice_Check(object)) {
-    size_t length = data_.size(), start, stop, step, slicelength;
-    py::slice slice = site;
-    slice.compute(length, &start, &stop, &step, &slicelength);
-    py::list output(length);
-    for (size_t i = 0; start < stop; ++i) {
-      output[i] = data_[start];
-      start += step;
-    }
-    return output;
-  }
-  py::print(site, "flush"_a = true);
-  throw std::invalid_argument("Invalid index into TensorArray");
+py::list MPS::bond_dimensions() const {
+  py::list output(size() + 1);
+  auto start = py::begin(output);
+  *start = py::int_(array_dim(data_[0], 0));
+  std::transform(begin(), end(), ++start, [](const py::object &a) -> auto {
+    return py::int_(array_dim(a, 2));
+  });
+  return output;
 }
 
-template <int n>
-py::object TensorArray<n>::__setitem__(py::object site, py::object A) {
-  auto object = site.ptr();
-  if (object == NULL) {
-    //
-  } else if (PyLong_Check(object)) {
-    return setitem(PyLong_AsLong(object), A);
-  } else if (PySlice_Check(object)) {
-    size_t length = data_.size(), start, stop, step, slicelength;
-    py::slice slice = site;
-    py::sequence new_data = A;
-    slice.compute(length, &start, &stop, &step, &slicelength);
-    for (size_t i = 0; start < stop; ++i) {
-      data_[start] = new_data[i];
-      start += step;
-    }
-    return py::none();
+double MPS::norm_squared() const { return py::abs(scprod(*this, *this)); }
+double MPS::norm() const { return std::sqrt(norm_squared()); }
+
+MPS MPS::zero_state() const {
+  MPS output = *this;
+  std::transform(begin(), end(), output.begin(), zero_like_array);
+  return output;
+}
+
+Environment MPS::left_environment(int site) const {
+  auto rho = _begin_environment();
+  for (int i = 0; i < site; ++i) {
+    auto A = getitem(i);
+    rho = _update_left_environment(A, A, rho);
   }
-  py::print(site, "flush"_a = true);
-  throw std::invalid_argument("Invalid index into TensorArray");
+  return rho;
+}
+
+Environment MPS::right_environment(int site) const {
+  auto rho = _begin_environment();
+  for (int i = size() - 1; i > site; --i) {
+    auto A = getitem(i);
+    rho = _update_right_environment(A, A, rho);
+  }
+  return rho;
 }
 
 } // namespace seemps
