@@ -60,7 +60,7 @@ class CanonicalMPS(MPS):
         super().__init__(data, **kwdargs)
         if isinstance(data, CanonicalMPS):
             actual_center = self.center = data.center
-            self._error = data._error
+            self.set_error(data.error())
             if center is not None:
                 actual_center = center
                 self.recenter(actual_center)
@@ -75,49 +75,6 @@ class CanonicalMPS(MPS):
             N = np.linalg.norm(A)
             if N:
                 self[actual_center] = A / np.linalg.norm(A)
-
-    @classmethod
-    def from_vector(
-        cls,
-        ψ: VectorLike,
-        dimensions: Sequence[int],
-        strategy: Strategy = DEFAULT_STRATEGY,
-        normalize: bool = True,
-        center: int = 0,
-        **kwdargs,
-    ) -> CanonicalMPS:
-        """Create an MPS in canonical form starting from a state vector.
-
-        Parameters
-        ----------
-        ψ : VectorLike
-            Real or complex vector of a wavefunction.
-        dimensions : Sequence[int]
-            Sequence of integers representing the dimensions of the
-            quantum systems that form this state.
-        strategy : Strategy, default = DEFAULT_STRATEGY
-            Default truncation strategy for algorithms working on this state.
-        normalize : bool, default = True
-            Whether the state is normalized to compensate truncation errors.
-        center : int, default = 0
-            Center for the canonical form of this decomposition.
-
-        Returns
-        -------
-        CanonicalMPS
-            A valid matrix-product state approximating this state vector.
-
-        See also
-        --------
-        :py:meth:`~seemps.state.MPS.from_vector`
-        """
-        data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
-        return CanonicalMPS(
-            data,
-            error=error,
-            center=center,
-            is_canonical=True,
-        )
 
     def zero_state(self) -> CanonicalMPS:
         """Return a zero wavefunction with the same physical dimensions."""
@@ -349,3 +306,60 @@ class CanonicalMPS(MPS):
     def copy(self):
         """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
         return self.__copy__()
+
+
+from .core import CanonicalMPS
+
+
+@classmethod
+def from_vector(
+    cls,
+    ψ: VectorLike,
+    dimensions: Sequence[int],
+    strategy: Strategy = DEFAULT_STRATEGY,
+    normalize: bool = True,
+    center: int = 0,
+    **kwdargs,
+) -> CanonicalMPS:
+    """Create an MPS in canonical form starting from a state vector.
+
+    Parameters
+    ----------
+    ψ : VectorLike
+        Real or complex vector of a wavefunction.
+    dimensions : Sequence[int]
+        Sequence of integers representing the dimensions of the
+        quantum systems that form this state.
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        Default truncation strategy for algorithms working on this state.
+    normalize : bool, default = True
+        Whether the state is normalized to compensate truncation errors.
+    center : int, default = 0
+        Center for the canonical form of this decomposition.
+
+    Returns
+    -------
+    CanonicalMPS
+        A valid matrix-product state approximating this state vector.
+
+    See also
+    --------
+    :py:meth:`~seemps.state.MPS.from_vector`
+    """
+    data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
+    return CanonicalMPS(
+        data,
+        error=error,
+        center=center,
+        is_canonical=True,
+    )
+
+
+CanonicalMPS.from_vector = from_vector
+CanonicalMPS.__array_priority__ = 10000
+CanonicalMPS.__add__ = MPS.__add__
+CanonicalMPS.__sub__ = MPS.__sub__
+CanonicalMPS.__mul__ = MPS.__mul__
+CanonicalMPS.__rmul__ = MPS.__rmul__
+
+__all__ = ["CanonicalMPS"]

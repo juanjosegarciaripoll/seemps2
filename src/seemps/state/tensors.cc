@@ -3,6 +3,50 @@
 
 namespace seemps {
 
+std::complex<double> array_vdot(const py::object &someA,
+                                const py::object &someB) {
+  py::object A = array_getcontiguous(someA);
+  py::object B = array_getcontiguous(someB);
+  int one = 1;
+  int L = array_size(A);
+  if (array_size(B) != L) {
+    throw std::invalid_argument("Arrays of different size in vdot");
+  }
+  switch (array_type(A)) {
+  case NPY_DOUBLE:
+    switch (array_type(B)) {
+    case NPY_DOUBLE:
+      return ddot_ptr(&L, array_data<double>(A), &one, array_data<double>(B),
+                      &one);
+    case NPY_COMPLEX64:
+    case NPY_COMPLEX128:
+      return array_vdot(array_cast(A, NPY_COMPLEX128), B);
+    default:
+      return array_vdot(A, array_cast(B, NPY_DOUBLE));
+    }
+  case NPY_COMPLEX64:
+    A = array_cast(A, NPY_COMPLEX128);
+  case NPY_COMPLEX128:
+    switch (array_type(B)) {
+    case NPY_COMPLEX128:
+      return zdotc_ptr(&L, array_data<std::complex<double>>(A), &one,
+                       array_data<std::complex<double>>(B), &one);
+    default:
+      return array_vdot(A, array_cast(B, NPY_COMPLEX128));
+    }
+  default:
+    // A is real
+    switch (array_type(B)) {
+    case NPY_COMPLEX64:
+      B = array_cast(B, NPY_COMPLEX128);
+    case NPY_COMPLEX128:
+      return array_vdot(array_cast(A, NPY_COMPLEX128), B);
+    default:
+      return array_vdot(array_cast(A, NPY_DOUBLE), array_cast(B, NPY_DOUBLE));
+    }
+  }
+}
+
 /*
  * Equivalent to A[:rows,:cols]
  */
@@ -102,9 +146,15 @@ py::object gemm(py::object B, Gemm BT, py::object A, Gemm AT) {
   }
   if (BT == Gemm::GEMM_NORMAL) {
     n = array_int_dim(B, 0);
+    if (k != array_dim(B, 1)) {
+      throw std::invalid_argument("Non-matching matrices in GEMM");
+    }
     Border = 'N';
   } else {
     n = array_int_dim(B, 1);
+    if (k != array_dim(B, 0)) {
+      throw std::invalid_argument("Non-matching matrices in GEMM");
+    }
     Border = (BT == Gemm::GEMM_TRANSPOSE) ? 'T' : 'C';
   }
   switch (array_type(A)) {

@@ -112,7 +112,7 @@ def simplify(
             tools.log("Stopping, as tolerance reached", debug_level=3)
             break
         direction = -direction
-    mps._error = 0.0
+    mps.set_error(0.0)
     mps.update_error(state.error())
     mps.update_error(err)
     if normalize and norm_mps_sqr:
@@ -266,7 +266,7 @@ def simplify_mps_sum(
             tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    mps._error = 0.0
+    mps.set_error(0.0)
     base_error = sum(
         np.abs(weights) * sqrt(state.error()) for weights, state in zip(weights, states)
     )

@@ -124,7 +124,8 @@ class TestCanonicalForm(MPSStatesFixture):
         def ok(Ψ):
             for center in range(Ψ.size):
                 ξ1 = CanonicalMPS(Ψ, center=center)
-                ξ2 = CanonicalMPS(Ψ, center=center).normalize_inplace()
+                ξ2 = CanonicalMPS(Ψ, center=center)
+                ξ2.normalize_inplace()
                 self.assertAlmostEqual(ξ2.norm_squared(), 1.0)
                 self.assertTrue(
                     similar(ξ1.to_vector() / sqrt(ξ1.norm_squared()), ξ2.to_vector())
@@ -139,7 +140,7 @@ class TestCanonicalForm(MPSStatesFixture):
         #
         def ok(Ψ):
             for center in range(Ψ.size):
-                ψ = CanonicalMPS(Ψ, center=center).normalize_inplace()
+                ψ = CanonicalMPS(Ψ, center=center, normalize=True)
                 ξ = ψ.copy()
                 self.assertEqual(ξ.size, ψ.size)
                 self.assertEqual(ξ.center, ψ.center)

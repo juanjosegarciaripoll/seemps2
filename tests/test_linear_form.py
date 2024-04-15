@@ -14,7 +14,7 @@ class TestLinearForm(TestCase):
         def ok(ψ):
             global foo
             for center in range(ψ.size):
-                ϕ = CanonicalMPS(ψ, center=center).normalize_inplace()
+                ϕ = CanonicalMPS(ψ, center=center, normalize=True)
                 LF = AntilinearForm(ϕ, ϕ, center)
                 for i in range(ϕ.size):
                     if i <= center:
@@ -28,7 +28,7 @@ class TestLinearForm(TestCase):
 
     def tensor1siteok(self, aϕ, O):
         for center in range(aϕ.size):
-            ϕ = CanonicalMPS(aϕ, center=center).normalize_inplace()
+            ϕ = CanonicalMPS(aϕ, center=center, normalize=True)
             for n in range(ϕ.size):
                 #
                 # Take an MPS Φ, construct a new state ψ = O1*ϕ with a local
@@ -59,7 +59,7 @@ class TestLinearForm(TestCase):
 
     def tensor2siteok(self, aϕ, O1, O2):
         for center in range(aϕ.size):
-            ϕ = CanonicalMPS(aϕ, center=center).normalize_inplace()
+            ϕ = CanonicalMPS(aϕ, center=center, normalize=True)
             for n in range(ϕ.size - 1):
                 #
                 # Take an MPS Φ, construct a new state ψ = O1*ϕ with a local

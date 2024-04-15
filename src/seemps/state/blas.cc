@@ -3,6 +3,9 @@
 
 namespace seemps {
 
+std::complex<double> (*zdotc_ptr)(int *n, std::complex<double> *zx, int *incx,
+                                  std::complex<double> *zy, int *incy);
+double (*ddot_ptr)(int *n, double *zx, int *incx, double *zy, int *incy);
 void (*dgemm_ptr)(char *, char *, int *, int *, int *, double *, double *,
                   int *, double *, int *, double *, double *, int *);
 void (*zgemm_ptr)(char *, char *, int *, int *, int *, std::complex<double> *,
@@ -28,6 +31,8 @@ void load_scipy_wrappers() {
   {
     auto cython_blas = py::module_::import("scipy.linalg.cython_blas");
     py::dict __pyx_capi__ = cython_blas.attr("__pyx_capi__");
+    load_wrapper(__pyx_capi__, "ddot", ddot_ptr);
+    load_wrapper(__pyx_capi__, "zdotc", zdotc_ptr);
     load_wrapper(__pyx_capi__, "dgemm", dgemm_ptr);
     load_wrapper(__pyx_capi__, "zgemm", zgemm_ptr);
   }
@@ -38,5 +43,4 @@ void load_scipy_wrappers() {
     load_wrapper(__pyx_capi__, "zgesvd", zgesvd_ptr);
   }
 }
-
 } // namespace seemps

@@ -17,6 +17,10 @@ void _normalize(double *data, size_t size, double norm);
 
 void _normalize(double *data, size_t size);
 
+extern std::complex<double> (*zdotc_ptr)(int *n, std::complex<double> *zx,
+                                         int *incx, std::complex<double> *zy,
+                                         int *incy);
+extern double (*ddot_ptr)(int *n, double *zx, int *incx, double *zy, int *incy);
 extern void (*dgemm_ptr)(char *, char *, int *, int *, int *, double *,
                          double *, int *, double *, int *, double *, double *,
                          int *);
@@ -46,6 +50,8 @@ void load_scipy_wrappers();
 /*
  * Numpy structures
  */
+
+std::complex<double> array_vdot(const py::object &A, const py::object &B);
 
 inline PyArrayObject *to_array(const py::object &a) {
   return reinterpret_cast<PyArrayObject *>(a.ptr());
@@ -136,6 +142,11 @@ inline auto matrix_product(const py::object &a, const py::object &b) {
       PyArray_MatrixProduct(a.ptr(), b.ptr()));
 }
 
+inline py::object empty_like_array(const py::object &a) {
+  return py::reinterpret_steal<py::object>(
+      PyArray_SimpleNew(array_ndim(a), array_dims(a), array_type(a)));
+}
+
 inline py::object empty_vector(npy_intp size, int type) {
   const npy_intp dims[1] = {size};
   return py::reinterpret_steal<py::object>(PyArray_SimpleNew(1, dims, type));
@@ -144,6 +155,19 @@ inline py::object empty_vector(npy_intp size, int type) {
 inline py::object empty_matrix(npy_intp rows, npy_intp cols, int type) {
   const npy_intp dims[2] = {rows, cols};
   return py::reinterpret_steal<py::object>(PyArray_SimpleNew(2, dims, type));
+}
+
+template <class Dimensions>
+inline py::object zero_array(const Dimensions &dims, int type = NPY_DOUBLE) {
+  auto the_dims = const_cast<npy_intp *>(&(*std::begin(dims)));
+  auto rank = static_cast<int>(std::size(d));
+  return py::reinterpret_steal<py::object>(
+      PyArray_ZEROS(rank, the_dims, type, 0));
+}
+
+inline py::object zero_like_array(const py::object &a) {
+  return py::reinterpret_steal<py::object>(
+      PyArray_ZEROS(array_ndim(a), array_dims(a), array_type(a), 0));
 }
 
 inline py::object zero_matrix(npy_intp rows, npy_intp cols,
@@ -159,6 +183,18 @@ inline py::object zero_vector(npy_intp size, int type = NPY_DOUBLE) {
 
 py::object eye(npy_intp rows, npy_intp cols);
 inline py::object eye(npy_intp rows) { return eye(rows, rows); }
+
+inline py::object array_conjugate(const py::object &a) {
+  auto type = array_type(a);
+  if (type != NPY_COMPLEX128 && type != NPY_COMPLEX64) {
+    return a;
+  } else {
+    auto output = empty_like_array(a);
+    return py::reinterpret_steal<py::object>(reinterpret_cast<PyObject *>(
+        PyArray_Conjugate(to_array(a), to_array(output))));
+    return output;
+  }
+}
 
 /*
  * Advanced contractions

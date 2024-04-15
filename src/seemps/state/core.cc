@@ -121,6 +121,207 @@ PYBIND11_MODULE(core, m) {
       .value("VARIATIONAL", Simplification::VARIATIONAL)
       .export_values();
 
+  py::class_<MPS, TensorArray3>(m, "MPS",
+                                R"doc(MPS (Matrix Product State) class.
+
+    This implements a bare-bones Matrix Product State object with open
+    boundary conditions. The tensors have three indices, `A[α,d,β]`, where
+    `α,β` are the internal labels and `d` is the physical state of the given
+    site.
+
+    Parameters
+    ----------
+    data : Iterable[Tensor3]
+        Sequence of three-legged tensors `A[α,si,β]`. The dimensions are not
+        verified for consistency.
+    error : float, default=0.0
+        Accumulated truncation error in the previous tensors.
+										   )doc")
+      .def(py::init<const MPS &, double>(), py::arg("state"),
+           py::arg("error") = 0.0)
+      .def(py::init<py::list, double>(), py::arg("state"),
+           py::arg("error") = 0.0)
+      .def(
+          "copy", &MPS::copy,
+          R"doc(Return a shallow copy of the MPS, without duplicating the tensors.)doc")
+      .def("as_mps", &MPS::as_mps)
+      .def("dimension", &MPS::dimension,
+           R"doc(Hilbert space dimension of this quantum system)doc")
+      .def("physical_dimensions", &MPS::physical_dimensions,
+           R"doc(List of physical dimensions for the quantum subsystems.)doc")
+      .def("bond_dimensions", &MPS::bond_dimensions,
+           R"doc(List of bond dimensions for the matrix product state.
+
+        Returns a list or vector of `N+1` integers, for an MPS of size `N`.
+        The integers `1` to `N-1` are the bond dimensions between the respective
+        pairs of tensors. The first and last index are `1`, as it corresponds
+        to a matrix product state with open boundary conditions.
+
+        Returns
+        -------
+        list[int]
+            List of virtual bond dimensions between MPS tensors, including the
+            boundary ones.
+
+        Examples
+        --------
+        >>> A = np.ones(1,2,3)
+        >>> B = np.ones(3,2,1)
+        >>> mps = MPS([A, B])
+        >>> mps.bond_dimensions()
+        [1, 3, 1])doc")
+      .def("norm_squared", &MPS::norm_squared,
+           R"doc(Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
+      .def("norm", &MPS::norm,
+           R"doc(Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
+      .def(
+          "zero_state", &MPS::zero_state,
+          R"doc(Return a zero wavefunction with the same physical dimensions.)doc")
+      .def("left_environment", &MPS::left_environment,
+           R"doc(Environment matrix for systems to the left of `site`.)doc")
+      .def("right_environment", &MPS::right_environment,
+           R"doc(Environment matrix for systems to the right of `site`.)doc")
+      .def("error", &MPS::error,
+           R"doc(Upper bound of the accumulated truncation error on this state.
+
+        If this quantum state results from `N` steps in which we have obtained
+        truncation errors :math:`\\delta_i`, this function returns the estimate
+        :math:`\\sqrt{\\sum_{i}\\delta_i^2}`.
+
+        Returns
+        -------
+        float
+			 Upper bound for the actual error when approximating this state.
+        )doc")
+      .def("set_error", &MPS::set_error)
+      .def("update_error", &MPS::update_error,
+           R"doc(Register an increase in the truncation error.
+
+        Parameters
+        ----------
+        delta : float
+            Error increment in norm-2
+
+        Returns
+        -------
+        float
+            Accumulated upper bound of total truncation error.
+
+        See also
+        --------
+        :py:meth:`error` : Total accumulated error after this update.
+        )doc")
+      .def("conj", &MPS::conj,
+           "doc(Return the complex-conjugate of this quantum state.)doc");
+
+  py::class_<CanonicalMPS, MPS>(m, "CanonicalMPS",
+                                R"doc(Canonical MPS class.
+
+    This implements a Matrix Product State object with open boundary
+    conditions, that is always on canonical form with respect to a given site.
+    The tensors have three indices, `A[α,i,β]`, where `α,β` are the internal
+    labels and `i` is the physical state of the given site.
+
+    Parameters
+    ----------
+    data : Iterable[Tensor3]
+        A set of tensors that will be orthogonalized. It can be an
+        :class:`MPS` state.
+    center : int, optional
+        The center for the canonical form. Defaults to the first site
+        `center = 0`.
+    normalize : bool, optional
+        Whether to normalize the state to compensate for truncation errors.
+        Defaults to the value set by `strategy`.
+    strategy : Strategy, optional
+        The truncation strategy for the orthogonalization and later
+        algorithms. Defaults to `DEFAULT_STRATEGY`.)doc")
+      .def(py::init<const CanonicalMPS &>())
+      .def(py::init<const py::list &, py::object, double, py::object,
+                    const Strategy &, bool>(),
+           py::arg("data"), py::arg("center") = CanonicalMPS::no_defined_center,
+           py::arg("error") = 0.0, py::arg("normalize") = py::none(),
+           py::arg("strategy") = DEFAULT_STRATEGY,
+           py::arg("is_canonical") = false)
+      .def(py::init<const MPS &, py::object, double, py::object,
+                    const Strategy &, bool>(),
+           py::arg("data"), py::arg("center") = CanonicalMPS::no_defined_center,
+           py::arg("error") = 0.0, py::arg("normalize") = py::none(),
+           py::arg("strategy") = DEFAULT_STRATEGY,
+           py::arg("is_canonical") = false)
+      .def(py::init<const CanonicalMPS &, py::object, double, py::object,
+                    const Strategy &, bool>(),
+           py::arg("data"), py::arg("center") = CanonicalMPS::no_defined_center,
+           py::arg("error") = 0.0, py::arg("normalize") = py::none(),
+           py::arg("strategy") = DEFAULT_STRATEGY,
+           py::arg("is_canonical") = false)
+      .def_property_readonly("center", &CanonicalMPS::center)
+      .def(
+          "zero_state", &CanonicalMPS::zero_state,
+          R"doc(Return a zero wavefunction with the same physical dimensions.)doc")
+      .def("norm_squared", &CanonicalMPS::norm_squared)
+      .def(
+          "left_environment", &CanonicalMPS::left_environment,
+          R"doc(Optimized version of :py:meth:`~seemps.state.MPS.left_environment`)doc")
+      .def(
+          "right_environment", &CanonicalMPS::right_environment,
+          R"doc(Optimized version of :py:meth:`~seemps.state.MPS.right_environment)doc")
+      .def("Schmidt_weights", &CanonicalMPS::Schmidt_weights,
+           py::arg("site") = CanonicalMPS::no_defined_center,
+           R"doc(Return the Schmidt weights for a bipartition around `site`.
+
+        Parameters
+        ----------
+        site : int, optional
+            Site in the range `[0, self.size)`, defaulting to `self.center`.
+            The system is diveded into `[0, self.site)` and `[self.site, self.size)`.
+
+        Returns
+        -------
+        numbers: np.ndarray
+            Vector of non-negative Schmidt weights.)doc")
+      .def("entanglement_entropy", &CanonicalMPS::entanglement_entropy,
+           py::arg("site") = CanonicalMPS::no_defined_center,
+           R"doc(Compute the entanglement entropy of the MPS for a bipartition
+        around `site`.
+
+        Parameters
+        ----------
+        site : int, optional
+            Site in the range `[0, self.size)`, defaulting to `self.center`.
+            The system is diveded into `[0, self.site)` and `[self.site, self.size)`.
+
+        Returns
+        -------
+        float
+            Von Neumann entropy of bipartition.)doc")
+      .def("Renyi_entropy", &CanonicalMPS::Renyi_entropy,
+           py::arg("site") = CanonicalMPS::no_defined_center,
+           py::arg("alpha") = 2.0,
+           R"doc(Compute the Renyi entropy of the MPS for a bipartition
+        around `site`.
+
+        Parameters
+        ----------
+        site : int, optional
+            Site in the range `[0, self.size)`, defaulting to `self.center`.
+            The system is diveded into `[0, self.site)` and `[self.site, self.size)`.
+        alpha : float, default = 2
+            Power of the Renyi entropy.
+
+        Returns
+        -------
+        float
+            Von Neumann entropy of bipartition.)doc")
+      .def("update_canonical", &CanonicalMPS::update_canonical)
+      .def("update_2site_right", &CanonicalMPS::update_2site_right)
+      .def("update_2site_left", &CanonicalMPS::update_2site_left)
+      .def("recenter",
+           py::overload_cast<int, const Strategy &>(&CanonicalMPS::recenter))
+      .def("recenter", py::overload_cast<int>(&CanonicalMPS::recenter))
+      .def("normalize_inplace", &CanonicalMPS::normalize_in_place)
+      .def("copy", &CanonicalMPS::copy);
+
   m.def("scprod", &scprod,
         R"doc(Compute the scalar product between matrix product states
     :math:`\langle\xi|\psi\rangle`.
@@ -176,5 +377,6 @@ PYBIND11_MODULE(core, m) {
   m.def("_update_canonical_2site_left", &_update_canonical_2site_left);
   m.def("_update_canonical_2site_right", &_update_canonical_2site_right);
   m.def("left_orth_2site", &left_orth_2site);
+
   m.def("right_orth_2site", &right_orth_2site);
 }
