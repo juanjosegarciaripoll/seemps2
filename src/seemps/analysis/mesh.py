@@ -40,16 +40,13 @@ class Interval(ABC):
             raise TypeError("Index must be an integer or a NumPy array")
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
-        ...
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def __getitem__(self, idx: int) -> float:
-        ...
+    def __getitem__(self, idx: int) -> float: ...
 
     @abstractmethod
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
-        ...
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]: ...
 
     def to_vector(self) -> np.ndarray:
         return np.array([self[idx] for idx in range(self.size)])
@@ -72,12 +69,10 @@ class RegularClosedInterval(Interval):
         self.step = (stop - start) / (size - 1)
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
-        ...
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def __getitem__(self, idx: int) -> float:
-        ...
+    def __getitem__(self, idx: int) -> float: ...
 
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
@@ -92,12 +87,10 @@ class RegularHalfOpenInterval(Interval):
         self.step = (stop - start) / size
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
-        ...
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def __getitem__(self, idx: int) -> float:
-        ...
+    def __getitem__(self, idx: int) -> float: ...
 
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
@@ -112,17 +105,34 @@ class ChebyshevZerosInterval(Interval):
         super().__init__(start, stop, size)
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray:
-        ...
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
 
     @overload
-    def __getitem__(self, idx: int) -> float:
-        ...
+    def __getitem__(self, idx: int) -> float: ...
 
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
-        zero = np.cos(np.pi * (2 * (self.size - idx) - 1) / (2 * self.size))
-        return (self.stop - self.start) * (zero + 1) / 2 + self.start
+        zero = np.cos(np.pi * (2 * idx + 1) / (2 * self.size))
+        return affine_transformation(zero, orig=(-1, 1), dest=(self.stop, self.start))
+
+
+class ChebyshevExtremaInterval(Interval):
+    """Irregular discretization given by an affine map between the
+    N extrema of the (N-1)-th Chebyshev polynomial in [-1, 1] to (start, stop)."""
+
+    def __init__(self, start: float, stop: float, size: int):
+        super().__init__(start, stop, size)
+
+    @overload
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
+
+    @overload
+    def __getitem__(self, idx: int) -> float: ...
+
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+        super()._validate_index(idx)
+        maxima = np.cos(np.pi * idx / (self.size - 1))
+        return affine_transformation(maxima, orig=(-1, 1), dest=(self.stop, self.start))
 
 
 class Mesh:
@@ -155,6 +165,7 @@ class Mesh:
     dimensions: tuple[int, ...]
 
     def __init__(self, intervals: list[Interval]):
+        # TODO: Rename dimensions to shape = (dimensions, dimension)
         self.intervals = intervals
         self.dimension = len(intervals)
         self.dimensions = tuple(interval.size for interval in self.intervals)
@@ -199,19 +210,36 @@ class Mesh:
         )
 
 
-def mps_to_mesh_matrix(sites_per_dimension: list[int], order: str = "A") -> np.ndarray:
+def affine_transformation(x: np.ndarray, orig: tuple, dest: tuple) -> np.ndarray:
+    """
+    Performs an affine transformation of x as u = a*x + b from orig=(x0, x1) to dest=(u0, u1).
+    """
+    # TODO: Combine the affine transformations for vectors, MPS and MPO.
+    x0, x1 = orig
+    u0, u1 = dest
+    a = (u1 - u0) / (x1 - x0)
+    b = 0.5 * ((u1 + u0) - a * (x0 + x1))
+    x_affine = a * x
+    if np.abs(b) > np.finfo(np.float64).eps:
+        x_affine = x_affine + b
+    return x_affine
+
+
+def mps_to_mesh_matrix(
+    sites_per_dimension: list[int], mps_order: str = "A"
+) -> np.ndarray:
     """
     Returns a matrix that transforms an array of MPS indices
     to an array of Mesh indices based on the specified order and base.
     """
-    if order == "A":
+    if mps_order == "A":
         T = np.zeros((sum(sites_per_dimension), len(sites_per_dimension)), dtype=int)
         start = 0
         for m, n in enumerate(sites_per_dimension):
             T[start : start + n, m] = 2 ** np.arange(n)[::-1]
             start += n
         return T
-    elif order == "B":
+    elif mps_order == "B":
         T = np.vstack(
             [
                 np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites_per_dimension])
