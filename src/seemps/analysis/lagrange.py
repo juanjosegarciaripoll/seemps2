@@ -240,7 +240,7 @@ class LagrangeBuilder:
         theta = np.arccos(2 * x - 1)
         idx = self.angular_index(theta)
 
-        P = 0
+        P = 0.0
         for gamma in range(idx - self.m, idx + self.m + 1):
             # Find the unique representative of gamma in [0, ..., d]
             gamma_res = (
