@@ -185,7 +185,7 @@ class LagrangeBuilder:
         local_order: Optional[int] = None,
     ):
         self.d = order
-        self.m = local_order
+        self.m = local_order if local_order else order
         self.D = order + 1
         self.c = np.array(
             [0.5 * (np.cos(np.pi * i / self.d) + 1) for i in range(self.d + 1)]
@@ -229,7 +229,7 @@ class LagrangeBuilder:
             den = np.delete(self.den[j], j)
             return np.prod(num / den, axis=1)
 
-    def local_chebyshev_cardinal(self, x: int, j: int) -> float:
+    def local_chebyshev_cardinal(self, x: float, j: int) -> float:
         """
         Evaluates the j-th local Chebyshev cardinal function at a given point x
         by means of a local angular Lagrange interpolation on an extended angular grid
