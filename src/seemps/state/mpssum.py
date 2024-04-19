@@ -101,15 +101,10 @@ def join_canonical(self, *args, **kwdargs) -> CanonicalMPS:
     return CanonicalMPS(self.join(), *args, **kwdargs)
 
 
-MPSSum.__array_priority__ = 10000
 MPSSum.as_mps = as_mps
 MPSSum.join = join
 MPSSum.join_canonical = join_canonical
 MPSSum._joined_tensors = _joined_tensors
-MPSSum.__add__ = __add__
-MPSSum.__sub__ = __sub__
-MPSSum.__mul__ = __mul__
-MPSSum.__rmul__ = __rmul__
 MPSSum.to_vector = to_vector
 
 __all__ = ["MPSSum"]

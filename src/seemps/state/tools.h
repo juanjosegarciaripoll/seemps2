@@ -128,4 +128,6 @@ object real(const object &w);
 
 double abs(const object &w);
 
+inline bool iscomplex(const object &w) { return PyComplex_Check(w.ptr()); }
+
 } // namespace pybind11

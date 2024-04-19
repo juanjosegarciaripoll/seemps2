@@ -62,10 +62,5 @@ def from_vector(
 
 
 CanonicalMPS.from_vector = from_vector
-CanonicalMPS.__array_priority__ = 10000
-CanonicalMPS.__add__ = MPS.__add__
-CanonicalMPS.__sub__ = MPS.__sub__
-CanonicalMPS.__mul__ = MPS.__mul__
-CanonicalMPS.__rmul__ = MPS.__rmul__
 
 __all__ = ["CanonicalMPS"]

@@ -80,6 +80,7 @@ pybind11_modules = [
             "src/seemps/state/mps.cc",
             "src/seemps/state/mpssum.cc",
             "src/seemps/state/canonical.cc",
+            "src/seemps/state/mps_algebra.cc",
             "src/seemps/state/schmidt.cc",
             "src/seemps/state/contractions.cc",
             "src/seemps/state/strategy.cc",

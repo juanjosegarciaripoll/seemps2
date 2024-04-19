@@ -1,5 +1,6 @@
 // Here we initialize the MY_PyArray_API
 #define INIT_NUMPY_ARRAY_CPP
+#include <pybind11/operators.h>
 #include "core.h"
 #include "tensors.h"
 #include "strategy.h"
@@ -212,7 +213,21 @@ PYBIND11_MODULE(core, m) {
         :py:meth:`error` : Total accumulated error after this update.
         )doc")
       .def("conj", &MPS::conj,
-           "doc(Return the complex-conjugate of this quantum state.)doc");
+           "doc(Return the complex-conjugate of this quantum state.)doc")
+      .def("__mul__", &MPS::times_object, py::is_operator())
+      .def("__rmul__", &MPS::times_object, py::is_operator())
+      .def(py::self + py::self)
+      .def(py::self - py::self)
+      // .def(py::self + MPSSum())
+      .def(
+          "__add__", [](const MPS &a, const MPSSum &b) { return a + b; },
+          py::is_operator())
+      // .def(py::self - MPSSum())
+      .def(
+          "__sub__", [](const MPS &a, const MPSSum &b) { return a - b; },
+          py::is_operator())
+      .def_property_readonly_static("__array_priority__",
+                                    [](const py::object &) { return 10000; });
 
   py::class_<CanonicalMPS, MPS>(m, "CanonicalMPS",
                                 R"doc(Canonical MPS class.
@@ -320,7 +335,9 @@ PYBIND11_MODULE(core, m) {
            py::overload_cast<int, const Strategy &>(&CanonicalMPS::recenter))
       .def("recenter", py::overload_cast<int>(&CanonicalMPS::recenter))
       .def("normalize_inplace", &CanonicalMPS::normalize_in_place)
-      .def("copy", &CanonicalMPS::copy);
+      .def("copy", &CanonicalMPS::copy)
+      .def("__mul__", &CanonicalMPS::times_object, py::is_operator())
+      .def("__rmul__", &CanonicalMPS::times_object, py::is_operator());
 
   py::class_<MPSSum>(
       m, "MPSSum",
@@ -353,7 +370,24 @@ PYBIND11_MODULE(core, m) {
            R"doc(Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
       .def("physical_dimensions", &MPSSum::physical_dimensions)
       .def("bond_dimensions", &MPSSum::bond_dimensions)
-      .def("dimension", &MPSSum::dimension);
+      .def("dimension", &MPSSum::dimension)
+      .def(py::self + py::self)
+      .def(py::self - py::self)
+      // .def(py:self + MPS())
+      .def(
+          "__add__", [](const MPSSum &a, const MPS &b) { return a + b; },
+          py::is_operator())
+      // .def(py:self - MPS())
+      .def(
+          "__sub__", [](const MPSSum &a, const MPS &b) { return a - b; },
+          py::is_operator())
+      .def(int() * py::self)
+      .def(double() * py::self)
+      .def(std::complex<double>() * py::self)
+      .def_property_readonly_static("__array_priority__",
+                                    [](const py::object &) { return 10000; })
+      .def("__mul__", &MPSSum::times_object, py::is_operator())
+      .def("__rmul__", &MPSSum::times_object, py::is_operator());
 
   m.def("scprod", &scprod,
         R"doc(Compute the scalar product between matrix product states

@@ -120,13 +120,13 @@ class TestMPSOperations(MPSStatesFixture):
     def test_multiplying_mps_by_non_scalar_raises_exception(self):
         A = MPS(self.inhomogeneous_state)
         with self.assertRaises(TypeError):
-            A = A * np.array([1.0])
+            B = A * np.array([1.0])
         with self.assertRaises(TypeError):
-            A = A * np.zeros((3, 3))
+            B = A * np.zeros((3, 3))
         with self.assertRaises(TypeError):
-            A = np.array([1.0]) * A
+            B = np.array([1.0]) * A
         with self.assertRaises(TypeError):
-            A = np.zeros((3, 3)) * A
+            B = np.zeros((3, 3)) * A
 
     def test_scaled_mps_produces_scaled_wavefunction(self):
         factor = 1.0 + 3.0j

@@ -85,6 +85,8 @@ public:
   }
 
   auto conj() const { return copy().conj_in_place(); }
+
+  py::object times_object(const py::object &weight_or_mps) const;
 };
 
 class MPSSum {
@@ -116,6 +118,8 @@ public:
   MPS &mps(int site) const;
 
   double norm() const;
+
+  py::object times_object(const py::object &weight_or_mps) const;
 
 private:
   void append(const Weight &weight, const py::object &mps);
@@ -185,7 +189,48 @@ public:
 
   const CanonicalMPS &recenter(int new_center, const Strategy &strategy);
 
+  py::object times_object(const py::object &weight_or_mps) const;
+
   int center() const { return center_; }
 };
+
+MPSSum operator+(const MPS &a, const MPS &b);
+MPSSum operator+(const MPS &a, const MPSSum &b);
+MPSSum operator+(const MPSSum &a, const MPSSum &b);
+MPSSum operator+(const MPSSum &a, const MPS &b);
+
+MPSSum operator-(const MPS &a, const MPS &b);
+MPSSum operator-(const MPSSum &a, const MPS &b);
+MPSSum operator-(const MPSSum &a, const MPSSum &b);
+MPSSum operator-(const MPS &a, const MPSSum &b);
+
+MPS operator*(const MPS &a, const MPS &b);
+inline MPS operator*(int a, const MPS &b) { return double(a) * b; }
+MPS operator*(double a, const MPS &b);
+MPS operator*(std::complex<double> a, const MPS &b);
+
+inline MPSSum operator*(int a, const MPSSum &b) { return double(a) * b; }
+MPSSum operator*(double a, const MPSSum &b);
+MPSSum operator*(std::complex<double> a, const MPSSum &b);
+
+inline MPS operator*(const MPS &a, int b) { return double(b) * a; }
+inline MPS operator*(const MPS &a, double b) { return b * a; }
+inline MPS operator*(const MPS &a, std::complex<double> b) { return b * a; }
+
+CanonicalMPS operator*(double a, const CanonicalMPS &b);
+CanonicalMPS operator*(std::complex<double> a, const CanonicalMPS &b);
+inline CanonicalMPS operator*(const CanonicalMPS &a, int b) {
+  return double(b) * a;
+}
+inline CanonicalMPS operator*(const CanonicalMPS &a, double b) { return b * a; }
+inline CanonicalMPS operator*(const CanonicalMPS &a, std::complex<double> b) {
+  return b * a;
+}
+
+inline MPSSum operator*(const MPSSum &a, int b) { return double(b) * a; }
+inline MPSSum operator*(const MPSSum &a, double b) { return b * a; }
+inline MPSSum operator*(const MPSSum &a, std::complex<double> b) {
+  return b * a;
+}
 
 } // namespace seemps

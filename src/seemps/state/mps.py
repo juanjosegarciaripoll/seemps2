@@ -6,72 +6,8 @@ from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
-from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum
+from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum, CanonicalMPS
 from .schmidt import vector2mps
-
-#
-# Dynamically patched methods
-#
-
-
-def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
-    """Represent `self + state` as :class:`.MPSSum`."""
-    match state:
-        case MPS():
-            return MPSSum([1.0, 1.0], [self, state], check_args=False)
-        case MPSSum(weights=w, states=s):
-            return MPSSum([1.0] + w, [self] + s, check_args=False)
-        case _:
-            raise InvalidOperation("+", self, state)
-
-
-def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
-    """Represent `self - state` as :class:`.MPSSum`"""
-    match state:
-        case MPS():
-            return MPSSum([1, -1], [self, state], check_args=False)
-        case MPSSum(weights=w, states=s):
-            return MPSSum([1] + [-wi for wi in w], [self] + s, check_args=False)
-        case _:
-            raise InvalidOperation("-", self, state)
-
-
-def __mul__(self, n: Union[Weight, MPS]) -> MPS:
-    """Compute `n * self` where `n` is a scalar."""
-    match n:
-        case int() | float() | complex():
-            if n:
-                mps_mult = self.copy()
-                mps_mult[0] = n * mps_mult[0]
-                mps_mult.set_error(np.abs(n) * mps_mult.error())
-                return mps_mult
-            return self.zero_state()
-        case MPS():
-            return MPS(
-                [
-                    # np.einsum('aib,cid->acibd', A, B)
-                    (
-                        A[:, np.newaxis, :, :, np.newaxis] * B[:, :, np.newaxis, :]
-                    ).reshape(A.shape[0] * B.shape[0], A.shape[1], -1)
-                    for A, B in zip(self, n)
-                ]
-            )
-        case _:
-            raise InvalidOperation("*", self, n)
-
-
-def __rmul__(self, n: Weight) -> MPS:
-    """Compute `self * n`, where `n` is a scalar."""
-    match n:
-        case int() | float() | complex():
-            if n:
-                mps_mult = self.copy()
-                mps_mult[0] = n * mps_mult[0]
-                mps_mult.set_error(abs(n) * mps_mult.error())
-                return mps_mult
-            return self.zero_state()
-        case _:
-            raise InvalidOperation("*", n, self)
 
 
 def _mps2vector(data: MPS) -> Vector:
@@ -327,11 +263,7 @@ def norm2(self) -> float:
     return self.norm_squared()
 
 
-MPS.__array_priority__ = 10000
-MPS.__add__ = __add__
-MPS.__sub__ = __sub__
-MPS.__mul__ = __mul__
-MPS.__rmul__ = __rmul__
+# MPS.__array_priority__ = 10000
 MPS.norm2 = norm2
 MPS.to_vector = _mps2vector
 MPS.from_tensor = from_tensor
