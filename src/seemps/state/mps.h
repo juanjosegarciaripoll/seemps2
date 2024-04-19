@@ -121,6 +121,8 @@ public:
 
   py::object times_object(const py::object &weight_or_mps) const;
 
+  double error() const;
+
 private:
   void append(const Weight &weight, const py::object &mps);
 

@@ -59,6 +59,16 @@ double MPSSum::norm_squared() const {
   return std::abs(output);
 }
 
+double MPSSum::error() const {
+  double output = 0.0;
+  for (size_t i = 0; i < sum_size(); ++i) {
+    auto wi = weights_[i].cast<std::complex<double>>();
+    auto error = mps_[i].cast<const MPS &>().error();
+    output += std::abs(wi) * error;
+  }
+  return output;
+}
+
 Weight MPSSum::weight(int site) const { return weights_[site]; }
 
 MPS &MPSSum::mps(int site) const { return mps_[site].cast<MPS &>(); }
