@@ -122,7 +122,7 @@ class CrossStrategy:
             self.random_indices = random_mps_indices(cross.state, rng=self.rng)
             self.func_samples = cross.sample_func(self.random_indices).reshape(-1)
         state_samples = cross.sample_state(self.random_indices)
-        return np.max(np.abs(state_samples - self.func_samples))
+        return np.linalg.norm(state_samples - self.func_samples, np.inf)
 
     def variation(self, cross: Cross) -> float:
         """

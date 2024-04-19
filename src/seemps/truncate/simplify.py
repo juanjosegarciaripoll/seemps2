@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Union
 from math import sqrt
 import numpy as np
+from numpy import vdot
 from .. import tools
 from ..state import (
     DEFAULT_TOLERANCE,
@@ -99,8 +100,8 @@ def simplify(
         #
         # We estimate the error
         #
-        norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
-        mps_state_scprod = np.vdot(last_tensor, form.tensor1site())
+        norm_mps_sqr = vdot(last_tensor, last_tensor).real
+        mps_state_scprod = vdot(last_tensor, form.tensor1site())
         old_err = err
         err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         tools.log(
@@ -250,8 +251,8 @@ def simplify_mps_sum(
         #
         # We estimate the error
         #
-        norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
-        mps_state_scprod = np.vdot(
+        norm_mps_sqr = vdot(last_tensor, last_tensor).real
+        mps_state_scprod = vdot(
             last_tensor,
             sum(w * f.tensor1site() for w, f in zip(weights, forms)),
         )
@@ -268,7 +269,7 @@ def simplify_mps_sum(
         direction = -direction
     mps.set_error(0.0)
     base_error = sum(
-        np.abs(weights) * sqrt(state.error()) for weights, state in zip(weights, states)
+        abs(weights) * sqrt(state.error()) for weights, state in zip(weights, states)
     )
     mps.update_error(base_error**2)
     mps.update_error(err)
@@ -286,3 +287,6 @@ def combine(
 ) -> CanonicalMPS:
     """Deprecated, use `simplify` instead."""
     return simplify_mps_sum(MPSSum(weights, states))
+
+
+__all__ = ["simplify"]

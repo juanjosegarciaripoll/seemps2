@@ -179,7 +179,7 @@ def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
     a = (u1 - u0) / (x1 - x0)
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
     mps_affine = a * mps
-    if np.abs(b) > np.finfo(np.float64).eps:
+    if abs(b) > np.finfo(np.float64).eps:
         I = MPS([np.ones((1, 2, 1))] * len(mps_affine))
         mps_affine = mps_affine + b * I
         # Preserve the input type

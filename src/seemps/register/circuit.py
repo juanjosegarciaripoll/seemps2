@@ -161,7 +161,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
         # extract the original determinant into a prefactor for the
         # rotation angles.
         #
-        factor = np.abs(np.linalg.det(O))
+        factor = abs(np.linalg.det(O))
         self.factor = sqrt(abs(factor))
         self.operator = O / self.factor
 

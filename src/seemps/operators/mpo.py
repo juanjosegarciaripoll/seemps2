@@ -87,7 +87,7 @@ class MPO(TensorArray):
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `n * self`"""
         if isinstance(n, (int, float, complex)):
-            absn = np.abs(n)
+            absn = abs(n)
             if absn:
                 phase = n / absn
                 factor = np.exp(np.log(absn) / self.size)
@@ -106,7 +106,7 @@ class MPO(TensorArray):
     def __rmul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `self * self`"""
         if isinstance(n, (int, float, complex)):
-            absn = np.abs(n)
+            absn = abs(n)
             if absn:
                 phase = n / absn
                 factor = np.exp(np.log(absn) / self.size)

@@ -70,7 +70,7 @@ class TestCase(unittest.TestCase):
             v = np.linalg.norm(A) * np.linalg.norm(B)
             if np.isclose(np.abs(u), v, **kwdargs):
                 return
-            error = f"\nmax(|A-B|)={np.max(np.abs(A - B))}"
+            error = f"\nmax(|A-B|)={np.linalg.norm(A - B, np.inf)}"
         raise self.failureException(f"Objects are not similar:\nA={A}\nB={B}" + error)
 
     def assertAlmostIdentity(self, A, **kwdargs) -> None:
