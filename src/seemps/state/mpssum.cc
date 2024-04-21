@@ -42,6 +42,7 @@ MPSSum MPSSum::conj() const {
     output.weights_[i] = py::conj(output.weights_[i]);
     output.mps_[i].cast<MPS &>().conj_in_place();
   }
+  return output;
 }
 
 double MPSSum::norm_squared() const {

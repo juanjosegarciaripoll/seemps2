@@ -207,13 +207,13 @@ MPSSum operator-(const MPSSum &a, const MPSSum &b);
 MPSSum operator-(const MPS &a, const MPSSum &b);
 
 MPS operator*(const MPS &a, const MPS &b);
-inline MPS operator*(int a, const MPS &b) { return double(a) * b; }
 MPS operator*(double a, const MPS &b);
 MPS operator*(std::complex<double> a, const MPS &b);
+inline MPS operator*(int a, const MPS &b) { return double(a) * b; }
 
-inline MPSSum operator*(int a, const MPSSum &b) { return double(a) * b; }
 MPSSum operator*(double a, const MPSSum &b);
 MPSSum operator*(std::complex<double> a, const MPSSum &b);
+inline MPSSum operator*(int a, const MPSSum &b) { return double(a) * b; }
 
 inline MPS operator*(const MPS &a, int b) { return double(b) * a; }
 inline MPS operator*(const MPS &a, double b) { return b * a; }
