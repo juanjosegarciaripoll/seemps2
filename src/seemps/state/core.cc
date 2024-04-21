@@ -370,7 +370,6 @@ PYBIND11_MODULE(core, m) {
            R"doc(Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
       .def("error", &MPSSum::error)
       .def("physical_dimensions", &MPSSum::physical_dimensions)
-      .def("bond_dimensions", &MPSSum::bond_dimensions)
       .def("dimension", &MPSSum::dimension)
       .def(py::self + py::self)
       .def(py::self - py::self)
@@ -382,9 +381,6 @@ PYBIND11_MODULE(core, m) {
       .def(
           "__sub__", [](const MPSSum &a, const MPS &b) { return a - b; },
           py::is_operator())
-      .def(int() * py::self)
-      .def(double() * py::self)
-      .def(std::complex<double>() * py::self)
       .def_property_readonly_static("__array_priority__",
                                     [](const py::object &) { return 10000; })
       .def("__mul__", &MPSSum::times_object, py::is_operator())

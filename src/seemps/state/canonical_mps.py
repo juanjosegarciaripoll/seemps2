@@ -17,7 +17,7 @@ from seemps.state.core import (
 from .mps import MPS
 
 
-@classmethod
+@classmethod  # type: ignore
 def from_vector(
     cls,
     ψ: VectorLike,
@@ -61,6 +61,6 @@ def from_vector(
     )
 
 
-CanonicalMPS.from_vector = from_vector
+CanonicalMPS.from_vector = from_vector  # type: ignore
 
 __all__ = ["CanonicalMPS"]

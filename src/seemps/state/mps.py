@@ -8,6 +8,14 @@ from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
 from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum, CanonicalMPS
 from .schmidt import vector2mps
+from .environments import (  # noqa: E402
+    Environment,
+    begin_environment,
+    update_left_environment,
+    update_right_environment,
+    join_environments,
+    scprod,
+)
 
 
 def _mps2vector(data: MPS) -> Vector:
@@ -20,7 +28,7 @@ def _mps2vector(data: MPS) -> Vector:
     return Ψ.reshape(-1)
 
 
-@classmethod
+@classmethod  # type: ignore
 def from_vector(
     cls,
     ψ: VectorLike,
@@ -53,7 +61,7 @@ def from_vector(
     return MPS(data, error)
 
 
-@classmethod
+@classmethod  # type: ignore
 def from_tensor(
     cls,
     state: np.ndarray,
@@ -264,22 +272,13 @@ def norm2(self) -> float:
 
 
 # MPS.__array_priority__ = 10000
-MPS.norm2 = norm2
-MPS.to_vector = _mps2vector
-MPS.from_tensor = from_tensor
-MPS.from_vector = from_vector
-MPS.extend = extend
-MPS.all_expectation1 = all_expectation1
-MPS.expectation1 = expectation1
-MPS.expectation2 = expectation2
-
-from .environments import (  # noqa: E402
-    Environment,
-    begin_environment,
-    update_left_environment,
-    update_right_environment,
-    join_environments,
-    scprod,
-)
+MPS.norm2 = norm2  # type: ignore
+MPS.to_vector = _mps2vector  # type: ignore
+MPS.from_tensor = from_tensor  # type: ignore
+MPS.from_vector = from_vector  # type: ignore
+MPS.extend = extend  # type: ignore
+MPS.all_expectation1 = all_expectation1  # type: ignore
+MPS.expectation1 = expectation1  # type: ignore
+MPS.expectation2 = expectation2  # type: ignore
 
 __all__ = ["MPS"]

@@ -58,7 +58,9 @@ class MPO(TensorArray):
 
     __array_priority__ = 10000
 
-    def __init__(self, data: list[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
+    def __init__(
+        self, data: MPO | Sequence[Tensor4], strategy: Strategy = DEFAULT_STRATEGY
+    ):
         super().__init__(data)
         self.strategy = strategy
 

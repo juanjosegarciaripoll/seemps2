@@ -12,44 +12,6 @@ def as_mps(self) -> MPS:
     return self.join()
 
 
-def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
-    """Add `self + state`, incorporating it to the lists."""
-    match state:
-        case MPS():
-            return MPSSum(self.weights + [1.0], self.states + [state], check_args=False)
-        case MPSSum(weights=w, states=s):
-            return MPSSum(self.weights + w, self.states + s, check_args=False)
-        case _:
-            raise InvalidOperation("+", self, state)
-
-
-def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
-    """Subtract `self - state`, incorporating it to the lists."""
-    match state:
-        case MPS():
-            return MPSSum(self.weights + [-1], self.states + [state], check_args=False)
-        case MPSSum(weights=w, states=s):
-            return MPSSum(
-                self.weights + [-wi for wi in w], self.states + s, check_args=False
-            )
-        case _:
-            raise InvalidOperation("-", self, state)
-
-
-def __mul__(self, n: Weight) -> MPSSum:
-    """Rescale the linear combination `n * self` for scalar `n`."""
-    if isinstance(n, (int, float, complex)):
-        return MPSSum([n * w for w in self.weights], self.states, check_args=False)
-    raise InvalidOperation("*", self, n)
-
-
-def __rmul__(self, n: Weight) -> MPSSum:
-    """Rescale the linear combination `self * n` for scalar `n`."""
-    if isinstance(n, (int, float, complex)):
-        return MPSSum([n * w for w in self.weights], self.states, check_args=False)
-    raise InvalidOperation("*", n, self)
-
-
 def to_vector(self) -> Vector:
     """Return the wavefunction of this quantum state."""
     return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore
@@ -101,10 +63,10 @@ def join_canonical(self, *args, **kwdargs) -> CanonicalMPS:
     return CanonicalMPS(self.join(), *args, **kwdargs)
 
 
-MPSSum.as_mps = as_mps
-MPSSum.join = join
-MPSSum.join_canonical = join_canonical
-MPSSum._joined_tensors = _joined_tensors
-MPSSum.to_vector = to_vector
+MPSSum.as_mps = as_mps  # type: ignore
+MPSSum.join = join  # type: ignore
+MPSSum.join_canonical = join_canonical  # type: ignore
+MPSSum._joined_tensors = _joined_tensors  # type: ignore
+MPSSum.to_vector = to_vector  # type: ignore
 
 __all__ = ["MPSSum"]
