@@ -67,13 +67,15 @@ def simplify(
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(state, center=start, strategy=strategy)
+        mps = CanonicalMPS(state, center=start, normalize=False, strategy=strategy)
         return CanonicalMPS(mps, center=-1 - start, strategy=strategy)
 
-    if guess is None:
-        mps = CanonicalMPS(state, center=start, strategy=strategy)
-    else:
-        mps = CanonicalMPS(guess)
+    mps = CanonicalMPS(
+        state if guess is None else guess,
+        center=start,
+        normalize=False,
+        strategy=strategy,
+    )
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     if not (norm_state_sqr := state.norm_squared()):
@@ -174,7 +176,7 @@ def simplify_mps_sum(
     """
     # Compute norm of output and eliminate zero states
     orig_sum_state = sum_state
-    norm_state_sqr, state = select_nonzero_mps_components(sum_state)
+    norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
     if not norm_state_sqr:
         tools.log(
             "COMBINE state with |state|=0. Returning zero state.",
@@ -186,7 +188,9 @@ def simplify_mps_sum(
     start = 0 if direction > 0 else -1
     # CANONICAL_FORM implements a simplification based on two passes
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(sum_state.join(), center=start, strategy=strategy)
+        mps = CanonicalMPS(
+            sum_state.join(), center=start, normalize=False, strategy=strategy
+        )
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
@@ -200,7 +204,9 @@ def simplify_mps_sum(
     # output is expected to be a CanonicalMPS, we must use the
     # strategy to construct it.
     if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-        mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(
+            sum_state.join(), center=-1 - start, normalize=False, strategy=strategy
+        )
         if tools.DEBUG >= 2:
             tools.log(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
@@ -210,9 +216,12 @@ def simplify_mps_sum(
             )
 
     # Prepare initial guess
-    if guess is None:
-        guess = sum_state.join()
-    mps = CanonicalMPS(guess, center=start, strategy=strategy)
+    mps = CanonicalMPS(
+        sum_state.join() if guess is None else guess,
+        center=start,
+        normalize=False,
+        strategy=strategy,
+    )
     simplification_tolerance = strategy.get_simplification_tolerance()
 
     size = mps.size
