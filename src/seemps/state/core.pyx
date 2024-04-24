@@ -200,7 +200,7 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
     max_error = total * strategy.tolerance
     final_error = 0.0
     for i in range(N):
-        if errors[i] >= max_error:
+        if errors[i] > max_error:
             i -= 1
             break
     final_size = min(N - i, strategy.max_bond_dimension)
