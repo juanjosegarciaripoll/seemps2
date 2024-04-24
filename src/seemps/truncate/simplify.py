@@ -138,8 +138,9 @@ def simplify(
         direction = -direction
     total_error = err
     if normalize and norm_mps_sqr:
-        last_tensor /= norm_mps_sqr
-        total_error /= norm_mps_sqr
+        factor = sqrt(norm_mps_sqr)
+        last_tensor /= factor
+        total_error /= factor
     mps._error = total_error
     return mps
 
@@ -213,7 +214,9 @@ def simplify_mps_sum(
         mps = CanonicalMPS(
             sum_state.join(), center=start, normalize=False, strategy=strategy
         )
-        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(
+            mps, center=-1 - start, normalize=normalize, strategy=strategy
+        )
         if tools.DEBUG >= 2:
             tools.log(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
@@ -227,7 +230,7 @@ def simplify_mps_sum(
     # strategy to construct it.
     if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
         mps = CanonicalMPS(
-            sum_state.join(), center=-1 - start, normalize=False, strategy=strategy
+            sum_state.join(), center=-1 - start, normalize=normalize, strategy=strategy
         )
         if tools.DEBUG >= 2:
             tools.log(
@@ -298,8 +301,9 @@ def simplify_mps_sum(
         direction = -direction
     total_error = (sqrt(sum_state.error()) + sqrt(err)) ** 2
     if normalize and norm_mps_sqr:
-        last_tensor /= norm_mps_sqr
-        total_error /= norm_mps_sqr
+        factor = sqrt(norm_mps_sqr)
+        last_tensor /= factor
+        total_error /= factor
     mps._error = total_error
     return mps
 
