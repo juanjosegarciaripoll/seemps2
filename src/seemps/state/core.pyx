@@ -205,7 +205,7 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
             break
     final_size = min(N - i, strategy.max_bond_dimension)
     max_error = errors[N - final_size]
-    if strategy.normalize:
+    if False: #strategy.normalize:
         _rescale_if_not_zero(s_start, sqrt(total - max_error), final_size)
     if final_size < N:
         # _resize_vector_in_place(s, final_size)
@@ -226,7 +226,7 @@ cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
     max_error = 0.0
     for i in range(final_size, N):
         max_error += data[i] * data[i]
-    if strategy.normalize:
+    if False: #strategy.normalize:
         _normalize(data, final_size)
     if final_size < N:
         # _resize_vector_in_place(s, final_size)
@@ -247,7 +247,7 @@ cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     max_error = 0.0
     for i in range(final_size, N):
         max_error += data[i] * data[i]
-    if strategy.normalize:
+    if False: #strategy.normalize:
         _normalize(data, final_size)
     if final_size < N:
         # _resize_vector_in_place(s, final_size)
