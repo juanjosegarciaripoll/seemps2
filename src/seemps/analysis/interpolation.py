@@ -84,7 +84,7 @@ def fourier_interpolation_1D(
     )
     U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
-    ψfmps = (Mf / M0) * ψfmps
+    ψfmps = np.sqrt(2 ** (Mf - M0)) * ψfmps
     if strategy.get_normalize_flag():
         ψfmps = ψfmps.normalize_inplace()
     return ψfmps, new_space
@@ -273,6 +273,8 @@ def finite_differences_interpolation(
         Interpolated MPS with one more site for each dimension.
     """
     space = copy.deepcopy(space)
+    if not isinstance(ψmps, CanonicalMPS):
+        ψmps = CanonicalMPS(ψmps, strategy=strategy)
     for i, q in enumerate(space.qubits_per_dimension):
         ψmps, space = finite_differences_interpolation_1D(
             ψmps, space, dim=i, strategy=strategy
