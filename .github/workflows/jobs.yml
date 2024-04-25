@@ -18,7 +18,7 @@ jobs:
       - name: Build and install
         run: pip install .
       - name: Run unit tests
-        run: python -m unittest -v tests
+        run: python -m unittest discover -f
       - name: Check types with mypy
         run: mypy src/seemps
       - name: Lint with flake8
