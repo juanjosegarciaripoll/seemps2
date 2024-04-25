@@ -273,6 +273,8 @@ def finite_differences_interpolation(
         Interpolated MPS with one more site for each dimension.
     """
     space = copy.deepcopy(space)
+    if not isinstance(ψmps, CanonicalMPS):
+        ψmps = CanonicalMPS(ψmps, strategy=strategy)
     for i, q in enumerate(space.qubits_per_dimension):
         ψmps, space = finite_differences_interpolation_1D(
             ψmps, space, dim=i, strategy=strategy
