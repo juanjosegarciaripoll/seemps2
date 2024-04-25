@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import dok_matrix, csr_matrix
+from scipy.sparse import dok_matrix, csr_matrix  # type: ignore
 from typing import Callable, Optional
 from functools import lru_cache
 
@@ -246,7 +246,9 @@ class LagrangeBuilder:
             gamma_res = (
                 -gamma
                 if gamma < 0
-                else self.d - (gamma - self.d) if gamma > self.d else gamma
+                else self.d - (gamma - self.d)
+                if gamma > self.d
+                else gamma
             )
             if j == gamma_res:
                 P += self.local_angular_cardinal(theta, gamma)
