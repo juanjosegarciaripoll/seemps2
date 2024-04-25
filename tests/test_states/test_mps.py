@@ -76,7 +76,7 @@ class TestMPSOperations(MPSStatesFixture):
         complex_mps = MPS([-1j * x for x in self.inhomogeneous_state])
         complex_mps_norm = complex_mps.norm()
         self.assertTrue(complex_mps_norm > 0)
-        self.assertTrue(isinstance(complex_mps_norm, np.double))
+        self.assertTrue(isinstance(complex_mps_norm, float))
 
     def test_norm_returns_wavefunction_norm(self):
         self.assertAlmostEqual(

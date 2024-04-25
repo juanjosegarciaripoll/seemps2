@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from math import sqrt
 from typing import Union, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, Tensor3
@@ -176,7 +177,7 @@ class MPSSum:
 
     def norm(self) -> float:
         """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        return np.sqrt(self.norm_squared())
+        return sqrt(self.norm_squared())
 
 
 from .canonical_mps import CanonicalMPS  # noqa: E402

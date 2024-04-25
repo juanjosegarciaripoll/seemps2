@@ -1,6 +1,7 @@
 from __future__ import annotations
 import copy
 import numpy as np
+from math import sqrt
 from ..qft import qft_mpo
 from ..state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
@@ -72,7 +73,7 @@ def fourier_interpolation_1D(ψ0mps, space, M0, Mf, dim, strategy=DEFAULT_STRATE
     )
     U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
-    ψfmps = ψfmps * (1 / np.sqrt(ψfmps.norm_squared()))
+    ψfmps = ψfmps * (1 / sqrt(ψfmps.norm_squared()))
 
     return ψfmps, new_space
 

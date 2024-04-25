@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Callable, Union
+from math import sqrt
 from ..state import MPS, Strategy, Truncation, scprod
 from ..truncate import simplify
 from ..qft import iqft, qft_flip
@@ -281,9 +282,9 @@ def mps_fejer(
 
     # Encode Fejér MPS with iQFT
     mps_v = mps_k2 * mps_phase
-    mps = (1 / np.sqrt(2) ** sites) * qft_flip(iqft(mps_v, strategy=strategy))
+    mps = (1 / sqrt(2) ** sites) * qft_flip(iqft(mps_v, strategy=strategy))
 
-    return mps_affine_transformation(mps, (-1, 1), (start, stop))
+    return mps_affine_transformation(mps, (-1, 1), (start, stop)).as_mps()
 
 
 # TODO: Consider if this helper function is necessary

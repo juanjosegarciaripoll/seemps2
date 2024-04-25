@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Union, Callable, Optional, Any
+from math import sqrt
 import numpy as np
 import dataclasses
-
 from ..optimization.descent import DESCENT_STRATEGY
 from ..state import MPS, CanonicalMPS, MPSSum, Strategy, scprod
 from ..operators import MPO, MPOList, MPOSum
@@ -198,7 +198,7 @@ def runge_kutta_fehlberg(
         H_state = H.apply(state)
         k1 = -1 * H_state
         variance = k1.norm_squared()
-        residual = np.sqrt(abs(variance - E * E))
+        residual = sqrt(abs(variance - E * E))
         if residual < abs(tol_residual * E):
             break
         state2 = simplify(state + 0.25 * Δβ * k1, strategy=strategy)
@@ -267,7 +267,7 @@ def runge_kutta_fehlberg(
         )
         norm_ord5_sqr = state_ord5.norm_squared()
         norm_ord4_sqr = state_ord4.norm_squared()
-        δ = np.sqrt(
+        δ = sqrt(
             abs(norm_ord5_sqr + norm_ord4_sqr - 2 * scprod(state_ord5, state_ord4).real)
         ).real
         i += 1

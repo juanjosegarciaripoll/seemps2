@@ -1,5 +1,6 @@
 import numpy as np
 import seemps
+from math import sqrt
 from seemps.evolution.euler import euler, euler2, implicit_euler
 from seemps.hamiltonians import HeisenbergHamiltonian
 from seemps.operators import MPO
@@ -12,7 +13,7 @@ class TestEuler(EvolutionTestCase):
     def test_euler_time_steps_and_callback(self):
         """Check the integration times used by the algorithm"""
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
         H = HeisenbergHamiltonian(nqubits).to_mpo()
 
         final = euler(H, 1.0, mps, steps=10, callback=lambda t, state: t)
@@ -32,7 +33,7 @@ class TestEuler(EvolutionTestCase):
         steps = 1
         dt = T / steps
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
 
         H = HeisenbergHamiltonian(nqubits).to_mpo()
         final = euler(H, T, mps, steps=steps)
@@ -47,7 +48,7 @@ class TestEuler2(EvolutionTestCase):
     def test_euler2_time_steps_and_callback(self):
         """Check the integration times used by the algorithm"""
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
         H = HeisenbergHamiltonian(nqubits).to_mpo()
 
         final = euler2(H, 1.0, mps, steps=10, callback=lambda t, state: t)
@@ -67,7 +68,7 @@ class TestEuler2(EvolutionTestCase):
         steps = 1
         dt = T / steps
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
 
         H = HeisenbergHamiltonian(nqubits).to_mpo()
         final = euler2(H, T, mps, steps=steps)
@@ -82,7 +83,7 @@ class TestImplicitEuler(EvolutionTestCase):
     def _test_implicit_euler_time_steps_and_callback(self):
         """Check the integration times used by the algorithm"""
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
         H = HeisenbergHamiltonian(nqubits).to_mpo()
 
         final = implicit_euler(H, 1.0, mps, steps=10, callback=lambda t, state: t)
@@ -104,7 +105,7 @@ class TestImplicitEuler(EvolutionTestCase):
         steps = 1
         dt = T / steps
         nqubits = 4
-        mps = product_state([np.ones(2) / np.sqrt(2)] * nqubits)
+        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
 
         H = HeisenbergHamiltonian(nqubits).to_mpo()
         final = implicit_euler(H, T, mps, steps=steps, tolerance=1e-10)

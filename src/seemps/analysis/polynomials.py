@@ -47,7 +47,7 @@ def _mps_x_tensor(
         On = On[0, :, min(1, On.shape[2] - 1)]
         ndx = np.where(On != 0)
         On_sign = np.sign(On[ndx])
-        On_abs = np.abs(On[ndx])
+        On_abs = abs(On[ndx])
         d = len(On)
         An = np.zeros((L, d, L))
         for m in range(L):

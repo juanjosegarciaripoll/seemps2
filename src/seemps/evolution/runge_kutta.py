@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from math import sqrt
 from typing import Union, Optional, Callable
 from ..state import MPS, Strategy, DEFAULT_STRATEGY, scprod
 from ..operators import MPO
@@ -204,8 +205,7 @@ def runge_kutta_fehlberg(
                 2
                 * (
                     1
-                    - scprod(state_ord5, state_ord4).real
-                    / np.sqrt(norm_ord5 * norm_ord4)
+                    - scprod(state_ord5, state_ord4).real / sqrt(norm_ord5 * norm_ord4)
                 )
             )
             if delta > 0:

@@ -1,4 +1,5 @@
 import numpy as np
+from math import sqrt
 from seemps.state import (
     DEFAULT_STRATEGY,
     CanonicalMPS,
@@ -126,7 +127,7 @@ class TestCanonicalForm(MPSStatesFixture):
                 ξ2 = CanonicalMPS(Ψ, center=center).normalize_inplace()
                 self.assertAlmostEqual(ξ2.norm_squared(), 1.0)
                 self.assertTrue(
-                    similar(ξ1.to_vector() / np.sqrt(ξ1.norm_squared()), ξ2.to_vector())
+                    similar(ξ1.to_vector() / sqrt(ξ1.norm_squared()), ξ2.to_vector())
                 )
 
         run_over_random_uniform_mps(ok)

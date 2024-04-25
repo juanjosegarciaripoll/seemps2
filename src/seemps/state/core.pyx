@@ -233,7 +233,7 @@ cdef tuple _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     if final_size < N:
         s = s[:final_size]
     return s, max_error
-33
+
 def truncate_vector(s, Strategy strategy):
     if (cnp.PyArray_Check(s) == 0 or
         cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or

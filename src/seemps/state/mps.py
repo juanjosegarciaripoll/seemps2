@@ -2,6 +2,7 @@ from __future__ import annotations
 import math
 import warnings
 import numpy as np
+from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
@@ -178,7 +179,7 @@ class MPS(array.TensorArray):
                 if n:
                     mps_mult = self.copy()
                     mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult._error *= abs(n)
                     return mps_mult
                 return self.zero_state()
             case MPS():
@@ -201,7 +202,7 @@ class MPS(array.TensorArray):
                 if n:
                     mps_mult = self.copy()
                     mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult._error *= abs(n)
                     return mps_mult
                 return self.zero_state()
             case _:
@@ -220,7 +221,7 @@ class MPS(array.TensorArray):
 
     def norm(self) -> float:
         """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        return np.sqrt(abs(scprod(self, self)))
+        return sqrt(abs(scprod(self, self)))
 
     def zero_state(self) -> MPS:
         """Return a zero wavefunction with the same physical dimensions."""
@@ -356,7 +357,7 @@ class MPS(array.TensorArray):
         """
         return self._error
 
-    def update_error(self, delta: float) -> float:
+    def update_error(self, delta: float) -> None:
         """Register an increase in the truncation error.
 
         Parameters
@@ -364,17 +365,11 @@ class MPS(array.TensorArray):
         delta : float
             Error increment in norm-2
 
-        Returns
-        -------
-        float
-            Accumulated upper bound of total truncation error.
-
         See also
         --------
         :py:meth:`error` : Total accumulated error after this update.
         """
-        self._error = (np.sqrt(self._error) + np.sqrt(delta)) ** 2
-        return self._error
+        self._error += delta
 
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer

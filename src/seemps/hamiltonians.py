@@ -122,13 +122,7 @@ class NNHamiltonian(object):
                 .transpose(0, 2, 1, 3)
                 .reshape(di * di, dj * dj)
             )
-            U, s, V = schmidt.svd(
-                Hij,
-                full_matrices=False,
-                overwrite_a=True,
-                check_finite=False,
-                lapack_driver=schmidt.SVD_LAPACK_DRIVER,
-            )
+            U, s, V = schmidt._our_svd(Hij)
             s, _ = core.truncate_vector(s, strategy)
             ds = s.size
             s = np.sqrt(s)

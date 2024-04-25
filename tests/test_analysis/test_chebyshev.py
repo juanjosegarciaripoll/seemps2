@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.polynomial import Chebyshev
 from scipy.special import erf
-
+from math import sqrt
 from seemps.analysis.mesh import RegularHalfOpenInterval
 from seemps.analysis.factories import mps_tensor_sum, mps_interval
 from seemps.analysis.chebyshev import (
@@ -88,7 +88,7 @@ class TestChebyshevExpansion(TestCase):
         start = -1
         stop = 2
         f = lambda x: np.exp(-x * x)
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(start))
+        f_intg = lambda x: (sqrt(np.pi) / 2) * (erf(x) - erf(start))
         self.assertSimilarSeries(
             chebyshev_coefficients(f, 22, start, stop).integ(1, lbnd=start),
             chebyshev_coefficients(f_intg, 22, start, stop),
@@ -110,14 +110,14 @@ class TestChebyshevMPS(TestCase):
         self.assertSimilar(f_diff(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d(self):
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+        f_intg = lambda x: (sqrt(np.pi) / 2) * (erf(x) - erf(-1))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
         mps_cheb = chebyshev_approximation(f_intg, 30, interval)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())
 
     def test_gaussian_integral_1d_b(self):
         f = lambda x: np.exp(-(x**2))
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+        f_intg = lambda x: (sqrt(np.pi) / 2) * (erf(x) - erf(-1))
         interval = RegularHalfOpenInterval(-1, 2, 2**5)
         mps_cheb = chebyshev_approximation(f, 30, interval, differentiation_order=-1)
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb.to_vector())

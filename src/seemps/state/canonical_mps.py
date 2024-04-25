@@ -1,5 +1,6 @@
 from __future__ import annotations
 import warnings
+from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
@@ -48,10 +49,10 @@ def _canonicalize(Ψ: list[Tensor3], center: int, truncation: Strategy) -> float
     err = 0.0
     for i in range(0, center):
         _, errk = _update_in_canonical_form_right(Ψ, Ψ[i], i, truncation)
-        err += errk
+        err += sqrt(errk)
     for i in range(len(Ψ) - 1, center, -1):
         _, errk = _update_in_canonical_form_left(Ψ, Ψ[i], i, truncation)
-        err += errk
+        err += sqrt(errk)
     return err
 
 
@@ -108,9 +109,7 @@ class CanonicalMPS(MPS):
                 0 if center is None else center
             )
             if not is_canonical:
-                self.update_error(
-                    _canonicalize(self._data, actual_center, self.strategy)
-                )
+                self._error += _canonicalize(self._data, actual_center, self.strategy)
         if normalize is True or (
             normalize is None and self.strategy.get_normalize_flag()
         ):
@@ -214,18 +213,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        A = self._data[site]
-        d1, d2, d3 = A.shape
-        s = schmidt.svd(
-            A.reshape(d1 * d2, d3),
-            full_matrices=False,
-            compute_uv=False,
-            check_finite=False,
-            lapack_driver=schmidt.SVD_LAPACK_DRIVER,
-        )
-        s *= s
-        s /= np.sum(s)
-        return s
+        return schmidt.schmidt_weights(self._data[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
@@ -274,7 +262,7 @@ class CanonicalMPS(MPS):
 
     def update_canonical(
         self, A: Tensor3, direction: int, truncation: Strategy
-    ) -> float:
+    ) -> None:
         """Update the state, replacing the tensor at `self.center`
         and moving the center to `self.center + direction`.
 
@@ -294,15 +282,14 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, err = _update_in_canonical_form_right(
+            self.center, error_squared = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, err = _update_in_canonical_form_left(
+            self.center, error_squared = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
-        self.update_error(err)
-        return err
+        self._error += sqrt(error_squared)
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -322,11 +309,11 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], err = schmidt.left_orth_2site(
+        self._data[site], self._data[site + 1], error_squared = schmidt.left_orth_2site(
             AA, strategy
         )
         self.center = site + 1
-        self.update_error(err)
+        self._error += sqrt(error_squared)
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
         """Split a two-site tensor into two one-site tensors by
@@ -345,11 +332,11 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], err = schmidt.right_orth_2site(
-            AA, strategy
+        self._data[site], self._data[site + 1], error_squared = (
+            schmidt.right_orth_2site(AA, strategy)
         )
         self.center = site
-        self.update_error(err)
+        self._error += sqrt(error_squared)
 
     def _interpret_center(self, center: int) -> int:
         """Converts `center` into an integer in `[0,self.size)`, with the

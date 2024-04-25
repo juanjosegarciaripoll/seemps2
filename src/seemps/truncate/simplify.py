@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import sqrt
 from typing import Optional, Union
 
 import numpy as np
@@ -104,9 +105,7 @@ def simplify(
         norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
         mps_state_scprod = np.vdot(last_tensor, form.tensor1site())
         old_err = err
-        err = 2 * abs(
-            1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
-        )
+        err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         tools.log(
             f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
             f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
@@ -116,11 +115,11 @@ def simplify(
             tools.log("Stopping, as tolerance reached", debug_level=3)
             break
         direction = -direction
-    mps._error = 0.0
-    mps.update_error(state.error())
-    mps.update_error(err)
+    total_error_bound = state._error + sqrt(err)
     if normalize and norm_mps_sqr:
         last_tensor /= norm_mps_sqr
+        total_error_bound /= sqrt(norm_mps_sqr)
+    mps._error = total_error_bound
     return mps
 
 
@@ -260,9 +259,7 @@ def simplify_mps_sum(
             sum(w * f.tensor1site() for w, f in zip(weights, forms)),
         )
         old_err = err
-        err = 2 * abs(
-            1.0 - mps_state_scprod.real / np.sqrt(norm_mps_sqr * norm_state_sqr)
-        )
+        err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         tools.log(
             f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
             f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
@@ -272,15 +269,13 @@ def simplify_mps_sum(
             tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    mps._error = 0.0
-    base_error = sum(
-        np.abs(weights) * np.sqrt(state.error())
-        for weights, state in zip(weights, states)
+    total_error_bound = sqrt(err) + sum(
+        abs(weight) * state._error for weight, state in zip(weights, states)
     )
-    mps.update_error(base_error**2)
-    mps.update_error(err)
     if normalize and norm_mps_sqr:
         last_tensor /= norm_mps_sqr
+        total_error_bound /= sqrt(norm_mps_sqr)
+    mps._error = total_error_bound
     return mps
 
 

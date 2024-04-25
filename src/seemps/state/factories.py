@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional, Union
 import warnings
+from math import sqrt
 import numpy as np
 from ..typing import VectorLike, Tensor3
 from .mps import MPS
@@ -40,7 +41,7 @@ def GHZ(n: int) -> MPS:
     """:class:`MPS` representing a GHZ state with `n` qubits."""
     a = np.zeros((2, 2, 2))
     b = a.copy()
-    a[0, 0, 0] = a[0, 1, 1] = 1.0 / np.sqrt(2.0)
+    a[0, 0, 0] = a[0, 1, 1] = 1.0 / sqrt(2.0)
     b[0, 0, 0] = 1.0
     b[1, 1, 1] = 1.0
     data = [a] + [b] * (n - 1)
@@ -58,7 +59,7 @@ def W(n: int) -> MPS:
     """
     a = np.zeros((2, 2, 2))
     a[0, 0, 0] = 1.0
-    a[0, 1, 1] = 1.0 / np.sqrt(n)
+    a[0, 1, 1] = 1.0 / sqrt(n)
     a[1, 0, 1] = 1.0
     data = [a] * n
     data[0] = a[0:1, :, :]
@@ -102,7 +103,7 @@ def graph_state(n: int) -> MPS:
     AA = np.swapaxes(AA, 0, 1)
     data = [AA] * n
     data[0] = np.dot(np.array([[[1, 0], [0, 1]]]), H)
-    data[-1] = np.swapaxes(np.array([[[1, 0], [0, 1]]]), 0, 2) / np.sqrt(2**n)
+    data[-1] = np.swapaxes(np.array([[[1, 0], [0, 1]]]), 0, 2) / sqrt(2**n)
     return MPS(data)
 
 
@@ -119,11 +120,11 @@ def AKLT(n: int) -> MPS:
     A1 = np.dot(np.array([[0, 1], [1, 0]]), iY)
     A2 = np.dot(np.array([[0, 0], [0, 1]]), iY)
 
-    AA = np.array([A0, A1, A2]) / np.sqrt(2)
+    AA = np.array([A0, A1, A2]) / sqrt(2)
     AA = np.swapaxes(AA, 0, 1)
     data = [AA] * n
     data[-1] = np.array([[[1, 0], [0, 1], [0, 0]]])
-    data[0] = np.array(np.einsum("ijk,kl->ijl", data[-1], iY)) / np.sqrt(2)
+    data[0] = np.array(np.einsum("ijk,kl->ijl", data[-1], iY)) / sqrt(2)
     data[-1] = np.swapaxes(data[-1], 0, 2)
 
     return MPS(data)
