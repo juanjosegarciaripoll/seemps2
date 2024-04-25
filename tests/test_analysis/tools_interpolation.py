@@ -1,5 +1,6 @@
-import numpy as np
 from math import sqrt
+
+import numpy as np
 
 
 def gaussian(r):
@@ -61,14 +62,14 @@ def fourier_interpolation_vector_1D(f, M, axis=0):
         M-point interpolated function on given axis.
     """
     d = f.shape
-    f = np.fft.ifft(f, norm="ortho", axis=axis)
+    f = np.fft.fft(f, norm="ortho", axis=axis)
     dims = list(f.shape)
     dims[axis] = M - d[axis]
     filler = np.zeros(dims, dtype=type(f[0]))
     if axis == 1:
         filler = filler.T
     f = np.insert(f, d[axis] // 2, filler, axis=axis)
-    f = np.fft.fft(f, norm="ortho", axis=axis)
+    f = np.fft.ifft(f, norm="ortho", axis=axis)
     return f * sqrt(M / d[axis])
 
 
