@@ -86,7 +86,7 @@ def fourier_interpolation_1D(
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
     ψfmps = (Mf / M0) * ψfmps
     if strategy.get_normalize_flag():
-        ψfmps = ψfmps * (1 / ψfmps.norm())
+        ψfmps = ψfmps.normalize_inplace()
     return ψfmps, new_space
 
 
