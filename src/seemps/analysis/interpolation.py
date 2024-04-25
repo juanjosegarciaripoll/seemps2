@@ -84,7 +84,7 @@ def fourier_interpolation_1D(
     )
     U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
-    ψfmps = (Mf / M0) * ψfmps
+    ψfmps = np.sqrt(2 ** (Mf - M0)) * ψfmps
     if strategy.get_normalize_flag():
         ψfmps = ψfmps.normalize_inplace()
     return ψfmps, new_space
