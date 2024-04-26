@@ -24,11 +24,11 @@ class TestCanonicalForm(MPSStatesFixture):
         def ok(Ψ, normalization=False):
             strategy = DEFAULT_STRATEGY.replace(normalize=normalization)
             for i in range(Ψ.size - 1):
-                ξ = Ψ.copy()
+                ξ = Ψ._data.copy()
                 _update_in_canonical_form_right(ξ, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], +1))
             for i in range(1, Ψ.size):
-                ξ = Ψ.copy()
+                ξ = Ψ._data.copy()
                 _update_in_canonical_form_left(ξ, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], -1))
 
@@ -44,7 +44,7 @@ class TestCanonicalForm(MPSStatesFixture):
         def ok(Ψ):
             for center in range(Ψ.size):
                 ξ = Ψ.copy()
-                _canonicalize(ξ, center, DEFAULT_STRATEGY)
+                _canonicalize(ξ._data, center, DEFAULT_STRATEGY)
                 #
                 # All sites to the left and to the right are isometries
                 #
