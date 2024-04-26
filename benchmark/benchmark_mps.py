@@ -1,4 +1,6 @@
 import seemps.state
+from seemps.state import CanonicalMPS, GHZ, scprod, DEFAULT_STRATEGY, random_uniform_mps
+from seemps.truncate import simplify
 from benchmark import BenchmarkSet, BenchmarkGroup
 import numpy as np
 import sys
@@ -21,7 +23,7 @@ def propagate_size(size):
 
 
 def make_ghz(size):
-    return (seemps.state.GHZ(size),)
+    return (GHZ(size),)
 
 
 def make_two_ghz(size):
@@ -29,7 +31,21 @@ def make_two_ghz(size):
 
 
 def scalar_product(A, B):
-    seemps.state.scprod(A, B)
+    scprod(A, B)
+
+
+def random_mps(size, rng=np.random.default_rng(0x23211)):
+    state = random_uniform_mps(2, size, 5)
+    strategy = DEFAULT_STRATEGY
+    return (state, strategy)
+
+
+def canonicalize(state, strategy):
+    return CanonicalMPS(state, strategy=strategy)
+
+
+def simplify(state, strategy):
+    return simplify(state, strategy=strategy)
 
 
 def run_all():
@@ -54,6 +70,18 @@ def run_all():
                 name="CMPS",
                 items=[
                     ("scprod", scalar_product, make_two_ghz),
+                ],
+            ),
+            BenchmarkGroup.run(
+                name="RMPS",
+                items=[
+                    ("canonical", canonicalize, random_mps),
+                ],
+            ),
+            BenchmarkGroup.run(
+                name="RMPS",
+                items=[
+                    ("simplify", canonicalize, random_mps),
                 ],
             ),
         ],
