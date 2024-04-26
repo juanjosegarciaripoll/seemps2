@@ -40,7 +40,7 @@ def maxvol_square(matrix: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     ).T
     for _ in range(SQUARE_MAXITER):
         i, j = np.divmod(np.abs(B).argmax(), r)
-        if np.abs(B[i, j]) <= SQUARE_TOL:
+        if abs(B[i, j]) <= SQUARE_TOL:
             break
         I[j] = i
         bj = B[:, j]
