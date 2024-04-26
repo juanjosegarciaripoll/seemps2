@@ -73,9 +73,7 @@ class CanonicalMPS(MPS):
                 0 if center is None else center
             )
             if not is_canonical:
-                self.update_error(
-                    _canonicalize(self._data, actual_center, self.strategy)
-                )
+                self._error += _canonicalize(self._data, actual_center, self.strategy)
         if normalize is True or (
             normalize is None and self.strategy.get_normalize_flag()
         ):
@@ -248,15 +246,15 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, err = _update_in_canonical_form_right(
+            self.center, error_squared = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, err = _update_in_canonical_form_left(
+            self.center, error_squared = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
-        self.update_error(err)
-        return err
+        self._error += sqrt(error_squared)
+        return error_squared
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -276,11 +274,11 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], err = schmidt.left_orth_2site(
+        self._data[site], self._data[site + 1], error_squared = schmidt.left_orth_2site(
             AA, strategy
         )
         self.center = site + 1
-        self.update_error(err)
+        self._error += sqrt(error_squared)
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
         """Split a two-site tensor into two one-site tensors by
@@ -299,11 +297,11 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], err = schmidt.right_orth_2site(
-            AA, strategy
+        self._data[site], self._data[site + 1], error_squared = (
+            schmidt.right_orth_2site(AA, strategy)
         )
         self.center = site
-        self.update_error(err)
+        self._error += sqrt(error_squared)
 
     def _interpret_center(self, center: int) -> int:
         """Converts `center` into an integer in `[0,self.size)`, with the
