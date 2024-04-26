@@ -78,7 +78,7 @@ def schmidt_weights(A: Tensor3) -> Vector:
     return s
 
 
-def ortho_right(A, strategy: Strategy):
+def _ortho_right(A, strategy: Strategy):
     α, i, β = A.shape
     U, s, V = _our_svd(A.reshape(α * i, β).copy())
     s, err = truncate_vector(s, strategy)
@@ -86,7 +86,7 @@ def ortho_right(A, strategy: Strategy):
     return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
 
 
-def ortho_left(A, strategy: Strategy):
+def _ortho_left(A, strategy: Strategy):
     α, i, β = A.shape
     U, s, V = _our_svd(A.reshape(α, i * β).copy())
     s, err = truncate_vector(s, strategy)

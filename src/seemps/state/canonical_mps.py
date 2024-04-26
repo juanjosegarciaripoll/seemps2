@@ -4,7 +4,19 @@ from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
-from . import environments, schmidt
+from .schmidt import (
+    _ortho_left,
+    _ortho_right,
+    vector2mps,
+    schmidt_weights,
+    left_orth_2site,
+    right_orth_2site,
+)
+from .environments import (
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+)
 from ._contractions import _contract_last_and_first
 from .core import DEFAULT_STRATEGY, Strategy
 from .mps import MPS
@@ -19,7 +31,7 @@ def _update_in_canonical_form_right(
     if site + 1 == len(Ψ):
         Ψ[site] = A
         return site, 0.0
-    Ψ[site], sV, err = schmidt.ortho_right(A, truncation)
+    Ψ[site], sV, err = _ortho_right(A, truncation)
     site += 1
     # np.einsum("ab,bic->aic", sV, Ψ[site])
     Ψ[site] = _contract_last_and_first(sV, Ψ[site])
@@ -35,7 +47,7 @@ def _update_in_canonical_form_left(
     if site == 0:
         Ψ[site] = A
         return site, 0.0
-    Ψ[site], Us, err = schmidt.ortho_left(A, truncation)
+    Ψ[site], Us, err = _ortho_left(A, truncation)
     site -= 1
     # np.einsum("aib,bc->aic", Ψ[site], Us)
     Ψ[site] = np.matmul(Ψ[site], Us)
@@ -153,7 +165,7 @@ class CanonicalMPS(MPS):
         --------
         :py:meth:`~seemps.state.MPS.from_vector`
         """
-        data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
         return CanonicalMPS(
             data,
             error=error,
@@ -178,17 +190,17 @@ class CanonicalMPS(MPS):
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
         start = min(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[0])
+        ρ = _begin_environment(self[start].shape[0])
         for A in self._data[start:site]:
-            ρ = environments.update_left_environment(A, A, ρ)
+            ρ = _update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
         start = max(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[-1])
+        ρ = _begin_environment(self[start].shape[-1])
         for A in self._data[start:site:-1]:
-            ρ = environments.update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
         return ρ
 
     def Schmidt_weights(self, site: Optional[int] = None) -> Vector:
@@ -213,7 +225,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        return schmidt.schmidt_weights(self._data[site])
+        return schmidt_weights(self._data[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
@@ -310,7 +322,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = schmidt.left_orth_2site(
+        self._data[site], self._data[site + 1], error_squared = left_orth_2site(
             AA, strategy
         )
         self.center = site + 1
@@ -333,8 +345,8 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = (
-            schmidt.right_orth_2site(AA, strategy)
+        self._data[site], self._data[site + 1], error_squared = right_orth_2site(
+            AA, strategy
         )
         self.center = site
         self._error += sqrt(error_squared)
@@ -399,3 +411,6 @@ class CanonicalMPS(MPS):
     def copy(self):
         """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
         return self.__copy__()
+
+
+__all__ = ["CanonicalMPS"]

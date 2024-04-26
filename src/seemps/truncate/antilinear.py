@@ -3,9 +3,9 @@ import numpy as np
 from ..typing import Tensor3, Tensor4
 from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
-    begin_environment,
-    update_right_environment,
-    update_left_environment,
+    _begin_environment,
+    _update_right_environment,
+    _update_left_environment,
 )
 
 
@@ -30,15 +30,15 @@ class AntilinearForm:
     def __init__(self, bra, ket, center=0):
         assert bra.size == ket.size
         size = bra.size
-        ρ = begin_environment()
+        ρ = _begin_environment()
         R = [ρ] * size
         for i in range(size - 1, center, -1):
-            R[i - 1] = ρ = update_right_environment(bra[i], ket[i], ρ)
+            R[i - 1] = ρ = _update_right_environment(bra[i], ket[i], ρ)
 
-        ρ = begin_environment()
+        ρ = _begin_environment()
         L = [ρ] * size
         for i in range(0, center):
-            L[i + 1] = ρ = update_left_environment(bra[i], ket[i], ρ)
+            L[i + 1] = ρ = _update_left_environment(bra[i], ket[i], ρ)
 
         self.bra = bra
         self.ket = ket
@@ -114,7 +114,7 @@ class AntilinearForm:
         prev = self.center
         nxt = prev + 1
         assert nxt < self.size
-        self.L[nxt] = update_left_environment(
+        self.L[nxt] = _update_left_environment(
             self.bra[prev], self.ket[prev], self.L[prev]
         )
         self.center = nxt
@@ -129,7 +129,7 @@ class AntilinearForm:
         prev = self.center
         nxt = prev - 1
         assert nxt >= 0
-        self.R[nxt] = update_right_environment(
+        self.R[nxt] = _update_right_environment(
             self.bra[prev], self.ket[prev], self.R[prev]
         )
         self.center = nxt
