@@ -1,7 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Optional
-from ..typing import Weight, Operator, Tensor3, Tensor4, Environment, MPOEnvironment
+from ..typing import Weight, Tensor3, Tensor4, Environment, MPOEnvironment
 
 
 def _begin_environment(χ: int = 1) -> Environment:
@@ -11,15 +10,10 @@ def _begin_environment(χ: int = 1) -> Environment:
     return np.eye(χ, dtype=np.float64)
 
 
-def _update_left_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, operator: Optional[Operator] = None
-) -> Environment:
+def _update_left_environment(B: Tensor3, A: Tensor3, rho: Environment) -> Environment:
     """Extend the left environment with two new tensors, 'B' and 'A' coming
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket."""
-    if operator is not None:
-        # A = np.einsum("ji,aib->ajb", operator, A)
-        A = np.matmul(operator, A)
     # np.einsum("ijk,li,ljk->nk", A, rho, B.conj())
     i, j, k = A.shape
     l, j, n = B.shape
@@ -29,15 +23,10 @@ def _update_left_environment(
     return np.matmul(B.reshape(l * j, n).T.conj(), rho.reshape(l * j, k))
 
 
-def _update_right_environment(
-    B: Tensor3, A: Tensor3, rho: Environment, operator: Optional[Operator] = None
-) -> Environment:
+def _update_right_environment(B: Tensor3, A: Tensor3, rho: Environment) -> Environment:
     """Extend the left environment with two new tensors, 'B' and 'A' coming
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket."""
-    if operator is not None:
-        # A = np.einsum("ji,aib->ajb", operator, A)
-        A = np.matmul(operator, A)
     # np.einsum("ijk,kn,ljn->il", A, rho, B.conj())
     i, j, k = A.shape
     l, j, n = B.shape
