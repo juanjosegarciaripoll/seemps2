@@ -17,10 +17,10 @@ from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 SVD_LAPACK_DRIVER = "gesvd"
 
 from seemps.state.core import _svd as _our_svd
-from seemps.state.core import left_orth_2site, right_orth_2site
+from seemps.state.core import _left_orth_2site, _right_orth_2site
 
 
-def schmidt_weights(A: Tensor3) -> Vector:
+def _schmidt_weights(A: Tensor3) -> Vector:
     d1, d2, d3 = A.shape
     s = svd(
         A.reshape(d1 * d2, d3),
@@ -34,7 +34,7 @@ def schmidt_weights(A: Tensor3) -> Vector:
     return s
 
 
-def vector2mps(
+def _vector2mps(
     state: VectorLike,
     dimensions: Sequence[int],
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -59,15 +59,15 @@ def vector2mps(
     if center < 0:
         center = L + center
     if center < 0 or center >= L:
-        raise Exception("Invalid value of center in vector2mps")
+        raise Exception("Invalid value of center in _vector2mps")
     err = 0.0
     for i in range(center):
-        output[i], ψ, new_err = left_orth_2site(
+        output[i], ψ, new_err = _left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
         )
         err += sqrt(new_err)
     for i in range(L - 1, center, -1):
-        ψ, output[i], new_err = right_orth_2site(
+        ψ, output[i], new_err = _right_orth_2site(
             ψ.reshape(ψ.shape[0], -1, dimensions[i], ψ.shape[-1]), strategy
         )
         err += sqrt(new_err)

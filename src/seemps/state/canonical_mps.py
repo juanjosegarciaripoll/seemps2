@@ -1,9 +1,15 @@
 from __future__ import annotations
 import warnings
+from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
-from . import schmidt
+from .schmidt import (
+    _vector2mps,
+    _schmidt_weights,
+    _left_orth_2site,
+    _right_orth_2site,
+)
 from .environments import (
     _begin_environment,
     _update_left_environment,
@@ -117,7 +123,7 @@ class CanonicalMPS(MPS):
         --------
         :py:meth:`~seemps.state.MPS.from_vector`
         """
-        data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
         return CanonicalMPS(
             data,
             error=error,
@@ -177,7 +183,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        return schmidt.schmidt_weights(self._data[site])
+        return _schmidt_weights(self._data[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
@@ -274,7 +280,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = schmidt.left_orth_2site(
+        self._data[site], self._data[site + 1], error_squared = _left_orth_2site(
             AA, strategy
         )
         self.center = site + 1
@@ -297,8 +303,8 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = (
-            schmidt.right_orth_2site(AA, strategy)
+        self._data[site], self._data[site + 1], error_squared = _right_orth_2site(
+            AA, strategy
         )
         self.center = site
         self._error += sqrt(error_squared)
@@ -363,3 +369,6 @@ class CanonicalMPS(MPS):
     def copy(self):
         """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
         return self.__copy__()
+
+
+__all__ = ["CanonicalMPS"]

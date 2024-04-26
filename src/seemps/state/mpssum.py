@@ -180,7 +180,7 @@ class MPSSum:
         return sqrt(self.norm_squared())
 
     def error(self) -> float:
-        """Upper bound of the norm-2 error accumulated in this MPS."""sm
+        """Upper bound of the norm-2 error accumulated in this MPS."""
         return sum(
             abs(weight) * state._error
             for weight, state in zip(self.weights, self.states)

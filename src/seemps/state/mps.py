@@ -4,12 +4,11 @@ import warnings
 import numpy as np
 from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
-from ..typing import Environment
 from ..tools import InvalidOperation
-from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
+from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
-from .schmidt import vector2mps
+from .schmidt import _vector2mps
 
 
 class MPS(array.TensorArray):
@@ -118,7 +117,7 @@ class MPS(array.TensorArray):
         MPS
             A valid matrix-product state approximating this state vector.
         """
-        data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
         return MPS(data, error)
 
     @classmethod
@@ -345,7 +344,7 @@ class MPS(array.TensorArray):
 
         If this quantum state results from `N` steps in which we have obtained
         truncation errors :math:`\\delta_i`, this function returns the estimate
-        :math:`\\sqrt{\\sum_{i}\\delta_i^2}`.
+        :math:`\\sum_{i}\\delta_i`.
 
         Returns
         -------
@@ -354,7 +353,7 @@ class MPS(array.TensorArray):
         """
         return self._error
 
-    def update_error(self, delta: float) -> float:
+    def update_error(self, delta: float) -> None:
         """Register an increase in the truncation error.
 
         Parameters
@@ -362,17 +361,11 @@ class MPS(array.TensorArray):
         delta : float
             Error increment in norm-2
 
-        Returns
-        -------
-        float
-            Accumulated upper bound of total truncation error.
-
         See also
         --------
         :py:meth:`error` : Total accumulated error after this update.
         """
-        self._error = (sqrt(self._error) + sqrt(delta)) ** 2
-        return self._error
+        self._error += delta
 
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer

@@ -99,7 +99,7 @@ def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float
     return err
 
 
-def left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
+def _left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
     """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
     that 'B' is a left-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
@@ -128,7 +128,7 @@ def left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarra
     )
 
 
-def right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
+def _right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
     """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
     that 'C' is a right-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
