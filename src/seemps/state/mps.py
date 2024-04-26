@@ -348,7 +348,7 @@ class MPS(array.TensorArray):
 
         If this quantum state results from `N` steps in which we have obtained
         truncation errors :math:`\\delta_i`, this function returns the estimate
-        :math:`\\sqrt{\\sum_{i}\\delta_i^2}`.
+        :math:`\\sum_{i}\\delta_i`.
 
         Returns
         -------

@@ -117,8 +117,9 @@ def simplify(
         direction = -direction
     total_error_bound = state._error + sqrt(err)
     if normalize and norm_mps_sqr:
-        last_tensor /= norm_mps_sqr
-        total_error_bound /= sqrt(norm_mps_sqr)
+        factor = sqrt(norm_mps_sqr)
+        last_tensor /= factor
+        total_error_bound /= factor
     mps._error = total_error_bound
     return mps
 
@@ -176,14 +177,13 @@ def simplify_mps_sum(
         Approximation to the linear combination in canonical form
     """
     # Compute norm of output and eliminate zero states
-    orig_sum_state = sum_state
-    norm_state_sqr, state = select_nonzero_mps_components(sum_state)
+    norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
     if not norm_state_sqr:
         tools.log(
             "COMBINE state with |state|=0. Returning zero state.",
             debug_level=2,
         )
-        return CanonicalMPS(orig_sum_state.states[0].zero_state(), is_canonical=True)
+        return CanonicalMPS(sum_state.states[0].zero_state(), is_canonical=True)
 
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else -1
@@ -269,12 +269,11 @@ def simplify_mps_sum(
             tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    total_error_bound = sqrt(err) + sum(
-        abs(weight) * state._error for weight, state in zip(weights, states)
-    )
+    total_error_bound = sum_state.error() + sqrt(err)
     if normalize and norm_mps_sqr:
-        last_tensor /= norm_mps_sqr
-        total_error_bound /= sqrt(norm_mps_sqr)
+        factor = sqrt(norm_mps_sqr)
+        last_tensor /= factor
+        total_error_bound /= factor
     mps._error = total_error_bound
     return mps
 

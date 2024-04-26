@@ -179,6 +179,13 @@ class MPSSum:
         """Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
         return sqrt(self.norm_squared())
 
+    def error(self) -> float:
+        """Upper bound of the norm-2 error accumulated in this MPS."""
+        return sum(
+            abs(weight) * state._error
+            for weight, state in zip(self.weights, self.states)
+        )
+
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402
