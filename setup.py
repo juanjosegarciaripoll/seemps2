@@ -43,6 +43,9 @@ else:
 
 # All Cython files with unix pathnames
 cython_files = [s.replace("\\", "/") for s in glob.glob("src/**/*.pyx", recursive=True)]
+include_files = [
+    s.replace("\\", "/") for s in glob.glob("src/**/*.pxi", recursive=True)
+]
 extension_names = [".".join(f[4:-4].split("/")) for f in cython_files]
 print(extension_names)
 print(cython_files)
@@ -53,6 +56,7 @@ extensions = [
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
         extra_compile_args=extra_compile_args,
         include_dirs=[np.get_include()],
+        depends=include_files,
     )
     for name, file in zip(extension_names, cython_files)
 ]
