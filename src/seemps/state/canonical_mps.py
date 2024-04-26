@@ -262,7 +262,7 @@ class CanonicalMPS(MPS):
 
     def update_canonical(
         self, A: Tensor3, direction: int, truncation: Strategy
-    ) -> None:
+    ) -> float:
         """Update the state, replacing the tensor at `self.center`
         and moving the center to `self.center + direction`.
 
@@ -290,6 +290,7 @@ class CanonicalMPS(MPS):
                 self._data, A, self.center, truncation
             )
         self._error += sqrt(error_squared)
+        return error_squared
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
