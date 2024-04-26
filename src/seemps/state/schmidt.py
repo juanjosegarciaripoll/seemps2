@@ -120,7 +120,7 @@ def _right_orth_2site(AA, strategy: Strategy):
     return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
 
 
-def vector2mps(
+def _vector2mps(
     state: VectorLike,
     dimensions: Sequence[int],
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -145,7 +145,7 @@ def vector2mps(
     if center < 0:
         center = L + center
     if center < 0 or center >= L:
-        raise Exception("Invalid value of center in vector2mps")
+        raise Exception("Invalid value of center in _vector2mps")
     err = 0.0
     for i in range(center):
         output[i], ψ, new_err = _left_orth_2site(
