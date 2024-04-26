@@ -64,7 +64,7 @@ def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         raise ValueError("illegal value in %dth argument of internal gesdd" % -info)
 
 
-def schmidt_weights(A: Tensor3) -> Vector:
+def _schmidt_weights(A: Tensor3) -> Vector:
     d1, d2, d3 = A.shape
     s = svd(
         A.reshape(d1 * d2, d3),
@@ -94,7 +94,7 @@ def _ortho_left(A, strategy: Strategy):
     return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
 
 
-def left_orth_2site(AA, strategy: Strategy):
+def _left_orth_2site(AA, strategy: Strategy):
     """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
     that 'B' is a left-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
@@ -109,7 +109,7 @@ def left_orth_2site(AA, strategy: Strategy):
     )
 
 
-def right_orth_2site(AA, strategy: Strategy):
+def _right_orth_2site(AA, strategy: Strategy):
     """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
     that 'C' is a right-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
@@ -148,12 +148,12 @@ def vector2mps(
         raise Exception("Invalid value of center in vector2mps")
     err = 0.0
     for i in range(center):
-        output[i], ψ, new_err = left_orth_2site(
+        output[i], ψ, new_err = _left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
         )
         err += sqrt(new_err)
     for i in range(L - 1, center, -1):
-        ψ, output[i], new_err = right_orth_2site(
+        ψ, output[i], new_err = _right_orth_2site(
             ψ.reshape(ψ.shape[0], -1, dimensions[i], ψ.shape[-1]), strategy
         )
         err += sqrt(new_err)

@@ -8,9 +8,9 @@ from .schmidt import (
     _ortho_left,
     _ortho_right,
     vector2mps,
-    schmidt_weights,
-    left_orth_2site,
-    right_orth_2site,
+    _schmidt_weights,
+    _left_orth_2site,
+    _right_orth_2site,
 )
 from .environments import (
     _begin_environment,
@@ -225,7 +225,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        return schmidt_weights(self._data[site])
+        return _schmidt_weights(self._data[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
@@ -322,7 +322,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = left_orth_2site(
+        self._data[site], self._data[site + 1], error_squared = _left_orth_2site(
             AA, strategy
         )
         self.center = site + 1
@@ -345,7 +345,7 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = right_orth_2site(
+        self._data[site], self._data[site + 1], error_squared = _right_orth_2site(
             AA, strategy
         )
         self.center = site
