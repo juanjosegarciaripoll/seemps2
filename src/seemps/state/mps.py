@@ -5,7 +5,7 @@ import numpy as np
 from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
-from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
+from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
 from .schmidt import vector2mps
@@ -247,9 +247,9 @@ class MPS(array.TensorArray):
         """
         ρL = self.left_environment(site)
         A = self[site]
-        OL = update_left_environment(A, A, ρL, operator=O)
+        OL = _update_left_environment(A, np.matmul(O, A), ρL)
         ρR = self.right_environment(site)
-        return join_environments(OL, ρR)
+        return _join_environments(OL, ρR)
 
     def expectation2(
         self, Opi: Operator, Opj: Operator, i: int, j: Optional[int] = None
@@ -283,12 +283,12 @@ class MPS(array.TensorArray):
         for ndx in range(i, j + 1):
             A = self[ndx]
             if ndx == i:
-                OQL = update_left_environment(A, A, OQL, operator=Opi)
+                OQL = _update_left_environment(A, np.matmul(Opi, A), OQL)
             elif ndx == j:
-                OQL = update_left_environment(A, A, OQL, operator=Opj)
+                OQL = _update_left_environment(A, np.matmul(Opj, A), OQL)
             else:
-                OQL = update_left_environment(A, A, OQL)
-        return join_environments(OQL, self.right_environment(j))
+                OQL = _update_left_environment(A, A, OQL)
+        return _join_environments(OQL, self.right_environment(j))
 
     def all_expectation1(self, operator: Union[Operator, list[Operator]]) -> Vector:
         """Vector of expectation values of the given operator acting on all
@@ -307,40 +307,36 @@ class MPS(array.TensorArray):
             Numpy array of expectation values.
         """
         L = self.size
-        ρ = begin_environment()
+        ρ = _begin_environment()
         allρR: list[Environment] = [ρ] * L
         for i in range(L - 1, 0, -1):
             A = self[i]
-            ρ = update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
             allρR[i - 1] = ρ
 
-        ρL = begin_environment()
+        ρL = _begin_environment()
         output: list[Weight] = [0.0] * L
         for i in range(L):
             A = self[i]
             ρR = allρR[i]
-            OρL = update_left_environment(
-                A,
-                A,
-                ρL,
-                operator=operator[i] if isinstance(operator, list) else operator,
-            )
-            output[i] = join_environments(OρL, ρR)
-            ρL = update_left_environment(A, A, ρL)
+            op_i = operator[i] if isinstance(operator, list) else operator
+            OρL = _update_left_environment(A, np.matmul(op_i, A), ρL)
+            output[i] = _join_environments(OρL, ρR)
+            ρL = _update_left_environment(A, A, ρL)
         return np.array(output)
 
     def left_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the left of `site`."""
-        ρ = begin_environment()
+        ρ = _begin_environment()
         for A in self._data[:site]:
-            ρ = update_left_environment(A, A, ρ)
+            ρ = _update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the right of `site`."""
-        ρ = begin_environment()
+        ρ = _begin_environment()
         for A in self._data[-1:site:-1]:
-            ρ = update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
         return ρ
 
     def error(self) -> float:
@@ -467,10 +463,9 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
 
 from .mpssum import MPSSum  # noqa: E402
 from .environments import (  # noqa: E402
-    Environment,
-    begin_environment,
-    update_left_environment,
-    update_right_environment,
-    join_environments,
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+    _join_environments,
     scprod,
 )

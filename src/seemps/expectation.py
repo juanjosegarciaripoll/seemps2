@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import Optional, Union
 from .typing import Operator, Weight, Vector
 from .state.environments import (
-    begin_environment,
-    end_environment,
-    update_left_environment,
+    _begin_environment,
+    _end_environment,
+    _update_left_environment,
 )
 from .state.mps import MPS
 from .mpo import MPO
@@ -95,10 +95,10 @@ def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     assert len(state) == len(operator_list)
     # TODO: Choose contraction order based on whether the state is
     # in a given canonical order or another
-    rho = begin_environment()
+    rho = _begin_environment()
     for Ai, opi in zip(state, operator_list):
-        rho = update_left_environment(Ai.conj(), Ai, rho, operator=opi)
-    return end_environment(rho)
+        rho = _update_left_environment(Ai.conj(), Ai, rho, operator=opi)
+    return _end_environment(rho)
 
 
 def mpo_expectation(state: MPS, operator: MPO) -> Weight:
