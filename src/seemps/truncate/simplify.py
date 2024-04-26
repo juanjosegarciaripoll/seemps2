@@ -67,7 +67,7 @@ def simplify(
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(state, center=start, normalize=False, strategy=strategy)
+        mps = CanonicalMPS(state, center=start, strategy=strategy)
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
@@ -133,10 +133,10 @@ def simplify(
             debug_level=2,
         )
         if err < simplification_tolerance or err > old_err:
-            tools.log("Stopping, as tolerance reached", debug_level=3)
+            tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    total_error_bound = sqrt(err)
+    total_error_bound = state._error + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
         last_tensor /= factor
@@ -198,25 +198,20 @@ def simplify_mps_sum(
         Approximation to the linear combination in canonical form
     """
     # Compute norm of output and eliminate zero states
-    orig_sum_state = sum_state
     norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
     if not norm_state_sqr:
         tools.log(
             "COMBINE state with |state|=0. Returning zero state.",
             debug_level=2,
         )
-        return CanonicalMPS(orig_sum_state.states[0].zero_state(), is_canonical=True)
+        return CanonicalMPS(sum_state.states[0].zero_state(), is_canonical=True)
 
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else -1
     # CANONICAL_FORM implements a simplification based on two passes
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(
-            sum_state.join(), center=start, normalize=False, strategy=strategy
-        )
-        mps = CanonicalMPS(
-            mps, center=-1 - start, normalize=normalize, strategy=strategy
-        )
+        mps = CanonicalMPS(sum_state.join(), center=start, strategy=strategy)
+        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
@@ -224,14 +219,13 @@ def simplify_mps_sum(
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
                 debug_level=2,
             )
+        return mps
 
     # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
     # output is expected to be a CanonicalMPS, we must use the
     # strategy to construct it.
     if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-        mps = CanonicalMPS(
-            sum_state.join(), center=-1 - start, normalize=normalize, strategy=strategy
-        )
+        mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing single-pass "
@@ -239,6 +233,7 @@ def simplify_mps_sum(
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
                 debug_level=2,
             )
+        return mps
 
     # Prepare initial guess
     mps = CanonicalMPS(
@@ -299,12 +294,12 @@ def simplify_mps_sum(
             tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    total_error = sum_state.error() + sqrt(err)
+    total_error_bound = sum_state.error() + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
         last_tensor /= factor
-        total_error /= factor
-    mps._error = total_error
+        total_error_bound /= factor
+    mps._error = total_error_bound
     return mps
 
 
