@@ -133,8 +133,8 @@ DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
 NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = TRUNCATION_DO_NOT_TRUNCATE,
                                          simplify = SIMPLIFICATION_DO_NOT_SIMPLIFY)
 
-cdef tuple _truncate_do_not_truncate(cnp.ndarray s, Strategy strategy):
-    return s, 0.0
+cdef double _truncate_do_not_truncate(cnp.ndarray s, Strategy strategy):
+    return 0.0
 
 cdef cnp.ndarray _make_empty_float64_vector(Py_ssize_t N):
     cdef cnp.npy_intp[1] dims = [N]
@@ -159,7 +159,7 @@ cdef void _rescale_if_not_zero(cnp.float64_t *data, cnp.float64_t factor, Py_ssi
 cdef void _normalize(cnp.float64_t *data, Py_ssize_t N) noexcept nogil:
     _rescale_if_not_zero(data, _norm(data, N), N)
 
-cdef tuple _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
+cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
     global _errors_buffer
     cdef:
         Py_ssize_t i, final_size, N = s.size
@@ -185,18 +185,19 @@ cdef tuple _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strateg
     max_error = total * strategy.tolerance
     final_error = 0.0
     for i in range(N):
-        if errors[i] >= max_error:
+        if errors[i] > max_error:
             i -= 1
             break
     final_size = min(N - i, strategy.max_bond_dimension)
     max_error = errors[N - final_size]
     if strategy.normalize:
         _rescale_if_not_zero(s_start, sqrt(total - max_error), final_size)
-    if final_size < N:
-        s = s[:final_size]
-    return s, max_error
+    # _resize_vector_in_place(s, final_size)
+    # TODO: HACK! This is fast, but unsafe
+    cnp.PyArray_DIMS(s)[0] = final_size
+    return max_error
 
-cdef tuple _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
+cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
     cdef:
         cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
         double max_error = strategy.tolerance * data[0]
@@ -211,11 +212,12 @@ cdef tuple _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
         max_error += data[i] * data[i]
     if strategy.normalize:
         _normalize(data, final_size)
-    if final_size < N:
-        s = s[:final_size]
-    return s, max_error
+    # _resize_vector_in_place(s, final_size)
+    # TODO: HACK! This is fast, but unsafe
+    cnp.PyArray_DIMS(s)[0] = final_size
+    return max_error
 
-cdef tuple _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
+cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     cdef:
         cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
         double max_error = strategy.tolerance
@@ -230,11 +232,23 @@ cdef tuple _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
         max_error += data[i] * data[i]
     if strategy.normalize:
         _normalize(data, final_size)
-    if final_size < N:
-        s = s[:final_size]
-    return s, max_error
+    # _resize_vector_in_place(s, final_size)
+    # TODO: HACK! This is fast, but unsafe
+    cnp.PyArray_DIMS(s)[0] = final_size
+    return max_error
 
-def truncate_vector(s, Strategy strategy):
+def truncate_vector(s, Strategy strategy) -> tuple[np.ndarray, float]:
+    if (cnp.PyArray_Check(s) == 0 or
+        cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or
+        cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):
+        raise ValueError("truncate_vector() requires float vector")
+    if strategy.method:
+        s = <cnp.ndarray>cnp.PyArray_FROM_OF(s,
+                                             cnp.NPY_ARRAY_ENSURECOPY |
+                                             cnp.NPY_ARRAY_C_CONTIGUOUS)
+    return s, strategy._truncate(<cnp.ndarray>s, strategy)
+
+def destructively_truncate_vector(s, Strategy strategy) -> float:
     if (cnp.PyArray_Check(s) == 0 or
         cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or
         cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):

@@ -5,7 +5,7 @@ from seemps.state.core import (
     Truncation,
     DEFAULT_STRATEGY,
     NO_TRUNCATION,
-    truncate_vector,
+    destructively_truncate_vector,
 )
 
 
@@ -18,25 +18,26 @@ class TestStrategyNoTruncation(TestStrategy):
     def test_strategy_no_truncation(self):
         values = self.logarithmic_values()
         old_values = values.copy()
-        s, err = truncate_vector(values, NO_TRUNCATION)
-        self.assertTrue(s is values)
-        self.assertEqual(s.size, old_values.size)
+        err = destructively_truncate_vector(values, NO_TRUNCATION)
+        self.assertEqual(values.size, old_values.size)
         self.assertEqual(err, 0.0)
 
     def test_strategy_no_truncation_ignores_tolerance(self):
         values = self.logarithmic_values()
         old_values = values.copy()
-        s, err = truncate_vector(values, NO_TRUNCATION.replace(tolerance=1e-3))
-        self.assertTrue(s is values)
-        self.assertEqual(s.size, old_values.size)
+        err = destructively_truncate_vector(
+            values, NO_TRUNCATION.replace(tolerance=1e-3)
+        )
+        self.assertEqual(values.size, old_values.size)
         self.assertEqual(err, 0.0)
 
     def test_strategy_no_truncation_ignores_max_bond_dimension(self):
         values = self.logarithmic_values()
         old_values = values.copy()
-        s, err = truncate_vector(values, NO_TRUNCATION.replace(tolerance=1e-3))
-        self.assertTrue(s is values)
-        self.assertEqual(s.size, old_values.size)
+        err = destructively_truncate_vector(
+            values, NO_TRUNCATION.replace(tolerance=1e-3)
+        )
+        self.assertEqual(values.size, old_values.size)
         self.assertEqual(err, 0.0)
 
 
@@ -48,10 +49,10 @@ class TestStrategyAbsoluteSingularValue(TestStrategy):
             tolerance=0.5e-4,
         )
         values = self.logarithmic_values()
-        s, err = truncate_vector(values, strategy)
-        self.assertEqual(s.size, 4)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[4:] ** 2))
+        orig_values = values.copy()
+        err = destructively_truncate_vector(values, strategy)
+        self.assertEqual(values.size, 4)
+        self.assertEqual(err, np.sum(orig_values[4:] ** 2))
 
     def test_strategy_absolute_singular_value_respects_max_bond_dimension(self):
         values = np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
@@ -61,18 +62,19 @@ class TestStrategyAbsoluteSingularValue(TestStrategy):
             max_bond_dimension=2,
         )
         values = self.logarithmic_values()
-        s, err = truncate_vector(values, strategy)
-        self.assertEqual(s.size, 2)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[2:] ** 2))
+        orig_values = values.copy()
+        err = destructively_truncate_vector(values, strategy)
+        self.assertEqual(values.size, 2)
+        self.assertEqual(err, np.sum(orig_values[2:] ** 2))
 
     def test_strategy_absolute_singular_value_zero_tolerance_behavior(self):
         values = np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
         strategy = Strategy(method=Truncation.ABSOLUTE_SINGULAR_VALUE, tolerance=0.0)
         values = self.logarithmic_values()
-        s, err = truncate_vector(values, strategy)
-        self.assertEqual(s.size, values.size)
-        self.assertTrue(s is values)
+        orig_values = values.copy()
+        err = destructively_truncate_vector(values, strategy)
+        self.assertEqual(values.size, values.size)
+        self.assertSimilar(values, orig_values)
         self.assertEqual(err, 0.0)
 
     def test_strategy_zero_tolerance_changes_method(self):
@@ -94,10 +96,10 @@ class TestStrategyRelativeSingularValue(TestStrategy):
             tolerance=0.5e-4,
         )
         values = self.logarithmic_values()
-        s, err = truncate_vector(values, strategy)
-        self.assertEqual(s.size, 5)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[5:] ** 2))
+        orig_values = values.copy()
+        err = destructively_truncate_vector(values, strategy)
+        self.assertEqual(values.size, 5)
+        self.assertEqual(err, np.sum(orig_values[5:] ** 2))
 
     def test_strategy_relative_singular_value_respects_max_bond_dimension(self):
         values = np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
@@ -107,7 +109,7 @@ class TestStrategyRelativeSingularValue(TestStrategy):
             max_bond_dimension=2,
         )
         values = self.logarithmic_values()
-        s, err = truncate_vector(values, strategy)
-        self.assertEqual(s.size, 2)
-        self.assertTrue(s is not values)
-        self.assertEqual(err, np.sum(values[2:] ** 2))
+        orig_values = values.copy()
+        err = destructively_truncate_vector(values, strategy)
+        self.assertEqual(values.size, 2)
+        self.assertEqual(err, np.sum(orig_values[2:] ** 2))
