@@ -1,6 +1,6 @@
 import numpy as np
 from seemps.state import NO_TRUNCATION
-from seemps.state.schmidt import vector2mps
+from seemps.state.schmidt import _vector2mps
 from seemps.state.array import TensorArray
 from .. import tools
 
@@ -15,7 +15,7 @@ class TestMPSFromVector(tools.TestCase):
 
     def test_mps_from_vector_on_one_site(self):
         v = self.rng.normal(size=5)
-        state, err = vector2mps(v, [5], strategy=NO_TRUNCATION, normalize=False)
+        state, err = _vector2mps(v, [5], strategy=NO_TRUNCATION, normalize=False)
         self.assertTrue(err >= 0)
         self.assertAlmostEqual(err, 0)
         self.assertEqual(len(state), 1)
@@ -27,7 +27,7 @@ class TestMPSFromVector(tools.TestCase):
         v3 = self.rng.normal(size=4)
         w = v1[:, np.newaxis, np.newaxis] * v2[:, np.newaxis] * v3
 
-        state, err = vector2mps(
+        state, err = _vector2mps(
             w.reshape(-1), [2, 3, 4], strategy=NO_TRUNCATION, normalize=False
         )
         self.assertTrue(err >= 0)
@@ -44,7 +44,7 @@ class TestMPSFromVector(tools.TestCase):
         for normalize in [False, True]:
             for N in range(1, 18):
                 v = self.rng.normal(size=(2**N,))
-                state, err = vector2mps(
+                state, err = _vector2mps(
                     v, [2] * N, strategy=NO_TRUNCATION, normalize=normalize
                 )
 
@@ -66,7 +66,7 @@ class TestMPSFromVector(tools.TestCase):
         for N in range(1, 10):
             v = self.rng.normal(size=(2**N,))
             for center in range(-N + 1, N):
-                state, err = vector2mps(
+                state, err = _vector2mps(
                     v, [2] * N, center=center, strategy=NO_TRUNCATION, normalize=False
                 )
                 self.assertSimilar(self.join_tensors(state), v)
@@ -75,7 +75,7 @@ class TestMPSFromVector(tools.TestCase):
         for N in range(2, 10):
             v = self.rng.normal(size=(2**N,))
             for center in range(0, N):
-                state, err = vector2mps(
+                state, err = _vector2mps(
                     v, [2] * N, center=center, strategy=NO_TRUNCATION
                 )
                 for i, A in enumerate(state):
@@ -88,7 +88,7 @@ class TestMPSFromVector(tools.TestCase):
         for N in range(1, 10):
             v = self.rng.normal(size=(2**N,))
             for center in range(0, N):
-                state, err = vector2mps(
+                state, err = _vector2mps(
                     v, [2] * N, center=center, normalize=True, strategy=NO_TRUNCATION
                 )
                 self.assertAlmostEqual(np.linalg.norm(state[center].reshape(-1)), 1)

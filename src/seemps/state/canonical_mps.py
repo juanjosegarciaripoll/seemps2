@@ -7,7 +7,7 @@ from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
 from .schmidt import (
     _ortho_left,
     _ortho_right,
-    vector2mps,
+    _vector2mps,
     _schmidt_weights,
     _left_orth_2site,
     _right_orth_2site,
@@ -165,7 +165,7 @@ class CanonicalMPS(MPS):
         --------
         :py:meth:`~seemps.state.MPS.from_vector`
         """
-        data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
         return CanonicalMPS(
             data,
             error=error,

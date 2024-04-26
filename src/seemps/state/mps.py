@@ -8,7 +8,7 @@ from ..tools import InvalidOperation
 from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
-from .schmidt import vector2mps
+from .schmidt import _vector2mps
 
 
 class MPS(array.TensorArray):
@@ -117,7 +117,7 @@ class MPS(array.TensorArray):
         MPS
             A valid matrix-product state approximating this state vector.
         """
-        data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
         return MPS(data, error)
 
     @classmethod
