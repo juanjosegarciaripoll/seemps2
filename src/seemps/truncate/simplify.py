@@ -1,10 +1,7 @@
 from __future__ import annotations
-
-from math import sqrt
 from typing import Optional, Union
-
+from math import sqrt
 import numpy as np
-
 from .. import tools
 from ..state import (
     DEFAULT_TOLERANCE,
@@ -71,12 +68,36 @@ def simplify(
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         mps = CanonicalMPS(state, center=start, strategy=strategy)
-        return CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        if tools.DEBUG >= 2:
+            tools.log(
+                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
+                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                debug_level=2,
+            )
+        return mps
 
-    if guess is None:
-        mps = CanonicalMPS(state, center=start, strategy=strategy)
-    else:
-        mps = CanonicalMPS(guess)
+    # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
+    # output is expected to be a CanonicalMPS, we must use the
+    # strategy to construct it.
+    if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
+        mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
+        if tools.DEBUG >= 2:
+            tools.log(
+                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
+                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                debug_level=2,
+            )
+        return mps
+
+    mps = CanonicalMPS(
+        state if guess is None else guess,
+        center=start,
+        normalize=False,
+        strategy=strategy,
+    )
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     if not (norm_state_sqr := state.norm_squared()):
@@ -85,7 +106,7 @@ def simplify(
     err = 2.0
     tools.log(
         f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
-        f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.",
+        f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
         debug_level=2,
     )
     for sweep in range(max(1, strategy.get_max_sweeps())):
@@ -112,7 +133,7 @@ def simplify(
             debug_level=2,
         )
         if err < simplification_tolerance or err > old_err:
-            tools.log("Stopping, as tolerance reached", debug_level=3)
+            tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
     total_error_bound = state._error + sqrt(err)
@@ -193,9 +214,9 @@ def simplify_mps_sum(
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
-                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
+                f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}",
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
                 debug_level=2,
             )
         return mps
@@ -207,17 +228,20 @@ def simplify_mps_sum(
         mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
-                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
+                f"COMBINE state with |state|={mps.norm():5e}\nusing single-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}",
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
                 debug_level=2,
             )
         return mps
 
     # Prepare initial guess
-    if guess is None:
-        guess = sum_state.join()
-    mps = CanonicalMPS(guess, center=start, strategy=strategy)
+    mps = CanonicalMPS(
+        sum_state.join() if guess is None else guess,
+        center=start,
+        normalize=False,
+        strategy=strategy,
+    )
     simplification_tolerance = strategy.get_simplification_tolerance()
 
     size = mps.size
@@ -225,7 +249,8 @@ def simplify_mps_sum(
     forms = [AntilinearForm(mps, si, center=start) for si in states]
     tools.log(
         f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
-        f"sweeps with tolerance {simplification_tolerance:5e}.\nWeights: {weights}",
+        f"sweeps with tolerance {simplification_tolerance:5e}.\nStrategy: {strategy}"
+        f"\nWeights: {weights}",
         debug_level=2,
     )
     err = 2.0
