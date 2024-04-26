@@ -207,10 +207,9 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
     max_error = errors[N - final_size]
     if False: #strategy.normalize:
         _rescale_if_not_zero(s_start, sqrt(total - max_error), final_size)
-    if final_size < N:
-        # _resize_vector_in_place(s, final_size)
-        # TODO: HACK! This is fast, but unsafe
-        PyArray_DIMS(s)[0] = final_size
+    # _resize_vector_in_place(s, final_size)
+    # TODO: HACK! This is fast, but unsafe
+    PyArray_DIMS(s)[0] = final_size
     return max_error
 
 cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
@@ -228,10 +227,9 @@ cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
         max_error += data[i] * data[i]
     if False: #strategy.normalize:
         _normalize(data, final_size)
-    if final_size < N:
-        # _resize_vector_in_place(s, final_size)
-        # TODO: HACK! This is fast, but unsafe
-        PyArray_DIMS(s)[0] = final_size
+    # _resize_vector_in_place(s, final_size)
+    # TODO: HACK! This is fast, but unsafe
+    PyArray_DIMS(s)[0] = final_size
     return max_error
 
 cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
@@ -249,10 +247,9 @@ cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
         max_error += data[i] * data[i]
     if False: #strategy.normalize:
         _normalize(data, final_size)
-    if final_size < N:
-        # _resize_vector_in_place(s, final_size)
-        # TODO: HACK! This is fast, but unsafe
-        PyArray_DIMS(s)[0] = final_size
+    # _resize_vector_in_place(s, final_size)
+    # TODO: HACK! This is fast, but unsafe
+    PyArray_DIMS(s)[0] = final_size
     return max_error
 
 def destructively_truncate_vector(s, Strategy strategy) -> float:

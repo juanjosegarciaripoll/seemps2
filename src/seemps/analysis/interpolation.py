@@ -1,11 +1,7 @@
 from __future__ import annotations
-
 import copy
 from math import sqrt
-from typing import List
-
 import numpy as np
-
 from ..operators import MPO
 from ..qft import qft_mpo
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy
@@ -84,7 +80,7 @@ def fourier_interpolation_1D(
     )
     U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
-    ψfmps = np.sqrt(2 ** (Mf - M0)) * ψfmps
+    ψfmps = sqrt(2 ** (Mf - M0)) * ψfmps
     if strategy.get_normalize_flag():
         ψfmps = ψfmps.normalize_inplace()
     return ψfmps, new_space
@@ -93,8 +89,8 @@ def fourier_interpolation_1D(
 def fourier_interpolation(
     ψmps: MPS,
     space: Space,
-    old_sites: List,
-    new_sites: List,
+    old_sites: list,
+    new_sites: list,
     strategy: Strategy = DEFAULT_STRATEGY,
 ):
     """Fourier interpolation on an MPS.

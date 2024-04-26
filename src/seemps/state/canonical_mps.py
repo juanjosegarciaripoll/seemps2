@@ -15,7 +15,6 @@ from .environments import (
     _update_left_environment,
     _update_right_environment,
 )
-from ._contractions import _contract_last_and_first
 from .core import (
     DEFAULT_STRATEGY,
     Strategy,

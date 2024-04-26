@@ -273,9 +273,10 @@ class LagrangeBuilder:
         """
         Returns the left-most MPS tensor required for Chebyshev interpolation.
         """
-        affine_func = lambda u: func(
-            affine_transformation(u, orig=(0, 1), dest=(start, stop))
-        )
+
+        def affine_func(u):
+            return func(affine_transformation(u, orig=(0, 1), dest=(start, stop)))
+
         A = np.zeros((1, 2, self.D))
         for s in range(2):
             A[0, s, :] = affine_func(0.5 * (s + self.c))

@@ -82,7 +82,7 @@ def simplify(
     # output is expected to be a CanonicalMPS, we must use the
     # strategy to construct it.
     if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
-        mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(state, center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "

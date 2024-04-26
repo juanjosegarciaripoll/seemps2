@@ -2,12 +2,13 @@ from __future__ import annotations
 import numpy as np
 import math
 from math import sqrt
-from typing import Sequence, Any, Callable
+from typing import Sequence
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
 from .core import Strategy, DEFAULT_STRATEGY
-from scipy.linalg import svd, LinAlgError  # type: ignore
-from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
+from scipy.linalg import svd  # type: ignore
+from seemps.state.core import _svd as _our_svd  # noqa: F401
+from seemps.state.core import _left_orth_2site, _right_orth_2site
 
 #
 # Type of LAPACK driver used for solving singular value decompositions.
@@ -15,9 +16,6 @@ from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 # may produced wrong results, specially in ill-conditioned matrices.
 #
 SVD_LAPACK_DRIVER = "gesvd"
-
-from seemps.state.core import _svd as _our_svd
-from seemps.state.core import _left_orth_2site, _right_orth_2site
 
 
 def _schmidt_weights(A: Tensor3) -> Vector:
