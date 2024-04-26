@@ -5,7 +5,7 @@ from math import sqrt
 from typing import Sequence, Any, Callable
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
-from .core import Strategy, truncate_vector, DEFAULT_STRATEGY
+from .core import Strategy, destructively_truncate_vector, DEFAULT_STRATEGY
 from scipy.linalg import svd, LinAlgError  # type: ignore
 from scipy.linalg.lapack import get_lapack_funcs  # type: ignore
 
@@ -81,7 +81,7 @@ def _schmidt_weights(A: Tensor3) -> Vector:
 def _ortho_right(A, strategy: Strategy):
     α, i, β = A.shape
     U, s, V = _our_svd(A.reshape(α * i, β).copy())
-    s, err = truncate_vector(s, strategy)
+    err = destructively_truncate_vector(s, strategy)
     D = s.size
     return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
 
@@ -89,7 +89,7 @@ def _ortho_right(A, strategy: Strategy):
 def _ortho_left(A, strategy: Strategy):
     α, i, β = A.shape
     U, s, V = _our_svd(A.reshape(α, i * β).copy())
-    s, err = truncate_vector(s, strategy)
+    err = destructively_truncate_vector(s, strategy)
     D = s.size
     return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
 
@@ -100,7 +100,7 @@ def _left_orth_2site(AA, strategy: Strategy):
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
     U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
-    S, err = truncate_vector(S, strategy)
+    err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (
         U[:, :D].reshape(α, d1, D),
@@ -115,7 +115,7 @@ def _right_orth_2site(AA, strategy: Strategy):
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
     U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
-    S, err = truncate_vector(S, strategy)
+    err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err
 

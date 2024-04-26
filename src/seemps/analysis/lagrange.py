@@ -5,7 +5,7 @@ from functools import lru_cache
 
 from ..state import MPS, Strategy
 from ..state.schmidt import _our_svd
-from ..state.core import truncate_vector
+from ..state.core import destructively_truncate_vector
 from ..truncate import simplify, SIMPLIFICATION_STRATEGY
 from .mesh import affine_transformation
 
@@ -103,7 +103,7 @@ def lagrange_rank_revealing(
         r1, s, r2 = B.shape
         ## SVD
         U, S, V = _our_svd(B.reshape(r1 * s, r2))
-        S, _ = truncate_vector(S, strategy)
+        destructively_truncate_vector(S, strategy)
         D = S.size
         U = U[:, :D]
         R = S.reshape(D, 1) * V[:D, :]
@@ -163,7 +163,7 @@ def lagrange_local_rank_revealing(
         r1 = B.shape[0]
         ## SVD
         U, S, V = _our_svd(B.reshape(r1 * 2, order + 1))
-        S, _ = truncate_vector(S, strategy)
+        destructively_truncate_vector(S, strategy)
         D = S.size
         U = U[:, :D]
         R = S.reshape(D, 1) * V[:D, :]
@@ -273,9 +273,10 @@ class LagrangeBuilder:
         """
         Returns the left-most MPS tensor required for Chebyshev interpolation.
         """
-        affine_func = lambda u: func(
-            affine_transformation(u, orig=(0, 1), dest=(start, stop))
-        )
+
+        def affine_func(u):
+            return func(affine_transformation(u, orig=(0, 1), dest=(start, stop)))
+
         A = np.zeros((1, 2, self.D))
         for s in range(2):
             A[0, s, :] = affine_func(0.5 * (s + self.c))
