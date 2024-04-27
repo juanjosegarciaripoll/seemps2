@@ -14,18 +14,17 @@ MPSSum operator+(const MPS &a, const MPS &b) {
 }
 
 MPSSum operator+(const MPSSum &a, const MPSSum &b) {
-  return MPSSum(a.weights() + b.weights(), a.states() + b.states(), true);
+  return MPSSum(a.weights() + b.weights(), a.states() + b.states(), false);
 }
 
-MPSSum operator+(const MPS &a, const MPSSum &b) {
-  py::list weights = copy(b.weights());
-  py::list states = copy(b.states());
-  weights.append(1.0);
-  states.append(a);
-  return MPSSum(weights, states, false);
-}
+MPSSum operator+(const MPS &a, const MPSSum &b) { return MPSSum(a) + b; }
 
-MPSSum operator+(const MPSSum &a, const MPS &b) { return b + a; }
+MPSSum operator+(const MPSSum &a, const MPS &b) {
+  auto output = a.copy();
+  output.weights().append(1.0);
+  output.states().append(b);
+  return output;
+}
 
 MPSSum operator-(const MPS &a, const MPS &b) {
   py::list weights(2);
@@ -50,13 +49,7 @@ MPSSum operator-(const MPSSum &a, const MPSSum &b) {
                 a.states() + b.states(), true);
 }
 
-MPSSum operator-(const MPS &a, const MPSSum &b) {
-  py::list weights = rescale(py::float_(-1.0), b.weights());
-  py::list states = copy(b.states());
-  weights.append(1.0);
-  states.append(a);
-  return MPSSum(weights, states, false);
-}
+MPSSum operator-(const MPS &a, const MPSSum &b) { return MPSSum(a) - b; }
 
 MPSSum operator-(const MPSSum &a, const MPS &b) {
   py::list weights = copy(a.weights());

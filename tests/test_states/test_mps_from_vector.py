@@ -1,6 +1,7 @@
 import numpy as np
 from seemps.state import NO_TRUNCATION
 from seemps.state.schmidt import _vector2mps
+from seemps.state.array import TensorArray
 from .. import tools
 
 

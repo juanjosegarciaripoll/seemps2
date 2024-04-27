@@ -102,6 +102,8 @@ public:
 
   MPSSum(py::object weights, py::object states, bool check_args);
 
+  explicit MPSSum(const MPS &mps);
+
   auto physical_dimensions() const { return mps(0).physical_dimensions(); }
 
   auto bond_dimensions() const { return mps(0).bond_dimensions(); }

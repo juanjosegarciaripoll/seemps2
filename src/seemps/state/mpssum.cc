@@ -3,33 +3,39 @@
 namespace seemps {
 
 MPSSum::MPSSum(py::object weights, py::object states, bool check_args) {
-  auto L = py::len(weights);
-  if (L != py::len(states)) {
-    throw std::invalid_argument(
-        "Lists of weights does not match list of states in MPSSum");
-  }
-  if (L == 0) {
-    throw std::invalid_argument("MPSSum requires a non-empty list of states");
-  }
   if (!check_args) {
-    weights_ = weights;
-    mps_ = states;
-  }
-  weights_ = py::list();
-  mps_ = py::list();
-  for (int i = 0; i < L; ++i) {
-    auto wi = weights[py::int_(i)];
-    auto si = states[py::int_(i)];
-    if (py::isinstance<MPSSum>(si)) {
-      append(wi, si.cast<MPSSum>());
-    } else if (py::isinstance<MPS>(si)) {
-      append(wi, si);
-    } else {
+    weights_ = std::move(weights);
+    mps_ = std::move(states);
+  } else {
+    auto L = py::len(weights);
+    if (L != py::len(states)) {
       throw std::invalid_argument(
-          "MPSSum argument did not contain a valid MPS");
+          "Lists of weights does not match list of states in MPSSum");
+    }
+    if (L == 0) {
+      throw std::invalid_argument("MPSSum requires a non-empty list of states");
+    }
+    weights_ = py::list();
+    mps_ = py::list();
+    for (int i = 0; i < L; ++i) {
+      auto wi = weights[py::int_(i)];
+      auto si = states[py::int_(i)];
+      if (py::isinstance<MPSSum>(si)) {
+        append(wi, si.cast<MPSSum>());
+      } else if (py::isinstance<MPS>(si)) {
+        append(wi, si);
+      } else {
+        throw std::invalid_argument(
+            "MPSSum argument did not contain a valid MPS");
+      }
     }
   }
   size_ = mps(0).size();
+}
+
+MPSSum::MPSSum(const MPS &mps) : weights_(1), mps_(1), size_{mps.size()} {
+  weights_[0] = 1.0;
+  mps_[0] = py::cast(mps);
 }
 
 MPSSum MPSSum::copy() const {
