@@ -6,8 +6,7 @@ from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod
 from .mpo import MPO
-from .state import DEFAULT_STRATEGY, Strategy
-from .state.core import _destructive_svd, destructively_truncate_vector
+from .state import schmidt, core, DEFAULT_STRATEGY, Strategy
 from .typing import Operator, Vector
 from .tools import σx, σy, σz
 
@@ -123,8 +122,8 @@ class NNHamiltonian(object):
                 .transpose(0, 2, 1, 3)
                 .reshape(di * di, dj * dj)
             )
-            U, s, V = _destructive_svd(Hij)
-            destructively_truncate_vector(s, strategy)
+            U, s, V = schmidt._destructive_svd(Hij)
+            core.destructively_truncate_vector(s, strategy)
             ds = s.size
             s = np.sqrt(s)
             #
