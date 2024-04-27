@@ -41,23 +41,6 @@ else:
         "wraparound": False,
     }
 
-# All Cython files with unix pathnames
-cython_files = [s.replace("\\", "/") for s in glob.glob("src/**/*.pyx", recursive=True)]
-extension_names = [".".join(f[4:-4].split("/")) for f in cython_files]
-print(extension_names)
-print(cython_files)
-extensions = [
-    Extension(
-        name,
-        [file],
-        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
-        extra_compile_args=extra_compile_args,
-        include_dirs=[np.get_include()],
-    )
-    for name, file in zip(extension_names, cython_files)
-]
-extensions = []
-
 # The main interface is through Pybind11Extension.
 # * You can add cxx_std = 11 / 14 / 17, and then build_ext can be removed.
 # * You can set include_pybind11 = false to add the include directory yourself,
@@ -99,6 +82,4 @@ pybind11_modules = [
     ),
 ]
 
-setup(
-    ext_modules=cythonize(extensions, compiler_directives=directives) + pybind11_modules
-)
+setup(ext_modules=pybind11_modules)
