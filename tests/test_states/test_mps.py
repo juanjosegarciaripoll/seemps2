@@ -11,13 +11,13 @@ class TestMPS(MPSStatesFixture):
         self.assertFalse(A._data is data)
         self.assertEqual(A._data, data)
 
-    def test_copy_is_shallow(self):
+    def test_initial_copy_is_shallow(self):
         A = MPS(self.product_state.copy(), 0.1)
         B = A.copy()
         self.assertTrue(A._data is not B._data)
         self.assertEqual(A._error, B._error)
-        self.assertTrue(contain_same_objects(A._data, B._data))
-        A[::] = self.other_tensor
+        self.assertTrue(contain_same_objects(A, B))
+        A[::] = [self.other_tensor] * len(A)
         self.assertTrue(contain_different_objects(A, B))
 
     def test_total_dimension_is_product_of_physical_dimensions(self):
@@ -127,13 +127,13 @@ class TestMPSOperations(MPSStatesFixture):
     def test_multiplying_mps_by_non_scalar_raises_exception(self):
         A = MPS(self.inhomogeneous_state)
         with self.assertRaises(TypeError):
-            A = A * np.array([1.0])
+            B = A * np.array([1.0])
         with self.assertRaises(TypeError):
-            A = A * np.zeros((3, 3))
+            B = A * np.zeros((3, 3))
         with self.assertRaises(TypeError):
-            A = np.array([1.0]) * A
+            B = np.array([1.0]) * A
         with self.assertRaises(TypeError):
-            A = np.zeros((3, 3)) * A
+            B = np.zeros((3, 3)) * A
 
     def test_scaled_mps_produces_scaled_wavefunction(self):
         factor = 1.0 + 3.0j
