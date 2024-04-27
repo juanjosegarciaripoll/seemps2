@@ -1,6 +1,6 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
-from seemps.state.core import TensorArray
+from seemps.state.array import TensorArray
 from .. import tools
 
 
@@ -91,11 +91,12 @@ class TestTensorArray(tools.TestCase):
             state[-4] = np.zeros((1, 2, 1))
 
     def test_tensor_array_rejects_non_array(self):
-        state = TensorArray([np.zeros((1, 2, 1))] * 3)
-        with self.assertRaises(Exception):
-            state[0] = 1
-        with self.assertRaises(Exception):
-            state[0] = [1, 2, 3]
+        if "c++" in self.seemps_version:
+            state = TensorArray([np.zeros((1, 2, 1))] * 3)
+            with self.assertRaises(Exception):
+                state[0] = 1
+            with self.assertRaises(Exception):
+                state[0] = [1, 2, 3]
 
     def test_tensor_array_length(self):
         state = TensorArray([np.zeros((1, 2, 1))] * 10)

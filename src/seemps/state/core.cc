@@ -108,6 +108,8 @@ PYBIND11_MODULE(core, m) {
   m.attr("DEFAULT_TOLERANCE") = std::numeric_limits<double>::epsilon();
   m.attr("MAX_BOND_DIMENSION") = 0x7fffffff;
 
+  m.attr("__version__") = "c++";
+
   py::enum_<Truncation>(m, "Truncation")
       .value("DO_NOT_TRUNCATE", Truncation::DO_NOT_TRUNCATE)
       .value("RELATIVE_SINGULAR_VALUE", Truncation::RELATIVE_SINGULAR_VALUE)
