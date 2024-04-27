@@ -312,3 +312,6 @@ def combine(
 ) -> CanonicalMPS:
     """Deprecated, use `simplify` instead."""
     return simplify_mps_sum(MPSSum(weights, states))
+
+
+__all__ = ["simplify"]
