@@ -15,9 +15,16 @@ TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
 class TestMPO(TestCase):
+    def test_initial_data_is_copied(self):
+        data = [np.zeros((1, 2, 2, 1))] * 10
+        A = MPO(data)
+        self.assertFalse(A._data is data)
+        self.assertEqual(A._data, data)
+
     def test_copy_is_shallow(self):
         A = MPO([np.zeros((1, 2, 2, 1))] * 10, Strategy())
         B = A.copy()
+        self.assertTrue(A._data is not B._data)
         self.assertTrue(contain_same_objects(A, B))
         self.assertTrue(A.strategy is B.strategy)
         A[::] = [np.ones((1, 2, 2, 1))] * 10
