@@ -138,8 +138,12 @@ inline auto array_copy(const py::object &A) {
 }
 
 inline auto matrix_product(const py::object &a, const py::object &b) {
+#if 0
   return py::reinterpret_steal<py::object>(
-      PyArray_MatrixProduct(a.ptr(), b.ptr()));
+										   PyArray_MatrixProduct(a.ptr(), b.ptr()));
+#else
+  return gemm(a, GEMM_NORMAL, b, GEMM_NORMAL);
+#endif
 }
 
 inline py::object empty_like_array(const py::object &a) {
