@@ -14,6 +14,8 @@ from numpy cimport (
     PyArray_DIMS,
     )
 
+__version__ = 'cython-contractions'
+
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
 

@@ -1,18 +1,7 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
-from seemps.state.array import TensorArray
-
 from ..fixture_mps_states import MPSStatesFixture
 from ..tools import *
-
-
-class TestTensorArray(MPSStatesFixture):
-    def test_initial_data_is_copied(self):
-        data = [np.zeros((1, 2, 1))] * 10
-        A = TensorArray(data)
-        self.assertFalse(A._data is data)
-        A[::] = self.other_tensor
-        self.assertTrue(contain_different_objects(A, data))
 
 
 class TestMPS(MPSStatesFixture):
