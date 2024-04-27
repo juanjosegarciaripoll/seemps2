@@ -5,6 +5,8 @@ from libc.math cimport sqrt
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
 
+__version__ = 'cython'
+
 class Truncation:
     DO_NOT_TRUNCATE = TRUNCATION_DO_NOT_TRUNCATE
     RELATIVE_SINGULAR_VALUE = TRUNCATION_RELATIVE_SINGULAR_VALUE
