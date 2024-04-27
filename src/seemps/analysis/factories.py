@@ -306,7 +306,9 @@ def mps_tensor_product(
         The resulting MPS from the tensor product of the input list.
     """
     if mps_order == "A":
-        result = MPS([site for mps in mps_list for site in mps])
+        nested_sites = [mps._data for mps in mps_list]
+        flattened_sites = [site for sites in nested_sites for site in sites]
+        result = MPS(flattened_sites)
     else:
         terms = mps_tensor_terms(mps_list, mps_order)
         result = terms[0]

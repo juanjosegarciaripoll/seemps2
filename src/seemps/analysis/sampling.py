@@ -92,9 +92,7 @@ def infinity_norm(tensor_network: Union[MPS, MPO], k_vals: int = 100) -> float:
         I_l = np.kron(I, np.ones((s, 1), dtype=int))
         I_r = np.kron(np.ones((I.shape[0], 1), dtype=int), np.arange(s).reshape(-1, 1))
         I = np.hstack((I_l, I_r))
-        norms = np.sum(
-            (reduced_site / np.linalg.norm(reduced_site, np.inf)) ** 2, axis=1
-        )
+        norms = np.sum((reduced_site / np.max(np.abs(reduced_site))) ** 2, axis=1)
         candidates = np.argsort(norms)[: -(k_vals + 1) : -1]
         I = I[candidates, :]
         reduced_site = reduced_site[candidates, :] * 2**scale_factor

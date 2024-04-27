@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 from typing import Callable, Optional
 from time import perf_counter
 import dataclasses
@@ -122,7 +123,7 @@ class CrossStrategy:
             self.random_indices = random_mps_indices(cross.state, rng=self.rng)
             self.func_samples = cross.sample_func(self.random_indices).reshape(-1)
         state_samples = cross.sample_state(self.random_indices)
-        return np.linalg.norm(state_samples - self.func_samples, np.inf)  # type: ignore
+        return np.max(np.abs(state_samples - self.func_samples))
 
     def variation(self, cross: Cross) -> float:
         """
@@ -131,12 +132,11 @@ class CrossStrategy:
         By default, compares the norm-2 of the difference between the two states.
         """
         if not hasattr(self, "previous_data"):
-            variation = np.Inf
-        else:
-            variation = (
-                cross.state - self.previous_state  # type: ignore
-            ).norm() / previous_state.norm()  # type: ignore
-        self.previous_state = cross.state.copy()
+            self.previous_data = deepcopy(cross.state._data)  # Expensive
+            return np.Inf
+        previous_state = MPS(self.previous_data)
+        variation = (cross.state - previous_state).norm() / previous_state.norm()
+        self.previous_data = deepcopy(cross.state._data)
         return variation
 
     def bond_update_strategy(self, cross: Cross, ltr: bool) -> tuple:
