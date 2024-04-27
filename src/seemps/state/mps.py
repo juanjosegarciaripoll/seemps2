@@ -10,10 +10,10 @@ from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum, Canonica
 from .schmidt import vector2mps
 from .environments import (  # noqa: E402
     Environment,
-    begin_environment,
-    update_left_environment,
-    update_right_environment,
-    join_environments,
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+    _join_environments,
     scprod,
 )
 
@@ -179,22 +179,22 @@ def all_expectation1(self, operator: Union[Operator, list[Operator]]) -> Vector:
         Numpy array of expectation values.
     """
     L = self.size
-    ρ = begin_environment()
+    ρ = _begin_environment()
     allρR: list[Environment] = [ρ] * L
     for i in range(L - 1, 0, -1):
         A = self[i]
-        ρ = update_right_environment(A, A, ρ)
+        ρ = _update_right_environment(A, A, ρ)
         allρR[i - 1] = ρ
 
-    ρL = begin_environment()
+    ρL = _begin_environment()
     output: list[Weight] = [0.0] * L
     for i in range(L):
         A = self[i]
         ρR = allρR[i]
         opi = operator[i] if isinstance(operator, list) else operator
-        OρL = update_left_environment(A, np.matmul(opi, A), ρL)
-        output[i] = join_environments(OρL, ρR)
-        ρL = update_left_environment(A, A, ρL)
+        OρL = _update_left_environment(A, np.matmul(opi, A), ρL)
+        output[i] = _join_environments(OρL, ρR)
+        ρL = _update_left_environment(A, A, ρL)
     return np.array(output)
 
 
@@ -218,9 +218,9 @@ def expectation1(self, O: Operator, site: int) -> Weight:
     """
     ρL = self.left_environment(site)
     A = self[site]
-    OL = update_left_environment(A, np.matmul(O, A), ρL)
+    OL = _update_left_environment(A, np.matmul(O, A), ρL)
     ρR = self.right_environment(site)
-    return join_environments(OL, ρR)
+    return _join_environments(OL, ρR)
 
 
 def expectation2(
@@ -255,12 +255,12 @@ def expectation2(
     for ndx in range(i, j + 1):
         A = self[ndx]
         if ndx == i:
-            OQL = update_left_environment(A, np.matmul(Opi, A), OQL)
+            OQL = _update_left_environment(A, np.matmul(Opi, A), OQL)
         elif ndx == j:
-            OQL = update_left_environment(A, np.matmul(Opj, A), OQL)
+            OQL = _update_left_environment(A, np.matmul(Opj, A), OQL)
         else:
-            OQL = update_left_environment(A, A, OQL)
-    return join_environments(OQL, self.right_environment(j))
+            OQL = _update_left_environment(A, A, OQL)
+    return _join_environments(OQL, self.right_environment(j))
 
 
 def norm2(self) -> float:

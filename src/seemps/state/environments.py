@@ -2,21 +2,21 @@ from __future__ import annotations
 import numpy as np
 from ..typing import Weight, Tensor3, Tensor4, Environment, MPOEnvironment
 from seemps.state.core import (
-    begin_environment,
-    update_left_environment,
-    update_right_environment,
-    end_environment,
-    join_environments,
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+    _end_environment,
+    _join_environments,
     scprod,
 )
 
 __all__ = [
     "Environment",
-    "begin_environment",
-    "end_environment",
-    "join_environments",
-    "update_left_environment",
-    "update_right_environment",
+    "_begin_environment",
+    "_end_environment",
+    "_join_environments",
+    "_update_left_environment",
+    "_update_right_environment",
     "scprod",
     "end_mpo_environment",
     "join_mpo_environments",
