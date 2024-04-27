@@ -4,7 +4,8 @@ from typing import Callable, Optional
 from functools import lru_cache
 
 from ..state import MPS, Strategy
-from ..state.core import destructively_truncate_vector, _destructive_svd
+from ..state.schmidt import _destructive_svd
+from ..state.core import destructively_truncate_vector
 from ..truncate import simplify, SIMPLIFICATION_STRATEGY
 from .mesh import affine_transformation
 

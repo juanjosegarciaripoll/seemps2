@@ -11,9 +11,10 @@ from .core import (
     schmidt_weights,
     left_orth_2site,
     right_orth_2site,
+    _destructive_svd,
 )
 
-__all__ = ["schmidt_weights", "vector2mps"]
+__all__ = ["schmidt_weights", "vector2mps", "_destructive_svd"]
 
 
 def vector2mps(
