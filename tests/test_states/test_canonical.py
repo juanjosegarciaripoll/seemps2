@@ -7,8 +7,8 @@ from seemps.state import (
     random_uniform_mps,
 )
 from seemps.state.canonical_mps import (
-    _update_canonical_left,
-    _update_canonical_right,
+    _update_in_canonical_form_left,
+    _update_in_canonical_form_right,
     _canonicalize,
 )
 from ..fixture_mps_states import MPSStatesFixture
@@ -18,18 +18,24 @@ from ..tools import *
 class TestCanonicalForm(MPSStatesFixture):
     def test_local_update_canonical(self):
         #
-        # We verify that _update_canonical() leaves a tensor that
+        # We verify that _update_in_canonical_form() leaves a tensor that
         # is an approximate isometry.
         #
         def ok(Ψ, normalization=False):
             strategy = DEFAULT_STRATEGY.replace(normalize=normalization)
             for i in range(Ψ.size - 1):
                 ξ = Ψ.copy()
-                _update_canonical_right(ξ, ξ[i], i, strategy)
+                if "c++" in self.seemps_version:
+                    _update_in_canonical_form_right(ξ, ξ[i], i, strategy)
+                else:
+                    _update_in_canonical_form_right(ξ._data, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], +1))
             for i in range(1, Ψ.size):
                 ξ = Ψ.copy()
-                _update_canonical_left(ξ, ξ[i], i, strategy)
+                if "c++" in self.seemps_version:
+                    _update_in_canonical_form_left(ξ, ξ[i], i, strategy)
+                else:
+                    _update_in_canonical_form_left(ξ._data, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], -1))
 
         run_over_random_uniform_mps(ok)
@@ -44,7 +50,10 @@ class TestCanonicalForm(MPSStatesFixture):
         def ok(Ψ):
             for center in range(Ψ.size):
                 ξ = Ψ.copy()
-                _canonicalize(ξ, center, DEFAULT_STRATEGY)
+                if "c++" in self.seemps_version:
+                    _canonicalize(ξ, center, DEFAULT_STRATEGY)
+                else:
+                    _canonicalize(ξ._data, center, DEFAULT_STRATEGY)
                 #
                 # All sites to the left and to the right are isometries
                 #
@@ -140,7 +149,7 @@ class TestCanonicalForm(MPSStatesFixture):
         #
         def ok(Ψ):
             for center in range(Ψ.size):
-                ψ = CanonicalMPS(Ψ, center=center, normalize=True)
+                ψ = CanonicalMPS(Ψ, center=center)
                 ξ = ψ.copy()
                 self.assertEqual(ξ.size, ψ.size)
                 self.assertEqual(ξ.center, ψ.center)
