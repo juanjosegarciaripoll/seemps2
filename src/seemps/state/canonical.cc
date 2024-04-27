@@ -66,12 +66,13 @@ CanonicalMPS::CanonicalMPS(const CanonicalMPS &data, py::object center,
   }
 }
 
-void CanonicalMPS::normalize_in_place() const {
+CanonicalMPS &CanonicalMPS::normalize_in_place() {
   auto N = norm();
   if (N) {
     auto A = center_tensor();
     A /= py::float_(N);
   }
+  return *this;
 }
 
 CanonicalMPS CanonicalMPS::zero_state() const {

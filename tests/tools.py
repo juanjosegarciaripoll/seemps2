@@ -23,6 +23,7 @@ def identical_lists(l1, l2):
 
 class TestCase(unittest.TestCase):
     rng = np.random.default_rng(seed=0x1232388472)
+    seemps_version = seemps.state.core.__version__
 
     def assertEqualTensors(self, a, b) -> None:
         if not (

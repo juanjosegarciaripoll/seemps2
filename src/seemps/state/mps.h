@@ -164,7 +164,7 @@ public:
 
   auto center_tensor() const { return getitem(center_); }
 
-  void normalize_in_place() const;
+  CanonicalMPS &normalize_in_place();
 
   CanonicalMPS zero_state() const;
 
