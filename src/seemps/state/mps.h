@@ -24,14 +24,14 @@ double abs(const Weight &);
 
 py::object schmidt_weights(py::object A);
 
-std::tuple<int, double> _update_canonical_right(TensorArray3 &state,
-                                                py::object A, int site,
-                                                const Strategy &truncation,
-                                                bool overwrite = false);
-std::tuple<int, double> _update_canonical_left(TensorArray3 &state,
-                                               py::object A, int site,
-                                               const Strategy &truncation,
-                                               bool overwrite = false);
+std::tuple<int, double>
+_update_in_canonical_form_right(TensorArray3 &state, py::object A, int site,
+                                const Strategy &truncation,
+                                bool overwrite = false);
+std::tuple<int, double>
+_update_in_canonical_form_left(TensorArray3 &state, py::object A, int site,
+                               const Strategy &truncation,
+                               bool overwrite = false);
 double _canonicalize(TensorArray3 &state, int center,
                      const Strategy &truncation);
 std::tuple<py::object, py::object, double>

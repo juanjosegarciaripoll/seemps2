@@ -146,12 +146,12 @@ double CanonicalMPS::update_canonical(py::object A, int direction,
                                       const Strategy &truncation) {
   if (direction > 0) {
     auto [new_center, error_squared] =
-        _update_canonical_right(*this, A, center_, truncation);
+        _update_in_canonical_form_right(*this, A, center_, truncation);
     center_ = new_center;
     return update_error(error_squared);
   } else {
     auto [new_center, error_squared] =
-        _update_canonical_left(*this, A, center_, truncation);
+        _update_in_canonical_form_left(*this, A, center_, truncation);
 
     center_ = new_center;
     return update_error(error_squared);

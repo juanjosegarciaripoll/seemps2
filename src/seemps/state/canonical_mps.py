@@ -7,8 +7,8 @@ from . import environments, schmidt
 from seemps.state.core import (
     DEFAULT_STRATEGY,
     Strategy,
-    _update_canonical_right,
-    _update_canonical_left,
+    _update_in_canonical_form_right,
+    _update_in_canonical_form_left,
     _update_canonical_2site_left,
     _update_canonical_2site_right,
     _canonicalize,

@@ -176,7 +176,7 @@ static double _truncate_relative_norm_squared(const py::object &a,
   double final_error = 0.0;
   size_t final_size = 1;
   for (i = 1; i < N; ++i) {
-    if (errors[i] >= max_error) {
+    if (errors[i] > max_error) {
       final_size = N - i + 1;
       break;
     }
