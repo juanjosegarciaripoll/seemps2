@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from functools import lru_cache
 
 from ..state import MPS, Strategy
-from ..state.schmidt import _our_svd
+from ..state.schmidt import _destructive_svd
 from ..state.core import destructively_truncate_vector
 from ..truncate import simplify, SIMPLIFICATION_STRATEGY
 from .mesh import affine_transformation
@@ -102,7 +102,7 @@ def lagrange_rank_revealing(
         B = np.tensordot(R, Ac, axes=1)
         r1, s, r2 = B.shape
         ## SVD
-        U, S, V = _our_svd(B.reshape(r1 * s, r2))
+        U, S, V = _destructive_svd(B.reshape(r1 * s, r2))
         destructively_truncate_vector(S, strategy)
         D = S.size
         U = U[:, :D]
@@ -162,7 +162,7 @@ def lagrange_local_rank_revealing(
         B = R @ Ac
         r1 = B.shape[0]
         ## SVD
-        U, S, V = _our_svd(B.reshape(r1 * 2, order + 1))
+        U, S, V = _destructive_svd(B.reshape(r1 * 2, order + 1))
         destructively_truncate_vector(S, strategy)
         D = S.size
         U = U[:, :D]

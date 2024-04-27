@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
 from .core import Strategy, DEFAULT_STRATEGY
 from scipy.linalg import svd  # type: ignore
-from seemps.state.core import _svd as _our_svd  # noqa: F401
+from seemps.state.core import _svd as _destructive_svd  # noqa: F401
 from seemps.state.core import _left_orth_2site, _right_orth_2site
 
 #
