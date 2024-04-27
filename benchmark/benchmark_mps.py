@@ -1,7 +1,7 @@
 import seemps.state
-from seemps.state.core import _gemm, GemmOrder, _destructive_svd
+from seemps.state import CanonicalMPS, GHZ, scprod, DEFAULT_STRATEGY, random_uniform_mps
+from seemps.truncate import simplify
 from benchmark import BenchmarkSet, BenchmarkGroup
-import scipy.linalg
 import numpy as np
 import sys
 
@@ -23,7 +23,7 @@ def propagate_size(size):
 
 
 def make_ghz(size):
-    return (seemps.state.GHZ(size),)
+    return (GHZ(size),)
 
 
 def make_two_ghz(size):
@@ -31,55 +31,29 @@ def make_two_ghz(size):
 
 
 def scalar_product(A, B):
-    seemps.state.scprod(A, B)
+    scprod(A, B)
 
 
-def make_real_matrix(size, rng=None):
-    if rng is None:
-        rng = np.random.default_rng(0x23211)
-    return (rng.normal(size=(size, size)),)
+def random_mps(size, rng=np.random.default_rng(0x23211)):
+    state = random_uniform_mps(2, size, 5)
+    strategy = DEFAULT_STRATEGY
+    return (state, strategy)
 
 
-def make_two_real_matrices(size, rng=None):
-    if rng is None:
-        rng = np.random.default_rng(0x23211)
-    return make_real_matrix(size, rng=rng) + make_real_matrix(size, rng=rng)
+def canonicalize(state, strategy):
+    return CanonicalMPS(state, strategy=strategy)
 
 
-def numpy_mmult(A, B):
-    return np.matmul(A, B)
-
-
-def seemps_mmult(A, B):
-    return _gemm(A, GemmOrder.NORMAL, B, GemmOrder.NORMAL)
-
-
-def scipy_svd(A):
-    return scipy.linalg.svd(
-        A.copy(), full_matrices=False, compute_uv=True, overwrite_a=True
-    )
-
-
-def seemps_svd(A):
-    return _destructive_svd(A.copy())
+def simplify(state, strategy):
+    return simplify(state, strategy=strategy)
 
 
 def run_all():
     warmup(64 * 10 * 2 * 10)
-    matrix_sizes = [2, 4, 8, 16, 32, 128, 256, 512]
     data = BenchmarkSet(
         name="Numpy",
         environment=system_version(),
         groups=[
-            BenchmarkGroup.run(
-                name="RMatrix",
-                items=[
-                    ("scipy_svd", scipy_svd, make_real_matrix, matrix_sizes),
-                    ("seemps_svd", seemps_svd, make_real_matrix, matrix_sizes),
-                    ("matmul", numpy_mmult, make_two_real_matrices, matrix_sizes),
-                    ("gemm", seemps_mmult, make_two_real_matrices, matrix_sizes),
-                ],
-            ),
             BenchmarkGroup.run(
                 name="MPS",
                 items=[
@@ -96,6 +70,18 @@ def run_all():
                 name="CMPS",
                 items=[
                     ("scprod", scalar_product, make_two_ghz),
+                ],
+            ),
+            BenchmarkGroup.run(
+                name="RMPS",
+                items=[
+                    ("canonical", canonicalize, random_mps),
+                ],
+            ),
+            BenchmarkGroup.run(
+                name="RMPS",
+                items=[
+                    ("simplify", canonicalize, random_mps),
                 ],
             ),
         ],
