@@ -136,12 +136,12 @@ def simplify(
             tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    total_error_bound = state.error() + sqrt(err)
+    total_error_bound = state._error + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
         last_tensor /= factor
         total_error_bound /= factor
-    mps.set_error(total_error_bound)
+    mps._error = total_error_bound
     return mps
 
 
@@ -299,7 +299,7 @@ def simplify_mps_sum(
         factor = sqrt(norm_mps_sqr)
         last_tensor /= factor
         total_error_bound /= factor
-    mps.set_error(total_error_bound)
+    mps._error = total_error_bound
     return mps
 
 

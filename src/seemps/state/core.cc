@@ -195,6 +195,7 @@ PYBIND11_MODULE(core, m) {
 			 Upper bound for the actual error when approximating this state.
         )doc")
       .def("set_error", &MPS::set_error)
+      .def_property("_error", &MPS::error, &MPS::set_error)
       .def("update_error", &MPS::update_error,
            R"doc(Register an increase in the truncation error.
 

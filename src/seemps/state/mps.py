@@ -7,7 +7,7 @@ from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
 from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum, CanonicalMPS
-from .schmidt import vector2mps
+from .schmidt import _vector2mps
 from .environments import (  # noqa: E402
     Environment,
     _begin_environment,
@@ -57,7 +57,7 @@ def from_vector(
     MPS
         A valid matrix-product state approximating this state vector.
     """
-    data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
+    data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
     return MPS(data, error)
 
 

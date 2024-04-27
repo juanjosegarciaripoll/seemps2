@@ -14,10 +14,10 @@ from .core import (
     _destructive_svd,
 )
 
-__all__ = ["schmidt_weights", "vector2mps", "_destructive_svd"]
+__all__ = ["schmidt_weights", "_vector2mps", "_destructive_svd"]
 
 
-def vector2mps(
+def _vector2mps(
     state: VectorLike,
     dimensions: Sequence[int],
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -42,7 +42,7 @@ def vector2mps(
     if center < 0:
         center = L + center
     if center < 0 or center >= L:
-        raise Exception("Invalid value of center in vector2mps")
+        raise Exception("Invalid value of center in _vector2mps")
     err = 0.0
     for i in range(center):
         output[i], ψ, new_err = left_orth_2site(

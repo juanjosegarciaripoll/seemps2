@@ -52,7 +52,7 @@ def from_vector(
     --------
     :py:meth:`~seemps.state.MPS.from_vector`
     """
-    data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
+    data, error = schmidt._vector2mps(ψ, dimensions, strategy, normalize, center)
     return CanonicalMPS(
         data,
         error=error,
