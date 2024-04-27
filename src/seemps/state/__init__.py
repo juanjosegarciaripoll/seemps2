@@ -7,7 +7,8 @@ from .core import (
     NO_TRUNCATION,
     MAX_BOND_DIMENSION,
 )
-from .mps import MPS, MPSSum
+from .mps import MPS
+from .mpssum import MPSSum
 from .canonical_mps import CanonicalMPS
 from .factories import (
     AKLT,
