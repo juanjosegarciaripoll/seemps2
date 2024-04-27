@@ -69,6 +69,10 @@ extensions = []
 from pybind11.setup_helpers import Pybind11Extension
 
 extra_compile_args = []
+extra_dependencies = [
+    s.replace("\\", "/") for s in glob.glob("src/**/*.h", recursive=True)
+] + [s.replace("\\", "/") for s in glob.glob("src/**/*.cc", recursive=True)]
+print(extra_dependencies)
 pybind11_modules = [
     Pybind11Extension(
         "seemps.state.core",
@@ -90,12 +94,7 @@ pybind11_modules = [
         extra_compile_args=extra_compile_args,
         include_dirs=[np.get_include()],
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
-        depends=[
-            "src/seemps/state/mps.h",
-            "src/seemps/state/strategy.h",
-            "src/seemps/state/tensors.h",
-            "src/seemps/state/tools.h",
-        ],
+        depends=extra_dependencies,
         cxx_std=17,
     ),
 ]
