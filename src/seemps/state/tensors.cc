@@ -111,6 +111,12 @@ static py::object _dgemm(const py::object &A, const py::object &B, int m, int n,
   int ldb = array_int_dim(B, 1);
   double alpha = 1.0;
   double beta = 0.0;
+  if (Border == 'C') {
+    Border = 'T';
+  }
+  if (Aorder == 'C') {
+    Aorder = 'T';
+  }
   dgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
             array_data<double>(B), &ldb, &beta, array_data<double>(C), &m);
   return C;
