@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Optional, Union
 from math import sqrt
 import numpy as np
-from numpy import vdot
 from .. import tools
 from ..state import (
     DEFAULT_TOLERANCE,
@@ -69,12 +68,36 @@ def simplify(
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         mps = CanonicalMPS(state, center=start, strategy=strategy)
-        return CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        if tools.DEBUG >= 2:
+            tools.log(
+                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
+                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                debug_level=2,
+            )
+        return mps
 
-    if guess is None:
-        mps = CanonicalMPS(state, center=start, strategy=strategy)
-    else:
-        mps = CanonicalMPS(guess)
+    # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
+    # output is expected to be a CanonicalMPS, we must use the
+    # strategy to construct it.
+    if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
+        mps = CanonicalMPS(state, center=-1 - start, strategy=strategy)
+        if tools.DEBUG >= 2:
+            tools.log(
+                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
+                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                debug_level=2,
+            )
+        return mps
+
+    mps = CanonicalMPS(
+        state if guess is None else guess,
+        center=start,
+        normalize=False,
+        strategy=strategy,
+    )
 
     simplification_tolerance = strategy.get_simplification_tolerance()
     if not (norm_state_sqr := state.norm_squared()):
@@ -83,7 +106,7 @@ def simplify(
     err = 2.0
     tools.log(
         f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
-        f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.",
+        f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
         debug_level=2,
     )
     for sweep in range(max(1, strategy.get_max_sweeps())):
@@ -100,8 +123,8 @@ def simplify(
         #
         # We estimate the error
         #
-        norm_mps_sqr = vdot(last_tensor, last_tensor).real
-        mps_state_scprod = vdot(last_tensor, form.tensor1site())
+        norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
+        mps_state_scprod = np.vdot(last_tensor, form.tensor1site())
         old_err = err
         err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         tools.log(
@@ -110,14 +133,15 @@ def simplify(
             debug_level=2,
         )
         if err < simplification_tolerance or err > old_err:
-            tools.log("Stopping, as tolerance reached", debug_level=3)
+            tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    total_error = state.error() + sqrt(err)
+    total_error_bound = state.error() + sqrt(err)
     if normalize and norm_mps_sqr:
-        last_tensor /= norm_mps_sqr
-        total_error /= sqrt(norm_mps_sqr)
-    mps.set_error(total_error)
+        factor = sqrt(norm_mps_sqr)
+        last_tensor /= factor
+        total_error_bound /= factor
+    mps.set_error(total_error_bound)
     return mps
 
 
@@ -174,14 +198,13 @@ def simplify_mps_sum(
         Approximation to the linear combination in canonical form
     """
     # Compute norm of output and eliminate zero states
-    orig_sum_state = sum_state
-    norm_state_sqr, state = select_nonzero_mps_components(sum_state)
+    norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
     if not norm_state_sqr:
         tools.log(
             "COMBINE state with |state|=0. Returning zero state.",
             debug_level=2,
         )
-        return CanonicalMPS(orig_sum_state.states[0].zero_state(), is_canonical=True)
+        return CanonicalMPS(sum_state.states[0].zero_state(), is_canonical=True)
 
     normalize = strategy.get_normalize_flag()
     start = 0 if direction > 0 else -1
@@ -191,9 +214,9 @@ def simplify_mps_sum(
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
-                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
+                f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}",
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
                 debug_level=2,
             )
         return mps
@@ -205,17 +228,20 @@ def simplify_mps_sum(
         mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
         if tools.DEBUG >= 2:
             tools.log(
-                f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
+                f"COMBINE state with |state|={mps.norm():5e}\nusing single-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}",
+                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
                 debug_level=2,
             )
         return mps
 
     # Prepare initial guess
-    if guess is None:
-        guess = sum_state.join()
-    mps = CanonicalMPS(guess, center=start, strategy=strategy)
+    mps = CanonicalMPS(
+        sum_state.join() if guess is None else guess,
+        center=start,
+        normalize=False,
+        strategy=strategy,
+    )
     simplification_tolerance = strategy.get_simplification_tolerance()
 
     size = mps.size
@@ -223,7 +249,8 @@ def simplify_mps_sum(
     forms = [AntilinearForm(mps, si, center=start) for si in states]
     tools.log(
         f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
-        f"sweeps with tolerance {simplification_tolerance:5e}.\nWeights: {weights}",
+        f"sweeps with tolerance {simplification_tolerance:5e}.\nStrategy: {strategy}"
+        f"\nWeights: {weights}",
         debug_level=2,
     )
     err = 2.0
@@ -251,8 +278,8 @@ def simplify_mps_sum(
         #
         # We estimate the error
         #
-        norm_mps_sqr = vdot(last_tensor, last_tensor).real
-        mps_state_scprod = vdot(
+        norm_mps_sqr = np.vdot(last_tensor, last_tensor).real
+        mps_state_scprod = np.vdot(
             last_tensor,
             sum(w * f.tensor1site() for w, f in zip(weights, forms)),
         )
@@ -267,11 +294,12 @@ def simplify_mps_sum(
             tools.log("Stopping, as tolerance reached", debug_level=2)
             break
         direction = -direction
-    total_error = sum_state.error() + sqrt(err)
+    total_error_bound = sum_state.error() + sqrt(err)
     if normalize and norm_mps_sqr:
-        last_tensor /= norm_mps_sqr
-        total_error /= sqrt(norm_mps_sqr)
-    mps.set_error(total_error)
+        factor = sqrt(norm_mps_sqr)
+        last_tensor /= factor
+        total_error_bound /= factor
+    mps.set_error(total_error_bound)
     return mps
 
 
