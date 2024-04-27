@@ -1,11 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from math import sqrt
-from typing import Union, Iterable
-from ..tools import InvalidOperation
 from ..typing import Weight, Vector, Tensor3
 from .core import MPSSum, CanonicalMPS, MPS
-from .environments import scprod
 
 
 def as_mps(self) -> MPS:

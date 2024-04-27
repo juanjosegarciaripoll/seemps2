@@ -1,12 +1,9 @@
 from __future__ import annotations
-import math
 import warnings
 import numpy as np
-from math import sqrt
-from typing import Optional, Union, Sequence, Iterable
-from ..tools import InvalidOperation
-from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
-from .core import DEFAULT_STRATEGY, Strategy, TensorArray, MPS, MPSSum, CanonicalMPS
+from typing import Optional, Union, Sequence
+from ..typing import Weight, Vector, VectorLike, Operator
+from .core import DEFAULT_STRATEGY, Strategy, MPS
 from .schmidt import _vector2mps
 from .environments import (  # noqa: E402
     Environment,
@@ -16,6 +13,8 @@ from .environments import (  # noqa: E402
     _join_environments,
     scprod,
 )
+
+__all__ = ["MPS", "scprod"]
 
 
 def _mps2vector(data: MPS) -> Vector:

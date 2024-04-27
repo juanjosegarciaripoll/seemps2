@@ -1,9 +1,7 @@
 from __future__ import annotations
-import warnings
-import numpy as np
-from typing import Optional, Sequence, Iterable
-from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
-from . import environments, schmidt
+from typing import Sequence
+from ..typing import VectorLike
+from . import schmidt
 from seemps.state.core import (
     DEFAULT_STRATEGY,
     Strategy,
@@ -14,7 +12,12 @@ from seemps.state.core import (
     _canonicalize,
     CanonicalMPS,
 )
-from .mps import MPS
+
+__all__ = [
+    "CanonicalMPS",
+    "_update_in_canonical_form_right",
+    "_update_in_canonical_form_right",
+]
 
 
 @classmethod  # type: ignore
