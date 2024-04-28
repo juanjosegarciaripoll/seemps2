@@ -277,7 +277,12 @@ PYBIND11_MODULE(core, m) {
       .def(
           "zero_state", &CanonicalMPS::zero_state,
           R"doc(Return a zero wavefunction with the same physical dimensions.)doc")
-      .def("norm_squared", &CanonicalMPS::norm_squared)
+      .def(
+          "norm_squared", &CanonicalMPS::norm_squared,
+          R"doc(Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this CanonicalMPS.)doc")
+      .def(
+          "norm", &CanonicalMPS::norm,
+          R"doc(Norm-2 :math:`\\Vert{\\psi}\\Vert^2` of this CanonicalMPS.)doc")
       .def(
           "left_environment", &CanonicalMPS::left_environment,
           R"doc(Optimized version of :py:meth:`~seemps.state.MPS.left_environment`)doc")

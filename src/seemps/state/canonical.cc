@@ -86,6 +86,8 @@ double CanonicalMPS::norm_squared() const {
   return abs(array_vdot(A, A));
 }
 
+double CanonicalMPS::norm() const { return sqrt(norm_squared()); }
+
 Environment CanonicalMPS::left_environment(int site) const {
   auto start = std::min(site, center_);
   auto rho = _begin_environment(array_dim(getitem(start), 0));

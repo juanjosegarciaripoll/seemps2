@@ -171,6 +171,7 @@ public:
   CanonicalMPS zero_state() const;
 
   double norm_squared() const;
+  double norm() const;
 
   Environment left_environment(int site) const;
 
