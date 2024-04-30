@@ -177,7 +177,7 @@ public:
 
   Environment right_environment(int site) const;
 
-  py::object Schmidt_weights(int site = no_defined_center) const;
+  py::list Schmidt_weights(int site = no_defined_center) const;
 
   double entanglement_entropy(int center) const;
 

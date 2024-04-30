@@ -24,7 +24,13 @@ template <class f>
 static void load_wrapper(py::dict &__pyx_capi__, const char *name,
                          f *&pointer) {
   py::capsule wrapper = __pyx_capi__[name];
+#if 1
+  // This copes with a bug in pybind11, which uses
+  // static_cast to cast a void* to the pointer.
+  pointer = reinterpret_cast<f *>(wrapper.get_pointer<void>());
+#else
   pointer = wrapper.get_pointer<f>();
+#endif
 }
 
 void load_scipy_wrappers() {

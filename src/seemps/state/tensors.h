@@ -110,7 +110,7 @@ template <typename elt> inline elt *array_data(const py::object &a) {
 using array_dims_t = std::initializer_list<npy_intp>;
 
 template <class Dimensions>
-inline py::object array_reshape(const py::object &a, Dimensions &d) {
+inline py::object array_reshape(const py::object &a, const Dimensions &d) {
   PyArray_Dims dims = {const_cast<npy_intp *>(&(*std::begin(d))),
                        static_cast<int>(std::size(d))};
   return py::reinterpret_steal<py::object>(
@@ -164,7 +164,7 @@ inline py::object empty_matrix(npy_intp rows, npy_intp cols, int type) {
 template <class Dimensions>
 inline py::object zero_array(const Dimensions &dims, int type = NPY_DOUBLE) {
   auto the_dims = const_cast<npy_intp *>(&(*std::begin(dims)));
-  auto rank = static_cast<int>(std::size(d));
+  auto rank = static_cast<int>(std::size(dims));
   return py::reinterpret_steal<py::object>(
       PyArray_ZEROS(rank, the_dims, type, 0));
 }
@@ -204,7 +204,7 @@ inline py::object array_conjugate(const py::object &a) {
  * Advanced contractions
  */
 
-py::object _matmul(py::object &A, py::object &B);
+py::object _matmul(const py::object &A, const py::object &B);
 
 py::object contract_last_and_first(py::object A, py::object B);
 py::object contract_nrjl_ijk_klm(py::object U, py::object A, py::object B);

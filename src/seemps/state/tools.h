@@ -29,11 +29,11 @@ public:
     operator object() const { return list_[index_]; }
   };
 
-  iterator(const iterator &) = default;
-  iterator(iterator &&) = default;
-  iterator &operator=(const iterator &) = default;
-  iterator &operator=(iterator &&) = default;
-  iterator(list &list, size_t index) : list_{list}, index_{index} {}
+  python_list_iterator(const python_list_iterator &) = default;
+  python_list_iterator(python_list_iterator &&) = default;
+  python_list_iterator &operator=(const python_list_iterator &) = default;
+  python_list_iterator &operator=(python_list_iterator &&) = default;
+  python_list_iterator(list &list, size_t index) : list_{list}, index_{index} {}
   ~python_list_iterator() = default;
 
   bool operator==(const iterator &other) const {
@@ -70,35 +70,36 @@ public:
   using pointer = object *;
   using reference = object &;
 
-  iterator(const iterator &) = default;
-  iterator(iterator &&) = default;
-  iterator &operator=(const iterator &it) {
+  python_list_const_iterator(const python_list_const_iterator &) = default;
+  python_list_const_iterator(python_list_const_iterator &&) = default;
+  python_list_const_iterator &operator=(const python_list_const_iterator &it) {
     list_ = it.list_;
     index_ = it.index_;
     return *this;
   }
-  iterator &operator=(iterator &&it) {
+  python_list_const_iterator &operator=(python_list_const_iterator &&it) {
     list_ = std::move(it.list_);
     index_ = it.index_;
     return *this;
   }
-  iterator(const list &list, size_t index) : list_{list}, index_{index} {}
+  python_list_const_iterator(const list &list, size_t index)
+      : list_{list}, index_{index} {}
   ~python_list_const_iterator() = default;
 
-  bool operator==(const iterator &other) const {
+  bool operator==(const python_list_const_iterator &other) const {
     return index_ == other.index_;
   }
 
-  bool operator!=(const iterator &other) const {
+  bool operator!=(const python_list_const_iterator &other) const {
     return index_ != other.index_;
   }
 
-  iterator &operator++() {
+  python_list_const_iterator &operator++() {
     ++index_;
     return *this;
   }
 
-  iterator operator++(int) {
+  python_list_const_iterator operator++(int) {
     auto return_value = *this;
     ++index_;
     return return_value;

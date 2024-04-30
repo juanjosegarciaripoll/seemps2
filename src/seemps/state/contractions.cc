@@ -4,7 +4,7 @@
 
 namespace seemps {
 
-py::object _matmul(py::object &A, py::object &B) {
+py::object _matmul(const py::object &A, const py::object &B) {
   auto numpy = py::module_::import("numpy");
   auto matmul = numpy.attr("matmul");
   return matmul(A, B);

@@ -110,7 +110,7 @@ Environment CanonicalMPS::right_environment(int site) const {
   return rho;
 }
 
-py::object CanonicalMPS::Schmidt_weights(int site) const {
+py::list CanonicalMPS::Schmidt_weights(int site) const {
   site = interpret_center(site);
   return schmidt_weights(
       ((site == center()) ? (*this) : copy().recenter(site, strategy_))
@@ -118,16 +118,17 @@ py::object CanonicalMPS::Schmidt_weights(int site) const {
 }
 
 double CanonicalMPS::entanglement_entropy(int center) const {
-  auto s = Schmidt_weights(center);
-  return std::accumulate(s.begin(), s.end(), 0.0,
-                         [](double entropy, auto schmidt_weight) -> double {
-                           auto w = schmidt_weight.cast<double>();
-                           return entropy - w * std::log2(w);
-                         });
+  const py::list s = Schmidt_weights(center);
+  return std::accumulate(
+      py::begin(s), py::end(s), 0.0,
+      [](double entropy, const py::object schmidt_weight) -> double {
+        auto w = schmidt_weight.cast<double>();
+        return entropy - w * std::log2(w);
+      });
 }
 
 double CanonicalMPS::Renyi_entropy(int center, double alpha) const {
-  auto s = Schmidt_weights(center);
+  const py::list s = Schmidt_weights(center);
   if (alpha < 0) {
     std::invalid_argument("Invalid Renyi entropy power");
   }
@@ -136,11 +137,12 @@ double CanonicalMPS::Renyi_entropy(int center, double alpha) const {
   } else if (alpha == 1) {
     alpha = 1 - 1e-9;
   }
-  return std::log(std::accumulate(s.begin(), s.end(), 0.0,
-                                  [=](double sum, auto schmidt_weight) {
-                                    double w = schmidt_weight.cast<double>();
-                                    return sum + std::pow(w, alpha);
-                                  })) /
+  return std::log(
+             std::accumulate(py::begin(s), py::end(s), 0.0,
+                             [=](double sum, const py::object schmidt_weight) {
+                               double w = schmidt_weight.cast<double>();
+                               return sum + std::pow(w, alpha);
+                             })) /
          (1 - alpha);
 }
 
@@ -184,7 +186,6 @@ const CanonicalMPS &CanonicalMPS::recenter(int new_center,
                                            const Strategy &strategy) {
 
   new_center = interpret_center(new_center);
-  auto old_center = center();
   while (center() < new_center) {
     update_canonical(center_tensor(), +1, strategy);
   }
