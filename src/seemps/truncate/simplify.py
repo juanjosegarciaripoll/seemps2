@@ -198,7 +198,8 @@ def simplify_mps_sum(
         Approximation to the linear combination in canonical form
     """
     # Compute norm of output and eliminate zero states
-    norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
+    # norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
+    norm_state_sqr = sum_state.delete_zero_components()
     if not norm_state_sqr:
         tools.log(
             "COMBINE state with |state|=0. Returning zero state.",

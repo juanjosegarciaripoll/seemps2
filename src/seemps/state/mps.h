@@ -128,6 +128,8 @@ public:
 
   double error() const;
 
+  double delete_zero_components();
+
 private:
   void append(const Weight &weight, const py::object &mps);
 

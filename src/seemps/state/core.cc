@@ -389,6 +389,10 @@ PYBIND11_MODULE(core, m) {
       .def(
           "__sub__", [](const MPSSum &a, const MPS &b) { return a - b; },
           py::is_operator())
+      .def(
+          "delete_zero_components", &MPSSum::delete_zero_components,
+          R"doc(Compute the norm-squared of the linear combination of weights and
+    states and eliminate states that are zero or have zero weight.)doc")
       .def_property_readonly_static("__array_priority__",
                                     [](const py::object &) { return 10000; })
       .def("__mul__", &MPSSum::times_object, py::is_operator())
