@@ -145,30 +145,6 @@ def simplify(
     return mps
 
 
-def select_nonzero_mps_components(state: MPSSum) -> tuple[float, MPSSum]:
-    """Compute the norm-squared of the linear combination of weights and
-    states and eliminate states that are zero or have zero weight."""
-    c: float = 0.0
-    final_weights: list[Weight] = []
-    final_states: list[MPS] = []
-    for wi, si in zip(state.weights, state.states):
-        wic = wi.conjugate()
-        ni = (wic * wi).real * si.norm_squared()
-        if ni:
-            for wj, sj in zip(final_weights, final_states):
-                c += 2 * (wic * wj * scprod(si, sj)).real
-            final_states.append(si)
-            final_weights.append(wi)
-            c += ni
-    L = len(final_weights)
-    if L == state.size:
-        return abs(c), state
-    elif L:
-        return abs(c), MPSSum(final_weights, final_states, check_args=False)
-    else:
-        return 0.0, state
-
-
 # TODO: We have to rationalize all this about directions. The user should
 # not really care about it and we can guess the direction from the canonical
 # form of either the guess or the state.
@@ -198,7 +174,7 @@ def simplify_mps_sum(
         Approximation to the linear combination in canonical form
     """
     # Compute norm of output and eliminate zero states
-    norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
+    norm_state_sqr = sum_state.delete_zero_components()
     if not norm_state_sqr:
         tools.log(
             "COMBINE state with |state|=0. Returning zero state.",
