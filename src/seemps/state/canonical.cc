@@ -58,7 +58,11 @@ CanonicalMPS::CanonicalMPS(const CanonicalMPS &data, py::object center,
                            const Strategy &strategy, bool is_canonical)
     : MPS(data), strategy_{strategy} {
   if (!center.is_none()) {
-    recenter(center.cast<int>(), strategy);
+    auto i = center.cast<int>();
+    if (i != center_) {
+      // TODO: Fix! Does not work!
+      recenter(center.cast<int>(), strategy);
+    }
   }
   if (normalize.cast<bool>() ||
       (normalize.is_none() && strategy.get_normalize_flag())) {
@@ -77,7 +81,9 @@ CanonicalMPS &CanonicalMPS::normalize_in_place() {
 
 CanonicalMPS CanonicalMPS::zero_state() const {
   auto output = copy();
-  std::transform(output.begin(), output.end(), output.begin(), zero_like_array);
+  output.set_error(0.0);
+  output.center_ = 0;
+  output.fill_with_zeros();
   return output;
 }
 

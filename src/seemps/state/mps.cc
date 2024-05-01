@@ -31,9 +31,19 @@ py::list MPS::bond_dimensions() const {
 double MPS::norm_squared() const { return py::abs(scprod(*this, *this)); }
 double MPS::norm() const { return std::sqrt(norm_squared()); }
 
+void MPS::fill_with_zeros() {
+  auto zero_tensor = [](const py::object &A) -> py::object {
+    auto d = array_dim(A, 1);
+    array_dims_t dims{1, d, 1};
+    return zero_array(dims);
+  };
+
+  std::transform(begin(), end(), begin(), zero_tensor);
+}
+
 MPS MPS::zero_state() const {
-  MPS output = *this;
-  std::transform(begin(), end(), output.begin(), zero_like_array);
+  MPS output = copy();
+  output.fill_with_zeros();
   return output;
 }
 
