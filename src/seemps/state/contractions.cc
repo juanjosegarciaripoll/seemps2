@@ -37,17 +37,16 @@ py::object contract_last_and_first(py::object A, py::object B) {
   auto Alast = array_dim(A, ndimA - 1);
   auto ndimB = array_ndim(B);
   auto Bfirst = array_dim(B, 0);
-  std::vector<npy_intp> new_dims;
-  new_dims.reserve(ndimA + ndimB - 2);
-  for (int i = 0; i < ndimA - 1; ++i) {
-    new_dims.emplace_back(array_dim(A, i));
-  }
-  for (int i = 1; i < ndimB; ++i) {
-    new_dims.emplace_back(array_dim(B, i));
-  }
-  auto C = matrix_product(as_matrix(A, array_size(A) / Alast, Alast),
-                          as_matrix(B, Bfirst, array_size(B) / Bfirst));
-  return array_reshape(C, new_dims);
+  auto ndimC = ndimA + ndimB - 2;
+  std::vector<npy_intp> new_dims(ndimC);
+  auto Adims = array_dims(A);
+  std::copy(Adims, Adims + ndimA, new_dims.begin());
+  auto Bdims = array_dims(B);
+  std::copy(Bdims + 1, Bdims + ndimB, new_dims.begin() + ndimA - 1);
+  return array_reshape(
+      matrix_product(as_matrix(A, array_size(A) / Alast, Alast),
+                     as_matrix(B, Bfirst, array_size(B) / Bfirst)),
+      new_dims);
 }
 
 } // namespace seemps
