@@ -14,6 +14,11 @@ import seemps.tools
 
 # seemps.tools.DEBUG = 3
 
+import os
+
+if "DEBUGSEEMPS" in os.environ:
+    seemps.tools.DEBUG = int(os.environ["DEBUGSEEMPS"])
+
 
 # %%
 def distance_in_norm_inf(tensor1: np.ndarray, tensor2: np.ndarray) -> float:
@@ -24,7 +29,7 @@ def distance_in_norm_inf(tensor1: np.ndarray, tensor2: np.ndarray) -> float:
 
 
 # %%
-def interpolate_gaussian_product(m, n, d, t, order):
+def interpolate_gaussian_product(m, n, d, t, mps_order):
     # Define function
     a, b = -1, 1
     func = lambda x: np.exp(-x)
@@ -49,12 +54,14 @@ def interpolate_gaussian_product(m, n, d, t, order):
     mps_x_squared = mps_from_polynomial([0, 0, 1], interval, strategy=NO_TRUNCATION)
     mps_domain = mps_tensor_sum(
         [mps_x_squared] * m,
-        mps_order=order,
+        mps_order=mps_order,
         strategy=COMPUTER_PRECISION,
     )
     (start, stop) = (0, m * b**2)
     coefficients = chebyshev_coefficients(func, d, start, stop)
+    seemps.tools.log("====\ncheb2mps started")
     mps_cheb = cheb2mps(coefficients, x=mps_domain, strategy=strategy_cheb)
+    seemps.tools.log("====\ncheb2mps finished")
     time_stop = perf_counter()
     time = time_stop - time_start
     # print(mps_cheb.bond_dimensions())
@@ -64,7 +71,7 @@ def interpolate_gaussian_product(m, n, d, t, order):
     rng = np.random.default_rng(42)
     mps_indices = random_mps_indices(mps_cheb, rng=rng)
     y_mps = evaluate_mps(mps_cheb, mps_indices)
-    T = mps_to_mesh_matrix([n] * m, order=order)
+    T = mps_to_mesh_matrix([n] * m, mps_order=order)
     mesh = Mesh([interval] * m)
     mesh_coordinates = mesh[mps_indices @ T]
     y_vec = func_tensor(mesh_coordinates)
@@ -104,11 +111,12 @@ d = 20
 order = "A"
 repeats = 20
 tot_time = 0.0
-for _ in range(repeats):
-    time, error, max_bond = interpolate_gaussian_product(m, n, d, t, order)
-    tot_time += time
-print(
-    f"-----\nExpansion completed in {tot_time/repeats:5f}s,\n"
-    f"with norm-2 error {error:6e}, "
-    f"\nand bond dimension {max_bond}"
-)
+if False:
+    for _ in range(repeats):
+        time, error, max_bond = interpolate_gaussian_product(m, n, d, t, order)
+        tot_time += time
+    print(
+        f"-----\nExpansion completed in {tot_time/repeats:5f}s,\n"
+        f"with norm-2 error {error:6e}, "
+        f"\nand bond dimension {max_bond}"
+    )
