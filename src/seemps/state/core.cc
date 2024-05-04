@@ -217,8 +217,38 @@ PYBIND11_MODULE(core, m) {
         )doc")
       .def("conj", &MPS::conj,
            "doc(Return the complex-conjugate of this quantum state.)doc")
-      .def("__mul__", &MPS::times_object, py::is_operator())
-      .def("__rmul__", &MPS::times_object, py::is_operator())
+      .def(
+          "__mul__",
+          [](const MPS &state, const py::object &weight_or_mps) {
+            if (py::isinstance<MPS>(weight_or_mps)) {
+              return py::cast(state * weight_or_mps.cast<const MPS &>());
+            } else if (py::isinstance<py::int_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::isinstance<py::float_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::iscomplex(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+                              state);
+            }
+            throw py::type_error("Invalid argument to __mul__ by MPS");
+          },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](const MPS &state, const py::object &weight_or_mps) {
+            if (py::isinstance<py::int_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::isinstance<py::float_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::iscomplex(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+                              state);
+            } else if (py::isinstance<MPS>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<const MPS &>() * state);
+            }
+            throw py::type_error("Invalid argument to __rmul__ by MPS");
+          },
+          py::is_operator())
       .def(py::self + py::self)
       .def(py::self - py::self)
       // .def(py::self + MPSSum())
@@ -344,8 +374,39 @@ PYBIND11_MODULE(core, m) {
       .def("recenter", py::overload_cast<int>(&CanonicalMPS::recenter))
       .def("normalize_inplace", &CanonicalMPS::normalize_in_place)
       .def("copy", &CanonicalMPS::copy)
-      .def("__mul__", &CanonicalMPS::times_object, py::is_operator())
-      .def("__rmul__", &CanonicalMPS::times_object, py::is_operator());
+      .def(
+          "__mul__",
+          [](const CanonicalMPS &state, const py::object &weight_or_mps) {
+            if (py::isinstance<MPS>(weight_or_mps)) {
+              return py::cast(state * weight_or_mps.cast<const MPS &>());
+            } else if (py::isinstance<py::int_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::isinstance<py::float_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::iscomplex(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+                              state);
+            }
+            throw py::type_error("Invalid argument to __mul__ by CanonicalMPS");
+          },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](const CanonicalMPS &state, const py::object &weight_or_mps) {
+            if (py::isinstance<py::int_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::isinstance<py::float_>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<double>() * state);
+            } else if (py::iscomplex(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+                              state);
+            } else if (py::isinstance<MPS>(weight_or_mps)) {
+              return py::cast(weight_or_mps.cast<const MPS &>() * state);
+            }
+            throw py::type_error(
+                "Invalid argument to __rmul__ by CanonicalMPS");
+          },
+          py::is_operator());
 
   py::class_<MPSSum>(
       m, "MPSSum",

@@ -86,8 +86,6 @@ public:
 
   auto conj() const { return copy().conj_in_place(); }
 
-  py::object times_object(const py::object &weight_or_mps) const;
-
 protected:
   void fill_with_zeros();
 };
@@ -198,8 +196,6 @@ public:
   const CanonicalMPS &recenter(int new_center);
 
   const CanonicalMPS &recenter(int new_center, const Strategy &strategy);
-
-  py::object times_object(const py::object &weight_or_mps) const;
 
   int center() const { return center_; }
 };

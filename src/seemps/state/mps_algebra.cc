@@ -134,19 +134,6 @@ MPSSum operator*(std::complex<double> a, const MPSSum &b) {
   return MPSSum(rescale(py::cast(a), b.weights()), b.states(), false);
 }
 
-py::object MPS::times_object(const py::object &weight_or_mps) const {
-  if (py::isinstance<MPS>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<const MPS &>());
-  } else if (py::isinstance<py::int_>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<double>());
-  } else if (py::isinstance<py::float_>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<double>());
-  } else if (py::iscomplex(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<std::complex<double>>());
-  }
-  throw py::type_error("Invalid argument to product by MPS");
-}
-
 py::object MPSSum::times_object(const py::object &weight_or_mps) const {
   if (py::isinstance<py::int_>(weight_or_mps)) {
     return py::cast(*this * weight_or_mps.cast<double>());
@@ -156,19 +143,6 @@ py::object MPSSum::times_object(const py::object &weight_or_mps) const {
     return py::cast(*this * weight_or_mps.cast<std::complex<double>>());
   }
   // TODO: Add MPS, CanonicalMPS and other MPSSum
-  throw py::type_error("Invalid argument to product by MPS");
-}
-
-py::object CanonicalMPS::times_object(const py::object &weight_or_mps) const {
-  if (py::isinstance<MPS>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<const MPS &>());
-  } else if (py::isinstance<py::int_>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<double>());
-  } else if (py::isinstance<py::float_>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<double>());
-  } else if (py::iscomplex(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<std::complex<double>>());
-  }
   throw py::type_error("Invalid argument to product by MPS");
 }
 
