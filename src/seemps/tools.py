@@ -25,8 +25,8 @@ class NoLogger:
     def __call__(self, *args, **kwdargs):
         pass
 
-    def __enter__(self):
-        pass
+    def __enter__(self) -> NoLogger:
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
@@ -61,8 +61,8 @@ class Logger:
     def __bool__(self) -> bool:
         return self.active
 
-    def __enter__(self):
-        pass
+    def __enter__(self) -> Logger:
+        return self
 
     def __call__(self, *args, **kwdargs):
         if self.active:
