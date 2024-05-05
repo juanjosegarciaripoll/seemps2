@@ -16,7 +16,10 @@ from seemps.state.core import (
 __all__ = [
     "CanonicalMPS",
     "_update_in_canonical_form_right",
-    "_update_in_canonical_form_right",
+    "_update_in_canonical_form_left",
+    "_update_canonical_2site_left",  # TODO: Delete
+    "_update_canonical_2site_right",  # TODO: Delete
+    "_canonicalize",  # TODO: Delete
 ]
 
 
