@@ -78,7 +78,7 @@ class Logger:
         PREFIX = self.old_prefix
 
 
-def make_logger(level: int = 0) -> NoLogger | Logger:
+def make_logger(level: int = 1) -> NoLogger | Logger:
     """Create an object that logs debug information. This object has a property
     `active` that determines whether logging is working. It also has a `__call__`
     method that allows invoking the object with the information to log, working
