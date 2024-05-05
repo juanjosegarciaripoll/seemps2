@@ -41,7 +41,7 @@ extern void (*zgesvd_ptr)(char *jobu, char *jobvt, int *m, int *n,
 
 enum Gemm { GEMM_NORMAL = 0, GEMM_TRANSPOSE = 1, GEMM_ADJOINT = 2 };
 
-py::object gemm(py::object A, Gemm AT, py::object B, Gemm BT);
+py::object gemm(const py::object &A, Gemm AT, const py::object &B, Gemm BT);
 
 std::tuple<py::object, py::object, py::object> destructive_svd(py::object A);
 
@@ -118,7 +118,7 @@ inline py::object array_reshape(const py::object &a, const Dimensions &d) {
 }
 
 // TODO: Make this more general
-py::object matrix_resize(py::object A, npy_intp rows, npy_intp cols);
+py::object matrix_resize(const py::object &A, npy_intp rows, npy_intp cols);
 
 inline auto as_matrix(const py::object &a, npy_intp rows, npy_intp cols) {
   npy_intp d[2] = {rows, cols};
@@ -206,7 +206,8 @@ inline py::object array_conjugate(const py::object &a) {
 
 py::object _matmul(const py::object &A, const py::object &B);
 
-py::object contract_last_and_first(py::object A, py::object B);
-py::object contract_nrjl_ijk_klm(py::object U, py::object A, py::object B);
+py::object contract_last_and_first(const py::object &A, const py::object &B);
+py::object contract_nrjl_ijk_klm(const py::object &U, const py::object &A,
+                                 const py::object &B);
 
 } // namespace seemps

@@ -5,7 +5,7 @@
 namespace seemps {
 template <int rank> class TensorArray {
 
-  static void check_array(py::object A) {
+  static void check_array(const py::object &A) {
     if (!is_array(A)) {
       throw std::invalid_argument("TensorArray did not get a tensor");
     }
@@ -71,7 +71,7 @@ public:
     switch (type) {
     case NPY_DOUBLE:
     case NPY_COMPLEX128:
-      data_[k] = A;
+      data_[k] = std::move(A);
       break;
     case NPY_COMPLEX64:
       data_[k] = array_cast(A, NPY_COMPLEX128);
@@ -81,7 +81,7 @@ public:
     }
   }
 
-  py::object __getitem__(py::object site) const {
+  py::object __getitem__(const py::object &site) const {
     auto object = site.ptr();
     if (object == NULL) {
       //
@@ -105,11 +105,11 @@ public:
     throw std::invalid_argument("Invalid index into TensorArray");
   }
 
-  py::object __setitem__(py::object site, py::object A) {
+  py::object __setitem__(const py::object &site, py::object A) {
     auto object = site.ptr();
     if (object != NULL) {
       if (PyLong_Check(object)) {
-        setitem(PyLong_AsLong(object), A);
+        setitem(PyLong_AsLong(object), std::move(A));
         return py::none();
       } else if (PySlice_Check(object)) {
         size_t length = data_.size(), start, stop, step, slicelength;

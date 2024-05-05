@@ -6,8 +6,9 @@
 namespace seemps {
 
 std::tuple<int, double>
-_update_in_canonical_form_right(TensorArray3 &state, py::object A, int site,
-                                const Strategy &strategy, bool overwrite) {
+_update_in_canonical_form_right(TensorArray3 &state, const py::object &A,
+                                int site, const Strategy &strategy,
+                                bool overwrite) {
   if (!is_array(A) || array_ndim(A) != 3) {
     throw std::invalid_argument(
         "Invalid tensor passed to _update_in_canonical_form_right");
@@ -31,7 +32,8 @@ _update_in_canonical_form_right(TensorArray3 &state, py::object A, int site,
 }
 
 std::tuple<int, double> _update_in_canonical_form_left(TensorArray3 &state,
-                                                       py::object A, int site,
+                                                       const py::object &A,
+                                                       int site,
                                                        const Strategy &strategy,
                                                        bool overwrite) {
   if (!is_array(A) || array_ndim(A) != 3) {
@@ -108,8 +110,8 @@ right_orth_2site(py::object AA, const Strategy &strategy) {
           as_3tensor(matrix_resize(V, D, -1), D, d2, b), err};
 }
 
-double _update_canonical_2site_left(TensorArray3 &state, py::object A, int site,
-                                    const Strategy &strategy) {
+double _update_canonical_2site_left(TensorArray3 &state, const py::object &A,
+                                    int site, const Strategy &strategy) {
   if (!is_array(A) || array_ndim(A) != 4) {
     throw std::invalid_argument(
         "Invalid tensor passed to _update_canonical_2site_left");
@@ -133,7 +135,7 @@ double _update_canonical_2site_left(TensorArray3 &state, py::object A, int site,
   return err;
 }
 
-double _update_canonical_2site_right(TensorArray3 &state, py::object A,
+double _update_canonical_2site_right(TensorArray3 &state, const py::object &A,
                                      int site, const Strategy &strategy) {
   if (!is_array(A) || array_ndim(A) != 4) {
     throw std::invalid_argument(

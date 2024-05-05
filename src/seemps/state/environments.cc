@@ -28,8 +28,8 @@ py::object _begin_environment(int D) {
   return eye(D);
 }
 
-py::object _update_left_environment(py::object B, py::object A,
-                                    py::object rho) {
+py::object _update_left_environment(const py::object &B, const py::object &A,
+                                    const py::object &rho) {
   if (!is_array(A) || !is_array(B) || !is_array(rho) || (array_ndim(B) != 3) ||
       (array_ndim(A) != 3) || (array_ndim(rho) != 2)) {
     throw std::invalid_argument(
@@ -48,8 +48,8 @@ py::object _update_left_environment(py::object B, py::object A,
       GEMM_NORMAL);
 }
 
-py::object _update_right_environment(py::object B, py::object A,
-                                     py::object rho) {
+py::object _update_right_environment(const py::object &B, const py::object &A,
+                                     const py::object &rho) {
   if (!is_array(A) || !is_array(B) || !is_array(rho) || (array_ndim(B) != 3) ||
       (array_ndim(A) != 3) || (array_ndim(rho) != 2)) {
     throw std::invalid_argument(
@@ -67,7 +67,7 @@ py::object _update_right_environment(py::object B, py::object A,
       GEMM_NORMAL, as_matrix(B, l, j * n), GEMM_ADJOINT);
 }
 
-Weight _end_environment(py::object rho) {
+Weight _end_environment(const py::object &rho) {
   auto A = to_array(rho);
   return py::reinterpret_steal<py::object>(
       PyArray_GETITEM(A, static_cast<char *>(PyArray_DATA(A))));
@@ -78,7 +78,7 @@ Weight _end_environment(py::object rho) {
  * can replace this with a simple np.dot(ρL.reshape(-1), ρR.reshape(-1))
  * This involves ρR -> ρR.T with respect to current conventions
  */
-Weight _join_environments(py::object rhoL, py::object rhoR) {
+Weight _join_environments(const py::object &rhoL, const py::object &rhoR) {
   if (array_dim(rhoL, 0) == 1) {
     return _end_environment(rhoL) * _end_environment(rhoR);
   }

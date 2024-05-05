@@ -10,7 +10,8 @@ py::object _matmul(const py::object &A, const py::object &B) {
   return matmul(A, B);
 }
 
-py::object contract_nrjl_ijk_klm(py::object U, py::object A, py::object B) {
+py::object contract_nrjl_ijk_klm(const py::object &U, const py::object &A,
+                                 const py::object &B) {
   if (PyArray_Check(A.ptr()) == 0 || PyArray_Check(B.ptr()) == 0 ||
       PyArray_Check(U.ptr()) == 0 || array_ndim(A) != 3 || array_ndim(B) != 3 ||
       array_ndim(U) != 2) {
@@ -28,7 +29,7 @@ py::object contract_nrjl_ijk_klm(py::object U, py::object A, py::object B) {
                        final_dims);
 }
 
-py::object contract_last_and_first(py::object A, py::object B) {
+py::object contract_last_and_first(const py::object &A, const py::object &B) {
   if (!PyArray_Check(A.ptr()) || !PyArray_Check(B.ptr())) {
     throw std::invalid_argument("_contract_last_and_first_expect tensors");
   }

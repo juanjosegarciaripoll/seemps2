@@ -81,6 +81,7 @@ MPS operator*(std::complex<double> a, const MPS &b) {
 
 MPS operator*(const MPS &a, const MPS &b) {
   auto output = b.copy();
+  output.set_error(0);
   if (output.size() != a.size()) {
     throw std::invalid_argument("Non-matching MPS found in '*'");
   }

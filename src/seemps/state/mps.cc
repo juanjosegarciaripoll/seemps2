@@ -43,6 +43,7 @@ void MPS::fill_with_zeros() {
 
 MPS MPS::zero_state() const {
   MPS output = copy();
+  output.set_error(0.0);
   output.fill_with_zeros();
   return output;
 }

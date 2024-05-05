@@ -50,7 +50,7 @@ std::complex<double> array_vdot(const py::object &someA,
 /*
  * Equivalent to A[:rows,:cols]
  */
-py::object matrix_resize(py::object A, npy_intp rows, npy_intp cols) {
+py::object matrix_resize(const py::object &A, npy_intp rows, npy_intp cols) {
   auto old_rows = array_dim(A, 0);
   auto old_cols = array_dim(A, 1);
   if (rows < 0) {
@@ -136,9 +136,10 @@ static py::object _zgemm(const py::object &A, const py::object &B, int m, int n,
   return C;
 }
 
-py::object gemm(py::object B, Gemm BT, py::object A, Gemm AT) {
-  A = array_getcontiguous(A);
-  B = array_getcontiguous(B);
+py::object gemm(const py::object &origB, Gemm BT, const py::object &origA,
+                Gemm AT) {
+  auto A = array_getcontiguous(origA);
+  auto B = array_getcontiguous(origB);
   int m, n, k;
   char Aorder, Border;
   if (AT == Gemm::GEMM_NORMAL) {

@@ -13,11 +13,12 @@ using Weight = py::object;
 using Environment = py::object;
 
 py::object _begin_environment(int D = 1);
-py::object _update_left_environment(py::object A, py::object B, py::object rho);
-py::object _update_right_environment(py::object A, py::object B,
-                                     py::object rho);
-Weight _end_environment(py::object rho);
-Weight _join_environments(py::object rhoL, py::object rhoR);
+py::object _update_left_environment(const py::object &A, const py::object &B,
+                                    const py::object &rho);
+py::object _update_right_environment(const py::object &A, const py::object &B,
+                                     const py::object &rho);
+Weight _end_environment(const py::object &rho);
+Weight _join_environments(const py::object &rhoL, const py::object &rhoR);
 
 Weight scprod(const TensorArray3 &A, const TensorArray3 &B);
 double abs(const Weight &);
@@ -25,12 +26,12 @@ double abs(const Weight &);
 py::object schmidt_weights(py::object A);
 
 std::tuple<int, double>
-_update_in_canonical_form_right(TensorArray3 &state, py::object A, int site,
-                                const Strategy &truncation,
+_update_in_canonical_form_right(TensorArray3 &state, const py::object &A,
+                                int site, const Strategy &truncation,
                                 bool overwrite = false);
 std::tuple<int, double>
-_update_in_canonical_form_left(TensorArray3 &state, py::object A, int site,
-                               const Strategy &truncation,
+_update_in_canonical_form_left(TensorArray3 &state, const py::object &A,
+                               int site, const Strategy &truncation,
                                bool overwrite = false);
 double _canonicalize(TensorArray3 &state, int center,
                      const Strategy &truncation);
@@ -38,9 +39,9 @@ std::tuple<py::object, py::object, double>
 left_orth_2site(py::object AA, const Strategy &strategy);
 std::tuple<py::object, py::object, double>
 right_orth_2site(py::object AA, const Strategy &strategy);
-double _update_canonical_2site_left(TensorArray3 &state, py::object A, int site,
-                                    const Strategy &strategy);
-double _update_canonical_2site_right(TensorArray3 &state, py::object A,
+double _update_canonical_2site_left(TensorArray3 &state, const py::object &A,
+                                    int site, const Strategy &strategy);
+double _update_canonical_2site_right(TensorArray3 &state, const py::object &A,
                                      int site, const Strategy &strategy);
 
 class MPS : public TensorArray3 {

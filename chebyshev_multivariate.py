@@ -59,12 +59,9 @@ def interpolate_gaussian_product(m, n, d, t, mps_order):
     )
     (start, stop) = (0, m * b**2)
     coefficients = chebyshev_coefficients(func, d, start, stop)
-    seemps.tools.log("====\ncheb2mps started")
     mps_cheb = cheb2mps(coefficients, x=mps_domain, strategy=strategy_cheb)
-    seemps.tools.log("====\ncheb2mps finished")
     time_stop = perf_counter()
     time = time_stop - time_start
-    # print(mps_cheb.bond_dimensions())
 
     # Evaluate MPS
     max_bond = max(mps_cheb.bond_dimensions())
@@ -111,7 +108,7 @@ d = 20
 order = "A"
 repeats = 20
 tot_time = 0.0
-if False:
+if True:
     for _ in range(repeats):
         time, error, max_bond = interpolate_gaussian_product(m, n, d, t, order)
         tot_time += time
