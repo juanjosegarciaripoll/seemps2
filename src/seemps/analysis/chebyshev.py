@@ -3,7 +3,7 @@ from typing import Callable, Optional
 from math import sqrt
 import numpy as np
 from scipy.fft import dct  # type: ignore
-from .. import tools
+from ..tools import make_logger
 from ..state import CanonicalMPS, MPS, MPSSum, Strategy, Truncation, Simplification
 from ..truncate import simplify
 from ..operators import MPO
@@ -108,28 +108,28 @@ def cheb2mps(
     else:
         raise Exception("In cheb2mps, either domain or an MPS must be provided.")
 
-    if tools.DEBUG:
-        tools.log("Clenshaw evaluation started")
     I_norm = 2 ** (x_mps.size / 2)
     normalized_I = CanonicalMPS(
         [np.ones((1, 2, 1)) / sqrt(2.0)] * x_mps.size, center=0, is_canonical=True
     )
     y_i = y_i_plus_1 = normalized_I.zero_state()
-    for i, c_i in enumerate(reversed(c.coef)):
-        y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
-        y_i = simplify(
-            # coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
-            MPSSum(
-                [I_norm * c_i, -1, 2],
-                [normalized_I, y_i_plus_2, x_mps * y_i_plus_1],
-                check_args=False,
-            ),
-            strategy=strategy,
-        )
-        if tools.DEBUG:
-            tools.log(
-                f"Clenshaw step {i} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
+    with make_logger(2) as logger:
+        logger(f"Clenshaw evaluation started with {len(c)} steps")
+        for i, c_i in enumerate(reversed(c.coef)):
+            y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
+            y_i = simplify(
+                # coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
+                MPSSum(
+                    [I_norm * c_i, -1, 2],
+                    [normalized_I, y_i_plus_2, x_mps * y_i_plus_1],
+                    check_args=False,
+                ),
+                strategy=strategy,
             )
+            if logger:
+                logger(
+                    f"Clenshaw step {i} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
+                )
     return simplify(y_i - x_mps * y_i_plus_1, strategy=strategy)
 
 

@@ -5,7 +5,7 @@ from time import perf_counter
 import dataclasses
 
 from ...typing import VectorLike
-from ...tools import DEBUG, log
+from ...tools import make_logger
 from ...state import MPS, random_mps
 from ..mesh import Mesh, mps_to_mesh_matrix
 from ..sampling import random_mps_indices, evaluate_mps
@@ -268,8 +268,8 @@ def cross_interpolation(
     cross = Cross(state, I_g, func, mesh, T)
 
     # Optimize Cross until convergence
-    if DEBUG:
-        log(f"Initial TT-Cross state: maxbond = {cross.maxbond:3d}")
+    logger = make_logger()
+    logger(f"Initial TT-Cross state: maxbond = {cross.maxbond:3d}")
     for i in range(cross_strategy.maxiter):
         start_time = perf_counter()
         sweep(cross, cross_strategy, ltr=True)
@@ -280,14 +280,13 @@ def cross_interpolation(
         error = cross_strategy.error(cross)
         variation = cross_strategy.variation(cross)
 
-        if DEBUG:
-            log(
-                f"Results after TT-Cross sweep {1+i:3d}: error={error:.15e}, "
-                f"variation={variation:.15e}, "
-                f"maxbond={cross.maxbond:3d}, "
-                f"time = {time:5f}, "
-                f"evals = {cross.evals:8d}"
-            )
+        logger(
+            f"Results after TT-Cross sweep {1+i:3d}: error={error:.15e}, "
+            f"variation={variation:.15e}, "
+            f"maxbond={cross.maxbond:3d}, "
+            f"time = {time:5f}, "
+            f"evals = {cross.evals:8d}"
+        )
 
         converged, message = cross_strategy.converged(cross, error, variation)
         if converged:
@@ -296,7 +295,7 @@ def cross_interpolation(
         if callback is not None:
             callback(cross)
 
-    log(message)
+    logger("TT-Cross finished with message:\n{message}")
     return CrossResults(
         state=cross.state,
         error=error,

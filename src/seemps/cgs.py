@@ -10,7 +10,7 @@ from .state import (
 )
 from .operators import MPO, MPOList, MPOSum
 from .truncate import simplify
-from . import tools
+from .tools import make_logger
 
 
 # TODO: Write tests for this
@@ -56,19 +56,20 @@ def cgs(
     r = b - A @ x
     p = simplify(r, strategy=strategy)
     ρ = r.norm_squared()
-    tools.log(f"CGS algorithm for {maxiter} iterations")
-    for i in range(maxiter):
-        α = ρ / A.expectation(p).real
-        x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
-        r = b - A @ x
-        ρ, ρold = r.norm_squared(), ρ
-        if callback is not None:
-            callback(x, ρ)
-        if ρ < tolerance * normb2:
-            tools.log(
-                f"CGS converged with residual {ρ} below relative tolerance {tolerance}"
-            )
-            break
-        p = simplify(MPSSum([1.0, ρ / ρold], [r, p]), strategy=strategy)
-        tools.log(f"Iteration {i:5}: |r|^2={ρ:5g} tol={tolerance:5g}")
+    with make_logger(2) as logger:
+        logger(f"CGS algorithm for {maxiter} iterations")
+        for i in range(maxiter):
+            α = ρ / A.expectation(p).real
+            x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
+            r = b - A @ x
+            ρ, ρold = r.norm_squared(), ρ
+            if callback is not None:
+                callback(x, ρ)
+            if ρ < tolerance * normb2:
+                logger(
+                    f"CGS converged with residual {ρ} below relative tolerance {tolerance}"
+                )
+                break
+            p = simplify(MPSSum([1.0, ρ / ρold], [r, p]), strategy=strategy)
+            logger(f"CGS step {i:5}: |r|^2={ρ:5g} tol={tolerance:5g}")
     return x, abs(ρ)
