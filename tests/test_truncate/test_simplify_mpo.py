@@ -6,8 +6,7 @@ from seemps.state import (
     random_uniform_mps,
     scprod,
 )
-from seemps.truncate import simplify, simplify_mpo
-from seemps.truncate.simplify_mpo import mpo_as_mps
+from seemps.truncate.simplify_mpo import mpo_as_mps, simplify_mpo
 
 from .. import tools
 
@@ -32,7 +31,7 @@ class TestSimplify(tools.TestCase):
             simplify=Simplification.VARIATIONAL, simplification_tolerance=tolerance
         )
         for n in range(3, 15):
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ = simplify_mpo(mpo, strategy=strategy)
@@ -47,7 +46,7 @@ class TestSimplify(tools.TestCase):
             strategy = DEFAULT_STRATEGY.replace(
                 simplify=Simplification.VARIATIONAL, max_bond_dimension=D
             )
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ = simplify_mpo(mpo, strategy=strategy)
@@ -59,7 +58,7 @@ class TestSimplify(tools.TestCase):
         strategy_0 = DEFAULT_STRATEGY.replace(simplify=Simplification.CANONICAL_FORM)
         strategy_1 = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
         for n in range(3, 9):
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ0 = simplify_mpo(mpo, strategy=strategy_0)
