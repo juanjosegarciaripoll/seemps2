@@ -113,7 +113,7 @@ class ChebyshevZerosInterval(Interval):
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
         zero = np.cos(np.pi * (2 * idx + 1) / (2 * self.size))
-        return affine_transformation(zero, orig=(-1, 1), dest=(self.stop, self.start))
+        return array_affine(zero, orig=(-1, 1), dest=(self.stop, self.start))
 
 
 class ChebyshevExtremaInterval(Interval):
@@ -132,7 +132,7 @@ class ChebyshevExtremaInterval(Interval):
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
         maxima = np.cos(np.pi * idx / (self.size - 1))
-        return affine_transformation(maxima, orig=(-1, 1), dest=(self.stop, self.start))
+        return array_affine(maxima, orig=(-1, 1), dest=(self.stop, self.start))
 
 
 class Mesh:
@@ -210,7 +210,11 @@ class Mesh:
         )
 
 
-def affine_transformation(x: np.ndarray, orig: tuple, dest: tuple) -> np.ndarray:
+def array_affine(
+    x: np.ndarray,
+    orig: tuple,
+    dest: tuple,
+) -> np.ndarray:
     """
     Performs an affine transformation of x as u = a*x + b from orig=(x0, x1) to dest=(u0, u1).
     """
@@ -220,13 +224,13 @@ def affine_transformation(x: np.ndarray, orig: tuple, dest: tuple) -> np.ndarray
     a = (u1 - u0) / (x1 - x0)
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
     x_affine = a * x
-    if np.abs(b) > np.finfo(np.float64).eps:
+    if abs(b) > np.finfo(np.float64).eps:
         x_affine = x_affine + b
     return x_affine
 
 
 def mps_to_mesh_matrix(
-    sites_per_dimension: list[int], mps_order: str = "A"
+    sites_per_dimension: list[int], mps_order: str = "A", base: int = 2
 ) -> np.ndarray:
     """
     Returns a matrix that transforms an array of MPS indices
@@ -236,13 +240,15 @@ def mps_to_mesh_matrix(
         T = np.zeros((sum(sites_per_dimension), len(sites_per_dimension)), dtype=int)
         start = 0
         for m, n in enumerate(sites_per_dimension):
-            T[start : start + n, m] = 2 ** np.arange(n)[::-1]
+            T[start : start + n, m] = base ** np.arange(n)[::-1]
             start += n
         return T
     elif mps_order == "B":
         T = np.vstack(
             [
-                np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites_per_dimension])
+                np.diag(
+                    [base ** (n - i - 1) if n > i else 0 for n in sites_per_dimension]
+                )
                 for i in range(max(sites_per_dimension))
             ]
         )
