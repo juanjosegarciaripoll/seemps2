@@ -42,6 +42,18 @@ class TestIntervals(TestCase):
         self.assertEqual([I[0], I[1]], list(I))
         self.assertEqual([I[0], I[1]], [x for x in I])
 
+    def test_regular_chebyshev_extrema_interval_constructor(self):
+        I = ChebyshevExtremaInterval(-1, 1, 2)
+        self.assertEqual(I.start, -1)
+        self.assertEqual(I.stop, 1)
+        self.assertEqual(I.size, 2)
+        self.assertEqual(len(I), 2)
+        self.assertAlmostEqual(I[0], -1)
+        self.assertAlmostEqual(I[1], 1)
+
+        self.assertEqual([I[0], I[1]], list(I))
+        self.assertEqual([I[0], I[1]], [x for x in I])
+
     def test_rescaled_chebyshev_zeros_interval(self):
         f = lambda x: 2 * x + 2  # Affine transformation
         I = ChebyshevZerosInterval(f(-1), f(1), 2)
