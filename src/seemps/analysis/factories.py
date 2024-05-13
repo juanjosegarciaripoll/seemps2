@@ -19,8 +19,8 @@ from .mesh import (
 )
 
 COMPUTER_PRECISION = SIMPLIFICATION_STRATEGY.replace(
-    tolerance=np.finfo(np.double).eps,
-    simplification_tolerance=np.finfo(np.double).eps,
+    tolerance=float(np.finfo(np.double).eps),
+    simplification_tolerance=float(np.finfo(np.double).eps),
     simplify=Simplification.DO_NOT_SIMPLIFY,
     method=Truncation.RELATIVE_SINGULAR_VALUE,
     normalize=False,
