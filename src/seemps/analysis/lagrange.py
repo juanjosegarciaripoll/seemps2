@@ -5,9 +5,13 @@ from functools import lru_cache
 
 from ..state import MPS, Strategy
 from ..state.schmidt import _destructive_svd
+from ..state._contractions import _contract_last_and_first
 from ..state.core import destructively_truncate_vector
 from ..truncate import simplify, SIMPLIFICATION_STRATEGY
-from .mesh import affine_transformation
+from .mesh import array_affine
+
+
+# TODO: Implement multivariate Lagrange interpolation and multirresolution constructions
 
 DEFAULT_LAGRANGE_STRATEGY = SIMPLIFICATION_STRATEGY.replace(normalize=False)
 
@@ -99,7 +103,7 @@ def lagrange_rank_revealing(
     U_L, R = np.linalg.qr(Al.reshape((2, order + 1)))
     tensors = [U_L.reshape(1, 2, 2)]
     for _ in range(sites - 2):
-        B = np.tensordot(R, Ac, axes=1)
+        B = _contract_last_and_first(R, Ac)
         r1, s, r2 = B.shape
         ## SVD
         U, S, V = _destructive_svd(B.reshape(r1 * s, r2))
@@ -109,7 +113,7 @@ def lagrange_rank_revealing(
         R = S.reshape(D, 1) * V[:D, :]
         ##
         tensors.append(U.reshape(r1, s, -1))
-    U_R = np.tensordot(R, Ar, axes=1)
+    U_R = _contract_last_and_first(R, Ar)
     tensors.append(U_R)
     return MPS(tensors)
 
@@ -246,9 +250,7 @@ class LagrangeBuilder:
             gamma_res = (
                 -gamma
                 if gamma < 0
-                else self.d - (gamma - self.d)
-                if gamma > self.d
-                else gamma
+                else self.d - (gamma - self.d) if gamma > self.d else gamma
             )
             if j == gamma_res:
                 P += self.local_angular_cardinal(theta, gamma)
@@ -275,7 +277,7 @@ class LagrangeBuilder:
         """
 
         def affine_func(u):
-            return func(affine_transformation(u, orig=(0, 1), dest=(start, stop)))
+            return func(array_affine(u, orig=(0, 1), dest=(start, stop)))
 
         A = np.zeros((1, 2, self.D))
         for s in range(2):
