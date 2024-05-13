@@ -6,7 +6,7 @@ from ..state import MPS, Strategy, Truncation, scprod
 from ..truncate import simplify
 from ..qft import iqft, qft_flip
 from .mesh import RegularHalfOpenInterval, Mesh
-from .factories import mps_tensor_product, mps_affine_transformation
+from .factories import mps_tensor_product, mps_affine
 from .cross import cross_interpolation, CrossStrategy
 
 
@@ -284,7 +284,7 @@ def mps_fejer(
     mps_v = mps_k2 * mps_phase
     mps = (1 / sqrt(2) ** sites) * qft_flip(iqft(mps_v, strategy=strategy))
 
-    return mps_affine_transformation(mps, (-1, 1), (start, stop)).as_mps()
+    return mps_affine(mps, (-1, 1), (start, stop)).as_mps()
 
 
 # TODO: Consider if this helper function is necessary
