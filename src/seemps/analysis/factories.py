@@ -6,24 +6,23 @@ from ..state import (
     MPS,
     MPSSum,
     Strategy,
-    DEFAULT_STRATEGY,
     Truncation,
-    DEFAULT_TOLERANCE,
     Simplification,
 )
-from ..truncate import simplify
+from ..truncate import simplify, SIMPLIFICATION_STRATEGY
 from .mesh import (
     Interval,
     RegularClosedInterval,
     RegularHalfOpenInterval,
     ChebyshevZerosInterval,
+    ChebyshevExtremaInterval,
 )
 
-DEFAULT_FACTORY_STRATEGY = Strategy(
+COMPUTER_PRECISION = SIMPLIFICATION_STRATEGY.replace(
+    tolerance=np.finfo(np.double).eps,
+    simplification_tolerance=np.finfo(np.double).eps,
+    simplify=Simplification.DO_NOT_SIMPLIFY,
     method=Truncation.RELATIVE_SINGULAR_VALUE,
-    tolerance=DEFAULT_TOLERANCE,
-    simplify=Simplification.VARIATIONAL,
-    simplification_tolerance=DEFAULT_TOLERANCE,
     normalize=False,
 )
 
@@ -96,7 +95,7 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
 
 
 def mps_sin(
-    start: float, stop: float, sites: int, strategy: Strategy = DEFAULT_FACTORY_STRATEGY
+    start: float, stop: float, sites: int, strategy: Strategy = COMPUTER_PRECISION
 ) -> MPS:
     """
     Returns an MPS representing a sine function discretized over an interval.
@@ -124,7 +123,7 @@ def mps_sin(
 
 
 def mps_cos(
-    start: float, stop: float, sites: int, strategy: Strategy = DEFAULT_FACTORY_STRATEGY
+    start: float, stop: float, sites: int, strategy: Strategy = COMPUTER_PRECISION
 ) -> MPS:
     """
     Returns an MPS representing a cosine function discretized over an interval.
@@ -154,7 +153,7 @@ def mps_cos(
 _State = TypeVar("_State", bound=Union[MPS, MPSSum])
 
 
-def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
+def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
     """
     Applies an affine transformation to an MPS, mapping it from one interval [x0, x1] to another [u0, u1].
     This is a transformation u = a * x + b, with u0 = a * x0 + b and and  u1 = a * x1 + b.
@@ -188,7 +187,7 @@ def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
     return mps_affine
 
 
-def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_FACTORY_STRATEGY):
+def mps_interval(interval: Interval, strategy: Strategy = COMPUTER_PRECISION):
     """
     Returns an MPS corresponding to a specific type of interval (open, closed, or Chebyshev zeros).
 
@@ -216,7 +215,9 @@ def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_FACTORY_STRATE
         start_zeros = np.pi / (2 ** (sites + 1))
         stop_zeros = np.pi + start_zeros
         mps_zeros = -1.0 * mps_cos(start_zeros, stop_zeros, sites, strategy=strategy)
-        return mps_affine_transformation(mps_zeros, (-1, 1), (start, stop))
+        return mps_affine(mps_zeros, (-1, 1), (start, stop))
+    elif isinstance(interval, ChebyshevExtremaInterval):
+        raise NotImplementedError()
     else:
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
@@ -285,7 +286,7 @@ def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
 def mps_tensor_product(
     mps_list: list[MPS],
     mps_order: str = "A",
-    strategy: Strategy = DEFAULT_FACTORY_STRATEGY,
+    strategy: Strategy = COMPUTER_PRECISION,
 ) -> MPS:
     """
     Returns the tensor product of a list of MPS, with the sites arranged
@@ -309,16 +310,20 @@ def mps_tensor_product(
         nested_sites = [mps._data for mps in mps_list]
         flattened_sites = [site for sites in nested_sites for site in sites]
         result = MPS(flattened_sites)
-    else:
+    elif mps_order == "B":
         terms = mps_tensor_terms(mps_list, mps_order)
         result = terms[0]
-        for idx, mps in enumerate(terms[1:]):
+        for _, mps in enumerate(terms[1:]):
             result = result * mps
+    else:
+        raise ValueError(f"Invalid mps order {mps_order}")
     return simplify(result, strategy=strategy)
 
 
 def mps_tensor_sum(
-    mps_list: list[MPS], mps_order: str = "A", strategy: Strategy = DEFAULT_STRATEGY
+    mps_list: list[MPS],
+    mps_order: str = "A",
+    strategy: Strategy = COMPUTER_PRECISION,
 ) -> MPS:
     """
     Returns the tensor sum of a list of MPS, with the sites arranged
@@ -340,16 +345,22 @@ def mps_tensor_sum(
     """
     if mps_order == "A":
         result = _mps_tensor_sum_serial_order(mps_list)
-    else:
+    elif mps_order == "B":
         result = MPSSum(
             [1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)
         ).join()
+    else:
+        raise ValueError(f"Invalid mps order {mps_order}")
     if strategy.get_simplify_flag():
         return simplify(result, strategy=strategy)
     return result
 
 
 def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> MPS:
+    """
+    Computes the MPS tensor sum in serial order in an optimized manner.
+    """
+
     def extend_tensor(A: Tensor3, first: bool, last: bool) -> Tensor3:
         a, d, b = A.shape
         output = np.zeros((a + 2, d, b + 2), dtype=A.dtype)
@@ -368,7 +379,7 @@ def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> MPS:
 
     output = [
         extend_tensor(Ai, i == 0, i == len(A) - 1)
-        for n, A in enumerate(mps_list)
+        for _, A in enumerate(mps_list)
         for i, Ai in enumerate(A)
     ]
     output[0] = output[0][[0], :, :]
