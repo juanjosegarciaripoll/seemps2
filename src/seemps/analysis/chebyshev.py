@@ -11,8 +11,7 @@ from ..truncate.simplify_mpo import simplify_mpo
 from ..operators import MPO, MPOList, MPOSum
 from .mesh import (
     Interval,
-    ChebyshevZerosInterval,
-    ChebyshevExtremaInterval,
+    ChebyshevInterval,
     array_affine,
 )
 from .operators import mpo_affine
@@ -61,10 +60,10 @@ def interpolation_coefficients(
     if domain is not None:
         start, stop = domain.start, domain.stop
     if interpolated_nodes == "zeros":
-        nodes = ChebyshevZerosInterval(start, stop, order).to_vector()
+        nodes = ChebyshevInterval(start, stop, order).to_vector()
         coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
     elif interpolated_nodes == "extrema":
-        nodes = ChebyshevExtremaInterval(start, stop, order).to_vector()
+        nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
         coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
     coefficients[0] /= 2  # type: ignore
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))

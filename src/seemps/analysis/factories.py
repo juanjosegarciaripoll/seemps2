@@ -10,13 +10,7 @@ from ..state import (
     Simplification,
 )
 from ..truncate import simplify, SIMPLIFICATION_STRATEGY
-from .mesh import (
-    Interval,
-    RegularClosedInterval,
-    RegularHalfOpenInterval,
-    ChebyshevZerosInterval,
-    ChebyshevExtremaInterval,
-)
+from .mesh import Interval, RegularInterval, ChebyshevInterval
 
 COMPUTER_PRECISION = SIMPLIFICATION_STRATEGY.replace(
     tolerance=float(np.finfo(np.double).eps),
@@ -27,7 +21,7 @@ COMPUTER_PRECISION = SIMPLIFICATION_STRATEGY.replace(
 )
 
 
-def mps_equispaced(start: float, stop: float, sites: int):
+def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
     """
     Returns an MPS representing a discretized interval with equispaced points.
 
@@ -189,12 +183,13 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
 
 def mps_interval(interval: Interval, strategy: Strategy = COMPUTER_PRECISION):
     """
-    Returns an MPS corresponding to a specific type of interval (open, closed, or Chebyshev zeros).
+    Returns an MPS corresponding to a specific type of interval.
 
     Parameters
     ----------
     interval : Interval
         The interval object containing start and stop points and the interval type.
+        Currently supports `RegularInterval` and `ChebyshevInterval`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
@@ -206,18 +201,22 @@ def mps_interval(interval: Interval, strategy: Strategy = COMPUTER_PRECISION):
     start = interval.start
     stop = interval.stop
     sites = int(np.log2(interval.size))
-    if isinstance(interval, RegularHalfOpenInterval):
-        return mps_equispaced(start, stop, sites)
-    elif isinstance(interval, RegularClosedInterval):
-        stop += (stop - start) / (2**sites - 1)
-        return mps_equispaced(start, stop, sites)
-    elif isinstance(interval, ChebyshevZerosInterval):
-        start_zeros = np.pi / (2 ** (sites + 1))
-        stop_zeros = np.pi + start_zeros
-        mps_zeros = -1.0 * mps_cos(start_zeros, stop_zeros, sites, strategy=strategy)
-        return mps_affine(mps_zeros, (-1, 1), (start, stop))
-    elif isinstance(interval, ChebyshevExtremaInterval):
-        raise NotImplementedError()
+    if isinstance(interval, RegularInterval):
+        start_reg = start + interval.step if not interval.endpoint_left else start
+        stop_reg = stop + interval.step if interval.endpoint_right else stop
+        return mps_equispaced(start_reg, stop_reg, sites)
+    elif isinstance(interval, ChebyshevInterval):
+        if interval.endpoints is True:  # Extrema
+            start_cheb = 0
+            stop_cheb = np.pi + np.pi / (2**sites - 1)
+        else:  # Zeros
+            start_cheb = np.pi / (2 ** (sites + 1))
+            stop_cheb = np.pi + start_cheb
+        return mps_affine(
+            mps_cos(start_cheb, stop_cheb, sites, strategy=strategy),
+            (1, -1),  # Reverse order
+            (start, stop),
+        )
     else:
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
@@ -231,7 +230,7 @@ def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Te
         k = 0
         for mps_id, mps in enumerate(mps_list):
             for i, Ai in enumerate(mps):
-                tensors[k] = (mps_id, Ai)
+                tensors[k] = (mps_id, Ai)  # type: ignore
                 k += 1
     elif mps_order == "B":
         k = 0
@@ -239,12 +238,12 @@ def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Te
         while k < len(tensors):
             for mps_id, mps in enumerate(mps_list):
                 if i < mps.size:
-                    tensors[k] = (mps_id, mps[i])
+                    tensors[k] = (mps_id, mps[i])  # type: ignore
                     k += 1
             i += 1
     else:
         raise ValueError(f"Invalid mps order {mps_order}")
-    return tensors
+    return tensors  # type: ignore
 
 
 def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:

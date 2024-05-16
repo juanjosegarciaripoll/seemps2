@@ -3,7 +3,7 @@ from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
 from seemps.state import MPS, NO_TRUNCATION
-from seemps.analysis.mesh import RegularHalfOpenInterval
+from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.factories import mps_tensor_sum, mps_interval
 from seemps.analysis.chebyshev import (
     DEFAULT_CHEBYSHEV_STRATEGY,
@@ -49,7 +49,7 @@ class TestChebyshevCoefficients(TestCase):
             f, order=estimate_order(f, tolerance=tolerance)
         )
         n = 6
-        domain = RegularHalfOpenInterval(-1, 1, 2**n)
+        domain = RegularInterval(-1, 1, 2**n)
         mps = cheb2mps(proj_coeffs, domain=domain, strategy=NO_TRUNCATION)
         y_vec = f(domain.to_vector())
         y_mps = mps.to_vector()
@@ -170,7 +170,7 @@ class TestChebyshevCoefficients(TestCase):
 class TestChebyshevMPS(TestCase):
     def test_gaussian_1d(self):
         f = lambda x: np.exp(-(x**2))
-        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        interval = RegularInterval(-1, 2, 2**5)
         mps_cheb_clen = cheb2mps(
             interpolation_coefficients(f, 30, domain=interval),
             domain=interval,
@@ -187,7 +187,7 @@ class TestChebyshevMPS(TestCase):
     def test_gaussian_derivative_1d(self):
         f = lambda x: np.exp(-(x**2))
         f_diff = lambda x: -2 * x * np.exp(-(x**2))
-        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        interval = RegularInterval(-1, 2, 2**5)
         c = interpolation_coefficients(f, 30, domain=interval)
         mps_cheb_clen = cheb2mps(c.deriv(1), domain=interval, clenshaw=True)
         mps_cheb_poly = cheb2mps(c.deriv(1), domain=interval, clenshaw=False)
@@ -196,7 +196,7 @@ class TestChebyshevMPS(TestCase):
 
     def test_gaussian_integral_1d(self):
         f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
-        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        interval = RegularInterval(-1, 2, 2**5)
         c = interpolation_coefficients(f_intg, 30, domain=interval)
         mps_cheb_clen = cheb2mps(c, domain=interval, clenshaw=True)
         mps_cheb_poly = cheb2mps(c, domain=interval, clenshaw=False)
@@ -206,7 +206,7 @@ class TestChebyshevMPS(TestCase):
     def test_gaussian_integral_1d_b(self):
         f = lambda x: np.exp(-(x**2))
         f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
-        interval = RegularHalfOpenInterval(-1, 2, 2**5)
+        interval = RegularInterval(-1, 2, 2**5)
         c = interpolation_coefficients(f, 30, domain=interval)
         mps_cheb_clen = cheb2mps(
             c.integ(1, lbnd=interval.start), domain=interval, clenshaw=True
@@ -221,10 +221,10 @@ class TestChebyshevMPS(TestCase):
         f = lambda z: np.exp(-(z**2))
         c = interpolation_coefficients(f, 30, -1, 5)
         sites = 6
-        interval_x = RegularHalfOpenInterval(-0.5, 2, 2**sites)
-        interval_y = RegularHalfOpenInterval(-0.5, 3, 2**sites)
+        interval_x = RegularInterval(-0.5, 2, 2**sites)
+        interval_y = RegularInterval(-0.5, 3, 2**sites)
         mps_x_plus_y = mps_tensor_sum(
-            [mps_interval(interval_y), mps_interval(interval_x)]
+            [mps_interval(interval_y), mps_interval(interval_x)]  # type: ignore
         )
         tol = 1e-10
         strategy = DEFAULT_CHEBYSHEV_STRATEGY.replace(
