@@ -2,12 +2,12 @@ from __future__ import annotations
 import numpy as np
 from typing import Callable, Union
 from math import sqrt
-from ..state import MPS, Strategy, Truncation, scprod
 from ..truncate import simplify
+from ..state import MPS, Strategy, scprod
 from ..qft import iqft, qft_flip
-from .mesh import RegularHalfOpenInterval, Mesh
-from .factories import mps_tensor_product, mps_affine
-from .cross import cross_interpolation, CrossStrategy
+from .mesh import RegularInterval, Mesh
+from .factories import mps_tensor_product, mps_affine, COMPUTER_PRECISION
+from .cross import cross_maxvol, BlackBoxLoadMPS, CrossStrategyMaxvol
 
 
 def mps_midpoint(start: float, stop: float, sites: int) -> MPS:
@@ -202,12 +202,8 @@ def mps_fejer(
     start: float,
     stop: float,
     sites: int,
-    strategy: Strategy = Strategy(
-        tolerance=1e-15,
-        simplification_tolerance=1e-15,
-        method=Truncation.ABSOLUTE_SINGULAR_VALUE,
-    ),
-    cross_strategy: CrossStrategy = CrossStrategy(tol_error=1e-15),
+    strategy: Strategy = COMPUTER_PRECISION,
+    cross_strategy: CrossStrategyMaxvol = CrossStrategyMaxvol(tol_sampling=1e-15),
 ) -> MPS:
     """
     Returns the MPS encoding of the Fejér first quadrature rule.
@@ -237,7 +233,6 @@ def mps_fejer(
     N = int(2**sites)
 
     # Encode 1/(1 - 4*k**2) term with cross interpolation
-    # TODO: Consider a better way instead of using cross
     def func(k):
         return np.where(
             k < N / 2,
@@ -245,12 +240,13 @@ def mps_fejer(
             2 / (1 - 4 * (N - k) ** 2),
         )
 
-    cross_results = cross_interpolation(
-        func, Mesh([RegularHalfOpenInterval(0, N, N)]), cross_strategy=cross_strategy
+    cross_results = cross_maxvol(
+        BlackBoxLoadMPS(func, Mesh([RegularInterval(0, N, N)])),
+        cross_strategy=cross_strategy,
     )
-    mps_k2 = simplify(cross_results.state, strategy=strategy)
+    mps_k2 = simplify(cross_results.mps, strategy=strategy)
 
-    # Encode phase term directly
+    # Encode phase term analytically
     p = 1j * np.pi / N  # prefactor
     exponent = p * 2 ** (sites - 1)
     tensor_1 = np.zeros((1, 2, 5), dtype=complex)
@@ -287,7 +283,6 @@ def mps_fejer(
     return mps_affine(mps, (-1, 1), (start, stop)).as_mps()
 
 
-# TODO: Consider if this helper function is necessary
 def integrate_mps(
     mps: MPS, mesh: Mesh, integral_type: str = "trapezoidal", mps_order: str = "A"
 ) -> Union[float, complex]:
