@@ -5,7 +5,7 @@ import scipy.special  # type: ignore
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .factories import mps_interval
-from .mesh import Interval, RegularHalfOpenInterval, RegularClosedInterval
+from .mesh import Interval, RegularInterval
 
 
 def _mps_x_tensor(
@@ -35,10 +35,10 @@ def _mps_x_tensor(
     xL : MPS
         MPS representation of the monomials collection.
     """
-    if not isinstance(domain, (RegularHalfOpenInterval, RegularClosedInterval)):
+    if not isinstance(domain, RegularInterval):
         raise ValueError("Unable to construct polyomial for non-regular intervals")
     L = degree + 1
-    x_mps: MPS = mps_interval(domain)
+    x_mps: MPS = mps_interval(domain)  # type:ignore
     N = len(x_mps)
     for n in range(N):
         # This is the operator with the information about

@@ -4,15 +4,14 @@ from math import sqrt
 import numpy as np
 from scipy.fft import dct  # type: ignore
 
-from .. import tools
+from ..tools import make_logger
 from ..state import CanonicalMPS, MPS, MPSSum, Strategy
 from ..truncate import simplify, SIMPLIFICATION_STRATEGY
 from ..truncate.simplify_mpo import simplify_mpo
 from ..operators import MPO, MPOList, MPOSum
 from .mesh import (
     Interval,
-    ChebyshevZerosInterval,
-    ChebyshevExtremaInterval,
+    ChebyshevInterval,
     array_affine,
 )
 from .operators import mpo_affine
@@ -61,10 +60,10 @@ def interpolation_coefficients(
     if domain is not None:
         start, stop = domain.start, domain.stop
     if interpolated_nodes == "zeros":
-        nodes = ChebyshevZerosInterval(start, stop, order).to_vector()
+        nodes = ChebyshevInterval(start, stop, order).to_vector()
         coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
     elif interpolated_nodes == "extrema":
-        nodes = ChebyshevExtremaInterval(start, stop, order).to_vector()
+        nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
         coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
     coefficients[0] /= 2  # type: ignore
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
@@ -217,10 +216,10 @@ def cheb2mps(
     normalized_x = CanonicalMPS(
         initial_mps, center=0, normalize=True, strategy=strategy
     )
+    logger = make_logger()
     if clenshaw:
-        if tools.DEBUG:
-            steps = len(c)
-            tools.log("MPS Clenshaw evaluation started")
+        steps = len(c)
+        logger("MPS Clenshaw evaluation started")
         y_i = y_i_plus_1 = normalized_I.zero_state()
         for i, c_i in enumerate(reversed(c)):
             y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
@@ -233,10 +232,9 @@ def cheb2mps(
                 ),
                 strategy=strategy,
             )
-            if tools.DEBUG:
-                tools.log(
-                    f"MPS Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
-                )
+            logger(
+                f"MPS Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
+            )
         f_mps = simplify(
             MPSSum(
                 weights=[1, -x_norm],
@@ -246,9 +244,8 @@ def cheb2mps(
             strategy=strategy,
         )
     else:
-        if tools.DEBUG:
-            steps = len(c)
-            tools.log("MPS Chebyshev expansion started")
+        steps = len(c)
+        logger("MPS Chebyshev expansion started")
 
         f_mps = simplify(
             MPSSum(
@@ -272,10 +269,9 @@ def cheb2mps(
                 MPSSum(weights=[1, c_i], states=[f_mps, T_i_plus_2], check_args=False),
                 strategy=strategy,
             )
-            if tools.DEBUG:
-                tools.log(
-                    f"MPS expansion step {i+1}/{steps} with maximum bond dimension {max(f_mps.bond_dimensions())} and error {f_mps.error():6e}"
-                )
+            logger(
+                f"MPS expansion step {i+1}/{steps} with maximum bond dimension {max(f_mps.bond_dimensions())} and error {f_mps.error():6e}"
+            )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
     return f_mps
 
@@ -317,13 +313,12 @@ def cheb2mpo(
     if rescale:
         orig = tuple(coefficients.linspace(2)[0])
         initial_mpo = mpo_affine(initial_mpo, orig, (-1, 1))
-
     c = coefficients.coef
     I = MPO([np.eye(2).reshape(1, 2, 2, 1)] * len(initial_mpo))
+    logger = make_logger()
     if clenshaw:
-        if tools.DEBUG:
-            steps = len(c)
-            tools.log("MPO Clenshaw evaluation started")
+        steps = len(c)
+        logger("MPO Clenshaw evaluation started")
         y_i = y_i_plus_1 = MPO([np.zeros((1, 2, 2, 1))] * len(initial_mpo))
         for i, c_i in enumerate(reversed(coefficients.coef)):
             y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
@@ -334,18 +329,16 @@ def cheb2mpo(
                 ),
                 strategy=strategy,
             )
-            if tools.DEBUG:
-                tools.log(
-                    f"MPO Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())}"
-                )
+            logger(
+                f"MPO Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())}"
+            )
         f_mpo = simplify_mpo(
             MPOSum([y_i, MPOList([initial_mpo, y_i_plus_1])], weights=[1, -1]),
             strategy=strategy,
         )
     else:
-        if tools.DEBUG:
-            steps = len(c)
-            tools.log("MPO Chebyshev expansion started")
+        steps = len(c)
+        logger("MPO Chebyshev expansion started")
         T_i, T_i_plus_1 = I, initial_mpo
         f_mpo = simplify_mpo(
             MPOSum(mpos=[T_i, T_i_plus_1], weights=[c[0], c[1]]),
@@ -360,9 +353,8 @@ def cheb2mpo(
                 MPOSum(mpos=[f_mpo, T_i_plus_2], weights=[1, c_i]),
                 strategy=strategy,
             )
-            if tools.DEBUG:
-                tools.log(
-                    f"MPO expansion step {i+1}/{steps} with maximum bond dimension {max(f_mpo.bond_dimensions())}"
-                )
+            logger(
+                f"MPO expansion step {i+1}/{steps} with maximum bond dimension {max(f_mpo.bond_dimensions())}"
+            )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
     return f_mpo
