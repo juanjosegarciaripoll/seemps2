@@ -67,12 +67,12 @@ def crank_nicolson(
     last_t = t_span[0]
     output = []
     idt = factor * (t_span[1] - last_t)
-    id = id_mpo(state.size, strategy=strategy)
-    A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt], strategy=strategy).join(
-        strategy=strategy
+    id = id_mpo(state.size, strategy=H.strategy)
+    A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt], strategy=H.strategy).join(
+        strategy=H.strategy
     )
-    B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt], strategy=strategy).join(
-        strategy=strategy
+    B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt], strategy=H.strategy).join(
+        strategy=H.strategy
     )
     for t in t_span:
         if t != last_t:
