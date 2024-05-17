@@ -35,7 +35,7 @@ def set_svd_driver(driver: str) -> None:
 set_svd_driver("gesdd")
 
 
-def _our_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _destructive_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     _lapack_svd, _lapack_svd_lwork = _lapack_svd_driver[type(A[0, 0])]
 
     # compute optimal lwork
@@ -80,7 +80,7 @@ def _schmidt_weights(A: Tensor3) -> Vector:
 
 def _ortho_right(A, strategy: Strategy):
     α, i, β = A.shape
-    U, s, V = _our_svd(A.reshape(α * i, β).copy())
+    U, s, V = _destructive_svd(A.reshape(α * i, β).copy())
     err = destructively_truncate_vector(s, strategy)
     D = s.size
     return U[:, :D].reshape(α, i, D), s.reshape(D, 1) * V[:D, :], err
@@ -88,7 +88,7 @@ def _ortho_right(A, strategy: Strategy):
 
 def _ortho_left(A, strategy: Strategy):
     α, i, β = A.shape
-    U, s, V = _our_svd(A.reshape(α, i * β).copy())
+    U, s, V = _destructive_svd(A.reshape(α, i * β).copy())
     err = destructively_truncate_vector(s, strategy)
     D = s.size
     return V[:D, :].reshape(D, i, β), U[:, :D] * s.reshape(1, D), err
@@ -99,7 +99,7 @@ def _left_orth_2site(AA, strategy: Strategy):
     that 'B' is a left-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
-    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
+    U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
     err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (
@@ -114,7 +114,7 @@ def _right_orth_2site(AA, strategy: Strategy):
     that 'C' is a right-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
     α, d1, d2, β = AA.shape
-    U, S, V = _our_svd(AA.reshape(α * d1, β * d2))
+    U, S, V = _destructive_svd(AA.reshape(α * d1, β * d2))
     err = destructively_truncate_vector(S, strategy)
     D = S.size
     return (U[:, :D] * S).reshape(α, d1, D), V[:D, :].reshape(D, d2, β), err

@@ -122,7 +122,7 @@ class NNHamiltonian(object):
                 .transpose(0, 2, 1, 3)
                 .reshape(di * di, dj * dj)
             )
-            U, s, V = schmidt._our_svd(Hij)
+            U, s, V = schmidt._destructive_svd(Hij)
             core.destructively_truncate_vector(s, strategy)
             ds = s.size
             s = np.sqrt(s)

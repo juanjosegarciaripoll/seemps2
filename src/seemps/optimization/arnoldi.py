@@ -205,7 +205,7 @@ def arnoldi_eigh(
     arnoldi = MPSArnoldiRepresentation(
         operator, strategy, tol_ill_conditioning=tol_ill, gamma=gamma
     )
-    log(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
+    log(f"Arnoldi expansion with maxiter={maxiter}, relative tolerance={tol}")
     v: MPS = arnoldi.restart_with_vector(guess)
     energy, variance = arnoldi.energy_and_variance()
     results = OptimizeResults(

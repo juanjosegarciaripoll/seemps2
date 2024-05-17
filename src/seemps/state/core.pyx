@@ -5,6 +5,8 @@ from libc.math cimport sqrt
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
 
+__version__ = 'cython'
+
 class Truncation:
     DO_NOT_TRUNCATE = TRUNCATION_DO_NOT_TRUNCATE
     RELATIVE_SINGULAR_VALUE = TRUNCATION_RELATIVE_SINGULAR_VALUE
@@ -119,9 +121,9 @@ cdef class Strategy:
             simplification_method="Variational (exact guess)"
         else:
             raise ValueError("Invalid simplification method found in Strategy")
-        return f"Strategy(method={method}, tolerance={self.tolerance}," \
-               f"max_bond_dimension={self.max_bond_dimension}, normalize={self.normalize}," \
-               f"simplification_method={simplification_method}, max_sweeps={self.max_sweeps})"
+        return f"Strategy(method={method}, tolerance={self.tolerance:5g}, " \
+               f"max_bond_dimension={self.max_bond_dimension}, normalize={self.normalize}, " \
+               f"simplify={simplification_method}, simplification_tolerance={self.simplification_tolerance:5g}, max_sweeps={self.max_sweeps})"
 
 DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
                             simplify = SIMPLIFICATION_VARIATIONAL,

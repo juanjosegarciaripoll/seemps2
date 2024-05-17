@@ -186,6 +186,33 @@ class MPSSum:
             for weight, state in zip(self.weights, self.states)
         )
 
+    def delete_zero_components(self) -> float:
+        """Compute the norm-squared of the linear combination of weights and
+        states and eliminate states that are zero or have zero weight."""
+        c: float = 0.0
+        final_weights: list[Weight] = []
+        final_states: list[MPS] = []
+        for wi, si in zip(self.weights, self.states):
+            wic = wi.conjugate()
+            ni = (wic * wi).real * si.norm_squared()
+            if ni:
+                for wj, sj in zip(final_weights, final_states):
+                    c += 2 * (wic * wj * scprod(si, sj)).real
+                final_states.append(si)
+                final_weights.append(wi)
+                c += ni
+        L = len(final_weights)
+        if L < len(self.states):
+            if L == 0:
+                self.weights = [0.0]
+                self.states = [self.states[0].zero_state()]
+                return 0.0
+            else:
+                self.weights = final_weights
+                self.states = final_states
+        return abs(c)
+
+
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402

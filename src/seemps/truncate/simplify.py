@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, Union
 from math import sqrt
 import numpy as np
-from .. import tools
+from ..tools import make_logger
 from ..state import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
@@ -13,7 +13,6 @@ from ..state import (
     Strategy,
     Truncation,
 )
-from ..state.environments import scprod
 from ..typing import Weight
 from .antilinear import AntilinearForm
 
@@ -63,18 +62,18 @@ def simplify(
     normalize = strategy.get_normalize_flag()
     size = state.size
     start = 0 if direction > 0 else -1
+    logger = make_logger(2)
 
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         mps = CanonicalMPS(state, center=start, strategy=strategy)
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
-        if tools.DEBUG >= 2:
-            tools.log(
+        if logger:
+            logger(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
-                debug_level=2,
             )
         return mps
 
@@ -83,12 +82,11 @@ def simplify(
     # strategy to construct it.
     if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
         mps = CanonicalMPS(state, center=-1 - start, strategy=strategy)
-        if tools.DEBUG >= 2:
-            tools.log(
+        if logger:
+            logger(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
-                debug_level=2,
             )
         return mps
 
@@ -104,11 +102,11 @@ def simplify(
         return CanonicalMPS(state.zero_state(), is_canonical=True)
     form = AntilinearForm(mps, state, center=start)
     err = 2.0
-    tools.log(
-        f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
-        f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
-        debug_level=2,
-    )
+    if logger:
+        logger(
+            f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
+            f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
+        )
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
@@ -127,13 +125,13 @@ def simplify(
         mps_state_scprod = np.vdot(last_tensor, form.tensor1site())
         old_err = err
         err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
-        tools.log(
-            f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
-            f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
-            debug_level=2,
-        )
+        if logger:
+            logger(
+                f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
+                f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
+            )
         if err < simplification_tolerance or err > old_err:
-            tools.log("Stopping, as tolerance reached", debug_level=2)
+            logger("Stopping, as tolerance reached")
             break
         direction = -direction
     total_error_bound = state._error + sqrt(err)
@@ -142,31 +140,8 @@ def simplify(
         last_tensor /= factor
         total_error_bound /= factor
     mps._error = total_error_bound
+    logger.close()
     return mps
-
-
-def select_nonzero_mps_components(state: MPSSum) -> tuple[float, MPSSum]:
-    """Compute the norm-squared of the linear combination of weights and
-    states and eliminate states that are zero or have zero weight."""
-    c: float = 0.0
-    final_weights: list[Weight] = []
-    final_states: list[MPS] = []
-    for wi, si in zip(state.weights, state.states):
-        wic = wi.conjugate()
-        ni = (wic * wi).real * si.norm_squared()
-        if ni:
-            for wj, sj in zip(final_weights, final_states):
-                c += 2 * (wic * wj * scprod(si, sj)).real
-            final_states.append(si)
-            final_weights.append(wi)
-            c += ni
-    L = len(final_weights)
-    if L == state.size:
-        return abs(c), state
-    elif L:
-        return abs(c), MPSSum(final_weights, final_states, check_args=False)
-    else:
-        return 0.0, state
 
 
 # TODO: We have to rationalize all this about directions. The user should
@@ -198,12 +173,11 @@ def simplify_mps_sum(
         Approximation to the linear combination in canonical form
     """
     # Compute norm of output and eliminate zero states
-    norm_state_sqr, sum_state = select_nonzero_mps_components(sum_state)
+    norm_state_sqr = sum_state.delete_zero_components()
+    logger = make_logger(2)
     if not norm_state_sqr:
-        tools.log(
-            "COMBINE state with |state|=0. Returning zero state.",
-            debug_level=2,
-        )
+        if logger:
+            logger("COMBINE state with |state|=0. Returning zero state.")
         return CanonicalMPS(sum_state.states[0].zero_state(), is_canonical=True)
 
     normalize = strategy.get_normalize_flag()
@@ -212,12 +186,11 @@ def simplify_mps_sum(
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
         mps = CanonicalMPS(sum_state.join(), center=start, strategy=strategy)
         mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
-        if tools.DEBUG >= 2:
-            tools.log(
+        if logger:
+            logger(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
-                debug_level=2,
             )
         return mps
 
@@ -226,12 +199,11 @@ def simplify_mps_sum(
     # strategy to construct it.
     if strategy.get_simplification_method() == Simplification.DO_NOT_SIMPLIFY:
         mps = CanonicalMPS(sum_state.join(), center=-1 - start, strategy=strategy)
-        if tools.DEBUG >= 2:
-            tools.log(
+        if logger:
+            logger(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing single-pass "
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
-                debug_level=2,
             )
         return mps
 
@@ -247,12 +219,13 @@ def simplify_mps_sum(
     size = mps.size
     weights, states = sum_state.weights, sum_state.states
     forms = [AntilinearForm(mps, si, center=start) for si in states]
-    tools.log(
-        f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
-        f"sweeps with tolerance {simplification_tolerance:5e}.\nStrategy: {strategy}"
-        f"\nWeights: {weights}",
-        debug_level=2,
-    )
+    if logger:
+        logger(
+            f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
+            f"sweeps with tolerance {simplification_tolerance:5e}.\nStrategy: {strategy}"
+            f"\nWeights: {weights}",
+        )
+
     err = 2.0
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
@@ -285,13 +258,13 @@ def simplify_mps_sum(
         )
         old_err = err
         err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
-        tools.log(
-            f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
-            f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
-            debug_level=2,
-        )
+        if logger:
+            logger(
+                f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
+                f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
+            )
         if err < simplification_tolerance or err > old_err:
-            tools.log("Stopping, as tolerance reached", debug_level=2)
+            logger("Stopping, as tolerance reached")
             break
         direction = -direction
     total_error_bound = sum_state.error() + sqrt(err)
@@ -300,6 +273,7 @@ def simplify_mps_sum(
         last_tensor /= factor
         total_error_bound /= factor
     mps._error = total_error_bound
+    logger.close()
     return mps
 
 
@@ -312,3 +286,6 @@ def combine(
 ) -> CanonicalMPS:
     """Deprecated, use `simplify` instead."""
     return simplify_mps_sum(MPSSum(weights, states))
+
+
+__all__ = ["simplify"]

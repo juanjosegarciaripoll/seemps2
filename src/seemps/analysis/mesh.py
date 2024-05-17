@@ -46,7 +46,7 @@ class Interval(ABC):
     def __getitem__(self, idx: int) -> float: ...
 
     @abstractmethod
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]: ...
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]: ...  # type: ignore
 
     def to_vector(self) -> np.ndarray:
         return np.array([self[idx] for idx in range(self.size)])
@@ -61,12 +61,33 @@ class Interval(ABC):
         return (self[i] for i in range(self.size))
 
 
-class RegularClosedInterval(Interval):
-    """Equispaced discretization between [start, stop]."""
+class RegularInterval(Interval):
+    """Equispaced discretization between start and stop.
+    The left and right boundary conditions can be set open or closed.
+    Defaults to a closed-left, open-right interval [start, stop).
+    """
 
-    def __init__(self, start: float, stop: float, size: int):
+    def __init__(
+        self,
+        start: float,
+        stop: float,
+        size: int,
+        endpoint_right: bool = False,
+        endpoint_left: bool = True,
+    ):
         super().__init__(start, stop, size)
-        self.step = (stop - start) / (size - 1)
+        self.endpoint_left = endpoint_left
+        self.endpoint_right = endpoint_right
+        if endpoint_left and endpoint_right:
+            self.num_steps = self.size - 1
+        elif endpoint_left or endpoint_right:
+            self.num_steps = self.size
+        else:
+            self.num_steps = self.size + 1
+        self.step = (stop - start) / self.num_steps
+        self.start_displaced = (
+            self.start if self.endpoint_left else self.start + self.step
+        )
 
     @overload
     def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
@@ -76,33 +97,18 @@ class RegularClosedInterval(Interval):
 
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
-        return idx * self.step + self.start
+        return self.start_displaced + idx * self.step
 
 
-class RegularHalfOpenInterval(Interval):
-    """Equispaced discretization between [start, stop)."""
-
-    def __init__(self, start: float, stop: float, size: int):
-        super().__init__(start, stop, size)
-        self.step = (stop - start) / size
-
-    @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
-
-    @overload
-    def __getitem__(self, idx: int) -> float: ...
-
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
-        super()._validate_index(idx)
-        return idx * self.step + self.start
-
-
-class ChebyshevZerosInterval(Interval):
+class ChebyshevInterval(Interval):
     """Irregular discretization given by an affine map between the
-    zeros of the N-th Chebyshev polynomial in [-1, 1] to (start, stop)."""
+    nodes (zeros or extrema) of the N-th Chebyshev polynomial in [-1, 1] to (start, stop).
+    If `endpoints=True` returns the Chebyshev extrema defined in the closed interval [a, b].
+    Else, returns the Chebyshev zeros defined in the open interval (a, b)."""
 
-    def __init__(self, start: float, stop: float, size: int):
+    def __init__(self, start: float, stop: float, size: int, endpoints: bool = False):
         super().__init__(start, stop, size)
+        self.endpoints = endpoints
 
     @overload
     def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
@@ -112,27 +118,11 @@ class ChebyshevZerosInterval(Interval):
 
     def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
-        zero = np.cos(np.pi * (2 * idx + 1) / (2 * self.size))
-        return affine_transformation(zero, orig=(-1, 1), dest=(self.stop, self.start))
-
-
-class ChebyshevExtremaInterval(Interval):
-    """Irregular discretization given by an affine map between the
-    N extrema of the (N-1)-th Chebyshev polynomial in [-1, 1] to (start, stop)."""
-
-    def __init__(self, start: float, stop: float, size: int):
-        super().__init__(start, stop, size)
-
-    @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
-
-    @overload
-    def __getitem__(self, idx: int) -> float: ...
-
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
-        super()._validate_index(idx)
-        maxima = np.cos(np.pi * idx / (self.size - 1))
-        return affine_transformation(maxima, orig=(-1, 1), dest=(self.stop, self.start))
+        if self.endpoints:  # Chebyshev extrema
+            nodes = np.cos(np.pi * idx / (self.size - 1))
+        else:  # Chebyshev zeros
+            nodes = np.cos(np.pi * (2 * idx + 1) / (2 * self.size))
+        return array_affine(nodes, orig=(-1, 1), dest=(self.stop, self.start))
 
 
 class Mesh:
@@ -165,7 +155,6 @@ class Mesh:
     dimensions: tuple[int, ...]
 
     def __init__(self, intervals: list[Interval]):
-        # TODO: Rename dimensions to shape = (dimensions, dimension)
         self.intervals = intervals
         self.dimension = len(intervals)
         self.dimensions = tuple(interval.size for interval in self.intervals)
@@ -210,23 +199,27 @@ class Mesh:
         )
 
 
-def affine_transformation(x: np.ndarray, orig: tuple, dest: tuple) -> np.ndarray:
+def array_affine(
+    x: np.ndarray,
+    orig: tuple,
+    dest: tuple,
+) -> np.ndarray:
     """
     Performs an affine transformation of x as u = a*x + b from orig=(x0, x1) to dest=(u0, u1).
     """
-    # TODO: Combine the affine transformations for vectors, MPS and MPO.
+    # TODO: Maybe combine the affine transformations for vectors, MPS and MPO in a single function?
     x0, x1 = orig
     u0, u1 = dest
     a = (u1 - u0) / (x1 - x0)
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
     x_affine = a * x
-    if np.abs(b) > np.finfo(np.float64).eps:
+    if abs(b) > np.finfo(np.float64).eps:
         x_affine = x_affine + b
     return x_affine
 
 
 def mps_to_mesh_matrix(
-    sites_per_dimension: list[int], mps_order: str = "A"
+    sites_per_dimension: list[int], mps_order: str = "A", base: int = 2
 ) -> np.ndarray:
     """
     Returns a matrix that transforms an array of MPS indices
@@ -236,13 +229,15 @@ def mps_to_mesh_matrix(
         T = np.zeros((sum(sites_per_dimension), len(sites_per_dimension)), dtype=int)
         start = 0
         for m, n in enumerate(sites_per_dimension):
-            T[start : start + n, m] = 2 ** np.arange(n)[::-1]
+            T[start : start + n, m] = base ** np.arange(n)[::-1]
             start += n
         return T
     elif mps_order == "B":
         T = np.vstack(
             [
-                np.diag([2 ** (n - i - 1) if n > i else 0 for n in sites_per_dimension])
+                np.diag(
+                    [base ** (n - i - 1) if n > i else 0 for n in sites_per_dimension]
+                )
                 for i in range(max(sites_per_dimension))
             ]
         )

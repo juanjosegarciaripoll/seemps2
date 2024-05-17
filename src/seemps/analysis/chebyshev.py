@@ -3,211 +3,358 @@ from typing import Callable, Optional
 from math import sqrt
 import numpy as np
 from scipy.fft import dct  # type: ignore
-from .. import tools
-from ..state import CanonicalMPS, MPS, MPSSum, Strategy, Truncation, Simplification
-from ..truncate import simplify
-from ..operators import MPO
-from .mesh import ChebyshevZerosInterval, Interval
-from .factories import mps_interval, mps_affine_transformation
 
-# TODO: All the tests have been done using the `RELATIVE_SINGULAR_VALUE`
-# truncation method, which is kind of flunky, because it does not measure
-# the actual error. This should be migrated to DEFAULT_STRATEGY, maybe
-# strengthening the tolerance
-DEFAULT_CHEBYSHEV_STRATEGY = Strategy(
-    method=Truncation.RELATIVE_SINGULAR_VALUE,
-    tolerance=1e-8,
-    simplify=Simplification.VARIATIONAL,
-    simplification_tolerance=1e-8,
-    normalize=False,
+from ..tools import make_logger
+from ..state import CanonicalMPS, MPS, MPSSum, Strategy
+from ..truncate import simplify, SIMPLIFICATION_STRATEGY
+from ..truncate.simplify_mpo import simplify_mpo
+from ..operators import MPO, MPOList, MPOSum
+from .mesh import (
+    Interval,
+    ChebyshevInterval,
+    array_affine,
 )
+from .operators import mpo_affine
+from .factories import mps_interval, mps_affine
 
 
-# TODO: Implement projection coefficients (coming from integration)
-def chebyshev_coefficients(
-    f: Callable,
-    order: int,
+DEFAULT_CHEBYSHEV_STRATEGY = SIMPLIFICATION_STRATEGY.replace(normalize=False)
+
+
+def interpolation_coefficients(
+    func: Callable,
+    order: Optional[int] = None,
     start: float = -1,
     stop: float = +1,
     domain: Optional[Interval] = None,
+    interpolated_nodes: str = "zeros",
 ) -> np.polynomial.Chebyshev:
     """
-    Returns the Chebyshev interpolation coefficients for a given function
-    on a specified interval.
-
-    The error of a Chebyshev interpolation is proportiona to all of the neglected
-    coefficients of higher order. If the decay is exponential, it can be approximated by
-    the last coefficient computed by this function.
+    Returns the coefficients for the Chebyshev interpolation of a function on a given set
+    of nodes and on a specified interval.
 
     Parameters
     ----------
-    f : Callable
+    func : Callable
         The target function to approximate with Chebyshev polynomials.
-    order : int
+    order : Optional[int], default = None
         The number of Chebyshev coefficients to compute.
+        If None, estimates an order that results in an error below machine precision.
     domain : Optional[Interval], default = None
         The domain on which the function is defined and in which the approximation
         is desired.
     start : float, default = -1
     stop : float, default = +1
         Alternative way to specify the function's domain.
+    interpolated_nodes : str, default = "zeros"
+        The nodes on which the function is interpolated. Use "zeros" for
+        Chebyshev zeros or "extrema" for Chebyshev extrema.
 
     Returns
     -------
     coefficients : `numpy.polynomial.Chebyshev`
         An array of Chebyshev coefficients scaled to the specified interval.
     """
+    if order is None:
+        order = estimate_order(func, start, stop, domain)
     if domain is not None:
         start, stop = domain.start, domain.stop
-    chebyshev_zeros = np.flip(ChebyshevZerosInterval(start, stop, order).to_vector())
-    coefficients = dct(f(chebyshev_zeros), type=2) / order
-    coefficients[0] /= 2
+    if interpolated_nodes == "zeros":
+        nodes = ChebyshevInterval(start, stop, order).to_vector()
+        coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
+    elif interpolated_nodes == "extrema":
+        nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
+        coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
+    coefficients[0] /= 2  # type: ignore
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
-# TODO: Implement adaptivity (starting point) for when using projection coefficients
-def cheb2mps(
-    c: np.polynomial.Chebyshev,
+def projection_coefficients(
+    func: Callable,
+    order: Optional[int] = None,
+    start: float = -1,
+    stop: float = +1,
     domain: Optional[Interval] = None,
-    x: Optional[MPS] = None,
-    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
-) -> MPS:
+) -> np.polynomial.Chebyshev:
     """
-    Construct an MPS representation of a function, from a Chebyshev expansion.
-
-    This function takes as input an MPS representation of the first order
-    polynomial `x` in a given `domain`, with values `[x0, x1]`. It also takes
-    a Chebyshev expansion `c` of a function `c(x)` defined in a domain that
-    contains this interval `[x0, x1]`. With this information, it constructs
-    the MPS that approximates `c(x)`.
-
-    Parameters
-    ----------
-    c : `numpy.polynomial.Chebyshev`
-        Chebyshev expansion over a given domain.
-    domain : Optional[Interval], default = None
-        Interval of definition for the function, which must be contained in the
-        Chebyshev's series domain.
-    x : Optional[MPS], default = None
-        MPS representation of the `x` function in the series' domain. It will
-        be computed from `domain` if not provided.
-    strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
-        Simplification strategy for operations between MPS.
-
-    Returns
-    -------
-    f : MPS
-        MPS representation of the polynomial expansion.
-    """
-    x_mps: MPS
-    if domain is not None:
-        x_mps = mps_interval(domain.map_to(-1, 1))
-    elif isinstance(x, MPS):
-        orig, _ = c.linspace(2)
-        x_mps = mps_affine_transformation(x, orig, (-1, 1))
-    else:
-        raise Exception("In cheb2mps, either domain or an MPS must be provided.")
-
-    if tools.DEBUG:
-        tools.log("Clenshaw evaluation started")
-    I_norm = 2 ** (x_mps.size / 2)
-    normalized_I = CanonicalMPS(
-        [np.ones((1, 2, 1)) / sqrt(2.0)] * x_mps.size, center=0, is_canonical=True
-    )
-    y_i = y_i_plus_1 = normalized_I.zero_state()
-    for i, c_i in enumerate(reversed(c.coef)):
-        y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
-        y_i = simplify(
-            # coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
-            MPSSum(
-                [I_norm * c_i, -1, 2],
-                [normalized_I, y_i_plus_2, x_mps * y_i_plus_1],
-                check_args=False,
-            ),
-            strategy=strategy,
-        )
-        if tools.DEBUG:
-            tools.log(
-                f"Clenshaw step {i} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
-            )
-    return simplify(y_i - x_mps * y_i_plus_1, strategy=strategy)
-
-
-# TODO: Implement
-def cheb2mpo(
-    c: np.polynomial.Chebyshev,
-    domain: Optional[Interval] = None,
-    x: Optional[MPO] = None,
-    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
-) -> MPO:
-    """
-    *NOT IMPLEMENTED*
-    Construct an MPO representation of a function, from a Chebyshev expansion.
-
-    This function takes as input an MPO representation of the first order
-    polynomial `x` in a given `domain`, with values `[x0,x1]`. It also takes
-    a Chebyshev expansion `c` of a function `c(x)` defined in a domain that
-    contains this interval `[x0,x1]`. With this information, it constructs
-    the MPO that approximates `c(x)`.
-
-    Parameters
-    ----------
-    c : `numpy.polynomial.Chebyshev`
-        Chebyshev expansion over a given domain.
-    domain : Optional[Interval], default = None
-        Interval of definition for the function, whose domain must be included
-        in that of `c`.
-    x : Optional[MPO], default = None
-        MPS representation of the `x` function in the series' domain. It will
-        be computed from `domain` if not provided.
-    strategy : Strategy, default = DEFAULT_CHEBYSHEV_STRATEGY
-        Simplification strategy for operations between MPOs.
-
-    Returns
-    -------
-    f : MPO
-        MPO representation of the polynomial expansion.
-    """
-    raise Exception("cheb2mpo not implemented")
-
-
-# TODO: Consider if this helper function is necessary
-def chebyshev_approximation(
-    f: Callable,
-    order: int,
-    domain: Interval,
-    differentiation_order: int = 0,
-    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
-) -> MPS:
-    """
-    Load a function as an MPS using Chebyshev expansions.
-
-    This function constructs a Chebyshev series that approximates `f` over
-    the given `domain`, and uses that expansion to construct an MPS
-    representation via `cheb2mps`.
+    Returns the coefficients for the Chebyshev projection of a function using
+    Chebyshev-Gauss integration.
 
     Parameters
     ----------
     func : Callable
-        A univariate scalar function.
-    order : int
-        Order of the Chebyshev expansion
-    domain : Interval
-        The domain over which the function is to be approximated.
-    differentiation_order : int, default = 0
-        If positive or negative value `N`, integrate or differentiate the
-        function a total of `abs(N)` times prior to computing the expansion.
-    strategy : Strategy, default Strategy()
-        The strategy used for simplifying the MPS or MPO during computation.
+        The target function to approximate with Chebyshev polynomials.
+    order : Optional[int], default = None
+        The number of Chebyshev projection coefficients to compute.
+        If None, estimates an order that results in an error below machine precision.
+    start : float, default = -1
+    stop : float, default = +1
+        The domain on which the function is defined and in which the
+        approximation is desired.
+    domain : Optional[Interval], default = None
+        Alternative way to specify the function's domain.
 
     Returns
     -------
-    mps : MPS
-        MPS approximation to the function.
+    coefficients : `numpy.polynomial.Chebyshev`
+    An array of Chebyshev coefficients scaled to the specified interval.
     """
-    c = chebyshev_coefficients(f, order, domain.start, domain.stop)
-    if differentiation_order < 0:
-        c = c.integ(-differentiation_order, lbnd=domain.start)
-    elif differentiation_order > 0:
-        c = c.deriv(differentiation_order)
-    return cheb2mps(c, domain, strategy=strategy)
+    if order is None:
+        order = estimate_order(func, start, stop, domain)
+    if domain is not None:
+        start, stop = domain.start, domain.stop
+    quad_order = order  # TODO: Check if this order integrates to machine precision
+    nodes = np.cos(np.pi * np.arange(1, 2 * quad_order, 2) / (2.0 * quad_order))
+    nodes_affine = array_affine(nodes, orig=(-1, 1), dest=(start, stop))
+    weights = np.ones(quad_order) * (np.pi / quad_order)
+    T_matrix = np.cos(np.outer(np.arange(order), np.arccos(nodes)))
+    coefficients = (2 / np.pi) * (T_matrix * func(nodes_affine)) @ weights
+    coefficients[0] /= 2
+    return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
+
+
+def estimate_order(
+    func: Callable,
+    start: float = -1,
+    stop: float = +1,
+    domain: Optional[Interval] = None,
+    tolerance: float = float(np.finfo(np.float64).eps),
+    initial_order: int = 2,
+    max_order: int = 2**12,  # 4096
+) -> int:
+    """
+    Returns an estimation of the number of Chebyshev coefficients required to achieve a
+    given accuracy such that the last pair of coefficients fall below a given tolerance,
+    as they theoretically bound the maximum error of the expansion.
+
+    Notes
+    -----
+    - The coefficients are evaluated in pairs because even and odd functions respectively
+    have vanishing even and odd coefficients.
+    """
+    if domain is not None:
+        start, stop = domain.start, domain.stop
+    order = initial_order
+    while order <= max_order:
+        c = projection_coefficients(func, order, start, stop).coef
+        max_c_in_pairs = np.maximum(abs(c[::2]), abs(c[1::2]))
+        c_below_tolerance = np.where(max_c_in_pairs < tolerance)[0]
+        if c_below_tolerance.size > 0 and c_below_tolerance[0] != 0:
+            return 2 * c_below_tolerance[0] + 1
+        order *= 2
+    raise ValueError("Order exceeds max_order without achieving tolerance.")
+
+
+def cheb2mps(
+    coefficients: np.polynomial.Chebyshev,
+    initial_mps: Optional[MPS] = None,
+    domain: Optional[Interval] = None,
+    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
+    clenshaw: bool = True,
+    rescale: bool = True,
+) -> MPS:
+    """
+    Constructs a MPS representation of a function by expanding it on the basis
+    of Chebyshev polynomials. It takes as input the Chebyshev coefficients of a function
+    `f(x)` defined in an interval `[a, b]` and, optionally, an initial MPS representing a
+    function `g(x)` that is taken as the first order polynomial of the expansion.
+    With this information, it constructs the MPS that approximates `f(g(x))`.
+
+    Parameters
+    ----------
+    coefficients : np.polynomial.Chebyshev
+        The Chebyshev expansion coefficients representing the target function that
+        is defined on a given interval `[a, b]`.
+    initial_mps: Optional[MPS], default = None
+        The initial MPS on which to apply the expansion.
+        By default (if `rescale` is True), it must have a support inside the domain of
+        definition of the function `[a, b]`.
+        If `rescale` is False, it must have a support inside `[-1, 1]`.
+    domain : Optional[Interval], default = None
+        An alternative way to specify the initial MPS by constructing it from the given Interval.
+    strategy : Strategy
+        The simplification strategy for operations between MPS.
+    clenshaw : bool, default = True
+        Whether to use the Clenshaw algorithm for polynomial evaluation.
+    rescale : bool, default = True
+        Whether to perform an affine transformation of the initial MPS from the domain
+        `[a, b]` of the Chebyshev coefficients to the canonical Chebyshev interval `[-1, 1]`.
+
+    Returns
+    -------
+    f_mps : MPS
+        MPS representation of the polynomial expansion.
+
+    Notes
+    -----
+    - The complexity of the expansion depends on the complexity (e.g. maximum bond dimension)
+    of the intermediate states which are general hard to anticipate and may depend on
+    the type of coefficients (interpolation, projection) or evaluation method used (Clenshaw, polynomial).
+
+    - The Clenshaw evaluation method has a better performance overall, but performs worse when
+    the interpolation order is overestimated, meaning that the expected accuracy is below
+    machine precision.
+    """
+    if isinstance(initial_mps, MPS):
+        pass
+    elif isinstance(domain, Interval):
+        initial_mps = mps_interval(domain)
+    else:
+        raise ValueError("Either a domain or an initial MPS must be provided.")
+    if rescale:
+        orig = tuple(coefficients.linspace(2)[0])
+        initial_mps = mps_affine(initial_mps, orig, (-1, 1))
+
+    c = coefficients.coef
+    I_norm = 2 ** (initial_mps.size / 2)
+    normalized_I = CanonicalMPS(
+        [np.ones((1, 2, 1)) / sqrt(2.0)] * initial_mps.size,
+        center=0,
+        is_canonical=True,
+    )
+    x_norm = initial_mps.norm()
+    normalized_x = CanonicalMPS(
+        initial_mps, center=0, normalize=True, strategy=strategy
+    )
+    logger = make_logger()
+    if clenshaw:
+        steps = len(c)
+        logger("MPS Clenshaw evaluation started")
+        y_i = y_i_plus_1 = normalized_I.zero_state()
+        for i, c_i in enumerate(reversed(c)):
+            y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
+            y_i = simplify(
+                # coef[i] * I - y[i + 2] + (2 * x_mps) * y[i + 1],
+                MPSSum(
+                    weights=[c_i * I_norm, -1, 2 * x_norm],
+                    states=[normalized_I, y_i_plus_2, normalized_x * y_i_plus_1],
+                    check_args=False,
+                ),
+                strategy=strategy,
+            )
+            logger(
+                f"MPS Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
+            )
+        f_mps = simplify(
+            MPSSum(
+                weights=[1, -x_norm],
+                states=[y_i, normalized_x * y_i_plus_1],
+                check_args=False,
+            ),
+            strategy=strategy,
+        )
+    else:
+        steps = len(c)
+        logger("MPS Chebyshev expansion started")
+
+        f_mps = simplify(
+            MPSSum(
+                weights=[c[0] * I_norm, c[1] * x_norm],
+                states=[normalized_I, normalized_x],
+                check_args=False,
+            ),
+            strategy=strategy,
+        )
+        T_i, T_i_plus_1 = I_norm * normalized_I, x_norm * normalized_x
+        for i, c_i in enumerate(c[2:], start=2):
+            T_i_plus_2 = simplify(
+                MPSSum(
+                    weights=[2 * x_norm, -1],
+                    states=[normalized_x * T_i_plus_1, T_i],
+                    check_args=False,
+                ),
+                strategy=strategy,
+            )
+            f_mps = simplify(
+                MPSSum(weights=[1, c_i], states=[f_mps, T_i_plus_2], check_args=False),
+                strategy=strategy,
+            )
+            logger(
+                f"MPS expansion step {i+1}/{steps} with maximum bond dimension {max(f_mps.bond_dimensions())} and error {f_mps.error():6e}"
+            )
+            T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
+    return f_mps
+
+
+def cheb2mpo(
+    coefficients: np.polynomial.Chebyshev,
+    initial_mpo: MPO,
+    strategy: Strategy = DEFAULT_CHEBYSHEV_STRATEGY,
+    clenshaw=True,
+    rescale=True,
+) -> MPO:
+    """
+    Constructs a MPO representation of a function by expanding it on the basis
+    of Chebyshev polynomials.
+
+    Parameters
+    ----------
+    coefficients : np.polynomial.Chebyshev
+        The Chebyshev expansion coefficients representing the target function that
+        is defined on a given interval `[a, b]`.
+    initial_mpo: MPO
+        The initial MPO on which to apply the expansion.
+        By default (if `rescale` is True), it must have a support inside the domain of
+        definition of the function `[a, b]`.
+        If `rescale` is False, it must have a support inside `[-1, 1]`.
+    strategy : Strategy
+        The simplification strategy for operations between MPS.
+    clenshaw : bool, default = True
+        Whether to use the Clenshaw algorithm for polynomial evaluation.
+    rescale : bool, default = True
+        Whether to perform an affine transformation of the initial MPO from the domain
+        `[a, b]` of the Chebyshev coefficients to the canonical Chebyshev interval `[-1, 1]`.
+
+    Returns
+    -------
+    f_mpo : MPO
+        MPO representation of the polynomial expansion.
+    """
+    if rescale:
+        orig = tuple(coefficients.linspace(2)[0])
+        initial_mpo = mpo_affine(initial_mpo, orig, (-1, 1))
+    c = coefficients.coef
+    I = MPO([np.eye(2).reshape(1, 2, 2, 1)] * len(initial_mpo))
+    logger = make_logger()
+    if clenshaw:
+        steps = len(c)
+        logger("MPO Clenshaw evaluation started")
+        y_i = y_i_plus_1 = MPO([np.zeros((1, 2, 2, 1))] * len(initial_mpo))
+        for i, c_i in enumerate(reversed(coefficients.coef)):
+            y_i_plus_1, y_i_plus_2 = y_i, y_i_plus_1
+            y_i = simplify_mpo(
+                MPOSum(
+                    mpos=[I, y_i_plus_2, MPOList([initial_mpo, y_i_plus_1])],
+                    weights=[c_i, -1, 2],
+                ),
+                strategy=strategy,
+            )
+            logger(
+                f"MPO Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())}"
+            )
+        f_mpo = simplify_mpo(
+            MPOSum([y_i, MPOList([initial_mpo, y_i_plus_1])], weights=[1, -1]),
+            strategy=strategy,
+        )
+    else:
+        steps = len(c)
+        logger("MPO Chebyshev expansion started")
+        T_i, T_i_plus_1 = I, initial_mpo
+        f_mpo = simplify_mpo(
+            MPOSum(mpos=[T_i, T_i_plus_1], weights=[c[0], c[1]]),
+            strategy=strategy,
+        )
+        for i, c_i in enumerate(c[2:], start=2):
+            T_i_plus_2 = simplify_mpo(
+                MPOSum(mpos=[MPOList([initial_mpo, T_i_plus_1]), T_i], weights=[2, -1]),
+                strategy=strategy,
+            )
+            f_mpo = simplify_mpo(
+                MPOSum(mpos=[f_mpo, T_i_plus_2], weights=[1, c_i]),
+                strategy=strategy,
+            )
+            logger(
+                f"MPO expansion step {i+1}/{steps} with maximum bond dimension {max(f_mpo.bond_dimensions())}"
+            )
+            T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
+    return f_mpo
