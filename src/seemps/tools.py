@@ -43,10 +43,9 @@ PREFIX = ""
 NO_LOGGER = Logger()
 
 
-class VerboseLogger:
+class VerboseLogger(Logger):
     old_prefix: str
     level: int
-    active: bool
 
     def __init__(self, level: int):
         global PREFIX
