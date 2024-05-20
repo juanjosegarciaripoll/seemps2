@@ -1,11 +1,23 @@
 import numpy as np
 cimport numpy as cnp
+cimport cpython
 from libc.math cimport sqrt
+from libc.string cimport memcpy
+from ..typing  import Environment, Tensor3
+from numpy cimport (
+    PyArray_Check,
+    PyArray_DIM,
+    PyArray_NDIM,
+    PyArray_SIZE,
+    PyArray_DATA,
+    PyArray_Resize,
+    PyArray_DIMS,
+    )
+
+__version__ = 'cython-contractions'
 
 MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
-
-__version__ = 'cython'
 
 class Truncation:
     DO_NOT_TRUNCATE = TRUNCATION_DO_NOT_TRUNCATE
@@ -161,6 +173,9 @@ cdef void _rescale_if_not_zero(cnp.float64_t *data, cnp.float64_t factor, Py_ssi
 cdef void _normalize(cnp.float64_t *data, Py_ssize_t N) noexcept nogil:
     _rescale_if_not_zero(data, _norm(data, N), N)
 
+cdef void _resize_vector_in_place(cnp.ndarray s, Py_ssize_t N):
+   PyArray_DIMS(s)[0] = N
+
 cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
     global _errors_buffer
     cdef:
@@ -168,11 +183,11 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
         double max_error, new_norm, final_error
         double total = 0.0
         cnp.float64_t *errors
-        cnp.float64_t *s_start = (<cnp.float64_t*>cnp.PyArray_DATA(s))
+        cnp.float64_t *s_start = (<cnp.float64_t*>PyArray_DATA(s))
         cnp.float64_t *data = &s_start[N-1]
     if cnp.PyArray_SIZE(_errors_buffer) <= N:
         _errors_buffer = _make_empty_float64_vector(2 * N)
-    errors = <cnp.float64_t*>cnp.PyArray_DATA(_errors_buffer)
+    errors = <cnp.float64_t*>PyArray_DATA(_errors_buffer)
     #
     # Compute the cumulative sum of the reduced density matrix eigen values
     # in reversed order. Thus errors[i] is the error we make when we drop
@@ -192,16 +207,16 @@ cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strate
             break
     final_size = min(N - i, strategy.max_bond_dimension)
     max_error = errors[N - final_size]
-    if strategy.normalize:
+    if False: #strategy.normalize:
         _rescale_if_not_zero(s_start, sqrt(total - max_error), final_size)
     # _resize_vector_in_place(s, final_size)
     # TODO: HACK! This is fast, but unsafe
-    cnp.PyArray_DIMS(s)[0] = final_size
+    PyArray_DIMS(s)[0] = final_size
     return max_error
 
 cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
     cdef:
-        cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
+        cnp.float64_t *data = <cnp.float64_t*>PyArray_DATA(s)
         double max_error = strategy.tolerance * data[0]
         Py_ssize_t i, N = s.size
         Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
@@ -212,16 +227,16 @@ cdef double _truncate_relative_singular_value(cnp.ndarray s, Strategy strategy):
     max_error = 0.0
     for i in range(final_size, N):
         max_error += data[i] * data[i]
-    if strategy.normalize:
+    if False: #strategy.normalize:
         _normalize(data, final_size)
     # _resize_vector_in_place(s, final_size)
     # TODO: HACK! This is fast, but unsafe
-    cnp.PyArray_DIMS(s)[0] = final_size
+    PyArray_DIMS(s)[0] = final_size
     return max_error
 
 cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     cdef:
-        cnp.float64_t *data = <cnp.float64_t*>cnp.PyArray_DATA(s)
+        cnp.float64_t *data = <cnp.float64_t*>PyArray_DATA(s)
         double max_error = strategy.tolerance
         Py_ssize_t i, N = s.size
         Py_ssize_t final_size = min(N, strategy.max_bond_dimension)
@@ -232,101 +247,21 @@ cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     max_error = 0.0
     for i in range(final_size, N):
         max_error += data[i] * data[i]
-    if strategy.normalize:
+    if False: #strategy.normalize:
         _normalize(data, final_size)
     # _resize_vector_in_place(s, final_size)
     # TODO: HACK! This is fast, but unsafe
-    cnp.PyArray_DIMS(s)[0] = final_size
+    PyArray_DIMS(s)[0] = final_size
     return max_error
 
-def truncate_vector(s, Strategy strategy) -> tuple[np.ndarray, float]:
-    if (cnp.PyArray_Check(s) == 0 or
-        cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or
-        cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):
-        raise ValueError("truncate_vector() requires float vector")
-    if strategy.method:
-        s = <cnp.ndarray>cnp.PyArray_FROM_OF(s,
-                                             cnp.NPY_ARRAY_ENSURECOPY |
-                                             cnp.NPY_ARRAY_C_CONTIGUOUS)
-    return s, strategy._truncate(<cnp.ndarray>s, strategy)
-
 def destructively_truncate_vector(s, Strategy strategy) -> float:
-    if (cnp.PyArray_Check(s) == 0 or
-        cnp.PyArray_TYPE(<cnp.ndarray>s) != cnp.NPY_FLOAT64 or
-        cnp.PyArray_NDIM(<cnp.ndarray>s) != 1):
-        raise ValueError("truncate_vector() requires float vector")
+    assert (cnp.PyArray_Check(s) and
+            cnp.PyArray_TYPE(<cnp.ndarray>s) == cnp.NPY_FLOAT64 or
+            cnp.PyArray_NDIM(<cnp.ndarray>s) == 1)
     return strategy._truncate(<cnp.ndarray>s, strategy)
 
-cdef cnp.ndarray _as_matrix(cnp.ndarray A, Py_ssize_t rows, Py_ssize_t cols):
-    cdef cnp.npy_intp *dims_data = [rows, cols]
-    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 2)
-    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
-
-def _contract_last_and_first(A, B) -> cnp.ndarray:
-    """Contract last index of `A` and first from `B`"""
-    if (cnp.PyArray_Check(A) == 0 or cnp.PyArray_Check(B) == 0):
-        raise ValueError("_contract_last_and_first expects tensors")
-
-    cdef:
-        cnp.ndarray Aarray = <cnp.ndarray>A
-        cnp.ndarray Barray = <cnp.ndarray>B
-        int ndimA = cnp.PyArray_NDIM(Aarray)
-        Py_ssize_t Alast = cnp.PyArray_DIM(Aarray, ndimA - 1)
-        Py_ssize_t Bfirst = cnp.PyArray_DIM(Barray, 0)
-    #
-    # By reshaping the two tensors to matrices, we ensure Numpy
-    # will always use the CBLAS path (provided the tensors have
-    # the same type, of course)
-    #
-    return <cnp.ndarray>cnp.PyArray_Reshape(
-        <cnp.ndarray>cnp.PyArray_MatrixProduct(
-            _as_matrix(Aarray, cnp.PyArray_SIZE(Aarray) / Alast, Alast),
-            _as_matrix(Barray, Bfirst, cnp.PyArray_SIZE(Barray) / Bfirst)
-        ),
-        A.shape[:-1] + B.shape[1:])
-
-
-cdef _matmul = np.matmul
-
-cdef cnp.ndarray _as_3tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j, Py_ssize_t k):
-    cdef cnp.npy_intp *dims_data = [i, j, k]
-    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 3)
-    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
-
-cdef cnp.ndarray _as_4tensor(cnp.ndarray A, Py_ssize_t i, Py_ssize_t j,
-                             Py_ssize_t k, Py_ssize_t l):
-    cdef cnp.npy_intp *dims_data = [i, j, k, l]
-    cdef cnp.PyArray_Dims dims = cnp.PyArray_Dims(dims_data, 4)
-    return <cnp.ndarray>cnp.PyArray_Newshape(A, &dims, cnp.NPY_CORDER)
-
-def _contract_nrjl_ijk_klm(U, A, B) -> cnp.ndarray:
-    #
-    # Assuming U[n*r,j*l], A[i,j,k] and B[k,l,m]
-    # Implements np.einsum('ijk,klm,nrjl -> inrm', A, B, U)
-    # See tests.test_contractions for other implementations and timing
-    #
-    if (cnp.PyArray_Check(A) == 0 or
-        cnp.PyArray_Check(B) == 0 or
-        cnp.PyArray_Check(U) == 0 or
-        cnp.PyArray_NDIM(<cnp.ndarray>A) != 3 or
-        cnp.PyArray_NDIM(<cnp.ndarray>B) != 3 or
-        cnp.PyArray_NDIM(<cnp.ndarray>U) != 2):
-        raise ValueError("Invalid arguments to _contract_nrjl_ijk_klm")
-    cdef:
-        # a, d, b = A.shape[0]
-        # b, e, c = B.shape[0]
-        Py_ssize_t a = cnp.PyArray_DIM(<cnp.ndarray>A, 0)
-        Py_ssize_t d = cnp.PyArray_DIM(<cnp.ndarray>A, 1)
-        Py_ssize_t b = cnp.PyArray_DIM(<cnp.ndarray>A, 2)
-        Py_ssize_t e = cnp.PyArray_DIM(<cnp.ndarray>B, 1)
-        Py_ssize_t c = cnp.PyArray_DIM(<cnp.ndarray>B, 2)
-    return _as_4tensor(
-        _matmul(
-            U,
-            _as_3tensor(
-                <cnp.ndarray>cnp.PyArray_MatrixProduct(
-                    _as_matrix(<cnp.ndarray>A, a*d, b),
-                    _as_matrix(<cnp.ndarray>B, b, e*c)),
-                a, d*e, c)
-        ),
-        a, d, e, c)
+include "gemm.pxi"
+include "svd.pxi"
+include "contractions.pxi"
+include "environments.pxi"
+include "schmidt.pxi"
