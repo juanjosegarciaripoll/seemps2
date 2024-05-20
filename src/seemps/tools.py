@@ -19,13 +19,13 @@ def take_from_list(O, i):
         return O
 
 
-class NoLogger:
+class Logger:
     active: bool = False
 
     def __call__(self, *args, **kwdargs):
         pass
 
-    def __enter__(self) -> NoLogger:
+    def __enter__(self) -> Logger:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -40,10 +40,10 @@ class NoLogger:
 
 DEBUG = 0
 PREFIX = ""
-NO_LOGGER = NoLogger()
+NO_LOGGER = Logger()
 
 
-class Logger:
+class VerboseLogger:
     old_prefix: str
     level: int
     active: bool
@@ -78,14 +78,14 @@ class Logger:
         PREFIX = self.old_prefix
 
 
-def make_logger(level: int = 1) -> NoLogger | Logger:
+def make_logger(level: int = 1) -> Logger:
     """Create an object that logs debug information. This object has a property
     `active` that determines whether logging is working. It also has a `__call__`
     method that allows invoking the object with the information to log, working
     as if it were a `print` statement."""
-    if level > DEBUG:
+    if level <= DEBUG:
         return NO_LOGGER
-    return Logger(level)
+    return VerboseLogger(level)
 
 
 # TODO: Find a faster way to do logs. Currently `log` always gets called

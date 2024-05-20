@@ -273,6 +273,7 @@ def cheb2mps(
                 f"MPS expansion step {i+1}/{steps} with maximum bond dimension {max(f_mps.bond_dimensions())} and error {f_mps.error():6e}"
             )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
+    logger.close()
     return f_mps
 
 
