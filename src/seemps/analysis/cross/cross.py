@@ -9,7 +9,7 @@ from scipy.linalg import lu, solve_triangular  # type: ignore
 from .black_box import BlackBox
 from ..sampling import evaluate_mps, random_mps_indices
 from ...state import MPS, random_mps
-from ...tools import make_logger, Logger
+from ...tools import Logger
 from ...typing import VectorLike
 
 
@@ -200,7 +200,7 @@ def _check_convergence(
         rng=cross_strategy.rng,
     )
     # TODO: Use max_bond_dimension() from MPS
-    maxbond = max(cross.mps.bond_dimensions())
+    maxbond = cross.mps.max_bond_dimension()
     if logger:
         logger(
             f"Cross sweep {1+sweep:3d} with error({cross_strategy.num_samples} samples "
@@ -213,7 +213,6 @@ def _check_convergence(
             logger(f"Stationary state reached with norm-2 change {change_norm}")
             return True
     if error < cross_strategy.tol_sampling:
-        converged = True
         logger(f"State converged within tolerance {cross_strategy.tol_sampling}")
         return True
     elif maxbond > cross_strategy.maxbond:
