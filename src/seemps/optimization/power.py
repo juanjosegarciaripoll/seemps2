@@ -141,4 +141,5 @@ def power_method(
             state = simplify(H_v, strategy=strategy)
             total_steps += 1
     logger(f"power_method() finished with results\n{results}")
+    logger.close()
     return results
