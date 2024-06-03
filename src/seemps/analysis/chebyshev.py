@@ -233,7 +233,7 @@ def cheb2mps(
                 strategy=strategy,
             )
             logger(
-                f"MPS Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())} and error {y_i.error():6e}"
+                f"MPS Clenshaw step {i+1}/{steps} with maximum bond dimension {y_i.max_bond_dimension()} and error {y_i.error():6e}"
             )
         f_mps = simplify(
             MPSSum(
@@ -270,9 +270,10 @@ def cheb2mps(
                 strategy=strategy,
             )
             logger(
-                f"MPS expansion step {i+1}/{steps} with maximum bond dimension {max(f_mps.bond_dimensions())} and error {f_mps.error():6e}"
+                f"MPS expansion step {i+1}/{steps} with maximum bond dimension {f_mps.max_bond_dimension()} and error {f_mps.error():6e}"
             )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
+    logger.close()
     return f_mps
 
 
@@ -330,7 +331,7 @@ def cheb2mpo(
                 strategy=strategy,
             )
             logger(
-                f"MPO Clenshaw step {i+1}/{steps} with maximum bond dimension {max(y_i.bond_dimensions())}"
+                f"MPO Clenshaw step {i+1}/{steps} with maximum bond dimension {y_i.max_bond_dimension()}"
             )
         f_mpo = simplify_mpo(
             MPOSum([y_i, MPOList([initial_mpo, y_i_plus_1])], weights=[1, -1]),
@@ -354,7 +355,7 @@ def cheb2mpo(
                 strategy=strategy,
             )
             logger(
-                f"MPO expansion step {i+1}/{steps} with maximum bond dimension {max(f_mpo.bond_dimensions())}"
+                f"MPO expansion step {i+1}/{steps} with maximum bond dimension {f_mpo.max_bond_dimension()}"
             )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
     return f_mpo

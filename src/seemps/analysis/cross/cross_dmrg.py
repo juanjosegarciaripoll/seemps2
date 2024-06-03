@@ -14,7 +14,7 @@ from ...state._contractions import _contract_last_and_first
 from ...state.schmidt import _destructive_svd
 from ...state.core import destructively_truncate_vector
 from ...truncate import SIMPLIFICATION_STRATEGY
-from ...tools import log
+from ...tools import make_logger
 
 DEFAULT_CROSS_STRATEGY = SIMPLIFICATION_STRATEGY.replace(
     normalize=False,
@@ -81,21 +81,21 @@ def cross_dmrg(
         low=0, high=black_box.base, size=black_box.sites
     )
     cross = CrossInterpolationDMRG(black_box, initial_point)
-    for i in range(cross_strategy.maxiter):
-        # Forward sweep
-        for k in range(cross.sites - 1):
-            _update_dmrg(cross, k, True, cross_strategy)
-        converged, message = _check_convergence(cross, i, cross_strategy)
-        if converged:
-            break
-        # Backward sweep
-        for k in reversed(range(cross.sites - 1)):
-            _update_dmrg(cross, k, False, cross_strategy)
-        converged, message = _check_convergence(cross, i, cross_strategy)
-        if converged:
-            break
-
-    log(message)
+    converged = False
+    with make_logger(2) as logger:
+        for i in range(cross_strategy.maxiter):
+            # Forward sweep
+            for k in range(cross.sites - 1):
+                _update_dmrg(cross, k, True, cross_strategy)
+            if converged := _check_convergence(cross, i, cross_strategy, logger):
+                break
+            # Backward sweep
+            for k in reversed(range(cross.sites - 1)):
+                _update_dmrg(cross, k, False, cross_strategy)
+            if converged := _check_convergence(cross, i, cross_strategy, logger):
+                break
+        if not converged:
+            logger("Maximum number of TT-Cross iterations reached")
     return CrossResults(mps=cross.mps, evals=black_box.evals)
 
 

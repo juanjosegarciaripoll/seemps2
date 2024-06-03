@@ -11,7 +11,7 @@ from .cross import (
     _check_convergence,
 )
 from ...state._contractions import _contract_last_and_first
-from ...tools import log
+from ...tools import make_logger
 
 
 @dataclasses.dataclass
@@ -105,17 +105,19 @@ def cross_maxvol(
         low=0, high=black_box.base, size=black_box.sites
     )
     cross = CrossInterpolationMaxvol(black_box, initial_point)
-    for i in range(cross_strategy.maxiter):
-        # Forward sweep
-        for k in range(cross.sites):
-            _update_maxvol(cross, k, True, cross_strategy)
-        # Backward sweep
-        for k in reversed(range(cross.sites)):
-            _update_maxvol(cross, k, False, cross_strategy)
-        converged, message = _check_convergence(cross, i, cross_strategy)
-        if converged:
-            break
-    log(message)
+    converged = False
+    with make_logger(2) as logger:
+        for i in range(cross_strategy.maxiter):
+            # Forward sweep
+            for k in range(cross.sites):
+                _update_maxvol(cross, k, True, cross_strategy)
+            # Backward sweep
+            for k in reversed(range(cross.sites)):
+                _update_maxvol(cross, k, False, cross_strategy)
+            if converged := _check_convergence(cross, i, cross_strategy, logger):
+                break
+        if not converged:
+            logger("Maximum number of iterations reached")
     return CrossResults(mps=cross.mps, evals=black_box.evals)
 
 

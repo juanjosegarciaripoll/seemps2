@@ -9,7 +9,7 @@ from scipy.linalg import lu, solve_triangular  # type: ignore
 from .black_box import BlackBox
 from ..sampling import evaluate_mps, random_mps_indices
 from ...state import MPS, random_mps
-from ...tools import make_logger
+from ...tools import Logger
 from ...typing import VectorLike
 
 
@@ -188,7 +188,8 @@ def _check_convergence(
     cross: CrossInterpolation,
     sweep: int,
     cross_strategy: CrossStrategy,
-) -> tuple[bool, str]:
+    logger: Logger,
+) -> bool:
     allowed_sampling_indices = getattr(
         cross.black_box, "allowed_sampling_indices", None
     )
@@ -198,24 +199,23 @@ def _check_convergence(
         allowed_indices=allowed_sampling_indices,
         rng=cross_strategy.rng,
     )
-    maxbond = max(cross.mps.bond_dimensions())
-    logger = make_logger()
-    logger(
-        f"Cross sweep {1+sweep:3d} with error({cross_strategy.num_samples} samples "
-        f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={cross.black_box.evals}"
-    )
-    converged = False
-    message = f"Maximum number of sweeps {cross_strategy.maxiter} reached"
+    # TODO: Use max_bond_dimension() from MPS
+    maxbond = cross.mps.max_bond_dimension()
+    if logger:
+        logger(
+            f"Cross sweep {1+sweep:3d} with error({cross_strategy.num_samples} samples "
+            f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={cross.black_box.evals}"
+        )
     if cross_strategy.check_norm_2:
         change_norm = cross.norm_2_change()
         logger(f"Norm-2 change {change_norm}")
         if change_norm <= cross_strategy.tol_norm_2:
-            converged = True
-            message = f"Stationary state reached with norm-2 change {change_norm}"
+            logger(f"Stationary state reached with norm-2 change {change_norm}")
+            return True
     if error < cross_strategy.tol_sampling:
-        converged = True
-        message = f"State converged within tolerance {cross_strategy.tol_sampling}"
+        logger(f"State converged within tolerance {cross_strategy.tol_sampling}")
+        return True
     elif maxbond > cross_strategy.maxbond:
-        converged = True
-        message = f"Maxbond reached above the threshold {cross_strategy.maxbond}"
-    return converged, message
+        logger(f"Maxbond reached above the threshold {cross_strategy.maxbond}")
+        return True
+    return False

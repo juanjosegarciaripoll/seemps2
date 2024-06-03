@@ -3,7 +3,7 @@ from typing import Callable, Union, Any, Optional
 import numpy as np
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
-from ..tools import log
+from ..tools import make_logger
 from ..state import (
     MPS,
     CanonicalMPS,
@@ -205,7 +205,8 @@ def arnoldi_eigh(
     arnoldi = MPSArnoldiRepresentation(
         operator, strategy, tol_ill_conditioning=tol_ill, gamma=gamma
     )
-    log(f"Arnoldi expansion with maxiter={maxiter}, relative tolerance={tol}")
+    logger = make_logger()
+    logger(f"Arnoldi expansion with maxiter={maxiter}, relative tolerance={tol}")
     v: MPS = arnoldi.restart_with_vector(guess)
     energy, variance = arnoldi.energy_and_variance()
     results = OptimizeResults(
@@ -216,7 +217,7 @@ def arnoldi_eigh(
         converged=False,
         message=f"Exceeded maximum number of steps {maxiter}",
     )
-    log(f"start, energy={energy}, variance={variance}")
+    logger(f"start, energy={energy}, variance={variance}")
     if callback is not None:
         callback(arnoldi.eigenvector(), results)
     last_energy = energy
@@ -233,7 +234,7 @@ def arnoldi_eigh(
         results.variances.append(variance)
         if energy < results.energy:
             results.energy, results.state = energy, arnoldi.eigenvector()
-        log(f"step={step}, energy={energy}, variance={variance}")
+        logger(f"step={step}, energy={energy}, variance={variance}")
         if callback is not None:
             callback(arnoldi.eigenvector(), results)
         if len(arnoldi.V) == 1:
@@ -252,8 +253,9 @@ def arnoldi_eigh(
                 results.converged = True
                 break
             last_energy = energy
-    log(
+    logger(
         f"Arnoldi finished with {step} iterations:\n"
         f"message = {results.message}\nconverged = {results.converged}"
     )
+    logger.close()
     return results

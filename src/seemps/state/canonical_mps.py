@@ -5,8 +5,6 @@ import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
 from .schmidt import (
-    _ortho_left,
-    _ortho_right,
     _vector2mps,
     _schmidt_weights,
     _left_orth_2site,
@@ -17,55 +15,14 @@ from .environments import (
     _update_left_environment,
     _update_right_environment,
 )
-from ._contractions import _contract_last_and_first
-from .core import DEFAULT_STRATEGY, Strategy
+from .core import (
+    DEFAULT_STRATEGY,
+    Strategy,
+    _update_in_canonical_form_right,
+    _update_in_canonical_form_left,
+    _canonicalize,
+)
 from .mps import MPS
-
-
-# TODO: Replace einsum by a more efficient form
-def _update_in_canonical_form_right(
-    Ψ: list[Tensor3], A: Tensor3, site: int, truncation: Strategy
-) -> tuple[int, float]:
-    """Insert a tensor in canonical form into the MPS Ψ at the given site.
-    Update the neighboring sites in the process."""
-    if site + 1 == len(Ψ):
-        Ψ[site] = A
-        return site, 0.0
-    Ψ[site], sV, err = _ortho_right(A, truncation)
-    site += 1
-    # np.einsum("ab,bic->aic", sV, Ψ[site])
-    Ψ[site] = _contract_last_and_first(sV, Ψ[site])
-    return site, err
-
-
-# TODO: Replace einsum by a more efficient form
-def _update_in_canonical_form_left(
-    Ψ: list[Tensor3], A: Tensor3, site: int, truncation: Strategy
-) -> tuple[int, float]:
-    """Insert a tensor in canonical form into the MPS Ψ at the given site.
-    Update the neighboring sites in the process."""
-    if site == 0:
-        Ψ[site] = A
-        return site, 0.0
-    Ψ[site], Us, err = _ortho_left(A, truncation)
-    site -= 1
-    # np.einsum("aib,bc->aic", Ψ[site], Us)
-    Ψ[site] = np.matmul(Ψ[site], Us)
-    return site, err
-
-
-def _canonicalize(Ψ: list[Tensor3], center: int, truncation: Strategy) -> float:
-    """Update a list of `Tensor3` objects to be in canonical form
-    with respect to `center`."""
-    # TODO: Revise the cumulative error update. Does it follow update_error()?
-    err = 0.0
-    for i in range(0, center):
-        _, errk = _update_in_canonical_form_right(Ψ, Ψ[i], i, truncation)
-        err += sqrt(errk)
-    for i in range(len(Ψ) - 1, center, -1):
-        _, errk = _update_in_canonical_form_left(Ψ, Ψ[i], i, truncation)
-        err += sqrt(errk)
-    return err
 
 
 class CanonicalMPS(MPS):
