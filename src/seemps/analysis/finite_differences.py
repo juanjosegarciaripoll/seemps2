@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import numpy as np
+
 from ..operators import MPO
 from ..register.transforms import mpo_weighted_shifts
 
@@ -54,6 +56,7 @@ _filtered_differences = {
     ),
     (1, 11): (
         [
+            -1 / 512,
             -8 / 512,
             -27 / 512,
             -48 / 512,
@@ -62,6 +65,7 @@ _filtered_differences = {
             48 / 512,
             27 / 512,
             8 / 512,
+            1 / 512,
         ],
         [4, 3, 2, 1, -1, -2, -3, -4],
     ),
