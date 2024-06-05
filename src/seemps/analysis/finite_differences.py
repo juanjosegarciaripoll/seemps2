@@ -90,6 +90,7 @@ def smooth_finite_differences_mpo(
     dx: float = 1.0,
     periodic: bool = False,
     base: int = 2,
+    tol: float = 1e-4,
 ) -> MPO:
     """Finite differences operator with noise resilience.
     Create the operator that implements a finite-difference approximation to
@@ -111,6 +112,8 @@ def smooth_finite_differences_mpo(
         Whether the grid assumes periodic boundary conditions
     base : int, default = 2
         Quantization of the tensor train (i.e. dimension of the register units)
+    tol : float, deafult = 1e-4
+        Tolerance of the step size to avoid rounding errors
 
     Returns
     -------
@@ -128,10 +131,14 @@ def smooth_finite_differences_mpo(
             "Unknown finite difference derivative of order {order} with noise filter of size {filter}"
         )
     else:
+        i = 1
+        while dx < tol:
+            dx = 2 * dx
+            i += 1
         return mpo_weighted_shifts(
             L,
             np.asarray(weights) / (dx**order),
-            shifts,
+            i * np.array(shifts),
             periodic=periodic,
             base=base,
         )
