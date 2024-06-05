@@ -134,7 +134,7 @@ def smooth_finite_differences_mpo(
         i = 1
         while dx < tol:
             dx = 2 * dx
-            i += 1
+            i *= 2
         return mpo_weighted_shifts(
             L,
             np.asarray(weights) / (dx**order),
