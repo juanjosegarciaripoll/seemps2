@@ -138,7 +138,7 @@ def smooth_finite_differences_mpo(
         return mpo_weighted_shifts(
             L,
             np.asarray(weights) / (dx**order),
-            i * np.array(shifts),
+            list(i * np.array(shifts)),
             periodic=periodic,
             base=base,
         )
