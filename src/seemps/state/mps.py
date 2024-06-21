@@ -86,7 +86,7 @@ class MPS(array.TensorArray):
 
     def max_bond_dimension(self) -> int:
         """Return the largest bond dimension."""
-        return max(a.shape[1] for a in self._data)
+        return max(a.shape[-1] for a in self._data)
 
     def to_vector(self) -> Vector:
         """Convert this MPS to a state vector."""
