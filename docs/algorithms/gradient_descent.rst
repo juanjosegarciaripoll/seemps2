@@ -41,7 +41,7 @@ with the definitions
     \Delta H^2 = \langle\psi|(H-E[\psi])^2|\psi\rangle,\;
     E_3 = \langle\psi|(H-E[\psi])^3|\psi\rangle.
 
-This algorithm is implemented by the function :func:`~seemps.optimization.gradient_descent`.
+This formulation, used in Ref. :cite:t:`GarciaMolina2024`, is implemented by the function :func:`~seemps.optimization.gradient_descent`.
 
 .. autosummary::
    :toctree: ../generated/

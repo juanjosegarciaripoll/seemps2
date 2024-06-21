@@ -44,7 +44,9 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",  # Link to other project's doc.
+    "sphinxcontrib.bibtex",  # Bibliography files
 ]
+bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
