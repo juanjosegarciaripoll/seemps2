@@ -38,7 +38,9 @@ def mpo_flip(operator):
 
 
 class Space:
-    """Class to encode the definition space of a discretized multidimensional function.
+    """Coordinate grid class.
+    
+    Class to encode the definition space of a discretized multidimensional function.
 
     Parameters
     ----------
@@ -49,9 +51,25 @@ class Space:
     closed : bool
         If closed is True, the position space intervals are closed (symmetrically defined).
         If False, the interval is open. (Optional, defaults to True).
+    order : str, optional
+            The order in which sites are organized. Default is "A" (sequential).
     """
 
     def __init__(self, qubits_per_dimension, L, closed=True, order="A"):
+        """
+        Initializes the Space object.
+
+        Parameters
+        ----------
+        qubits_per_dimension : list[int]
+            Number of qubits for each dimension.
+        L : list[list[float]]
+            Position space intervals [a_i, b_i] for each dimension i.
+        closed : bool, optional
+            If True, the intervals are closed; if False, they are open. Default is True.
+        order : str, optional
+            The order in which sites are organized. Default is "A" (sequential).
+        """
         self.qubits_per_dimension = qubits_per_dimension
         self.grid_dimensions = [2**n for n in qubits_per_dimension]
         self.closed = closed
@@ -73,6 +91,19 @@ class Space:
         ]
 
     def increase_resolution(self, new_qubits_per_dimension):
+        """
+        Creates a new Space object with increased resolution based on the new qubits per dimension.
+
+        Parameters
+        ----------
+        new_qubits_per_dimension : list[int]
+            New number of qubits for each dimension.
+
+        Returns
+        -------
+        Space
+            A new Space object with the increased resolution.
+        """
         if self.closed:
             new_space = Space(
                 new_qubits_per_dimension,
@@ -103,13 +134,25 @@ class Space:
         return new_space
 
     def __str__(self):
+        """
+        Returns a string representation of the Space object.
+
+        Returns
+        -------
+        str
+            String representation of the Space object.
+        """
         return f"Space(a={self.a}, b={self.b}, dx={self.dx}, closed={self.closed}, qubits={self.qubits_per_dimension})"
 
     def get_coordinates_tuples(self):
-        """Creates a list of coordinates tuples of the form
-        (n,k), where n is the dimension and k is the significant digit
-        of the qubits used for storing that dimension. Each qubit has
-        a tuple (n,k) associated to it.
+        """
+        Creates a list of coordinate tuples for the qubits.
+
+        Returns
+        -------
+        list[tuple]
+            List of tuples (n, k), where `n` is the dimension and `k` is the significant digit 
+            of the qubits used for storing that dimension.
         """
         coordinates_tuples = []
         coordinates_tuples = [
@@ -120,7 +163,14 @@ class Space:
         return coordinates_tuples
 
     def get_sites(self):
-        """Sites for each dimension"""
+        """
+        Generates the sites for each dimension based on the order.
+
+        Returns
+        -------
+        list[list[int]]
+            A list of lists containing site indices for each dimension.
+        """
         sites = []
         index = 0
         if self.order == "A":
@@ -137,15 +187,57 @@ class Space:
         return sites
 
     def extend(self, op, dim):
-        """Extend MPO acting on 1D to a multi-dimensional MPS."""
+        """
+        Extends an MPO acting on a 1D space to a multi-dimensional MPS.
+
+        Parameters
+        ----------
+        op : MPO
+            The MPO to extend.
+        dim : int
+            The dimension to extend along.
+
+        Returns
+        -------
+        MPS
+            The extended multi-dimensional MPS.
+        """
         return op.extend(self.n_sites, self.sites[dim])
 
     def enlarge_dimension(self, dim, amount) -> Space:
+        """
+        Enlarges the specified dimension by adding more qubits.
+
+        Parameters
+        ----------
+        dim : int
+            The dimension to enlarge.
+        amount : int
+            The number of qubits to add.
+
+        Returns
+        -------
+        Space
+            A new Space object with the enlarged dimension.
+        """
         new_qubits_per_dimension = self.qubits_per_dimension.copy()
         new_qubits_per_dimension[dim] += amount
         return Space(new_qubits_per_dimension, self.L, self.closed, self.order)
 
     def new_positions_from_old_space(self, space: Space) -> list[int]:
+        """
+        Maps new positions from an old Space object to the current Space object.
+
+        Parameters
+        ----------
+        space : Space
+            The old Space object to map positions from.
+
+        Returns
+        -------
+        list[int]
+            List of new positions in the current Space object.
+        """
         new_positions = self.sites.copy()
         for d, n in enumerate(space.qubits_per_dimension):
             new_positions[d] = new_positions[d][:n]
