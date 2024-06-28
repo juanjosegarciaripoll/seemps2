@@ -36,7 +36,7 @@ def fourier_interpolation_1D(
     with a new number of sites Mf.
 
     Parameters
-    ---------
+    ----------
     ψ0mps: MPS
         Discretized multidimensional function MPS.
     space: Space

@@ -9,6 +9,7 @@ Quantum numerical analysis
    :maxdepth: 1
 
    seemps_analysis_spaces
+   seemps_analysis_operators
    seemps_analysis_differentiation
    seemps_analysis_integration
    seemps_analysis_interpolation
