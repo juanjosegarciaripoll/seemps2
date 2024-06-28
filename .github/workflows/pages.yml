@@ -16,7 +16,8 @@ jobs:
             python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install cython sphinx sphinx-design pydata-sphinx-theme numpydoc
+          pip install -r docs/requirements.txt
+		  pip install -r requirements.txt
           pip install .
           python setup.py build_ext --inplace
       - name: Sphinx build
