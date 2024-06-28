@@ -61,4 +61,4 @@ intervals `s \in [0,2^{n-1}) \cup [2^{n+m}-2^{n-1},2^{n+m})`, and (iii)  Fourier
 
 Ref. :cite:t:`GarciaMolina2022` presents a more detailed explanation and an use case.
 
-An example on how to use these functions is shown in <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Interpolation.ipynb>`_.
+An example on how to use these functions is shown in `Interpolation.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Interpolation.ipynb>`_.
