@@ -10,6 +10,7 @@ In the directory `examples` of the library, we have created various Jupyter note
 
 - `Computation of a spin-1/2 model ground state using DMRG <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/DMRG.ipynb>`_.
 - `Solution of a Hamiltonian PDE <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/PDE.ipynb>`_.
+- `Function interpolation <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Interpolation.ipynb>`_.
 
 Further examples of use appear in the datasets and associated codes to the following publications:
 
