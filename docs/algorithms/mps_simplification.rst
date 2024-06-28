@@ -28,7 +28,10 @@ objects into ordinary :class:`seemps.state.MPS` states (see
 :doc:`MPS combination <../seemps_objects_sum>`). Both are implemented using the
 same front-end function.
 
+It is possible to extend this algorithm to MPOs by recasting them as an MPS.
+
 .. autosummary::
    :toctree: ../generated/
 
    ~seemps.truncate.simplify
+   ~seemps.truncate.simplify_mpo.simplify_mpo

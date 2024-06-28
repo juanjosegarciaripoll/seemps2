@@ -36,7 +36,7 @@ def simplify_mpo(
     guess: Optional[MPS] = None,
     mpo_strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
-    """Simplify an MPS state transforming it into another one with a smaller bond
+    """Simplify an MPO transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
 
     Parameters
