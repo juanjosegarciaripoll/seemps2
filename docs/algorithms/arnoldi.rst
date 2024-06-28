@@ -40,7 +40,7 @@ memory factor :math:`\gamma=-0.75`.
 
 The rule in :ref:`alg_descent` is a particular case of the Arnoldi iteration with a Krylov basis with  $L=2$.
 
-This algorithm can be used both in a context of global optimazation and evolution.
+Ref. :cite:t:`GarciaMolina2024` presents this algorithm and its implementation for global optimization problems. It is also suitable for evolution problems.
 
 .. autosummary::
     :toctree: generated/
