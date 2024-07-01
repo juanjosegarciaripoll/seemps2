@@ -38,7 +38,7 @@ based on previous estimates, using the formula :math:`|{\xi_{k+1}}\rangle=(1-\ga
 memory factor :math:`\gamma=-0.75`.
 
 
-The rule in :ref:`alg_descent` is a particular case of the Arnoldi iteration with a Krylov basis with  $L=2$.
+The rule in :ref:`alg_descent` is a particular case of the Arnoldi iteration with a Krylov basis with  :math:`L=2`.
 
 Ref. :cite:t:`GarciaMolina2024` presents this algorithm and its implementation for global optimization problems. It is also suitable for evolution problems.
 

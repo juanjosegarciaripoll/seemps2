@@ -40,6 +40,8 @@ leading to
 
 This approximation is improved with a smoother formula to avoid noise resilience following `Holoborodko <http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators>`_.
 
+An example on how to use these functions is shown in `Differentiation.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Differentiation.ipynb>`_.
+
 .. autosummary::
     :toctree: generated/
 
