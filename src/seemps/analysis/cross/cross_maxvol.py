@@ -155,7 +155,7 @@ def _update_maxvol(
     fiber = cross.sample_fiber(k)
     r_l, s, r_g = fiber.shape
     if forward:
-        C = fiber.reshape(r_l * s, r_g, order=order)
+        C = fiber.reshape(r_l * s, r_g, order=order)  # type: ignore
         Q, _ = scipy.linalg.qr(C, mode="economic", overwrite_a=True, check_finite=False)  # type: ignore
         I, _ = choose_maxvol(
             Q,  # type: ignore
@@ -168,7 +168,7 @@ def _update_maxvol(
             cross.I_l[k + 1] = combine_indices(cross.I_l[k], cross.I_s[k])[I]
     else:
         if k > 0:
-            R = fiber.reshape(r_l, s * r_g, order=order)
+            R = fiber.reshape(r_l, s * r_g, order=order)  # type: ignore
             Q, _ = scipy.linalg.qr(  # type: ignore
                 R.T, mode="economic", overwrite_a=True, check_finite=False
             )
@@ -179,7 +179,7 @@ def _update_maxvol(
                 cross_strategy.tol_maxvol_square,
                 cross_strategy.tol_maxvol_rect,
             )
-            cross.mps[k] = (G.T).reshape(-1, s, r_g, order=order)
+            cross.mps[k] = (G.T).reshape(-1, s, r_g, order=order)  # type: ignore
             cross.I_g[k - 1] = combine_indices(cross.I_s[k], cross.I_g[k])[I]
         else:
             cross.mps[0] = fiber
@@ -219,11 +219,11 @@ def maxvol_rectangular(
     if r_min < r or r_min > r_max or r_max > n:
         raise ValueError("Invalid minimum/maximum number of added rows")
     I0, B = maxvol_square(A, maxiter, tol)
-    I = np.hstack([I0, np.zeros(r_max - r, dtype=I0.dtype)])
+    I = np.hstack([I0, np.zeros(r_max - r, dtype=I0.dtype)])  # type: ignore
     S = np.ones(n, dtype=int)
     S[I0] = 0
     F = S * np.linalg.norm(B) ** 2
-    for k in range(r, r_max):
+    for k in range(r, int(r_max)):
         i = np.argmax(F)
         if k >= r_min and F[i] <= tol_rect**2:
             break

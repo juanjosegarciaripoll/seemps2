@@ -79,9 +79,15 @@ class IntegerInterval(Interval):
         size = (stop - start + step - 1) // step
         super().__init__(start, stop, size)
 
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[int, np.ndarray]:
+    @overload
+    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
+
+    @overload
+    def __getitem__(self, idx: int) -> float: ...
+
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
         super()._validate_index(idx)
-        return self.start + idx * self.step  # type: ignore
+        return self.start + idx * self.step
 
 
 class RegularInterval(Interval):

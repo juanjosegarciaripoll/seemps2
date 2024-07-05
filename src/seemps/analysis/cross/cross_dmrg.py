@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.linalg
+import scipy.linalg  # type: ignore
 from dataclasses import dataclass
 from typing import Optional, Callable
 
