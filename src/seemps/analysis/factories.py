@@ -1,24 +1,10 @@
 from __future__ import annotations
 import numpy as np
-from typing import TypeVar, Union
+from typing import TypeVar, Union, Optional
 from ..typing import Tensor3
-from ..state import (
-    MPS,
-    MPSSum,
-    Strategy,
-    Truncation,
-    Simplification,
-)
-from ..truncate import simplify, SIMPLIFICATION_STRATEGY
+from ..state import Strategy, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY
+from ..truncate import simplify
 from .mesh import Interval, RegularInterval, ChebyshevInterval
-
-COMPUTER_PRECISION = SIMPLIFICATION_STRATEGY.replace(
-    tolerance=float(np.finfo(np.double).eps),
-    simplification_tolerance=float(np.finfo(np.double).eps),
-    simplify=Simplification.DO_NOT_SIMPLIFY,
-    method=Truncation.RELATIVE_SINGULAR_VALUE,
-    normalize=False,
-)
 
 
 def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
@@ -55,7 +41,8 @@ def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
 
 def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MPS:
     """
-    Returns an MPS representing an exponential function discretized over an interval.
+    Returns an MPS representing an exponential function discretized over a
+    half-open interval [start, stop).
 
     Parameters
     ----------
@@ -65,7 +52,7 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    c : complex
+    c : complex, default=1
         The coefficient in the exponent of the exponential function.
 
     Returns
@@ -89,10 +76,14 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
 
 
 def mps_sin(
-    start: float, stop: float, sites: int, strategy: Strategy = COMPUTER_PRECISION
+    start: float,
+    stop: float,
+    sites: int,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPS:
     """
-    Returns an MPS representing a sine function discretized over an interval.
+    Returns an MPS representing a sine function discretized over a
+    half-open interval [start, stop).
 
     Parameters
     ----------
@@ -102,7 +93,7 @@ def mps_sin(
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    strategy : Strategy, default = DEFAULT_STRATEGY
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
@@ -117,10 +108,14 @@ def mps_sin(
 
 
 def mps_cos(
-    start: float, stop: float, sites: int, strategy: Strategy = COMPUTER_PRECISION
+    start: float,
+    stop: float,
+    sites: int,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPS:
     """
-    Returns an MPS representing a cosine function discretized over an interval.
+    Returns an MPS representing a cosine function discretized over a
+    half-open interval [start, stop).
 
     Parameters
     ----------
@@ -130,7 +125,7 @@ def mps_cos(
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    strategy : Strategy, default = DEFAULT_STRATEGY
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
@@ -155,7 +150,7 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
 
     Parameters
     ----------
-    mps : MPS
+    mps : Union[MPS, MPSSum]
         The MPS to be transformed.
     orig : tuple
         A tuple (x0, x1) representing the original interval.
@@ -164,8 +159,8 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
 
     Returns
     -------
-    MPS
-        The transformed MPS.
+    mps_affine : Union[MPS, MPSSum]
+        The MPS affinely transformed from (x0, x1) to (u0, u1).
     """
     x0, x1 = orig
     u0, u1 = dest
@@ -181,7 +176,7 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
     return mps_affine
 
 
-def mps_interval(interval: Interval, strategy: Strategy = COMPUTER_PRECISION):
+def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
     """
     Returns an MPS corresponding to a specific type of interval.
 
@@ -190,12 +185,12 @@ def mps_interval(interval: Interval, strategy: Strategy = COMPUTER_PRECISION):
     interval : Interval
         The interval object containing start and stop points and the interval type.
         Currently supports `RegularInterval` and `ChebyshevInterval`.
-    strategy : Strategy, default = DEFAULT_STRATEGY
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
     -------
-    mps : MPS
+    MPS
         An MPS representing the interval according to its type.
     """
     start = interval.start
@@ -221,7 +216,9 @@ def mps_interval(interval: Interval, strategy: Strategy = COMPUTER_PRECISION):
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
 
-def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Tensor3]]:
+def _map_mps_locations(
+    mps_list: list[MPS], mps_order: str
+) -> list[tuple[int, Tensor3]]:
     """Create a vector that lists which MPS and which tensor is
     associated to which position in the joint Hilbert space.
     """
@@ -246,12 +243,11 @@ def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Te
     return tensors  # type: ignore
 
 
-def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
+def _mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
     """
-    Extends each MPS of a given input list by appending identity tensors to it
-    according to the specified MPS order ('A' or 'B').
-    The resulting list of MPS can be given as terms to a tensorized operation between MPS,
-    such as a tensor product or tensor sum.
+    Extends each MPS of a given input list by appending identity tensors to it according
+    to the specified MPS order ('A' or 'B'). The resulting list of MPS can be given as terms
+    to a tensorized operation between MPS, such as a tensor product or tensor sum.
 
     Parameters
     ----------
@@ -278,15 +274,16 @@ def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
                 output[k] = np.eye(D).reshape(D, 1, D) * np.ones((1, site_dimension, 1))
         return MPS(output)
 
-    mps_map = map_mps_locations(mps_list, mps_order)
+    mps_map = _map_mps_locations(mps_list, mps_order)
     return [extend_mps(mps_id, mps_map) for mps_id, _ in enumerate(mps_list)]
 
 
 def mps_tensor_product(
     mps_list: list[MPS],
     mps_order: str = "A",
-    strategy: Strategy = COMPUTER_PRECISION,
-) -> MPS:
+    strategy: Optional[Strategy] = None,
+    simplify_steps: bool = False,
+) -> Union[MPS, CanonicalMPS]:
     """
     Returns the tensor product of a list of MPS, with the sites arranged
     according to the specified MPS order.
@@ -297,12 +294,15 @@ def mps_tensor_product(
         The list of MPS objects to multiply.
     mps_order : str
         The order in which to arrange the resulting MPS ('A' or 'B').
-    strategy : optional
-        The strategy to use when multiplying the MPS.
+    strategy : Strategy, optional
+        The strategy to use when multiplying the MPS. If None, the tensor product is not simplified.
+    simplify_steps : bool, default=False
+        Whether to simplify the intermediate steps with `strategy` (if provided)
+        or simplify at the end.
 
     Returns
     -------
-    MPS
+    result : MPS | CanonicalMPS
         The resulting MPS from the tensor product of the input list.
     """
     if mps_order == "A":
@@ -310,20 +310,27 @@ def mps_tensor_product(
         flattened_sites = [site for sites in nested_sites for site in sites]
         result = MPS(flattened_sites)
     elif mps_order == "B":
-        terms = mps_tensor_terms(mps_list, mps_order)
+        terms = _mps_tensor_terms(mps_list, mps_order)
         result = terms[0]
         for _, mps in enumerate(terms[1:]):
-            result = result * mps
+            result = (
+                simplify(result * mps, strategy=strategy)
+                if (strategy and simplify_steps)
+                else result * mps
+            )
     else:
         raise ValueError(f"Invalid mps order {mps_order}")
-    return simplify(result, strategy=strategy)
+    if strategy and not simplify_steps:
+        result = simplify(result, strategy=strategy)
+    return result
 
 
 def mps_tensor_sum(
     mps_list: list[MPS],
     mps_order: str = "A",
-    strategy: Strategy = COMPUTER_PRECISION,
-) -> MPS:
+    strategy: Optional[Strategy] = None,
+    simplify_steps: bool = False,
+) -> Union[MPS, CanonicalMPS]:
     """
     Returns the tensor sum of a list of MPS, with the sites arranged
     according to the specified MPS order.
@@ -332,26 +339,34 @@ def mps_tensor_sum(
     ----------
     mps_list : list[MPS]
         The list of MPS objects to sum.
-    mps_order : str
+    mps_order : str, default='A'
         The order in which to arrange the resulting MPS ('A' or 'B').
-    strategy : optional
-        The strategy to use when summing the MPS.
+    strategy : Strategy, optional
+        The strategy to use when summing the MPS. If None, the tensor sum is not simplified.
+    simplify_steps : bool, default=False
+        Whether to simplify the intermediate steps with `strategy` (if provided)
+        or simplify at the end.
 
     Returns
     -------
-    MPS
+    result : MPS | CanonicalMPS
         The resulting MPS from the tensor sum of the input list.
     """
     if mps_order == "A":
         result = _mps_tensor_sum_serial_order(mps_list)
     elif mps_order == "B":
-        result = MPSSum(
-            [1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)
-        ).join()
+        terms = _mps_tensor_terms(mps_list, mps_order)
+        result = terms[0]
+        for _, mps in enumerate(terms[1:]):
+            result = (
+                simplify(result + mps, strategy=strategy)
+                if (strategy and simplify_steps)
+                else (result + mps).join()
+            )
     else:
         raise ValueError(f"Invalid mps order {mps_order}")
-    if strategy.get_simplify_flag():
-        return simplify(result, strategy=strategy)
+    if strategy and not simplify_steps:
+        result = simplify(result, strategy=strategy)
     return result
 
 

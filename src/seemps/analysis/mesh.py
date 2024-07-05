@@ -8,13 +8,23 @@ import numpy as np
 
 
 class Interval(ABC):
-    """Interval Abstract Base Class.
+    """
+    Interval Abstract Base Class.
 
-    This abstracts an Interval object, which represents implicitly an interval
-    discretized along N points within two endpoints start and stop. Intervals
-    act like sequences of numbers denoting points along the interval. They
-    can be accessed as in `i[0]`, `i[1]`,... up to `i[size-1]` and they can
+    This class represents implicitly a univariate discretization along `size`
+    points within two endpoints `start` and `stop`. The elements of an `Interval`
+    can be indexed as in `i[0]`, `i[1]`,... up to `i[size-1]` and they can
     be converted to other sequences, as in `list(i)`, or iterated over.
+
+    Parameters
+    ----------
+    start : float
+        The initial point of the interval.
+    stop : float
+        The ending point of the interval.
+    size : int
+        The discretization size, i.e. number of points of the interval within
+        `start` and `stop`.
     """
 
     start: float
@@ -61,9 +71,24 @@ class Interval(ABC):
         return (self[i] for i in range(self.size))
 
 
+class IntegerInterval(Interval):
+    """Equispaced integer discretization between `start` and `stop` with given `step`."""
+
+    def __init__(self, start: int, stop: int, step: int = 1):
+        self.step = step
+        size = (stop - start + step - 1) // step
+        super().__init__(start, stop, size)
+
+    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[int, np.ndarray]:
+        super()._validate_index(idx)
+        return self.start + idx * self.step  # type: ignore
+
+
 class RegularInterval(Interval):
-    """Equispaced discretization between start and stop.
-    The left and right boundary conditions can be set open or closed.
+    """
+    Equispaced discretization between `start` and `stop` with `size` points.
+    The left and right boundary conditions can be set open or closed by
+    respectively setting the `endpoint_right` and `endpoint_left` flags.
     Defaults to a closed-left, open-right interval [start, stop).
     """
 
@@ -101,10 +126,13 @@ class RegularInterval(Interval):
 
 
 class ChebyshevInterval(Interval):
-    """Irregular discretization given by an affine map between the
-    nodes (zeros or extrema) of the N-th Chebyshev polynomial in [-1, 1] to (start, stop).
-    If `endpoints=True` returns the Chebyshev extrema defined in the closed interval [a, b].
-    Else, returns the Chebyshev zeros defined in the open interval (a, b)."""
+    """
+    Irregular discretization between `start` and `stop` given by the zeros or extrema
+    of a Chebyshev polynomial of order `size` or `size-1` respectively.
+    The nodes are affinely transformed from the canonical [-1, 1] interval to [start, stop].
+    If `endpoints` is set, returns the Chebyshev extrema, defined in the closed interval [a, b].
+    Else, returns the Chebyshev zeros defined in the open interval (start, stop).
+    """
 
     def __init__(self, start: float, stop: float, size: int, endpoints: bool = False):
         super().__init__(start, stop, size)
@@ -143,8 +171,6 @@ class Mesh:
         The supplied list of intervals.
     dimension : int
         Dimension of the space in which this mesh is embedded.
-    shape : tuple[int]
-        Shape of the equivalent tensor this Mesh can be converted to.
     dimensions : tuple[int]
         Tuple of the sizes of each interval
     """
@@ -200,19 +226,18 @@ class Mesh:
 
 
 def array_affine(
-    x: np.ndarray,
+    array: np.ndarray,
     orig: tuple,
     dest: tuple,
 ) -> np.ndarray:
     """
-    Performs an affine transformation of x as u = a*x + b from orig=(x0, x1) to dest=(u0, u1).
+    Performs an affine transformation of a given `array` as u = a*x + b from orig=(x0, x1) to dest=(u0, u1).
     """
-    # TODO: Maybe combine the affine transformations for vectors, MPS and MPO in a single function?
     x0, x1 = orig
     u0, u1 = dest
     a = (u1 - u0) / (x1 - x0)
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
-    x_affine = a * x
+    x_affine = a * array
     if abs(b) > np.finfo(np.float64).eps:
         x_affine = x_affine + b
     return x_affine
@@ -222,8 +247,17 @@ def mps_to_mesh_matrix(
     sites_per_dimension: list[int], mps_order: str = "A", base: int = 2
 ) -> np.ndarray:
     """
-    Returns a matrix that transforms an array of MPS indices
-    to an array of Mesh indices based on the specified order and base.
+    Returns a matrix that transforms an array of `MPS` indices
+    to an array of `Mesh` indices based on the specified order and base.
+
+    Parameters
+    ----------
+    sites_per_dimension : list[int]
+        The number of MPS sites allocated to each spatial dimension.
+    mps_order : str, default='A'
+        The order of the MPS sites, either serial ('A') or interleaved ('B').
+    base : int, default=2
+        The base or physical dimension of the MPS.
     """
     if mps_order == "A":
         T = np.zeros((sum(sites_per_dimension), len(sites_per_dimension)), dtype=int)

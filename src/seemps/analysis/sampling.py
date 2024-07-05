@@ -19,9 +19,10 @@ def evaluate_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        The array of evaluations corresponding to the provided indices."""
+        The array of evaluations corresponding to the provided indices.
+    """
     if mps_indices.ndim == 1:
-        mps_indices = mps_indices[np.newaxis, :]
+        mps_indices = mps_indices.reshape(1, -1)
     A = mps[0][:, mps_indices[:, 0], :]
     for idx, site in enumerate(mps[1:]):
         B = site[:, mps_indices[:, idx + 1], :]
@@ -31,7 +32,7 @@ def evaluate_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
 
 
 def random_mps_indices(
-    mps: MPS,
+    physical_dimensions: list[int],
     num_indices: int = 1000,
     allowed_indices: Optional[list[int]] = None,
     rng: np.random.Generator = np.random.default_rng(),
@@ -41,21 +42,24 @@ def random_mps_indices(
 
     Parameters
     ----------
-    mps : MPS
-        The matrix product state to sample from.
-    num_indices : int, default 1000
+    physical_dimensions : list[int]
+        The physical dimensions of the MPS.
+    num_indices : int, default=1000
         The number of random indices to generate.
+    allowed_indices : list[int], optional
+        An optional list with allowed values for the random indices.
     rng : np.random.Generator, default=`numpy.random.default_rng()`
         The random number generator to be used. If None, uses Numpy's
         default random number generator without any predefined seed.
-    allowed_indices : Optional[tuple], default=None
-        An optional tuple with allowed values for the random indices.
+
     Returns
     -------
-    indices : np.ndarray
-        An array of random MPS indices."""
+    np.ndarray
+        An array of random MPS indices.
+    """
+    # TODO: Implement quasi-random sampling to reduce sampling variance.
     mps_indices = []
-    for k in mps.physical_dimensions():
+    for k in physical_dimensions:
         indices = list(range(k))
         if allowed_indices is not None:
             indices = list(set(indices) & set(allowed_indices))
