@@ -3,7 +3,7 @@
 .. _analysis_spaces:
 
 *****************************************
-Uniform grids and affine transformations
+Uniform Grids and Affine Transformations
 *****************************************
 
 Numerical analysis problems are defined on a discretized space. Given a one-dimensional
@@ -50,3 +50,24 @@ The :class::`Space` creates an object to define the problem's coordinates for a 
 
     ~seemps.analysis.space.Space
     ~seemps.analysis.space.mpo_flip
+
+Implicit representations
+------------------------
+Alternatively, the multivariate spaces can be represented implicitly using the :class:`~seemps.analysis.mesh.Interval` and :class:`~seemps.analysis.mesh.Mesh` classes.
+
+Essentially, the :class:`~seemps.analysis.mesh.Interval` class represents an univariate discretization implicitly, and can be indexed similarly as an explicit array. Then, the :class:`~seemps.analysis.mesh.Mesh` class represents a multivariate space as a collection of :class:`~seemps.analysis.mesh.Interval` objects. These objects can be indexed using multidimensional indices similarly as explicit multivariate arrays, without explicitly containing them and avoiding an exponential memory overhead.
+
+Currently, there are three types of :class:`~seemps.analysis.mesh.Interval` implemented:
+
+- :class:`~seemps.analysis.mesh.RegularInterval`: An interval representing a regular discretization.
+- :class:`~seemps.analysis.mesh.ChebyshevInterval`: An interval representing an irregular discretization on the Chebyshev zeros or extrema.
+- :class:`~seemps.analysis.mesh.IntegerInterval`: An interval representing a regular discretization with integers.
+
+.. autosummary::
+    :toctree: generated/
+
+    ~seemps.analysis.mesh.Mesh
+    ~seemps.analysis.mesh.Interval
+    ~seemps.analysis.mesh.RegularInterval
+    ~seemps.analysis.mesh.ChebyshevInterval
+    ~seemps.analysis.mesh.IntegerInterval

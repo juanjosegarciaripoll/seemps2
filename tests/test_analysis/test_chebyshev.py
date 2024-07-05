@@ -2,11 +2,10 @@ import numpy as np
 from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
-from seemps.state import MPS, NO_TRUNCATION
+from seemps.state import MPS, NO_TRUNCATION, DEFAULT_STRATEGY
 from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.factories import mps_tensor_sum, mps_interval
 from seemps.analysis.chebyshev import (
-    DEFAULT_CHEBYSHEV_STRATEGY,
     interpolation_coefficients,
     projection_coefficients,
     cheb2mps,
@@ -227,7 +226,7 @@ class TestChebyshevMPS(TestCase):
             [mps_interval(interval_y), mps_interval(interval_x)]  # type: ignore
         )
         tol = 1e-10
-        strategy = DEFAULT_CHEBYSHEV_STRATEGY.replace(
+        strategy = DEFAULT_STRATEGY.replace(
             tolerance=tol**2, simplification_tolerance=tol**2
         )
         mps_cheb_clen = cheb2mps(

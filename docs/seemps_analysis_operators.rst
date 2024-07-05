@@ -2,9 +2,9 @@
 
 .. _analysis_operators:
 
-*********************
-Operators
-*********************
+**************************
+Predefined Operators (MPO)
+**************************
 
 The SeeMPS library provides a exact MPO representation of basic operators.
 

@@ -15,3 +15,6 @@ Index of algorithms
    runge_kutta
    crank_nicolson
    tebd_evolution
+   chebyshev
+   tt-cross
+   lagrange

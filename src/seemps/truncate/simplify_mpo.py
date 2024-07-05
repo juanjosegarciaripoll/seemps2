@@ -27,8 +27,6 @@ def mps_as_mpo(
     )
 
 
-# TODO: As opposed to MPS, the MPO class does not have an error attribute to keep track
-# of the simplification errors
 def simplify_mpo(
     operator: Union[MPO, MPOList, MPOSum],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
@@ -36,26 +34,27 @@ def simplify_mpo(
     guess: Optional[MPS] = None,
     mpo_strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
-    """Simplify an MPO transforming it into another one with a smaller bond
+    """Simplify an MPO state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
 
     Parameters
     ----------
     operator : Union[MPO, MPOList, MPOSum]
-        Operator to approximate.
-    strategy : Strategy
-        Truncation strategy. Defaults to `SIMPLIFICATION_STRATEGY`.
-    direction : { +1, -1 }
-        Initial direction for the sweeping algorithm. Defaults to +1.
-    guess : MPS
-        A guess for the new state, to ease the optimization. Defaults to None.
-    mpo_strategy : Strategy
-        Strategy of the resulting MPO. Defaults to `DEFAULT_STRATEGY`.
+        MPO to simplify. If given as `MPOList` or `MPOSum`, it is joined to `MPO`
+        before the simplification.
+    strategy : Strategy, default=SIMPLIFICATION_STRATEGY
+        Truncation strategy to use in the simplification routine.
+    direction : int, default=1
+        Initial direction for the sweeping algorithm.
+    guess : MPS, optional
+        Guess for the new state, to ease the optimization.
+    mpo_strategy : Strategy, default=DEFAULT_STRATEGY
+        Strategy of the resulting MPO.
 
     Returns
     -------
     MPO
-    Approximation O to the operator.
+        Approximation O to the operator.
     """
     if isinstance(operator, MPOList) or isinstance(operator, MPOSum):
         operator = operator.join()
