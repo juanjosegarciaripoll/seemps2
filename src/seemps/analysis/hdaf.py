@@ -108,14 +108,21 @@ def hdaf_kernel(
 def hdaf_mpo(
     num_qubits: int,
     dx: float,
-    s0: float,
     M: int,
+    s0: Optional[float] = None,
     time: float = 0.0,
     derivative: int = 0,
     periodic: bool = True,
-    tol: float = 1e-16,
+    tol: Optional[float] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
+
+    # Optional arguments
+    if s0 is None:
+        s0 = auto_sigma(M=M, dx=dx, time=time)
+
+    if tol is None:
+        tol = strategy.get_simplification_tolerance()  # TODO is this correct?
 
     # Make kernel vector
     num_elems = math.ceil(
