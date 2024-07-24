@@ -119,7 +119,7 @@ def hdaf_mpo(
     Constructs a Matrix Product Operator (MPO) of Hermite Distributed
     Approximating Functionals (HDAFs). The operator may approximate the
     identity, a derivative or the free propagator, depending on the values
-    of the `time` and `derivative` parameters.
+    of the `derivative` and `time` parameters.
 
     Parameters
     ----------
@@ -144,7 +144,8 @@ def hdaf_mpo(
 
     Returns
     -------
-        An MPO approximating the operator specified by the input parameters.
+    mpo: MPO
+        The HDAF approximation to an operator specified by the input parameters.
     """
 
     # Compute width if not provided
