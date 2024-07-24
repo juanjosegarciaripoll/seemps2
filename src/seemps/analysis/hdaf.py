@@ -115,6 +115,37 @@ def hdaf_mpo(
     periodic: bool = True,
     strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
+    """
+    Constructs a Matrix Product Operator (MPO) of Hermite Distributed
+    Approximating Functionals (HDAFs). The operator may approximate the
+    identity, a derivative or the free propagator, depending on the values
+    of the `time` and `derivative` parameters.
+
+    Parameters
+    ----------
+    num_qubits : int
+        The number of qubits to discretize the system.
+    dx : float
+        The grid stepsize.
+    M : int
+        The order of the highest Hermite polynomial (must be an even integer).
+    s0 : Optional[float], default=None
+        The width of the HDAF Gaussian weight. If not provided, a suitable
+        width will be computed based on `M` and `dx`.
+    time : float, default=0.0
+        The evolution time of the Free Propagator to approximate.
+    derivative : int, default=0
+        The order of the derivative to approximate.
+    periodic : bool, default=True
+        Whether the grid follows perioidic boundary conditions.
+    strategy : Strategy, default=DEFAULT_STRATEGY
+        The strategy for the returned MPO. Values of the HDAF below the
+        simplification tolerance of the strategy will be discarded.
+
+    Returns
+    -------
+        An MPO approximating the operator specified by the input parameters.
+    """
 
     # Compute width if not provided
     if s0 is None:
