@@ -116,7 +116,7 @@ def hdaf_mpo(
     strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
 
-    # Optional arguments
+    # Compute width if not provided
     if s0 is None:
         s0 = auto_sigma(M=M, dx=dx, time=time)
 
@@ -135,7 +135,6 @@ def hdaf_mpo(
     # Diagonals and values
     shifts_pos = np.where(np.abs(hdaf_vec_pos) > tol)[0]
     shifts_neg = np.where(np.abs(hdaf_vec_neg) > tol)[0]
-    # shifts_neg = shifts_pos[:0:-1] # TODO Check
 
     shifts = np.r_[shifts_neg - len(hdaf_vec_neg), shifts_pos]
     weights = np.r_[hdaf_vec_neg[shifts_neg], hdaf_vec_pos[shifts_pos]]
