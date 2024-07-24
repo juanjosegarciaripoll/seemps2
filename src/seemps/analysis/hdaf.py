@@ -113,7 +113,6 @@ def hdaf_mpo(
     time: float = 0.0,
     derivative: int = 0,
     periodic: bool = True,
-    tol: Optional[float] = None,
     strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
 
@@ -121,8 +120,8 @@ def hdaf_mpo(
     if s0 is None:
         s0 = auto_sigma(M=M, dx=dx, time=time)
 
-    if tol is None:
-        tol = strategy.get_simplification_tolerance()  # TODO is this correct?
+    # Threshold of values to discard
+    tol = strategy.get_simplification_tolerance()
 
     # Make kernel vector
     num_elems = math.ceil(
