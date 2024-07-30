@@ -47,9 +47,25 @@ An example on how to use these functions is shown in `Differentiation.ipynb <htt
 
     ~seemps.analysis.finite_differences.smooth_finite_differences_mpo
 
-Hermite Distributed Approximate Functionals (HDAF)
-==================================================
+Hermite Distributed Approximating Functionals (HDAFs)
+=====================================================
 
+HDAFs allow to approximate operators that are functions of derivatives. In particular, for a derivative of order :math:`k`,
+
+.. math::
+   |\partial_x^k f\rangle \approx  \left[\Delta x \delta_{M}^{(k)}(0; \sigma) \mathbb{I} + \sum_{i=1}^{W} \Delta x \delta_{M}^{(k)}(i\Delta x; \sigma) \left(\hat{\Sigma}^{+i} + (-1)^{k}\hat{\Sigma}^{-i}\right)\right] |f\rangle,
+
+where :math:`W` is a suitable index where the summand vanishes,
+
+.. math::
+   \delta_{M}^{(k)}(x; \sigma) = \left(\frac{-1}{\sqrt{2}\sigma}\right)^{k} \frac{\exp\left(\frac{-x^{2}}{2\sigma^{2}}\right)}{\sqrt{2\pi}\sigma} \sum_{m=0}^{M/2}\left(-\frac{1}{4}\right)^{m} \frac{H_{2m + k}\left(\frac{x}{\sqrt{2}\sigma}\right)}{m!},
+
+and :math:`H_n(x)` is the :math:`n`-th Hermite polynomial on :math:`x`.
+
+.. autosummary::
+   :toctree: generated/
+
+   ~analysis.hdaf.hdaf_mpo
 
 
 Fourier approximation
