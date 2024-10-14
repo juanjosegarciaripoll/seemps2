@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Union, Optional
+from typing import Union, Optional, cast
 from ..typing import Vector, Operator
 from ..mpo import MPOList, MPO
 
@@ -49,6 +49,7 @@ def qubo_mpo(
     else:
         if h is not None:
             J = J + np.diag(h)
+        J = cast(Operator, J) # Type hint for mypy
         L = len(J)
         id2 = np.eye(2)
         data = []
@@ -114,7 +115,8 @@ def qubo_exponential_mpo(
     else:
         if h is not None:
             J = J + np.diag(h)
-        J = (J + J.T) / 2
+        J = (J + J.T) / 2       # type: ignore[union-attr]
+        J = cast(Operator, J)   # Type hint for mypy
         L = len(J)
         noop = np.eye(2).reshape(1, 2, 2, 1)
         out = []
