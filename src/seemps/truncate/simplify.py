@@ -192,6 +192,7 @@ def simplify_mps_sum(
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
+            logger.close()
         return mps
 
     # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
@@ -205,6 +206,7 @@ def simplify_mps_sum(
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
+            logger.close()
         return mps
 
     # Prepare initial guess
