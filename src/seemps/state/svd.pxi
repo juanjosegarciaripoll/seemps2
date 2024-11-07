@@ -20,8 +20,20 @@ def _svd(cnp.ndarray A) -> tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray]:
         raise ValueError("Invalid argument to SVD")
     return __svd(A)
 
+cdef bint __use_gesdd = 1
+
+def _select_driver(name: str):
+    global __use_gesdd
+    if name == "gesvd":
+        __use_gesdd = 0
+    elif name == "gesdd":
+        __use_gesdd = 1
+    else:
+        raise Exception(f"Invalid LAPACK SVD driver name: {name}")
+
 # TODO: Allow selecting other drivers
 cdef tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray] __svd(cnp.ndarray A):
+    global __use_gesdd
     cdef:
         int m = cnp.PyArray_DIM(A, 1)
         int n = cnp.PyArray_DIM(A, 0)
@@ -38,15 +50,27 @@ cdef tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray] __svd(cnp.ndarray A):
         U = _empty_matrix(r, m, type)
         VT = A
     if type == cnp.NPY_DOUBLE:
-        err = __dgesvd(<double*>cnp.PyArray_DATA(A),
-                       <double*>cnp.PyArray_DATA(U),
-                       <double*>cnp.PyArray_DATA(s),
-                       <double*>cnp.PyArray_DATA(VT), m, n, r)
+        if __use_gesdd:
+            err = __dgesdd(<double*>cnp.PyArray_DATA(A),
+                           <double*>cnp.PyArray_DATA(U),
+                           <double*>cnp.PyArray_DATA(s),
+                           <double*>cnp.PyArray_DATA(VT), m, n, r)
+        else:
+            err = __dgesvd(<double*>cnp.PyArray_DATA(A),
+                           <double*>cnp.PyArray_DATA(U),
+                           <double*>cnp.PyArray_DATA(s),
+                           <double*>cnp.PyArray_DATA(VT), m, n, r)
     elif type == cnp.NPY_COMPLEX128:
-        err = __zgesvd(<double complex*>cnp.PyArray_DATA(A),
-                       <double complex*>cnp.PyArray_DATA(U),
-                       <double*>cnp.PyArray_DATA(s),
-                       <double complex*>cnp.PyArray_DATA(VT), m, n, r)
+        if __use_gesdd:
+            err = __zgesdd(<double complex*>cnp.PyArray_DATA(A),
+                           <double complex*>cnp.PyArray_DATA(U),
+                           <double*>cnp.PyArray_DATA(s),
+                           <double complex*>cnp.PyArray_DATA(VT), m, n, r)
+        else:
+            err = __zgesvd(<double complex*>cnp.PyArray_DATA(A),
+                           <double complex*>cnp.PyArray_DATA(U),
+                           <double*>cnp.PyArray_DATA(s),
+                           <double complex*>cnp.PyArray_DATA(VT), m, n, r)
     elif type == cnp.NPY_COMPLEX64:
         return __svd(<cnp.ndarray>cnp.PyArray_Cast(A, cnp.NPY_COMPLEX128))
     else:
@@ -87,6 +111,13 @@ cdef int __dgesvd(double *A, double *U, double *s, double *VT,
            <double*>cnp.PyArray_DATA(work), &lwork, &info)
     return info
 
+"""
+void BLAS_FUNC(zgesvd)(
+     char *jobu, char *jobvt,
+     int *m, int *n, npy_complex128 *a, int *lda,
+     double *s, npy_complex128 *u, int *ldu, npy_complex128 *vt, int *ldvt,
+     npy_complex128 *work, int *lwork, double *rwork, int *info);
+"""
 
 cdef int __zgesvd(double complex*A, double complex*U, double *s, double complex*VT,
                   int m, int n, int r) noexcept:
@@ -110,5 +141,76 @@ cdef int __zgesvd(double complex*A, double complex*U, double *s, double complex*
            &m, &n, A, &m, s, U, &m, VT, &r,
            <double complex*>cnp.PyArray_DATA(work), &lwork,
            <double*>cnp.PyArray_DATA(rwork),
+           &info)
+    return info
+
+"""
+void BLAS_FUNC(dgesdd)(
+    char *jobz, int *m, int *n, double *a, int *lda,
+    double *s, double *u, int *ldu, double *vt, int *ldvt,
+    double *work, int *lwork, int *iwork, int *info);
+"""
+
+cdef int __dgesdd(double *A, double *U, double *s, double *VT,
+                  int m, int n, int r) noexcept:
+    cdef:
+        int lwork, info
+        char *jobz = 'O'
+        double work_temp
+        cnp.ndarray iwork = _empty_vector(8 * r, cnp.NPY_INT)
+    lwork = -1
+    dgesdd(jobz,
+           &m, &n, A, &m, s, U, &m, VT, &r,
+           &work_temp, &lwork,
+           <int*>cnp.PyArray_DATA(iwork), &info)
+    if info != 0:
+        return info
+    lwork = int(work_temp)
+    cdef:
+        cnp.ndarray work = _empty_vector(lwork, cnp.NPY_DOUBLE)
+    dgesdd(jobz,
+           &m, &n, A, &m, s, U, &m, VT, &r,
+           <double*>cnp.PyArray_DATA(work), &lwork,
+           <int*>cnp.PyArray_DATA(iwork), &info)
+    return info
+
+"""
+void BLAS_FUNC(zgesdd)(
+  char *jobz, int *m, int *n,
+  npy_complex128 *a, int *lda,
+  double *s, npy_complex128 *u, int *ldu,
+  npy_complex128 *vt, int *ldvt,
+  npy_complex128 *work, int *lwork, double *rwork, int *iwork, int *info);
+"""
+
+cdef int __zgesdd(double complex*A, double complex*U, double *s, double complex*VT,
+                  int m, int n, int r) noexcept:
+    cdef:
+        int lwork, info
+        char *jobz
+        double complex work_temp
+        int lrwork = r * max(5*r+7, 2*max(m,n)+2*r+1)
+        cnp.ndarray rwork = _empty_vector(lrwork, cnp.NPY_DOUBLE)
+        cnp.ndarray iwork = _empty_vector(8 * r, cnp.NPY_INT)
+    lwork = -1
+    if A == U or A == VT:
+        jobz = 'O'
+    else:
+        jobz = 'S'
+    zgesdd(jobz,
+           &m, &n, A, &m, s, U, &m, VT, &r,
+           &work_temp, &lwork, <double*>cnp.PyArray_DATA(rwork),
+           <int*>cnp.PyArray_DATA(iwork),
+           &info)
+    if info != 0:
+        return info
+    lwork = int(work_temp.real)
+    cdef:
+        cnp.ndarray work = _empty_vector(lwork, cnp.NPY_COMPLEX128)
+    zgesdd(jobz,
+           &m, &n, A, &m, s, U, &m, VT, &r,
+           <double complex*>cnp.PyArray_DATA(work), &lwork,
+           <double*>cnp.PyArray_DATA(rwork),
+           <int*>cnp.PyArray_DATA(iwork),
            &info)
     return info
