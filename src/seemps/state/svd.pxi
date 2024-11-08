@@ -22,7 +22,7 @@ def _svd(cnp.ndarray A) -> tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray]:
 
 cdef bint __use_gesdd = 1
 
-def _select_driver(name: str):
+def _select_lapack_driver(name: str):
     global __use_gesdd
     if name == "gesvd":
         __use_gesdd = 0

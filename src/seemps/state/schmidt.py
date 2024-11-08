@@ -6,7 +6,7 @@ from typing import Sequence
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
 from .core import Strategy, DEFAULT_STRATEGY
-from scipy.linalg import svd  # type: ignore
+from scipy.linalg import svd as _scipy_svd  # type: ignore
 from seemps.state.core import _svd as _destructive_svd  # noqa: F401
 from seemps.state.core import _left_orth_2site, _right_orth_2site
 
@@ -20,7 +20,7 @@ SVD_LAPACK_DRIVER = "gesvd"
 
 def _schmidt_weights(A: Tensor3) -> Vector:
     d1, d2, d3 = A.shape
-    s = svd(
+    s = _scipy_svd(
         A.reshape(d1 * d2, d3),
         full_matrices=False,
         compute_uv=False,
@@ -75,3 +75,6 @@ def _vector2mps(
         err /= N
     output[center] = ψ
     return output, err * err
+
+
+__all__ = ["_destructive_svd", "_schmidt_weights", "_vector2mps"]
