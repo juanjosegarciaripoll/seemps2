@@ -31,7 +31,8 @@ cdef (int, double) __update_in_canonical_form_right(
         # Truncate and store in state
         double err = truncation._truncate(s, truncation)
         Py_ssize_t D = PyArray_SIZE(s)
-    state[site] = _as_3tensor(_resize_matrix(U, -1, D), a, i, D)
+    #state[site] = _as_3tensor(_resize_matrix(U, -1, D), a, i, D)
+    PyList_SetItem(state, site, _as_3tensor(_resize_matrix(U, -1, D), a, i, D))
     site += 1
     # np.einsum("ab,bic->aic", sV, state[site])
     state[site] = __contract_last_and_first(
