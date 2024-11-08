@@ -13,7 +13,7 @@ from .cross import (
 )
 from ..sampling import random_mps_indices
 from ...state import Strategy, DEFAULT_TOLERANCE
-from ...state.schmidt import svd
+from scipy.linalg import svd
 from ...state.core import destructively_truncate_vector
 from ...truncate import SIMPLIFICATION_STRATEGY
 from ...tools import make_logger
@@ -149,9 +149,13 @@ def _update_dmrg(
     if forward:
         if k < cross.sites - 2:
             C = U.reshape(r_l * s1, r)
-            Q, _ = scipy.linalg.qr(C, mode="economic", overwrite_a=True, check_finite=False)  # type: ignore
+            Q, _ = scipy.linalg.qr(
+                C, mode="economic", overwrite_a=True, check_finite=False
+            )  # type: ignore
             I, G = maxvol_square(
-                Q, cross_strategy.maxiter_maxvol_square, cross_strategy.tol_maxvol_square  # type: ignore
+                Q,
+                cross_strategy.maxiter_maxvol_square,
+                cross_strategy.tol_maxvol_square,  # type: ignore
             )
             cross.I_l[k + 1] = cross.combine_indices(cross.I_l[k], cross.I_s[k])[I]
             cross.mps[k] = G.reshape(r_l, s1, r)
@@ -165,7 +169,9 @@ def _update_dmrg(
                 R.T, mode="economic", overwrite_a=True, check_finite=False
             )
             I, G = maxvol_square(
-                Q, cross_strategy.maxiter_maxvol_square, cross_strategy.tol_maxvol_square  # type: ignore
+                Q,
+                cross_strategy.maxiter_maxvol_square,
+                cross_strategy.tol_maxvol_square,  # type: ignore
             )
             cross.I_g[k] = cross.combine_indices(cross.I_s[k + 1], cross.I_g[k + 1])[I]
             cross.mps[k + 1] = (G.T).reshape(r, s2, r_g)
