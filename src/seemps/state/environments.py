@@ -1,28 +1,14 @@
 from __future__ import annotations
 import numpy as np
-from ..typing import Weight, Tensor3, Tensor4, Environment, MPOEnvironment
+from ..typing import Weight, Tensor3, Tensor4, MPOEnvironment
 from seemps.state.core import (
-    begin_environment,
-    update_left_environment,
-    update_right_environment,
-    end_environment,
-    join_environments,
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+    _end_environment,
+    _join_environments,
     scprod,
 )
-
-__all__ = [
-    "Environment",
-    "begin_environment",
-    "end_environment",
-    "join_environments",
-    "update_left_environment",
-    "update_right_environment",
-    "scprod",
-    "end_mpo_environment",
-    "join_mpo_environments",
-    "update_left_mpo_environment",
-    "update_right_mpo_environment",
-]
 
 
 def begin_mpo_environment() -> MPOEnvironment:
@@ -62,3 +48,18 @@ def end_mpo_environment(ρ: MPOEnvironment) -> Weight:
 
 def join_mpo_environments(left: MPOEnvironment, right: MPOEnvironment) -> Weight:
     return np.dot(left.reshape(-1), right.reshape(-1))
+
+
+__all__ = [
+    "_begin_environment",
+    "_update_left_environment",
+    "_update_right_environment",
+    "_end_environment",
+    "_join_environments",
+    "scprod",
+    "begin_mpo_environment",
+    "update_left_mpo_environment",
+    "update_right_mpo_environment",
+    "end_mpo_environment",
+    "join_mpo_environments",
+]

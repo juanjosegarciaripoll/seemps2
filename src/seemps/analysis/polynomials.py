@@ -5,7 +5,7 @@ import scipy.special  # type: ignore
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .factories import mps_interval
-from .mesh import Interval, RegularHalfOpenInterval, RegularClosedInterval
+from .mesh import Interval, RegularInterval
 
 
 def _mps_x_tensor(
@@ -35,10 +35,10 @@ def _mps_x_tensor(
     xL : MPS
         MPS representation of the monomials collection.
     """
-    if not isinstance(domain, (RegularHalfOpenInterval, RegularClosedInterval)):
+    if not isinstance(domain, RegularInterval):
         raise ValueError("Unable to construct polyomial for non-regular intervals")
     L = degree + 1
-    x_mps: MPS = mps_interval(domain)
+    x_mps: MPS = mps_interval(domain)  # type:ignore
     N = len(x_mps)
     for n in range(N):
         # This is the operator with the information about
@@ -47,7 +47,7 @@ def _mps_x_tensor(
         On = On[0, :, min(1, On.shape[2] - 1)]
         ndx = np.where(On != 0)
         On_sign = np.sign(On[ndx])
-        On_abs = np.abs(On[ndx])
+        On_abs = abs(On[ndx])
         d = len(On)
         An = np.zeros((L, d, L))
         for m in range(L):
@@ -103,10 +103,11 @@ def mps_from_polynomial(
     if not isinstance(p, Polynomial):
         p = Polynomial(p)
     xm_mps = _mps_x_tensor(p.degree(), domain, first)
+    coef: np.ndarray = np.asarray(p.coef)
     if first:
-        xm_mps[0] = np.einsum("a,aib->ib", p.coef, xm_mps[0])[np.newaxis, :, :]
+        xm_mps[0] = np.einsum("a,aib->ib", coef, xm_mps[0])[np.newaxis, :, :]
     else:
-        xm_mps[-1] = np.einsum("aib,b->ai", xm_mps[-1], p.coef)[:, :, np.newaxis]
+        xm_mps[-1] = np.einsum("aib,b->ai", xm_mps[-1], coef)[:, :, np.newaxis]
     if strategy.get_simplify_flag():
         return simplify(xm_mps, strategy=strategy)
     return xm_mps

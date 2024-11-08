@@ -3,7 +3,7 @@ from typing import Callable, Optional, Union
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
 from opt_einsum import contract  # type: ignore
-from .. import tools
+from ..tools import make_logger
 from ..typing import Tensor4, Vector
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, random_mps
 from ..state._contractions import _contract_last_and_first
@@ -157,7 +157,8 @@ def dmrg(
     if tol_eigs is None:
         tol_eigs = tol
 
-    tools.log(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
+    logger = make_logger()
+    logger(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
     if guess.center == 0:
@@ -176,10 +177,10 @@ def dmrg(
         trajectory=[energy],
         variances=[variance],
     )
-    tools.log(f"start, energy={energy}, variance={variance}")
+    logger(f"start, energy={energy}, variance={variance}")
     if callback is not None:
         callback(QF.state, results)
-    E: float = np.Inf
+    E: float = np.inf
     last_E: float = E
     strategy = strategy.replace(normalize=True)
     for step in range(maxiter):
@@ -187,12 +188,12 @@ def dmrg(
             for i in range(0, H.size - 1):
                 E, AB = QF.diagonalize(i, tol=tol_eigs)
                 QF.update_2site_right(AB, i, strategy)
-                tools.log(f"-> site={i}, eigenvalue={E}")
+                logger(f"-> site={i}, eigenvalue={E}")
         else:
             for i in range(H.size - 2, -1, -1):
                 E, AB = QF.diagonalize(i, tol=tol_eigs)
                 QF.update_2site_left(AB, i, strategy)
-                tools.log(f"<- site={i}, eigenvalue={E}")
+                logger(f"<- site={i}, eigenvalue={E}")
 
         # In principle, E is the exact eigenvalue. However, we have
         # truncated the eigenvector, which means that the computation of
@@ -203,7 +204,7 @@ def dmrg(
 
         results.trajectory.append(E)
         results.variances.append(variance)
-        tools.log(f"step={step}, eigenvalue={E}, energy={energy}, variance={variance}")
+        logger(f"step={step}, eigenvalue={E}, energy={energy}, variance={variance}")
         if E < results.energy:
             results.energy, results.state = E, QF.state.copy()
         if callback is not None:
@@ -220,8 +221,9 @@ def dmrg(
             break
         direction = -direction
         last_E = E
-    tools.log(
+    logger(
         f"DMRG finished with {step} iterations:\n"
         f"message = {results.message}\nconverged = {results.converged}"
     )
+    logger.close()
     return results

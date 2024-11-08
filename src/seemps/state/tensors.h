@@ -35,11 +35,22 @@ extern void (*zgesvd_ptr)(char *jobu, char *jobvt, int *m, int *n,
                           std::complex<double> *work, int *lwork, double *rwork,
                           int *info);
 
+extern void (*dgesdd_ptr)(char *jobz, int *m, int *n, double *a, int *lda,
+                          double *s, double *u, int *ldu, double *vt, int *ldvt,
+                          double *work, int *lwork, int *iwork, int *info);
+extern void (*zgesdd_ptr)(char *jobz, int *m, int *n, std::complex<double> *a,
+                          int *lda, double *s, std::complex<double> *u,
+                          int *ldu, std::complex<double> *vt, int *ldvt,
+                          std::complex<double> *work, int *lwork, double *rwork,
+                          int *iwork, int *info);
+
 enum Gemm { GEMM_NORMAL = 0, GEMM_TRANSPOSE = 1, GEMM_ADJOINT = 2 };
 
 py::object gemm(py::object A, Gemm AT, py::object B, Gemm BT);
 
 std::tuple<py::object, py::object, py::object> destructive_svd(py::object A);
+
+void _select_svd_driver(std::string which);
 
 void load_scipy_wrappers();
 

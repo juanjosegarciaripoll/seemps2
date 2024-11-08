@@ -25,9 +25,9 @@ class TestMPO(TestCase):
         A = MPO([np.zeros((1, 2, 2, 1))] * 10, Strategy())
         B = A.copy()
         self.assertTrue(A._data is not B._data)
-        self.assertTrue(contain_same_objects(A._data, B._data))
+        self.assertTrue(contain_same_objects(A, B))
         self.assertTrue(A.strategy is B.strategy)
-        A[::] = np.ones((1, 2, 2, 1))
+        A[::] = [np.ones((1, 2, 2, 1))] * 10
         self.assertTrue(contain_different_objects(A, B))
 
     def test_mpo_multiplies_by_number(self):

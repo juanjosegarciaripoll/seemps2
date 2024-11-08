@@ -1,5 +1,6 @@
 from seemps.tools import *
 from .tools import *
+import os
 
 
 class TestTools(TestCase):
@@ -14,3 +15,9 @@ class TestTools(TestCase):
             σ = random_Pauli()
             self.assertTrue(almostIdentity(σ @ σ))
             self.assertTrue(np.sum(np.abs(σ.T.conj() - σ)) == 0)
+
+
+if "DEBUGSEEMPS" in os.environ:
+    from seemps import tools
+
+    tools.DEBUG = int(os.environ["DEBUGSEEMPS"])

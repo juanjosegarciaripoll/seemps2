@@ -8,15 +8,14 @@ from ..typing import VectorLike, Tensor3
 from .core import (
     Strategy,
     DEFAULT_STRATEGY,
-    schmidt_weights,
-    left_orth_2site,
-    right_orth_2site,
+    _destructive_svd,
+    _schmidt_weights,
+    _left_orth_2site,
+    _right_orth_2site,
 )
 
-__all__ = ["schmidt_weights", "vector2mps"]
 
-
-def vector2mps(
+def _vector2mps(
     state: VectorLike,
     dimensions: Sequence[int],
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -41,15 +40,15 @@ def vector2mps(
     if center < 0:
         center = L + center
     if center < 0 or center >= L:
-        raise Exception("Invalid value of center in vector2mps")
+        raise Exception("Invalid value of center in _vector2mps")
     err = 0.0
     for i in range(center):
-        output[i], ψ, new_err = left_orth_2site(
+        output[i], ψ, new_err = _left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
         )
         err += sqrt(new_err)
     for i in range(L - 1, center, -1):
-        ψ, output[i], new_err = right_orth_2site(
+        ψ, output[i], new_err = _right_orth_2site(
             ψ.reshape(ψ.shape[0], -1, dimensions[i], ψ.shape[-1]), strategy
         )
         err += sqrt(new_err)
@@ -59,3 +58,6 @@ def vector2mps(
         err /= N
     output[center] = ψ
     return output, err * err
+
+
+__all__ = ["_destructive_svd", "_schmidt_weights", "_vector2mps"]

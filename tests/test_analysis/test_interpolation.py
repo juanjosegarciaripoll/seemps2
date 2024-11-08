@@ -1,7 +1,8 @@
 import numpy as np
+
 from seemps.analysis.interpolation import *
 from seemps.analysis.space import Space
-from seemps.state import MPS, DEFAULT_STRATEGY
+from seemps.state import DEFAULT_STRATEGY, MPS
 
 from ..tools import *
 from .tools_interpolation import *
@@ -28,6 +29,8 @@ class TestInterpolation(TestCase):
             sol_int_mps, _ = fourier_interpolation_1D(
                 sol_N_mps, space, n, m, dim=0, strategy=self.strategy
             )
+            sol_int_mps = sol_int_mps.to_vector()
+            sol_int_mps /= np.linalg.norm(sol_int_mps)
             self.assertSimilar(sol_int, sol_int_mps)
 
     def test_fourier_interpolation(self):
@@ -53,6 +56,8 @@ class TestInterpolation(TestCase):
                 qubits_per_dimension_M,
                 strategy=self.strategy,
             )
+            sol_int_mps = sol_int_mps.to_vector()
+            sol_int_mps /= np.linalg.norm(sol_int_mps)
             self.assertSimilar(sol_int.flatten(), sol_int_mps)
 
     def test_finite_differences_interpolation_1D(self):

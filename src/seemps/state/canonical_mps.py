@@ -1,14 +1,25 @@
 from __future__ import annotations
 import warnings
+from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
-from . import environments, schmidt
-from seemps.state.core import (
+from .schmidt import (
+    _vector2mps,
+    _schmidt_weights,
+    _left_orth_2site,
+    _right_orth_2site,
+)
+from .environments import (
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+)
+from .core import (
     DEFAULT_STRATEGY,
     Strategy,
-    _update_canonical_right,
-    _update_canonical_left,
+    _update_in_canonical_form_right,
+    _update_in_canonical_form_left,
     _update_canonical_2site_left,
     _update_canonical_2site_right,
     _canonicalize,
@@ -69,9 +80,7 @@ class CanonicalMPS(MPS):
                 0 if center is None else center
             )
             if not is_canonical:
-                self.update_error(
-                    _canonicalize(self._data, actual_center, self.strategy)
-                )
+                self._error += _canonicalize(self._data, actual_center, self.strategy)
         if normalize is True or (
             normalize is None and self.strategy.get_normalize_flag()
         ):
@@ -115,7 +124,7 @@ class CanonicalMPS(MPS):
         --------
         :py:meth:`~seemps.state.MPS.from_vector`
         """
-        data, error = schmidt.vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
         return CanonicalMPS(
             data,
             error=error,
@@ -140,17 +149,17 @@ class CanonicalMPS(MPS):
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
         start = min(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[0])
+        ρ = _begin_environment(self[start].shape[0])
         for A in self._data[start:site]:
-            ρ = environments.update_left_environment(A, A, ρ)
+            ρ = _update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.right_environment`"""
         start = max(site, self.center)
-        ρ = environments.begin_environment(self[start].shape[-1])
+        ρ = _begin_environment(self[start].shape[-1])
         for A in self._data[start:site:-1]:
-            ρ = environments.update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
         return ρ
 
     def Schmidt_weights(self, site: Optional[int] = None) -> Vector:
@@ -175,7 +184,7 @@ class CanonicalMPS(MPS):
             return self.copy().recenter(site).Schmidt_weights()
         # TODO: this is for [0, self.center] (self.center, self.size)
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
-        return schmidt.schmidt_weights(self._data[site])
+        return _schmidt_weights(self._data[site])
 
     def entanglement_entropy(self, site: Optional[int] = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
@@ -244,15 +253,15 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, err = _update_canonical_right(
+            self.center, error_squared = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, err = _update_canonical_left(
+            self.center, error_squared = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
-        self.update_error(err)
-        return err
+        self._error += sqrt(error_squared)
+        return error_squared
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -272,9 +281,9 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        err = _update_canonical_2site_left(self._data, AA, site, strategy)
+        error_squared = _update_canonical_2site_left(self._data, AA, site, strategy)
         self.center = site + 1
-        self.update_error(err)
+        self._error += sqrt(error_squared)
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
         """Split a two-site tensor into two one-site tensors by
@@ -293,9 +302,9 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        err = _update_canonical_2site_right(self._data, AA, site, strategy)
+        error_squared = _update_canonical_2site_right(self._data, AA, site, strategy)
         self.center = site
-        self.update_error(err)
+        self._error += sqrt(error_squared)
 
     def _interpret_center(self, center: int) -> int:
         """Converts `center` into an integer in `[0,self.size)`, with the
@@ -357,3 +366,6 @@ class CanonicalMPS(MPS):
     def copy(self):
         """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
         return self.__copy__()
+
+
+__all__ = ["CanonicalMPS"]

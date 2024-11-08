@@ -2,7 +2,7 @@ import numpy as np
 from numpy.polynomial.polynomial import Polynomial
 from seemps.state import MPS
 from seemps.analysis.polynomials import _mps_x_tensor, mps_from_polynomial
-from seemps.analysis.mesh import RegularClosedInterval, Interval
+from seemps.analysis.mesh import RegularInterval, Interval
 from ..tools import TestCase
 
 
@@ -22,21 +22,21 @@ class TestMonomialsCollection(TestCase):
     def test_all_monomials_up_to_fourth_order_from_end(self):
         N = 5  # qubits
         L = 5  # one plust the last order
-        domain = RegularClosedInterval(0, 1, 2**N)
+        domain = RegularInterval(0, 1, 2**N, endpoint_right=True)
         xL_mps = _mps_x_tensor(L, domain, first=False)
         self.assertContainsMonomials(L, xL_mps, domain, first=False)
 
     def test_all_monomials_up_to_fourth_order_from_start(self):
         N = 5  # qubits
         L = 5  # one plust the last order
-        domain = RegularClosedInterval(0, 1, 2**N)
+        domain = RegularInterval(0, 1, 2**N, endpoint_right=True)
         xL_mps = _mps_x_tensor(L, domain, first=True)
         self.assertContainsMonomials(L, xL_mps, domain, first=True)
 
 
 class TestPolynomialFunction(TestCase):
     N = 5
-    domain = RegularClosedInterval(0, 1, 2**5)
+    domain = RegularInterval(0, 1, 2**5, endpoint_right=True)
 
     def assertSimilarPolynomial(self, p: Polynomial, p_mps: MPS):
         x = self.domain.to_vector()

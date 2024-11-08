@@ -86,7 +86,7 @@ class MPO(array.TensorArray):
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `n * self`"""
         if isinstance(n, (int, float, complex)):
-            absn = np.abs(n)
+            absn = abs(n)
             if absn:
                 phase = n / absn
                 factor = np.exp(np.log(absn) / self.size)
@@ -104,7 +104,7 @@ class MPO(array.TensorArray):
     def __rmul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `self * self`"""
         if isinstance(n, (int, float, complex)):
-            absn = np.abs(n)
+            absn = abs(n)
             if absn:
                 phase = n / absn
                 factor = np.exp(np.log(absn) / self.size)
@@ -133,6 +133,10 @@ class MPO(array.TensorArray):
     def bond_dimensions(self) -> list[int]:
         """Return the bond dimensions of the MPO."""
         return [A.shape[-1] for A in self._data][:-1]
+
+    def max_bond_dimension(self) -> int:
+        """Return the largest bond dimension."""
+        return max(A.shape[0] for A in self._data)
 
     @property
     def T(self) -> MPO:
@@ -168,8 +172,7 @@ class MPO(array.TensorArray):
         state: MPS,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
-        ...
+    ) -> MPS: ...
 
     @overload
     def apply(
@@ -177,8 +180,7 @@ class MPO(array.TensorArray):
         state: MPSSum,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
-        ...
+    ) -> MPS: ...
 
     def apply(
         self,
@@ -231,12 +233,10 @@ class MPO(array.TensorArray):
         return state
 
     @overload
-    def __matmul__(self, b: MPS) -> MPS:
-        ...
+    def __matmul__(self, b: MPS) -> MPS: ...
 
     @overload
-    def __matmul__(self, b: MPSSum) -> MPS | MPSSum:
-        ...
+    def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""
@@ -449,8 +449,7 @@ class MPOList(object):
         state: MPS,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS:
-        ...
+    ) -> MPS: ...
 
     @overload
     def apply(
@@ -458,8 +457,7 @@ class MPOList(object):
         state: MPSSum,
         strategy: Optional[Strategy] = None,
         simplify: Optional[bool] = None,
-    ) -> MPS | MPSSum:
-        ...
+    ) -> MPS | MPSSum: ...
 
     # TODO: Describe how `strategy` and simplify act as compared to
     # the values provided by individual operators.
@@ -500,12 +498,10 @@ class MPOList(object):
         return state
 
     @overload
-    def __matmul__(self, b: MPS) -> MPS:
-        ...
+    def __matmul__(self, b: MPS) -> MPS: ...
 
     @overload
-    def __matmul__(self, b: MPSSum) -> MPS | MPSSum:
-        ...
+    def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
     def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
         """Implement multiplication `self @ b`."""

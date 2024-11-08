@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable, Union, Optional, Any
 import dataclasses
 import numpy as np
-from .. import tools
+from ..tools import make_logger
 from ..state import MPS, CanonicalMPS, Strategy, random_mps
 from ..truncate import simplify
 from ..mpo import MPO, MPOList, MPOSum
@@ -73,7 +73,7 @@ def power_method(
     )
     results = PowerMethodOptimizeResults(
         state=state,
-        energy=np.Inf,
+        energy=np.inf,
         converged=False,
         trajectory=[],
         variances=[],
@@ -82,8 +82,9 @@ def power_method(
     # This extra field is needed because CGS consumes iterations
     # in itself.
     results.steps = []
-    last_energy = np.Inf
-    tools.log(f"power_method() invoked with {maxiter} iterations")
+    last_energy = np.inf
+    logger = make_logger()
+    logger(f"power_method() invoked with {maxiter} iterations")
     total_steps = 0
 
     def cgs_callback(state, residual):
@@ -100,7 +101,7 @@ def power_method(
         results.trajectory.append(energy)
         results.variances.append(variance)
         results.steps.append(total_steps)
-        tools.log(f"step = {step:5d}, energy = {energy}, variance = {variance}")
+        logger(f"step = {step:5d}, energy = {energy}, variance = {variance}")
         if callback is not None:
             callback(state, results)
         energy_change = energy - last_energy
@@ -139,5 +140,6 @@ def power_method(
         else:
             state = simplify(H_v, strategy=strategy)
             total_steps += 1
-    tools.log(f"power_method() finished with results\n{results}")
+    logger(f"power_method() finished with results\n{results}")
+    logger.close()
     return results

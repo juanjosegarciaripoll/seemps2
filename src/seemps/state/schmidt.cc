@@ -5,13 +5,12 @@
 
 namespace seemps {
 
-std::tuple<int, double> _update_canonical_right(py::list state, py::object A,
-                                                int site,
-                                                const Strategy &strategy,
-                                                bool overwrite) {
+std::tuple<int, double>
+_update_in_canonical_form_right(py::list state, py::object A, int site,
+                                const Strategy &strategy, bool overwrite) {
   if (!is_array(A) || array_ndim(A) != 3) {
     throw std::invalid_argument(
-        "Invalid tensor passed to _update_canonical_right");
+        "Invalid tensor passed to _update_in_canonical_form_right");
   }
   py::object tensor = overwrite ? array_getcontiguous(A) : array_copy(A);
   auto a = array_dim(tensor, 0);
@@ -29,13 +28,13 @@ std::tuple<int, double> _update_canonical_right(py::list state, py::object A,
   return {site, err};
 }
 
-std::tuple<int, double> _update_canonical_left(py::list state, py::object A,
-                                               int site,
-                                               const Strategy &strategy,
-                                               bool overwrite) {
+std::tuple<int, double> _update_in_canonical_form_left(py::list state,
+                                                       py::object A, int site,
+                                                       const Strategy &strategy,
+                                                       bool overwrite) {
   if (!is_array(A) || array_ndim(A) != 3) {
     throw std::invalid_argument(
-        "Invalid tensor passed to _update_canonical_right");
+        "Invalid tensor passed to _update_in_canonical_form_right");
   }
   py::object tensor = overwrite ? array_getcontiguous(A) : array_copy(A);
   auto a = array_dim(tensor, 0);
@@ -56,12 +55,14 @@ std::tuple<int, double> _update_canonical_left(py::list state, py::object A,
 double _canonicalize(py::list state, int center, const Strategy &strategy) {
   double err = 0.0;
   for (int i = 0; i < center;) {
-    auto [site, errk] = _update_canonical_right(state, state[i], i, strategy);
+    auto [site, errk] =
+        _update_in_canonical_form_right(state, state[i], i, strategy);
     err += errk;
     i = site;
   }
   for (int i = state.size() - 1; i > center;) {
-    auto [site, errk] = _update_canonical_left(state, state[i], i, strategy);
+    auto [site, errk] =
+        _update_in_canonical_form_left(state, state[i], i, strategy);
     err += errk;
     i = site;
   }
@@ -69,9 +70,9 @@ double _canonicalize(py::list state, int center, const Strategy &strategy) {
 }
 
 std::tuple<py::object, py::object, double>
-left_orth_2site(py::object AA, const Strategy &strategy) {
+_left_orth_2site(py::object AA, const Strategy &strategy) {
   if (!is_array(AA) || array_ndim(AA) != 4) {
-    throw std::invalid_argument("left_orth_2site requires a 4D tensor");
+    throw std::invalid_argument("_left_orth_2site requires a 4D tensor");
   }
   auto a = array_dim(AA, 0);
   auto d1 = array_dim(AA, 1);
@@ -87,9 +88,9 @@ left_orth_2site(py::object AA, const Strategy &strategy) {
 }
 
 std::tuple<py::object, py::object, double>
-right_orth_2site(py::object AA, const Strategy &strategy) {
+_right_orth_2site(py::object AA, const Strategy &strategy) {
   if (!is_array(AA) || array_ndim(AA) != 4) {
-    throw std::invalid_argument("left_orth_2site requires a 4D tensor");
+    throw std::invalid_argument("_right_orth_2site requires a 4D tensor");
   }
   auto a = array_dim(AA, 0);
   auto d1 = array_dim(AA, 1);

@@ -5,10 +5,10 @@ import numpy as np
 from math import sqrt
 from typing import Optional, Union, Sequence, Iterable
 from ..tools import InvalidOperation
-from ..typing import Weight, Vector, VectorLike, Operator, Tensor3
+from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
-from .schmidt import vector2mps
+from .schmidt import _vector2mps
 
 
 class MPS(array.TensorArray):
@@ -84,6 +84,10 @@ class MPS(array.TensorArray):
         """
         return list(a.shape[0] for a in self._data) + [self._data[-1].shape[-1]]
 
+    def max_bond_dimension(self) -> int:
+        """Return the largest bond dimension."""
+        return max(a.shape[-1] for a in self._data)
+
     def to_vector(self) -> Vector:
         """Convert this MPS to a state vector."""
         return _mps2vector(self._data)
@@ -117,7 +121,7 @@ class MPS(array.TensorArray):
         MPS
             A valid matrix-product state approximating this state vector.
         """
-        data, error = vector2mps(ψ, dimensions, strategy, normalize, center)
+        data, error = _vector2mps(ψ, dimensions, strategy, normalize, center)
         return MPS(data, error)
 
     @classmethod
@@ -179,7 +183,7 @@ class MPS(array.TensorArray):
                 if n:
                     mps_mult = self.copy()
                     mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult._error *= abs(n)
                     return mps_mult
                 return self.zero_state()
             case MPS():
@@ -202,7 +206,7 @@ class MPS(array.TensorArray):
                 if n:
                     mps_mult = self.copy()
                     mps_mult._data[0] = n * mps_mult._data[0]
-                    mps_mult._error = np.abs(n) ** 2 * mps_mult._error
+                    mps_mult._error *= abs(n)
                     return mps_mult
                 return self.zero_state()
             case _:
@@ -247,9 +251,9 @@ class MPS(array.TensorArray):
         """
         ρL = self.left_environment(site)
         A = self[site]
-        OL = update_left_environment(A, np.matmul(O, A), ρL)
+        OL = _update_left_environment(A, np.matmul(O, A), ρL)
         ρR = self.right_environment(site)
-        return join_environments(OL, ρR)
+        return _join_environments(OL, ρR)
 
     def expectation2(
         self, Opi: Operator, Opj: Operator, i: int, j: Optional[int] = None
@@ -283,12 +287,12 @@ class MPS(array.TensorArray):
         for ndx in range(i, j + 1):
             A = self[ndx]
             if ndx == i:
-                OQL = update_left_environment(A, np.matmul(Opi, A), OQL)
+                OQL = _update_left_environment(A, np.matmul(Opi, A), OQL)
             elif ndx == j:
-                OQL = update_left_environment(A, np.matmul(Opj, A), OQL)
+                OQL = _update_left_environment(A, np.matmul(Opj, A), OQL)
             else:
-                OQL = update_left_environment(A, A, OQL)
-        return join_environments(OQL, self.right_environment(j))
+                OQL = _update_left_environment(A, A, OQL)
+        return _join_environments(OQL, self.right_environment(j))
 
     def all_expectation1(self, operator: Union[Operator, list[Operator]]) -> Vector:
         """Vector of expectation values of the given operator acting on all
@@ -307,36 +311,36 @@ class MPS(array.TensorArray):
             Numpy array of expectation values.
         """
         L = self.size
-        ρ = begin_environment()
+        ρ = _begin_environment()
         allρR: list[Environment] = [ρ] * L
         for i in range(L - 1, 0, -1):
             A = self[i]
-            ρ = update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
             allρR[i - 1] = ρ
 
-        ρL = begin_environment()
+        ρL = _begin_environment()
         output: list[Weight] = [0.0] * L
         for i in range(L):
             A = self[i]
             ρR = allρR[i]
-            opi = operator[i] if isinstance(operator, list) else operator
-            OρL = update_left_environment(A, np.matmul(opi, A), ρL)
-            output[i] = join_environments(OρL, ρR)
-            ρL = update_left_environment(A, A, ρL)
+            op_i = operator[i] if isinstance(operator, list) else operator
+            OρL = _update_left_environment(A, np.matmul(op_i, A), ρL)
+            output[i] = _join_environments(OρL, ρR)
+            ρL = _update_left_environment(A, A, ρL)
         return np.array(output)
 
     def left_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the left of `site`."""
-        ρ = begin_environment()
+        ρ = _begin_environment()
         for A in self._data[:site]:
-            ρ = update_left_environment(A, A, ρ)
+            ρ = _update_left_environment(A, A, ρ)
         return ρ
 
     def right_environment(self, site: int) -> Environment:
         """Environment matrix for systems to the right of `site`."""
-        ρ = begin_environment()
+        ρ = _begin_environment()
         for A in self._data[-1:site:-1]:
-            ρ = update_right_environment(A, A, ρ)
+            ρ = _update_right_environment(A, A, ρ)
         return ρ
 
     def error(self) -> float:
@@ -344,7 +348,7 @@ class MPS(array.TensorArray):
 
         If this quantum state results from `N` steps in which we have obtained
         truncation errors :math:`\\delta_i`, this function returns the estimate
-        :math:`\\sqrt{\\sum_{i}\\delta_i^2}`.
+        :math:`\\sum_{i}\\delta_i`.
 
         Returns
         -------
@@ -353,7 +357,7 @@ class MPS(array.TensorArray):
         """
         return self._error
 
-    def update_error(self, delta: float) -> float:
+    def update_error(self, delta: float) -> None:
         """Register an increase in the truncation error.
 
         Parameters
@@ -361,17 +365,11 @@ class MPS(array.TensorArray):
         delta : float
             Error increment in norm-2
 
-        Returns
-        -------
-        float
-            Accumulated upper bound of total truncation error.
-
         See also
         --------
         :py:meth:`error` : Total accumulated error after this update.
         """
-        self._error = (sqrt(self._error) + sqrt(delta)) ** 2
-        return self._error
+        self._error += delta
 
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
@@ -469,10 +467,9 @@ def _mps2vector(data: list[Tensor3]) -> Vector:
 
 from .mpssum import MPSSum  # noqa: E402
 from .environments import (  # noqa: E402
-    Environment,
-    begin_environment,
-    update_left_environment,
-    update_right_environment,
-    join_environments,
+    _begin_environment,
+    _update_left_environment,
+    _update_right_environment,
+    _join_environments,
     scprod,
 )

@@ -7,6 +7,8 @@
 
 using namespace seemps;
 
+const char *__version__ = "pybind11";
+
 static int ok_loaded() {
   import_array();
   if (PyErr_Occurred()) {
@@ -27,6 +29,8 @@ PYBIND11_MODULE(core, m) {
         "Truncate singular values according to specified criteria, modifying "
         "the array.");
 
+  m.attr("__version__") = __version__;
+
   py::enum_<Gemm>(m, "GemmOrder")
       .value("NORMAL", GEMM_NORMAL)
       .value("TRANSPOSE", GEMM_TRANSPOSE)
@@ -38,6 +42,8 @@ PYBIND11_MODULE(core, m) {
   m.def("_contract_nrjl_ijk_klm", &contract_nrjl_ijk_klm);
 
   m.def("_destructive_svd", &destructive_svd);
+
+  m.def("_select_svd_driver", &_select_svd_driver);
 
   py::object OK_LOADED = py::cast(ok_loaded());
 
@@ -114,35 +120,35 @@ PYBIND11_MODULE(core, m) {
         Scalar product.
 		 )doc");
   m.def(
-      "begin_environment", &_begin_environment, py::arg("D") = int(1),
+      "_begin_environment", &_begin_environment, py::arg("D") = int(1),
       R"doc(Initiate the computation of a left environment from two MPS. The bond
     dimension χ defaults to 1. Other values are used for states in canonical
     form that we know how to open and close)doc");
   m.def(
-      "update_left_environment", &_update_left_environment,
+      "_update_left_environment", &_update_left_environment,
       R"doc(Extend the left environment with two new tensors, 'B' and 'A' coming
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket.)doc");
   m.def(
-      "update_right_environment", &_update_right_environment,
+      "_update_right_environment", &_update_right_environment,
       R"doc(Extend the left environment with two new tensors, 'B' and 'A' coming
     from the bra and ket of a scalar product. If an operator is provided, it
     is contracted with the ket.)doc");
-  m.def("end_environment", &_end_environment,
+  m.def("_end_environment", &_end_environment,
         R"doc(Extract the scalar product from the last environment.)doc");
-  m.def("join_environments", &_join_environments,
+  m.def("_join_environments", &_join_environments,
         R"doc(Join left and right environments to produce a scalar.)doc");
 
-  m.def("schmidt_weights", &schmidt_weights);
+  m.def("_schmidt_weights", &schmidt_weights);
   m.def(
-      "_update_canonical_right", &_update_canonical_right, py::arg("state"),
-      py::arg("tensor"), py::arg("site"), py::arg("strategy"),
+      "_update_in_canonical_form_right", &_update_in_canonical_form_right,
+      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
       py::arg("overwrite") = false,
       R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process)doc");
   m.def(
-      "_update_canonical_left", &_update_canonical_left, py::arg("state"),
-      py::arg("tensor"), py::arg("site"), py::arg("strategy"),
+      "_update_in_canonical_form_left", &_update_in_canonical_form_left,
+      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
       py::arg("overwrite") = false,
       R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process)doc");
@@ -151,6 +157,6 @@ PYBIND11_MODULE(core, m) {
     with respect to `center`.)doc");
   m.def("_update_canonical_2site_left", &_update_canonical_2site_left);
   m.def("_update_canonical_2site_right", &_update_canonical_2site_right);
-  m.def("left_orth_2site", &left_orth_2site);
-  m.def("right_orth_2site", &right_orth_2site);
+  m.def("_left_orth_2site", &_left_orth_2site);
+  m.def("_right_orth_2site", &_right_orth_2site);
 }

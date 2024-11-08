@@ -1,34 +1,13 @@
 from __future__ import annotations
 import numpy as np
-from typing import TypeVar, Union
+from typing import TypeVar, Union, Optional
 from ..typing import Tensor3
-from ..state import (
-    MPS,
-    MPSSum,
-    Strategy,
-    DEFAULT_STRATEGY,
-    Truncation,
-    DEFAULT_TOLERANCE,
-    Simplification,
-)
+from ..state import Strategy, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY
 from ..truncate import simplify
-from .mesh import (
-    Interval,
-    RegularClosedInterval,
-    RegularHalfOpenInterval,
-    ChebyshevZerosInterval,
-)
-
-DEFAULT_FACTORY_STRATEGY = Strategy(
-    method=Truncation.RELATIVE_SINGULAR_VALUE,
-    tolerance=DEFAULT_TOLERANCE,
-    simplify=Simplification.VARIATIONAL,
-    simplification_tolerance=DEFAULT_TOLERANCE,
-    normalize=False,
-)
+from .mesh import Interval, RegularInterval, ChebyshevInterval
 
 
-def mps_equispaced(start: float, stop: float, sites: int):
+def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
     """
     Returns an MPS representing a discretized interval with equispaced points.
 
@@ -62,7 +41,8 @@ def mps_equispaced(start: float, stop: float, sites: int):
 
 def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MPS:
     """
-    Returns an MPS representing an exponential function discretized over an interval.
+    Returns an MPS representing an exponential function discretized over a
+    half-open interval [start, stop).
 
     Parameters
     ----------
@@ -72,7 +52,7 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    c : complex
+    c : complex, default=1
         The coefficient in the exponent of the exponential function.
 
     Returns
@@ -96,10 +76,14 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
 
 
 def mps_sin(
-    start: float, stop: float, sites: int, strategy: Strategy = DEFAULT_FACTORY_STRATEGY
+    start: float,
+    stop: float,
+    sites: int,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPS:
     """
-    Returns an MPS representing a sine function discretized over an interval.
+    Returns an MPS representing a sine function discretized over a
+    half-open interval [start, stop).
 
     Parameters
     ----------
@@ -109,7 +93,7 @@ def mps_sin(
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    strategy : Strategy, default = DEFAULT_STRATEGY
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
@@ -124,10 +108,14 @@ def mps_sin(
 
 
 def mps_cos(
-    start: float, stop: float, sites: int, strategy: Strategy = DEFAULT_FACTORY_STRATEGY
+    start: float,
+    stop: float,
+    sites: int,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPS:
     """
-    Returns an MPS representing a cosine function discretized over an interval.
+    Returns an MPS representing a cosine function discretized over a
+    half-open interval [start, stop).
 
     Parameters
     ----------
@@ -137,7 +125,7 @@ def mps_cos(
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    strategy : Strategy, default = DEFAULT_STRATEGY
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
@@ -154,7 +142,7 @@ def mps_cos(
 _State = TypeVar("_State", bound=Union[MPS, MPSSum])
 
 
-def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
+def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
     """
     Applies an affine transformation to an MPS, mapping it from one interval [x0, x1] to another [u0, u1].
     This is a transformation u = a * x + b, with u0 = a * x0 + b and and  u1 = a * x1 + b.
@@ -162,7 +150,7 @@ def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
 
     Parameters
     ----------
-    mps : MPS
+    mps : Union[MPS, MPSSum]
         The MPS to be transformed.
     orig : tuple
         A tuple (x0, x1) representing the original interval.
@@ -171,15 +159,15 @@ def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
 
     Returns
     -------
-    MPS
-        The transformed MPS.
+    mps_affine : Union[MPS, MPSSum]
+        The MPS affinely transformed from (x0, x1) to (u0, u1).
     """
     x0, x1 = orig
     u0, u1 = dest
     a = (u1 - u0) / (x1 - x0)
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
     mps_affine = a * mps
-    if np.abs(b) > np.finfo(np.float64).eps:
+    if abs(b) > np.finfo(np.float64).eps:
         I = MPS([np.ones((1, 2, 1))] * len(mps_affine))
         mps_affine = mps_affine + b * I
         # Preserve the input type
@@ -188,40 +176,49 @@ def mps_affine_transformation(mps: _State, orig: tuple, dest: tuple) -> _State:
     return mps_affine
 
 
-def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_FACTORY_STRATEGY):
+def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
     """
-    Returns an MPS corresponding to a specific type of interval (open, closed, or Chebyshev zeros).
+    Returns an MPS corresponding to a specific type of interval.
 
     Parameters
     ----------
     interval : Interval
         The interval object containing start and stop points and the interval type.
-    strategy : Strategy, default = DEFAULT_STRATEGY
+        Currently supports `RegularInterval` and `ChebyshevInterval`.
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy to apply.
 
     Returns
     -------
-    mps : MPS
+    MPS
         An MPS representing the interval according to its type.
     """
     start = interval.start
     stop = interval.stop
     sites = int(np.log2(interval.size))
-    if isinstance(interval, RegularHalfOpenInterval):
-        return mps_equispaced(start, stop, sites)
-    elif isinstance(interval, RegularClosedInterval):
-        stop += (stop - start) / (2**sites - 1)
-        return mps_equispaced(start, stop, sites)
-    elif isinstance(interval, ChebyshevZerosInterval):
-        start_zeros = np.pi / (2 ** (sites + 1))
-        stop_zeros = np.pi + start_zeros
-        mps_zeros = -1.0 * mps_cos(start_zeros, stop_zeros, sites, strategy=strategy)
-        return mps_affine_transformation(mps_zeros, (-1, 1), (start, stop))
+    if isinstance(interval, RegularInterval):
+        start_reg = start + interval.step if not interval.endpoint_left else start
+        stop_reg = stop + interval.step if interval.endpoint_right else stop
+        return mps_equispaced(start_reg, stop_reg, sites)
+    elif isinstance(interval, ChebyshevInterval):
+        if interval.endpoints is True:  # Extrema
+            start_cheb = 0
+            stop_cheb = np.pi + np.pi / (2**sites - 1)
+        else:  # Zeros
+            start_cheb = np.pi / (2 ** (sites + 1))
+            stop_cheb = np.pi + start_cheb
+        return mps_affine(
+            mps_cos(start_cheb, stop_cheb, sites, strategy=strategy),
+            (1, -1),  # Reverse order
+            (start, stop),
+        )
     else:
         raise ValueError(f"Unsupported interval type {type(interval)}")
 
 
-def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Tensor3]]:
+def _map_mps_locations(
+    mps_list: list[MPS], mps_order: str
+) -> list[tuple[int, Tensor3]]:
     """Create a vector that lists which MPS and which tensor is
     associated to which position in the joint Hilbert space.
     """
@@ -230,7 +227,7 @@ def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Te
         k = 0
         for mps_id, mps in enumerate(mps_list):
             for i, Ai in enumerate(mps):
-                tensors[k] = (mps_id, Ai)
+                tensors[k] = (mps_id, Ai)  # type: ignore
                 k += 1
     elif mps_order == "B":
         k = 0
@@ -238,20 +235,19 @@ def map_mps_locations(mps_list: list[MPS], mps_order: str) -> list[tuple[int, Te
         while k < len(tensors):
             for mps_id, mps in enumerate(mps_list):
                 if i < mps.size:
-                    tensors[k] = (mps_id, mps[i])
+                    tensors[k] = (mps_id, mps[i])  # type: ignore
                     k += 1
             i += 1
     else:
         raise ValueError(f"Invalid mps order {mps_order}")
-    return tensors
+    return tensors  # type: ignore
 
 
-def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
+def _mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
     """
-    Extends each MPS of a given input list by appending identity tensors to it
-    according to the specified MPS order ('A' or 'B').
-    The resulting list of MPS can be given as terms to a tensorized operation between MPS,
-    such as a tensor product or tensor sum.
+    Extends each MPS of a given input list by appending identity tensors to it according
+    to the specified MPS order ('A' or 'B'). The resulting list of MPS can be given as terms
+    to a tensorized operation between MPS, such as a tensor product or tensor sum.
 
     Parameters
     ----------
@@ -278,15 +274,16 @@ def mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
                 output[k] = np.eye(D).reshape(D, 1, D) * np.ones((1, site_dimension, 1))
         return MPS(output)
 
-    mps_map = map_mps_locations(mps_list, mps_order)
+    mps_map = _map_mps_locations(mps_list, mps_order)
     return [extend_mps(mps_id, mps_map) for mps_id, _ in enumerate(mps_list)]
 
 
 def mps_tensor_product(
     mps_list: list[MPS],
     mps_order: str = "A",
-    strategy: Strategy = DEFAULT_FACTORY_STRATEGY,
-) -> MPS:
+    strategy: Optional[Strategy] = None,
+    simplify_steps: bool = False,
+) -> Union[MPS, CanonicalMPS]:
     """
     Returns the tensor product of a list of MPS, with the sites arranged
     according to the specified MPS order.
@@ -297,29 +294,43 @@ def mps_tensor_product(
         The list of MPS objects to multiply.
     mps_order : str
         The order in which to arrange the resulting MPS ('A' or 'B').
-    strategy : optional
-        The strategy to use when multiplying the MPS.
+    strategy : Strategy, optional
+        The strategy to use when multiplying the MPS. If None, the tensor product is not simplified.
+    simplify_steps : bool, default=False
+        Whether to simplify the intermediate steps with `strategy` (if provided)
+        or simplify at the end.
 
     Returns
     -------
-    MPS
+    result : MPS | CanonicalMPS
         The resulting MPS from the tensor product of the input list.
     """
     if mps_order == "A":
         nested_sites = [mps._data for mps in mps_list]
         flattened_sites = [site for sites in nested_sites for site in sites]
         result = MPS(flattened_sites)
-    else:
-        terms = mps_tensor_terms(mps_list, mps_order)
+    elif mps_order == "B":
+        terms = _mps_tensor_terms(mps_list, mps_order)
         result = terms[0]
-        for idx, mps in enumerate(terms[1:]):
-            result = result * mps
-    return simplify(result, strategy=strategy)
+        for _, mps in enumerate(terms[1:]):
+            result = (
+                simplify(result * mps, strategy=strategy)
+                if (strategy and simplify_steps)
+                else result * mps
+            )
+    else:
+        raise ValueError(f"Invalid mps order {mps_order}")
+    if strategy and not simplify_steps:
+        result = simplify(result, strategy=strategy)
+    return result
 
 
 def mps_tensor_sum(
-    mps_list: list[MPS], mps_order: str = "A", strategy: Strategy = DEFAULT_STRATEGY
-) -> MPS:
+    mps_list: list[MPS],
+    mps_order: str = "A",
+    strategy: Optional[Strategy] = None,
+    simplify_steps: bool = False,
+) -> Union[MPS, CanonicalMPS]:
     """
     Returns the tensor sum of a list of MPS, with the sites arranged
     according to the specified MPS order.
@@ -328,28 +339,42 @@ def mps_tensor_sum(
     ----------
     mps_list : list[MPS]
         The list of MPS objects to sum.
-    mps_order : str
+    mps_order : str, default='A'
         The order in which to arrange the resulting MPS ('A' or 'B').
-    strategy : optional
-        The strategy to use when summing the MPS.
+    strategy : Strategy, optional
+        The strategy to use when summing the MPS. If None, the tensor sum is not simplified.
+    simplify_steps : bool, default=False
+        Whether to simplify the intermediate steps with `strategy` (if provided)
+        or simplify at the end.
 
     Returns
     -------
-    MPS
+    result : MPS | CanonicalMPS
         The resulting MPS from the tensor sum of the input list.
     """
     if mps_order == "A":
         result = _mps_tensor_sum_serial_order(mps_list)
+    elif mps_order == "B":
+        terms = _mps_tensor_terms(mps_list, mps_order)
+        result = terms[0]
+        for _, mps in enumerate(terms[1:]):
+            result = (
+                simplify(result + mps, strategy=strategy)
+                if (strategy and simplify_steps)
+                else (result + mps).join()
+            )
     else:
-        result = MPSSum(
-            [1.0] * len(mps_list), mps_tensor_terms(mps_list, mps_order)
-        ).join()
-    if strategy.get_simplify_flag():
-        return simplify(result, strategy=strategy)
+        raise ValueError(f"Invalid mps order {mps_order}")
+    if strategy and not simplify_steps:
+        result = simplify(result, strategy=strategy)
     return result
 
 
 def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> MPS:
+    """
+    Computes the MPS tensor sum in serial order in an optimized manner.
+    """
+
     def extend_tensor(A: Tensor3, first: bool, last: bool) -> Tensor3:
         a, d, b = A.shape
         output = np.zeros((a + 2, d, b + 2), dtype=A.dtype)
@@ -368,7 +393,7 @@ def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> MPS:
 
     output = [
         extend_tensor(Ai, i == 0, i == len(A) - 1)
-        for n, A in enumerate(mps_list)
+        for _, A in enumerate(mps_list)
         for i, Ai in enumerate(A)
     ]
     output[0] = output[0][[0], :, :]

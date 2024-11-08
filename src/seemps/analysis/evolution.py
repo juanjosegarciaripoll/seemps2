@@ -67,7 +67,7 @@ def euler(
     """
     normalization_strategy = strategy.replace(normalize=True)
     state = CanonicalMPS(state, normalize=True)
-    results = EvolutionResults(state=state, energy=np.Inf, trajectory=[], Δβ=Δβ, β=[0])
+    results = EvolutionResults(state=state, energy=np.inf, trajectory=[], Δβ=Δβ, β=[0])
     for i in range(maxiter + 1):
         if i > 0:
             H_state = H.apply(state)
@@ -95,7 +95,7 @@ def improved_euler(
     """
     normalization_strategy = strategy.replace(normalize=True)
     state = CanonicalMPS(state, normalize=True)
-    results = EvolutionResults(state=state, energy=np.Inf, trajectory=[], Δβ=Δβ, β=[0])
+    results = EvolutionResults(state=state, energy=np.inf, trajectory=[], Δβ=Δβ, β=[0])
     for i in range(maxiter):
         if i > 0:
             H_state = H.apply(state)
@@ -125,7 +125,7 @@ def runge_kutta(
     """
     normalization_strategy = strategy.replace(normalize=True)
     state = CanonicalMPS(state, normalize=True)
-    results = EvolutionResults(state=state, energy=np.Inf, trajectory=[], Δβ=Δβ, β=[0])
+    results = EvolutionResults(state=state, energy=np.inf, trajectory=[], Δβ=Δβ, β=[0])
     for i in range(maxiter):
         if i > 0:
             H_state = H.apply(state)
