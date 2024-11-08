@@ -79,40 +79,48 @@ def _update_in_canonical_form_left(state, A, site, truncation):
     assert PyList_Check(state)
     return __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
 
+cdef float __recanonicalize_left(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation):
+    cdef:
+        double err = 0.0
+        object A
+    while oldcenter < newcenter:
+        A = <object>PyList_GET_ITEM(state, oldcenter)
+        err += __update_in_canonical_form_right(state, A, oldcenter, truncation)[1]
+        oldcenter += 1
+    return err
+
+cdef float __recanonicalize_right(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation):
+    cdef:
+        double err = 0.0
+        object A
+    while newcenter < oldcenter:
+        A = <object>PyList_GET_ITEM(state, oldcenter)
+        err += __update_in_canonical_form_left(state, A, oldcenter, truncation)[1]
+        oldcenter -= 1
+    return err
 
 def _recanonicalize(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation) -> float:
     """Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`."""
-    # TODO: Revise the cumulative error update. Does it follow update_error()?
-    cdef:
-        double err = 0.0, errk
-    while oldcenter < newcenter:
-        _, errk = __update_in_canonical_form_right(state, state[oldcenter],
-                                                   oldcenter, truncation)
-        err += errk
-        oldcenter += 1
-    while newcenter < oldcenter:
-        _, errk = __update_in_canonical_form_left(state, state[oldcenter],
-                                                  oldcenter, truncation)
-        err += errk
-        oldcenter -= 1
-    return err
+    # Invariants:
+    # - state is a list
+    # - 0 <= oldcenter, newcenter < len(state)
+    #
+    if oldcenter < newcenter:
+        return __recanonicalize_left(state, oldcenter, newcenter, truncation)
+    else:
+        return __recanonicalize_right(state, oldcenter, newcenter, truncation)
 
 
 def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float:
     """Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`."""
-    # TODO: Revise the cumulative error update. Does it follow update_error()?
-    cdef:
-        Py_ssize_t i, L = PyList_GET_SIZE(state)
-        double err = 0.0, errk
-    for i in range(0, center):
-        _, errk = __update_in_canonical_form_right(state, state[i], i, truncation)
-        err += errk
-    for i in range(L - 1, center, -1):
-        _, errk = __update_in_canonical_form_left(state, state[i], i, truncation)
-        err += errk
-    return err
+    # Invariants:
+    # - state is a list
+    # - 0 <= center < len(state)
+    #
+    return (__recanonicalize_left(state, 0, center, truncation) +
+            __recanonicalize_right(state, PyList_GET_SIZE(state)-1, center, truncation))
 
 
 def _left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarray, float]:
