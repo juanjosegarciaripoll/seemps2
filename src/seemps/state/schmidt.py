@@ -7,8 +7,7 @@ from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector
 from .core import Strategy, DEFAULT_STRATEGY
 from scipy.linalg import svd as _scipy_svd  # type: ignore
-from seemps.state.core import _svd as _destructive_svd  # noqa: F401
-from seemps.state.core import _left_orth_2site, _right_orth_2site
+from seemps.state.core import _destructive_svd, _left_orth_2site, _right_orth_2site
 
 #
 # Type of LAPACK driver used for solving singular value decompositions.

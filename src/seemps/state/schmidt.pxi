@@ -6,6 +6,7 @@ from cpython cimport (
     PyList_GET_ITEM,
     PyTuple_GET_ITEM
     )
+from libc.math cimport sqrt
 
 
 cdef (int, double) __update_in_canonical_form_right(
@@ -35,7 +36,7 @@ cdef (int, double) __update_in_canonical_form_right(
     # np.einsum("ab,bic->aic", sV, state[site])
     state[site] = __contract_last_and_first(
         _as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), state[site])
-    return site, err
+    return site, sqrt(err)
 
 
 def _update_in_canonical_form_right(state, A, site, truncation):
@@ -72,29 +73,44 @@ cdef (int, double) __update_in_canonical_form_left(
     state[site] = _as_3tensor(_resize_matrix(V, D, -1), D, i, b)
     site -= 1
     state[site] = __contract_last_and_first(state[site], _resize_matrix(U, -1, D) * s)
-    return site, err
+    return site, sqrt(err)
 
 def _update_in_canonical_form_left(state, A, site, truncation):
     assert PyList_Check(state)
     return __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
 
 
+def _recanonicalize(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation) -> float:
+    """Update a list of `Tensor3` objects to be in canonical form
+    with respect to `center`."""
+    # TODO: Revise the cumulative error update. Does it follow update_error()?
+    cdef:
+        double err = 0.0, errk
+    while oldcenter < newcenter:
+        _, errk = __update_in_canonical_form_right(state, state[oldcenter],
+                                                   oldcenter, truncation)
+        err += errk
+        oldcenter += 1
+    while newcenter < oldcenter:
+        _, errk = __update_in_canonical_form_left(state, state[oldcenter],
+                                                  oldcenter, truncation)
+        err += errk
+        oldcenter -= 1
+    return err
+
+
 def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float:
     """Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`."""
     # TODO: Revise the cumulative error update. Does it follow update_error()?
-    assert PyList_Check(state)
     cdef:
         Py_ssize_t i, L = PyList_GET_SIZE(state)
         double err = 0.0, errk
-        cnp.ndarray A
     for i in range(0, center):
-        A = state[i]
-        _, errk = __update_in_canonical_form_right(state, A, i, truncation)
+        _, errk = __update_in_canonical_form_right(state, state[i], i, truncation)
         err += errk
     for i in range(L - 1, center, -1):
-        A = state[i]
-        _, errk = __update_in_canonical_form_left(state, A, i, truncation)
+        _, errk = __update_in_canonical_form_left(state, state[i], i, truncation)
         err += errk
     return err
 

@@ -21,6 +21,7 @@ from .core import (
     _update_in_canonical_form_right,
     _update_in_canonical_form_left,
     _canonicalize,
+    _recanonicalize,
 )
 from .mps import MPS
 
@@ -231,7 +232,7 @@ class CanonicalMPS(MPS):
 
     def update_canonical(
         self, A: Tensor3, direction: int, truncation: Strategy
-    ) -> float:
+    ) -> None:
         """Update the state, replacing the tensor at `self.center`
         and moving the center to `self.center + direction`.
 
@@ -251,15 +252,14 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, error_squared = _update_in_canonical_form_right(
+            self.center, error = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, error_squared = _update_in_canonical_form_left(
+            self.center, error = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
-        self._error += sqrt(error_squared)
-        return error_squared
+        self._error += error
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -339,13 +339,15 @@ class CanonicalMPS(MPS):
             This same object.
         """
         center = self._interpret_center(center)
-        old = self.center
-        if strategy is None:
-            strategy = self.strategy
-        if center != old:
-            dr = +1 if center > old else -1
-            for i in range(old, center, dr):
-                self.update_canonical(self._data[i], dr, strategy)
+        oldcenter = self.center
+        if oldcenter != center:
+            err = _recanonicalize(
+                self._data,
+                oldcenter,
+                center,
+                self.strategy if strategy is None else strategy,
+            )
+            self._error += err
         return self
 
     def normalize_inplace(self) -> CanonicalMPS:
