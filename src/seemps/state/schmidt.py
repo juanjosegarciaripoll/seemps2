@@ -62,18 +62,18 @@ def _vector2mps(
         output[i], ψ, new_err = _left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
         )
-        err += sqrt(new_err)
+        err += new_err
     for i in range(L - 1, center, -1):
         ψ, output[i], new_err = _right_orth_2site(
             ψ.reshape(ψ.shape[0], -1, dimensions[i], ψ.shape[-1]), strategy
         )
-        err += sqrt(new_err)
+        err += new_err
     if normalize:
         N: float = np.linalg.norm(ψ.reshape(-1))  # type: ignore
         ψ /= N
         err /= N
     output[center] = ψ
-    return output, err * err
+    return output, err
 
 
 __all__ = ["_destructive_svd", "_schmidt_weights", "_vector2mps"]

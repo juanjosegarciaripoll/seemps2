@@ -146,7 +146,7 @@ def _left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarr
     return (
         _as_3tensor(_resize_matrix(U, -1, D), a, d1, D),
         _as_3tensor(_as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), D, d2, b),
-        err,
+        sqrt(err),
     )
 
 
@@ -173,5 +173,5 @@ def _right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndar
     return (
         _as_3tensor(_resize_matrix(U, -1, D) * s, a, d1, D),
         _as_3tensor(_resize_matrix(V, D, -1), D, d2, b),
-        err,
+        sqrt(err),
     )

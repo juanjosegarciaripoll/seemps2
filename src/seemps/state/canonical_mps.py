@@ -279,11 +279,9 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = _left_orth_2site(
-            AA, strategy
-        )
+        self._data[site], self._data[site + 1], error = _left_orth_2site(AA, strategy)
         self.center = site + 1
-        self._error += sqrt(error_squared)
+        self._error += error
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
         """Split a two-site tensor into two one-site tensors by
@@ -302,11 +300,9 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = _right_orth_2site(
-            AA, strategy
-        )
+        self._data[site], self._data[site + 1], error = _right_orth_2site(AA, strategy)
         self.center = site
-        self._error += sqrt(error_squared)
+        self._error += error
 
     def _interpret_center(self, center: int) -> int:
         """Converts `center` into an integer in `[0,self.size)`, with the
