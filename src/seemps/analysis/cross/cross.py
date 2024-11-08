@@ -40,7 +40,7 @@ class CrossStrategy:
     num_samples : int, default=1000
         Number of function samples to evaluate the error.
     tol_norm_2 : float, optional
-        Tolerance for the increment in norm-2 of the MPS after each sweep. 
+        Tolerance for the increment in norm-2 of the MPS after each sweep.
         If None, this increment is not measured.
     rng : np.random.Generator, default=np.random.default_rng()
         Random number generator used to initialize the algorithm and sample the error.
@@ -155,6 +155,7 @@ class CrossInterpolation:
                 if k > 0:
                     self.I_g[k - 1] = self.combine_indices(self.I_s[k], self.I_g[k])[I]
                 else:
+                    # ruff: noqa: F841
                     indices = [
                         self.combine_indices(self.I_s[0], self.I_g[0])[I]
                     ] + self.I_g[:-1]

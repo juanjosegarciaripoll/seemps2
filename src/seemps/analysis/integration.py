@@ -310,9 +310,11 @@ def mps_fejer(
     N = int(2**sites)
 
     # Encode 1/(1 - 4*k**2) term with TCI
-    func = lambda k: np.where(k < N / 2, 2 / (1 - 4 * k**2), 2 / (1 - 4 * (N - k) ** 2))
+    def selector(k):
+        return np.where(k < N / 2, 2 / (1 - 4 * k**2), 2 / (1 - 4 * (N - k) ** 2))
+
     mps_k2 = cross_dmrg(
-        BlackBoxLoadMPS(func, IntegerInterval(0, N)), cross_strategy=cross_strategy
+        BlackBoxLoadMPS(selector, IntegerInterval(0, N)), cross_strategy=cross_strategy
     ).mps
     mps_k2 = simplify(mps_k2, strategy=strategy)
 

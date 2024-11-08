@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg  # type: ignore
-from typing import TypeVar, Union, Optional, Callable
+from typing import Union, Optional, Callable
 from dataclasses import dataclass
 
 from .cross import (
@@ -24,15 +24,15 @@ class CrossStrategyGreedy(CrossStrategy):
     points_partial: int = 10
     """
     Dataclass containing parameters for TCI with greedy pivot updates.
-    Supplements the base `CrossStrategy` class. 
+    Supplements the base `CrossStrategy` class.
 
     Parameters
     ----------
     tol_pivot : float, default=1e-12
-        Minimum allowable error for a pivot, excluding those below this threshold. 
+        Minimum allowable error for a pivot, excluding those below this threshold.
         The algorithm halts when the maximum pivot error across all sites falls below this limit.
     partial : bool, default=True
-        Whether to use a row-column alternating partial search strategy to find pivots in the superblock. 
+        Whether to use a row-column alternating partial search strategy to find pivots in the superblock.
         If False, performs a 'full search' that uses more function evaluations (O(chi) vs. O(chi^2)) but
         can introduce potentially smaller errors.
     maxiter_partial : int, default=5
@@ -81,7 +81,7 @@ def cross_greedy(
         )
     cross = CrossInterpolationGreedy(black_box, initial_points)
 
-    if cross_strategy.partial == True:
+    if cross_strategy.partial:
         update_method = _update_partial_search
     else:
         update_method = _update_full_search
@@ -269,7 +269,10 @@ def _update_full_search(
     A = cross.sample_superblock(k)
     B = cross.sample_skeleton(k)
 
-    error_function = lambda A, B: np.abs(A - B)
+    # TODO: Why do we need this function and not use |A-B| directly?
+    def error_function(A, B):
+        return np.abs(A - B)
+
     diff = error_function(A, B)
     j_l, j_g = np.unravel_index(np.argmax(diff), A.shape)
     pivot_error = diff[j_l, j_g]
@@ -303,7 +306,10 @@ def _update_partial_search(
     A_random = cross.sample_superblock(k, j_l=j_l_random, j_g=j_g_random)
     B_random = cross.sample_skeleton(k, j_l=j_l_random, j_g=j_g_random)
 
-    error_function = lambda A, B: np.abs(A - B)
+    # TODO: Why do we need this function and not use |A-B| directly?
+    def error_function(A, B):
+        return np.abs(A - B)
+
     diff = error_function(A_random, B_random)
     i, j = np.unravel_index(np.argmax(diff), A_random.shape)
     j_l, j_g = j_l_random[i], j_g_random[j]

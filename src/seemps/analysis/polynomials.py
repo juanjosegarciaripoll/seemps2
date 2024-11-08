@@ -103,10 +103,11 @@ def mps_from_polynomial(
     if not isinstance(p, Polynomial):
         p = Polynomial(p)
     xm_mps = _mps_x_tensor(p.degree(), domain, first)
+    coef: np.ndarray = np.asarray(p.coef)
     if first:
-        xm_mps[0] = np.einsum("a,aib->ib", p.coef, xm_mps[0])[np.newaxis, :, :]
+        xm_mps[0] = np.einsum("a,aib->ib", coef, xm_mps[0])[np.newaxis, :, :]
     else:
-        xm_mps[-1] = np.einsum("aib,b->ai", xm_mps[-1], p.coef)[:, :, np.newaxis]
+        xm_mps[-1] = np.einsum("aib,b->ai", xm_mps[-1], coef)[:, :, np.newaxis]
     if strategy.get_simplify_flag():
         return simplify(xm_mps, strategy=strategy)
     return xm_mps
