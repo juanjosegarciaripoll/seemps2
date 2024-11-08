@@ -20,10 +20,10 @@ cdef (int, double) __update_in_canonical_form_right(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
 ):
     if site + 1 == PyList_GET_SIZE(state):
-        state_set(state, site, someA)
+        state_set(state, site, <cnp.ndarray>someA)
         return site, 0.0
     cdef:
-        cnp.ndarray A = _copy_array(someA)
+        cnp.ndarray A = _copy_array(<cnp.ndarray>someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
         Py_ssize_t i = PyArray_DIM(A, 1)
         Py_ssize_t b = PyArray_DIM(A, 2)
@@ -47,7 +47,7 @@ cdef (int, double) __update_in_canonical_form_right(
 def _update_in_canonical_form_right(state, A, site, truncation):
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    return __update_in_canonical_form_right(state, <cnp.ndarray>A, site, truncation)
+    return __update_in_canonical_form_right(state, A, site, truncation)
 
 
 cdef (int, double) __update_in_canonical_form_left(
@@ -56,10 +56,10 @@ cdef (int, double) __update_in_canonical_form_left(
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
     if site == 0:
-        state_set(state, 0, someA)
+        state_set(state, 0, <cnp.ndarray>someA)
         return site, 0.0
     cdef:
-        cnp.ndarray A = _copy_array(someA)
+        cnp.ndarray A = _copy_array(<cnp.ndarray>someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
         Py_ssize_t i = PyArray_DIM(A, 1)
         Py_ssize_t b = PyArray_DIM(A, 2)
@@ -79,7 +79,7 @@ cdef (int, double) __update_in_canonical_form_left(
     return site, sqrt(err)
 
 def _update_in_canonical_form_left(state, A, site, truncation):
-    return __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
+    return __update_in_canonical_form_left(state, A, site, truncation)
 
 cdef float __recanonicalize_left(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation):
     cdef:
