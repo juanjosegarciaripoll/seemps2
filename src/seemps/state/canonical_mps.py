@@ -1,15 +1,9 @@
 from __future__ import annotations
 import warnings
-from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
-from .schmidt import (
-    _vector2mps,
-    _schmidt_weights,
-    _left_orth_2site,
-    _right_orth_2site,
-)
+from .schmidt import _vector2mps, _schmidt_weights
 from .environments import (
     _begin_environment,
     _update_left_environment,
