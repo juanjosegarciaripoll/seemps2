@@ -3,6 +3,7 @@ from Cython.Build import cythonize
 import glob
 import numpy as np
 import sys
+import os
 
 # The main interface is through Pybind11Extension.
 # * You can add cxx_std = 11 / 14 / 17, and then build_ext can be removed.
@@ -14,15 +15,31 @@ import sys
 # reproducible builds(https: // github.com/pybind/python_example/pull/53)
 from pybind11.setup_helpers import Pybind11Extension
 
+extra_link_args = []
 if sys.platform == "linux":
     # We assume GCC or other compilers with compatible command line
     extra_compile_args = ["-O3", "-ffast-math", "-Wno-sign-compare"]
+    if "SANITIZE" in os.environ:
+        sanitize = os.environ["SANITIZE"]
+        if not sanitize in ["address", "leak"]:
+            raise Exception(f"Unknown or unsupported sanitize option {sanitize}")
+        extra_args = ["-g", "-fno-omit-frame-pointer", f"-fsanitize={sanitize}"]
+        extra_compile_args += extra_args
+        extra_link_args += extra_args
 else:
     # We assume Microsoft Visual C / C++ compiler
     extra_compile_args = ["/Ox", "/fp:fast"]
+    if "SANITIZE" in os.environ:
+        sanitize = os.environ["SANITIZE"]
+        if not sanitize in ["address", "leak"]:
+            raise Exception(f"Unknown or unsupported sanitize option {sanitize}")
+        extra_args = ["-g", f"/fsanitize={sanitize}"]
+        extra_compile_args += extra_args
+        extra_link_args += extra_args + ["/INFERASANLIBS"]
+
 extra_dependencies = [
     s.replace("\\", "/") for s in glob.glob("src/**/*.h", recursive=True)
-] + [s.replace("\\", "/") for s in glob.glob("src/**/*.cc", recursive=True)]
+]  # + [s.replace("\\", "/") for s in glob.glob("src/**/*.cc", recursive=True)]
 pybind11_modules = [
     Pybind11Extension(
         "seemps.state.core",
@@ -42,6 +59,7 @@ pybind11_modules = [
             "src/seemps/state/core.cc",
         ],
         extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         include_dirs=[np.get_include()],
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
         depends=extra_dependencies,
