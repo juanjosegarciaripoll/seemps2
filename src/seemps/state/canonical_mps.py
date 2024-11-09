@@ -83,9 +83,9 @@ class CanonicalMPS(MPS):
             normalize is None and self.strategy.get_normalize_flag()
         ):
             A = self[actual_center]
-            N = np.linalg.norm(A)
+            N = np.linalg.norm(A.reshape(-1))
             if N:
-                self[actual_center] = A / np.linalg.norm(A)
+                self[actual_center] = A / N
 
     @classmethod
     def from_vector(
