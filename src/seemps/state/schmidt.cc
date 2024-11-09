@@ -25,7 +25,7 @@ _update_in_canonical_form_right(py::list state, py::object A, int site,
   ++site;
   state[site] = contract_last_and_first(
       as_matrix(s, D, 1) * matrix_resize(V, D, -1), state[site]);
-  return {site, err};
+  return {site, std::sqrt(err)};
 }
 
 std::tuple<int, double> _update_in_canonical_form_left(py::list state,
@@ -49,7 +49,7 @@ std::tuple<int, double> _update_in_canonical_form_left(py::list state,
   --site;
   state[site] =
       contract_last_and_first(state[site], matrix_resize(U, -1, D) * s);
-  return {site, err};
+  return {site, std::sqrt(err)};
 }
 
 double _recanonicalize(py::list state, int oldcenter, int newcenter,
@@ -102,7 +102,7 @@ _left_orth_2site(py::object AA, const Strategy &strategy) {
   auto D = array_size(s);
   return {as_3tensor(matrix_resize(U, -1, D), a, d1, D),
           as_3tensor(as_matrix(s, D, 1) * matrix_resize(V, D, -1), D, d2, b),
-          err};
+          std::sqrt(err)};
 }
 
 std::tuple<py::object, py::object, double>
@@ -119,7 +119,7 @@ _right_orth_2site(py::object AA, const Strategy &strategy) {
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
   return {as_3tensor(matrix_resize(U, -1, D) * s, a, d1, D),
-          as_3tensor(matrix_resize(V, D, -1), D, d2, b), err};
+          as_3tensor(matrix_resize(V, D, -1), D, d2, b), std::sqrt(err)};
 }
 
 double _update_canonical_2site_left(py::list state, py::object A, int site,
@@ -143,7 +143,7 @@ double _update_canonical_2site_left(py::list state, py::object A, int site,
   state[site] = as_3tensor(matrix_resize(U, -1, D), a, d1, D);
   state[site + 1] =
       as_3tensor(as_matrix(s, D, 1) * matrix_resize(V, D, -1), D, d2, b);
-  return err;
+  return std::sqrt(err);
 }
 
 double _update_canonical_2site_right(py::list state, py::object A, int site,
@@ -166,7 +166,7 @@ double _update_canonical_2site_right(py::list state, py::object A, int site,
 
   state[site] = as_3tensor(matrix_resize(U, -1, D) * s, a, d1, D);
   state[site + 1] = as_3tensor(matrix_resize(V, D, -1), D, d2, b);
-  return err;
+  return std::sqrt(err);
 }
 
 } // namespace seemps

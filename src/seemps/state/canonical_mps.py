@@ -86,9 +86,11 @@ class CanonicalMPS(MPS):
             normalize is None and self.strategy.get_normalize_flag()
         ):
             A = self[actual_center]
-            N = np.linalg.norm(A)
+            N = np.linalg.norm(A.reshape(-1))
             if N:
-                self[actual_center] = A / np.linalg.norm(A)
+                self._data[actual_center] = A / N
+            else:
+                warnings.warn("Refusing to normalize zero vector")
 
     @classmethod
     def from_vector(
@@ -234,7 +236,7 @@ class CanonicalMPS(MPS):
 
     def update_canonical(
         self, A: Tensor3, direction: int, truncation: Strategy
-    ) -> float:
+    ) -> None:
         """Update the state, replacing the tensor at `self.center`
         and moving the center to `self.center + direction`.
 
@@ -254,15 +256,14 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, error_squared = _update_in_canonical_form_right(
+            self.center, error = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, error_squared = _update_in_canonical_form_left(
+            self.center, error = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
-        self._error += sqrt(error_squared)
-        return error_squared
+        self._error += error
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -282,9 +283,8 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        error_squared = _update_canonical_2site_left(self._data, AA, site, strategy)
+        self._error += _update_canonical_2site_left(self._data, AA, site, strategy)
         self.center = site + 1
-        self._error += sqrt(error_squared)
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
         """Split a two-site tensor into two one-site tensors by
@@ -303,9 +303,8 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        error_squared = _update_canonical_2site_right(self._data, AA, site, strategy)
+        self._error += _update_canonical_2site_right(self._data, AA, site, strategy)
         self.center = site
-        self._error += sqrt(error_squared)
 
     def _interpret_center(self, center: int) -> int:
         """Converts `center` into an integer in `[0,self.size)`, with the
@@ -338,26 +337,26 @@ class CanonicalMPS(MPS):
             This same object.
         """
         center = self._interpret_center(center)
-        old = self.center
-        if center != old:
-            error_squared = _recanonicalize(
+        oldcenter = self.center
+        if oldcenter != center:
+            err = _recanonicalize(
                 self._data,
-                old,
+                oldcenter,
                 center,
                 self.strategy if strategy is None else strategy,
             )
-            self._error += sqrt(error_squared)
+            self._error += err
         return self
 
     def normalize_inplace(self) -> CanonicalMPS:
         """Normalize the state by updating the central tensor."""
         n = self.center
         A = self._data[n]
-        N = np.linalg.norm(A)
-        if N == 0:
-            warnings.warn("Refusing to normalize zero vector")
-        else:
+        N = np.linalg.norm(A.reshape(-1))
+        if N:
             self._data[n] = A / N
+        else:
+            warnings.warn("Refusing to normalize zero vector")
         return self
 
     def __copy__(self):
