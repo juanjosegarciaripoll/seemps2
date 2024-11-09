@@ -16,14 +16,11 @@ cdef inline void state_set(list state, Py_ssize_t n, cnp.ndarray A) noexcept:
 cdef inline cnp.ndarray state_get(list state, Py_ssize_t n) noexcept:
      return <cnp.ndarray>PyList_GET_ITEM(state, n)
 
-cdef (int, double) __update_in_canonical_form_right(
-    list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
-):
-    if site + 1 == PyList_GET_SIZE(state):
-        state_set(state, site, <cnp.ndarray>someA)
-        return site, 0.0
+cdef double __update_in_canonical_form_right(
+    list[Tensor3] state, cnp.ndarray someA, Py_ssize_t site, Strategy truncation
+) noexcept:
     cdef:
-        cnp.ndarray A = _copy_array(<cnp.ndarray>someA)
+        cnp.ndarray A = _copy_array(someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
         Py_ssize_t i = PyArray_DIM(A, 1)
         Py_ssize_t b = PyArray_DIM(A, 2)
@@ -41,23 +38,23 @@ cdef (int, double) __update_in_canonical_form_right(
     site += 1
     state_set(state, site, __contract_last_and_first(
         _as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), state_get(state, site)))
-    return site, sqrt(err)
+    return sqrt(err)
 
 
-def _update_in_canonical_form_right(state, A, site, truncation):
+def _update_in_canonical_form_right(list state, cnp.ndarray A, Py_ssize_t site, Strategy truncation):
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    return __update_in_canonical_form_right(state, A, site, truncation)
-
-
-cdef (int, double) __update_in_canonical_form_left(
-    list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
-):
-    """Insert a tensor in canonical form into the MPS state at the given site.
-    Update the neighboring sites in the process."""
-    if site == 0:
-        state_set(state, 0, <cnp.ndarray>someA)
+    if site + 1 == PyList_GET_SIZE(state):
+        state_set(state, site, A)
         return site, 0.0
+    return site+1, __update_in_canonical_form_right(state, A, site, truncation)
+
+
+cdef double __update_in_canonical_form_left(
+    list[Tensor3] state, cnp.ndarray someA, Py_ssize_t site, Strategy truncation
+) noexcept:
+    """Insert a tensor in canonical form into the MPS state at the given site.
+    Update the neighboring sites in the process."""
     cdef:
         cnp.ndarray A = _copy_array(<cnp.ndarray>someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
@@ -76,17 +73,20 @@ cdef (int, double) __update_in_canonical_form_left(
     state_set(state, site, _as_3tensor(_resize_matrix(V, D, -1), D, i, b))
     site -= 1
     state_set(state, site, __contract_last_and_first(state_get(state, site), _resize_matrix(U, -1, D) * s))
-    return site, sqrt(err)
+    return sqrt(err)
 
-def _update_in_canonical_form_left(state, A, site, truncation):
-    return __update_in_canonical_form_left(state, A, site, truncation)
+def _update_in_canonical_form_left(list[Tensor3] state, cnp.ndarray A, Py_ssize_t site, Strategy truncation):
+    if site == 0:
+        state_set(state, 0, A)
+        return site, 0.0
+    return site-1, __update_in_canonical_form_left(state, A, site, truncation)
 
 cdef float __recanonicalize_left(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation):
     cdef:
         double err = 0.0
     while oldcenter < newcenter:
         err += __update_in_canonical_form_right(state, state_get(state, oldcenter),
-                                                oldcenter, truncation)[1]
+                                                oldcenter, truncation)
         oldcenter += 1
     return err
 
@@ -95,7 +95,7 @@ cdef float __recanonicalize_right(list[Tensor3] state, int oldcenter, int newcen
         double err = 0.0
     while newcenter < oldcenter:
         err += __update_in_canonical_form_left(state, state_get(state, oldcenter),
-                                               oldcenter, truncation)[1]
+                                               oldcenter, truncation)
         oldcenter -= 1
     return err
 
