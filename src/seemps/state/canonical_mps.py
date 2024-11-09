@@ -23,6 +23,7 @@ from .core import (
     _update_canonical_2site_left,
     _update_canonical_2site_right,
     _canonicalize,
+    _recanonicalize,
 )
 from .mps import MPS
 
@@ -338,12 +339,14 @@ class CanonicalMPS(MPS):
         """
         center = self._interpret_center(center)
         old = self.center
-        if strategy is None:
-            strategy = self.strategy
         if center != old:
-            dr = +1 if center > old else -1
-            for i in range(old, center, dr):
-                self.update_canonical(self._data[i], dr, strategy)
+            error_squared = _recanonicalize(
+                self._data,
+                old,
+                center,
+                self.strategy if strategy is None else strategy,
+            )
+            self._error += sqrt(error_squared)
         return self
 
     def normalize_inplace(self) -> CanonicalMPS:

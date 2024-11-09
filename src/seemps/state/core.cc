@@ -155,6 +155,9 @@ PYBIND11_MODULE(core, m) {
   m.def("_canonicalize", &_canonicalize,
         R"doc(Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`.)doc");
+  m.def("_recanonicalize", &_recanonicalize,
+        R"doc(Update a list of `Tensor3` objects to be in canonical form
+    with respect to a new site `center`.)doc");
   m.def("_update_canonical_2site_left", &_update_canonical_2site_left);
   m.def("_update_canonical_2site_right", &_update_canonical_2site_right);
   m.def("_left_orth_2site", &_left_orth_2site);

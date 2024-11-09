@@ -26,6 +26,8 @@ _update_in_canonical_form_left(py::list state, py::object A, int site,
                                const Strategy &truncation,
                                bool overwrite = false);
 double _canonicalize(py::list state, int center, const Strategy &truncation);
+double _recanonicalize(py::list state, int oldcenter, int newcenter,
+                       const Strategy &truncation);
 std::tuple<py::object, py::object, double>
 _left_orth_2site(py::object AA, const Strategy &strategy);
 std::tuple<py::object, py::object, double>

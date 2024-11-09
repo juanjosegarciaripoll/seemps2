@@ -52,6 +52,24 @@ std::tuple<int, double> _update_in_canonical_form_left(py::list state,
   return {site, err};
 }
 
+double _recanonicalize(py::list state, int oldcenter, int newcenter,
+                       const Strategy &strategy) {
+  double err = 0.0;
+  while (oldcenter < newcenter) {
+    auto [site, errk] = _update_in_canonical_form_right(state, state[oldcenter],
+                                                        oldcenter, strategy);
+    err += errk;
+    oldcenter = site;
+  }
+  while (oldcenter > newcenter) {
+    auto [site, errk] = _update_in_canonical_form_left(state, state[oldcenter],
+                                                       oldcenter, strategy);
+    err += errk;
+    oldcenter = site;
+  }
+  return err;
+}
+
 double _canonicalize(py::list state, int center, const Strategy &strategy) {
   double err = 0.0;
   for (int i = 0; i < center;) {
