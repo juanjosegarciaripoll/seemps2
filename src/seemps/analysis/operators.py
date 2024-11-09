@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from ..operators import MPO, MPOList
+from ..operators import MPO, MPOList, MPOSum
 from ..state import Strategy, DEFAULT_STRATEGY
 from typing import Union
 
@@ -292,3 +292,19 @@ def sin_mpo(n: int, a: float, dx: float, strategy=DEFAULT_STRATEGY):
     exp2 = exponential_mpo(n, a, dx, c=-1j, strategy=strategy)
     sin_mpo = (-1j) * 0.5 * (exp1 - exp2)
     return sin_mpo.join(strategy=strategy)
+
+
+def mpo_affine(
+    mpo: MPO,
+    orig: tuple,
+    dest: tuple,
+):
+    x0, x1 = orig
+    u0, u1 = dest
+    a = (u1 - u0) / (x1 - x0)
+    b = 0.5 * ((u1 + u0) - a * (x0 + x1))
+    mpo_affine = a * mpo
+    if abs(b) > np.finfo(np.float64).eps:
+        I = MPO([np.ones((1, 2, 2, 1))] * len(mpo_affine))
+        mpo_affine = MPOSum(mpos=[mpo_affine, I], weights=[1, b]).join()
+    return mpo_affine

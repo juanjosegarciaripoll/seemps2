@@ -140,6 +140,10 @@ class MPO(TensorArray):
         """Return the bond dimensions of the MPO."""
         return [A.shape[-1] for A in self][:-1]
 
+    def max_bond_dimension(self) -> int:
+        """Return the maximum bond dimensions of the MPO."""
+        return max(A.shape[-1] for A in self)
+
     @property
     def T(self) -> MPO:
         return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)

@@ -85,11 +85,11 @@ def gradient_descent(
     state = simplify(guess, strategy=strategy)
     results = OptimizeResults(
         state=state,
-        energy=np.Inf,
+        energy=np.inf,
         converged=False,
         message=f"Exceeded maximum number of steps {maxiter}",
     )
-    E = last_E = variance = avg_H2 = np.Inf
+    E = last_E = variance = avg_H2 = np.inf
     H_state: MPS
     with make_logger() as logger:
         logger(f"gradient_descent() invoked with {maxiter} iterations")

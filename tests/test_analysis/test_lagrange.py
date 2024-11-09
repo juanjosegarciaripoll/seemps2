@@ -1,6 +1,6 @@
 import numpy as np
 
-from seemps.analysis.mesh import RegularHalfOpenInterval
+from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.lagrange import (
     lagrange_basic,
     lagrange_rank_revealing,
@@ -15,7 +15,7 @@ class TestLagrangeMPS(TestCase):
         f = lambda x: np.exp(-(x**2))
         start, stop = -2, 2
         sites = 6
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
+        interval = RegularInterval(start, stop, 2**sites)
         mps = lagrange_basic(f, 20, sites, start, stop)
         self.assertSimilar(f(interval.to_vector()), mps.to_vector())
 
@@ -23,7 +23,7 @@ class TestLagrangeMPS(TestCase):
         f = lambda x: np.exp(-(x**2))
         start, stop = -2, 2
         sites = 6
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
+        interval = RegularInterval(start, stop, 2**sites)
         mps = lagrange_rank_revealing(f, 20, sites, start, stop)
         self.assertSimilar(f(interval.to_vector()), mps.to_vector())
 
@@ -31,7 +31,7 @@ class TestLagrangeMPS(TestCase):
         f = lambda x: np.exp(-(x**2))
         start, stop = -2, 2
         sites = 6
-        interval = RegularHalfOpenInterval(start, stop, 2**sites)
+        interval = RegularInterval(start, stop, 2**sites)
         mps = lagrange_local_rank_revealing(f, 20, 5, sites, start, stop)
         self.assertSimilar(f(interval.to_vector()), mps.to_vector())
 

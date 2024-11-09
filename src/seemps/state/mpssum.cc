@@ -42,6 +42,22 @@ MPSSum MPSSum::copy() const {
   return MPSSum(py::copy(weights_), py::copy(mps_), false);
 }
 
+MPSSum MPSSum::deepcopy() const {
+  py::list mps_list;
+  std::for_each(py::begin(mps_), py::end(mps_), [&](py::object a) -> void {
+    py::object mps_copy;
+    if (py::isinstance<MPS>(a)) {
+      mps_copy = py::cast(a.cast<MPS &>().deepcopy());
+    } else if (py::isinstance<CanonicalMPS>(a)) {
+      mps_copy = py::cast(a.cast<CanonicalMPS &>().deepcopy());
+    } else {
+      mps_copy = py::copy(a);
+    }
+    mps_list.append(mps_copy);
+  });
+  return MPSSum(py::copy(weights_), mps_list, false);
+}
+
 MPSSum MPSSum::conj() const {
   auto output = copy();
   for (size_t i = 0; i < sum_size(); ++i) {
@@ -111,7 +127,7 @@ double MPSSum::delete_zero_components() {
     std::complex<double> wi = weights_[i].cast<std::complex<double>>();
     if (wi.real() != 0.0 || wi.imag() != 0) {
       auto wic = std::conj(wi);
-      auto &statei = mps_[i];
+      auto statei = mps_[i];
       const auto &si = statei.cast<const MPS &>();
       auto ni = (wic * wi).real() * state_norm_squared(statei);
       if (ni) {

@@ -2,6 +2,12 @@
 
 namespace seemps {
 
+CanonicalMPS CanonicalMPS::deepcopy() const {
+  auto output = copy();
+  std::transform(output.begin(), output.end(), output.begin(), py::copy);
+  return output;
+}
+
 int CanonicalMPS::interpret_center(int center) const {
   if (center == no_defined_center) {
     return 0;

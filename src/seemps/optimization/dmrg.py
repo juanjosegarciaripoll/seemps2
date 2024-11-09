@@ -180,7 +180,7 @@ def dmrg(
     logger(f"start, energy={energy}, variance={variance}")
     if callback is not None:
         callback(QF.state, results)
-    E: float = np.Inf
+    E: float = np.inf
     last_E: float = E
     strategy = strategy.replace(normalize=True)
     for step in range(maxiter):

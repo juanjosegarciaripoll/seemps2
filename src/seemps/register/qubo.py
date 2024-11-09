@@ -47,19 +47,20 @@ def qubo_mpo(
         data[-1] = A
         data[0] = data[0][[0], :, :, :]
     else:
+        Jmatrix = np.asarray(J)
         if h is not None:
-            J = J + np.diag(h)
-        L = len(J)
+            Jmatrix += np.diag(h)
+        L = len(Jmatrix)
         id2 = np.eye(2)
         data = []
         for i in range(L):
             A = np.zeros((i + 2, 2, 2, i + 3))
-            A[0, 1, 1, 1] = J[i, i]
+            A[0, 1, 1, 1] = Jmatrix[i, i]
             A[1, :, :, 1] = np.eye(2)
             A[0, :, :, 0] = np.eye(2)
             A[0, 1, 1, i + 2] = 1.0
             for j in range(i):
-                A[j + 2, 1, 1, 1] = J[i, j] + J[j, i]
+                A[j + 2, 1, 1, 1] = Jmatrix[i, j] + Jmatrix[j, i]
                 A[j + 2, :, :, j + 2] = np.eye(2)
             data.append(A)
         data[-1] = data[-1][:, :, :, [1]]
@@ -112,20 +113,21 @@ def qubo_exponential_mpo(
             data.append(A)
         return MPO(data, **kwdargs)
     else:
+        Jmatrix = np.asarray(J)
         if h is not None:
-            J = J + np.diag(h)
-        J = (J + J.T) / 2
+            Jmatrix += np.diag(h)
+        Jmatrix = (Jmatrix + Jmatrix.T) / 2
         L = len(J)
         noop = np.eye(2).reshape(1, 2, 2, 1)
         out = []
         for i in range(L):
             data = [noop] * i
             A = np.zeros((1, 2, 2, 2))
-            A[0, 1, 1, 1] = np.exp(beta * J[i, i])
+            A[0, 1, 1, 1] = np.exp(beta * Jmatrix[i, i])
             A[0, 0, 0, 0] = 1.0
             for j in range(i + 1, L):
                 A = np.zeros((2, 2, 2, 2))
-                A[1, 1, 1, 1] = np.exp(beta * J[i, j])
+                A[1, 1, 1, 1] = np.exp(beta * Jmatrix[i, j])
                 A[1, 0, 0, 1] = 1.0
                 A[0, 0, 0, 0] = 1.0
                 A[0, 1, 1, 0] = 1.0

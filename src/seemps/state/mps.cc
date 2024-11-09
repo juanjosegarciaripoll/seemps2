@@ -2,6 +2,12 @@
 
 namespace seemps {
 
+MPS MPS::deepcopy() const {
+  auto output = copy();
+  std::transform(output.begin(), output.end(), output.begin(), py::copy);
+  return output;
+}
+
 py::int_ MPS::dimension() const {
   return std::accumulate(
       begin(), end(), py::int_(1),
@@ -26,6 +32,13 @@ py::list MPS::bond_dimensions() const {
     return py::int_(array_dim(a, 2));
   });
   return output;
+}
+
+py::int_ MPS::max_bond_dimension() const {
+  return std::accumulate(begin(), end(), py::int_(1),
+                         [](py::int_ i, const py::object &a) -> auto {
+                           return std::max<py::int_>(i, array_dim(a, 1));
+                         });
 }
 
 double MPS::norm_squared() const { return py::abs(scprod(*this, *this)); }

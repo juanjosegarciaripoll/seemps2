@@ -58,10 +58,13 @@ public:
 
   MPS copy() const { return MPS(*this); }
   MPS as_mps() const { return *this; }
+  MPS deepcopy() const;
 
   py::int_ dimension() const;
 
   py::list physical_dimensions() const;
+
+  py::int_ max_bond_dimension() const;
 
   py::list bond_dimensions() const;
 
@@ -113,6 +116,7 @@ public:
   auto dimension() const { return mps(0).dimension(); }
 
   MPSSum copy() const;
+  MPSSum deepcopy() const;
 
   MPSSum conj() const;
 
@@ -167,6 +171,7 @@ public:
 
   CanonicalMPS copy() const { return CanonicalMPS(*this); }
   CanonicalMPS as_mps() const { return *this; }
+  CanonicalMPS deepcopy() const;
 
   auto center_tensor() const { return getitem(center_); }
 

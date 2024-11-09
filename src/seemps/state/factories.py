@@ -209,8 +209,9 @@ def random_mps(
             DR = np.min([DR * d, D, d ** (N - i - 1)])
         T = rng.normal(size=(DL, d, DR))
         if complex:
-            T = T + 1j * rng.normal(size=T.shape)
-        mps[i] = T
+            mps[i] = T + 1j * rng.normal(size=T.shape)
+        else:
+            mps[i] = T
     return MPS(mps)
 
 

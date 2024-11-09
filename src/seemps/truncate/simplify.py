@@ -67,8 +67,9 @@ def simplify(
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(state, center=start, strategy=strategy)
-        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(state, center=start, strategy=strategy).recenter(
+            -1 - start, strategy
+        )
         if logger:
             logger(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
@@ -192,6 +193,7 @@ def simplify_mps_sum(
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
+            logger.close()
         return mps
 
     # TODO: DO_NOT_SIMPLIFY should do nothing. However, since the
@@ -205,6 +207,7 @@ def simplify_mps_sum(
                 f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
                 f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
+            logger.close()
         return mps
 
     # Prepare initial guess

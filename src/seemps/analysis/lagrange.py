@@ -1,24 +1,26 @@
 import numpy as np
-from scipy.sparse import dok_matrix, csr_matrix  # type: ignore
+from scipy.sparse import dok_matrix, csc_array  # type: ignore
 from typing import Callable, Optional
 from functools import lru_cache
 
-from ..state import MPS, Strategy
+from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..state.schmidt import _destructive_svd
+from ..state._contractions import _contract_last_and_first
 from ..state.core import destructively_truncate_vector
-from ..truncate import simplify, SIMPLIFICATION_STRATEGY
-from .mesh import affine_transformation
+from ..truncate import simplify
+from .mesh import array_affine
 
-DEFAULT_LAGRANGE_STRATEGY = SIMPLIFICATION_STRATEGY.replace(normalize=False)
+
+# TODO: Implement multivariate Lagrange interpolation and multirresolution constructions
 
 
 def lagrange_basic(
     func: Callable,
     order: int,
     sites: int,
-    start: float = -1,
-    stop: float = 1,
-    strategy: Strategy = DEFAULT_LAGRANGE_STRATEGY,
+    start: float = -1.0,
+    stop: float = 1.0,
+    strategy: Strategy = DEFAULT_STRATEGY,
     use_logs: bool = True,
 ) -> MPS:
     """
@@ -32,15 +34,15 @@ def lagrange_basic(
         The order of the Chebyshev interpolation.
     sites : int
         The number of qubits of the MPS.
-    start : float
+    start : float, default=-1.0
         The starting point of the function's domain.
-    stop : float
+    stop : float, default=1.0
         The end point of the function's domain.
-    strategy : Strategy
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy.
-    use_logs : bool
+    use_logs : bool, default=True
         Whether to compute the Chebyshev cardinal function using
-        logarithms to avoid overflow (default True).
+        logarithms to avoid overflow.
 
     Returns
     -------
@@ -60,9 +62,9 @@ def lagrange_rank_revealing(
     func: Callable,
     order: int,
     sites: int,
-    start: float = -1,
-    stop: float = 1,
-    strategy: Strategy = DEFAULT_LAGRANGE_STRATEGY,
+    start: float = -1.0,
+    stop: float = 1.0,
+    strategy: Strategy = DEFAULT_STRATEGY,
     use_logs: bool = True,
 ) -> MPS:
     """
@@ -76,15 +78,15 @@ def lagrange_rank_revealing(
         The order of the Chebyshev interpolation.
     sites : int
         The number of qubits of the MPS.
-    start : float
+    start : float, default=-1.0
         The starting point of the function's domain.
-    stop : float
+    stop : float, default=1.0
         The end point of the function's domain.
-    strategy : Strategy
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy.
-    use_logs : bool
+    use_logs : bool, default=True
         Whether to compute the Chebyshev cardinal function using
-        logarithms to avoid overflow (default True).
+        logarithms to avoid overflow.
 
     Returns
     -------
@@ -99,7 +101,7 @@ def lagrange_rank_revealing(
     U_L, R = np.linalg.qr(Al.reshape((2, order + 1)))
     tensors = [U_L.reshape(1, 2, 2)]
     for _ in range(sites - 2):
-        B = np.tensordot(R, Ac, axes=1)
+        B = _contract_last_and_first(R, Ac)
         r1, s, r2 = B.shape
         ## SVD
         U, S, V = _destructive_svd(B.reshape(r1 * s, r2))
@@ -109,7 +111,7 @@ def lagrange_rank_revealing(
         R = S.reshape(D, 1) * V[:D, :]
         ##
         tensors.append(U.reshape(r1, s, -1))
-    U_R = np.tensordot(R, Ar, axes=1)
+    U_R = _contract_last_and_first(R, Ar)
     tensors.append(U_R)
     return MPS(tensors)
 
@@ -119,9 +121,9 @@ def lagrange_local_rank_revealing(
     order: int,
     local_order: int,
     sites: int,
-    start: float = -1,
-    stop: float = 1,
-    strategy: Strategy = DEFAULT_LAGRANGE_STRATEGY,
+    start: float = -1.0,
+    stop: float = 1.0,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPS:
     """
     Performs a local rank-revealing Lagrange MPS Chebyshev interpolation of a function.
@@ -138,11 +140,11 @@ def lagrange_local_rank_revealing(
         The local order of the Chebyshev interpolation.
     sites : int
         The number of qubits of the MPS.
-    start : float
+    start : float, default=-1.0
         The starting point of the function's domain.
-    stop : float
+    stop : float, default=1.0
         The end point of the function's domain.
-    strategy : Strategy
+    strategy : Strategy, default=DEFAULT_STRATEGY
         The MPS simplification strategy.
 
     Returns
@@ -246,9 +248,7 @@ class LagrangeBuilder:
             gamma_res = (
                 -gamma
                 if gamma < 0
-                else self.d - (gamma - self.d)
-                if gamma > self.d
-                else gamma
+                else self.d - (gamma - self.d) if gamma > self.d else gamma
             )
             if j == gamma_res:
                 P += self.local_angular_cardinal(theta, gamma)
@@ -273,13 +273,11 @@ class LagrangeBuilder:
         """
         Returns the left-most MPS tensor required for Chebyshev interpolation.
         """
-
-        def affine_func(u):
-            return func(affine_transformation(u, orig=(0, 1), dest=(start, stop)))
-
         A = np.zeros((1, 2, self.D))
         for s in range(2):
-            A[0, s, :] = affine_func(0.5 * (s + self.c))
+            A[0, s, :] = func(
+                array_affine(0.5 * (s + self.c), orig=(0, 1), dest=(start, stop))
+            )
         return A
 
     def A_C(self, use_logs: bool = True) -> np.ndarray:
@@ -302,7 +300,7 @@ class LagrangeBuilder:
                 A[i, s, 0] = self.chebyshev_cardinal(np.array([0.5 * s]), i, use_logs)
         return A
 
-    def A_C_sparse(self) -> csr_matrix:
+    def A_C_sparse(self) -> csc_array:
         """
         Returns the central MPS tensor required for local Chebyshev interpolation.
         For efficiency, it is represented as a (d+1, 2*(d+1)) sparse matrix (CSR).
@@ -315,9 +313,9 @@ class LagrangeBuilder:
                     val = self.local_chebyshev_cardinal(0.5 * (s + c_j), i)
                     if val != 0:
                         A[i, s * self.D + j] = val
-        return A.tocsr()
+        return A.tocsc()
 
-    def A_R_sparse(self) -> csr_matrix:
+    def A_R_sparse(self) -> csc_array:
         """
         Returns the right-most MPS tensor required for local Chebyshev interpolation.
         For efficiency, it is represented as a (d+1, 2) sparse matrix (CSR).
@@ -328,4 +326,4 @@ class LagrangeBuilder:
                 val = self.local_chebyshev_cardinal(0.5 * s, i)
                 if val != 0:
                     A[i, s] = val
-        return A.tocsr()
+        return A.tocsc()

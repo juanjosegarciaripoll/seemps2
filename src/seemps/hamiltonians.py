@@ -182,6 +182,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
         self.constant = True
         if isinstance(dimension, list):
             self.dimensions = dimension
+            assert len(dimension) == size
         else:
             self.dimensions = [dimension] * size
         self.interactions = [

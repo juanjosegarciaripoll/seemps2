@@ -73,7 +73,7 @@ def power_method(
     )
     results = PowerMethodOptimizeResults(
         state=state,
-        energy=np.Inf,
+        energy=np.inf,
         converged=False,
         trajectory=[],
         variances=[],
@@ -82,7 +82,7 @@ def power_method(
     # This extra field is needed because CGS consumes iterations
     # in itself.
     results.steps = []
-    last_energy = np.Inf
+    last_energy = np.inf
     logger = make_logger()
     logger(f"power_method() invoked with {maxiter} iterations")
     total_steps = 0

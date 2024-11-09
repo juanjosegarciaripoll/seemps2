@@ -44,6 +44,13 @@ PYBIND11_MODULE(core, m) {
 
   m.attr("STATUS") = OK_LOADED;
 
+  /*
+   * TODO:
+   * - Separate TensorArray3 and TensorArray4
+   * - Implement control of array rank
+   * - Move bond_dimensions(), max_bond_dimension() and others to TensorArray
+   */
+
   py::class_<TensorArray3>(m, "TensorArray",
                            R"doc(TensorArray class.
 
@@ -147,11 +154,19 @@ PYBIND11_MODULE(core, m) {
       .def(
           "copy", &MPS::copy,
           R"doc(Return a shallow copy of the MPS, without duplicating the tensors.)doc")
+      .def(
+          "deepcopy", &MPS::copy,
+          R"doc(Return a deep copy of the MPS, without duplicating the tensors.)doc")
+      .def("__copy__", &MPS::copy)
+      .def("__deepcopy__",
+           [](const MPS &mps, py::object memo) { return mps.deepcopy(); })
       .def("as_mps", &MPS::as_mps)
       .def("dimension", &MPS::dimension,
            R"doc(Hilbert space dimension of this quantum system)doc")
       .def("physical_dimensions", &MPS::physical_dimensions,
            R"doc(List of physical dimensions for the quantum subsystems.)doc")
+      .def("max_bond_dimension", &MPS::max_bond_dimension,
+           R"doc(Return the largest bond dimension.)doc")
       .def("bond_dimensions", &MPS::bond_dimensions,
            R"doc(List of bond dimensions for the matrix product state.
 
@@ -374,6 +389,10 @@ PYBIND11_MODULE(core, m) {
       .def("recenter", py::overload_cast<int>(&CanonicalMPS::recenter))
       .def("normalize_inplace", &CanonicalMPS::normalize_in_place)
       .def("copy", &CanonicalMPS::copy)
+      .def("deepcopy", &CanonicalMPS::deepcopy)
+      .def("__copy__", &CanonicalMPS::copy)
+      .def("__deepcopy__", [](const CanonicalMPS &mps,
+                              py::object memo) { return mps.deepcopy(); })
       .def(
           "__mul__",
           [](const CanonicalMPS &state, const py::object &weight_or_mps) {
@@ -432,6 +451,10 @@ PYBIND11_MODULE(core, m) {
       .def_property_readonly("states", &MPSSum::states)
       .def_property_readonly("size", &MPSSum::size)
       .def("copy", &MPSSum::copy)
+      .def("deepcopy", &MPSSum::deepcopy)
+      .def("__copy__", &MPSSum::copy)
+      .def("__deepcopy__",
+           [](const MPSSum &mps, py::object memo) { return mps.deepcopy(); })
       .def("conj", &MPSSum::conj)
       .def("norm_squared", &MPSSum::norm_squared,
            R"doc(Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS.)doc")
