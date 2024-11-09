@@ -1,7 +1,6 @@
 from __future__ import annotations
 import numpy as np
 import math
-from math import sqrt
 from typing import Sequence
 from numpy.typing import NDArray
 from ..typing import VectorLike, Tensor3, Vector

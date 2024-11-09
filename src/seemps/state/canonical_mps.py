@@ -1,6 +1,5 @@
 from __future__ import annotations
 import warnings
-from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
