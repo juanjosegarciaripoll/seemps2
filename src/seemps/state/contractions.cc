@@ -39,9 +39,12 @@ py::object contract_last_and_first(const py::object &A, const py::object &B) {
   auto ndimB = array_ndim(B);
   auto Bfirst = array_dim(B, 0);
   auto ndimC = ndimA + ndimB - 2;
+  if (ndimC == 0) {
+    std::cerr << "Empty contraction\n" << std::flush;
+  }
   std::vector<npy_intp> new_dims(ndimC);
   auto Adims = array_dims(A);
-  std::copy(Adims, Adims + ndimA, new_dims.begin());
+  std::copy(Adims, Adims + ndimA - 1, new_dims.begin());
   auto Bdims = array_dims(B);
   std::copy(Bdims + 1, Bdims + ndimB, new_dims.begin() + ndimA - 1);
   return array_reshape(
