@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -55,12 +56,23 @@ def delete_directories(patterns: list[str], root: str = "."):
             shutil.rmtree(path)
 
 
+def delete_files(patterns: list[str], root: str = "."):
+    regexp = [re.compile(p) for p in patterns]
+    for root, _, files in os.walk("."):
+        for f in files:
+            if any(p.match(f) for p in regexp):
+                path = root + "/" + f
+                print(f"Removing {path}")
+                os.remove(path)
+
+
 def clean() -> None:
     for path in ["build", "dist"]:
         if os.path.exists(path):
             print(f"Removing {path}")
             shutil.rmtree(path)
     delete_directories(["SeeMPS.egg-info", "__pycache__"])
+    delete_files([r".*\.so", r".*\.pyd", r".*\.pyc"])
 
 
 def check() -> bool:
