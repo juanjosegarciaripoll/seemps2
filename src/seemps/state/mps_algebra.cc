@@ -1,11 +1,10 @@
-#include <pybind11/complex.h>
 #include "mps.h"
 
 namespace seemps {
 
 MPSSum operator+(const MPS &a, const MPS &b) {
-  py::list weights(2);
-  py::list states(2);
+  auto weights = py::empty_list(2);
+  auto states = py::empty_list(2);
   weights[0] = 1.0;
   weights[1] = 1.0;
   states[0] = a;
@@ -27,8 +26,8 @@ MPSSum operator+(const MPSSum &a, const MPS &b) {
 }
 
 MPSSum operator-(const MPS &a, const MPS &b) {
-  py::list weights(2);
-  py::list states(2);
+  auto weights = py::empty_list(2);
+  auto states = py::empty_list(2);
   weights[0] = 1.0;
   weights[1] = -1.0;
   states[0] = a;
@@ -37,10 +36,9 @@ MPSSum operator-(const MPS &a, const MPS &b) {
 }
 
 static py::list rescale(const py::object &a, const py::list &b) {
-  py::list c(b.size());
-  for (size_t i = 0; i < b.size(); ++i) {
-    c[i] = a * b[i];
-  }
+  auto c = py::empty_list(py::len(b));
+  std::transform(begin(b), end(b), begin(c),
+                 [&](py::object b_i) -> auto { return a * b; });
   return c;
 }
 
@@ -137,11 +135,11 @@ MPSSum operator*(std::complex<double> a, const MPSSum &b) {
 
 py::object MPSSum::times_object(const py::object &weight_or_mps) const {
   if (py::isinstance<py::int_>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<double>());
+    return py::cast(*this * py::cast<double>(weight_or_mps));
   } else if (py::isinstance<py::float_>(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<double>());
+    return py::cast(*this * py::cast<double>(weight_or_mps));
   } else if (py::iscomplex(weight_or_mps)) {
-    return py::cast(*this * weight_or_mps.cast<std::complex<double>>());
+    return py::cast(*this * py::cast<std::complex<double>>(weight_or_mps));
   }
   // TODO: Add MPS, CanonicalMPS and other MPSSum
   throw py::type_error("Invalid argument to product by MPS");

@@ -1,6 +1,6 @@
 // Here we initialize the MY_PyArray_API
 #define INIT_NUMPY_ARRAY_CPP
-#include <pybind11/operators.h>
+#include <nanobind/operators.h>
 #include "core.h"
 #include "tensors.h"
 #include "strategy.h"
@@ -16,11 +16,8 @@ static int ok_loaded() {
   return 1;
 }
 
-PYBIND11_MODULE(core, m) {
+NB_MODULE(core, m) {
   load_scipy_wrappers();
-
-  py::options options;
-  options.disable_function_signatures();
 
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
@@ -74,26 +71,24 @@ PYBIND11_MODULE(core, m) {
       .def("__setitem__", &TensorArray3::__setitem__)
       .def("__iter__", &TensorArray3::__iter__)
       .def("__len__", &TensorArray3::len)
-      .def_property("_data", &TensorArray3::data, &TensorArray3::set_data)
-      .def_property_readonly("size", &TensorArray3::len);
+      .def_prop_rw("_data", &TensorArray3::data, &TensorArray3::set_data)
+      .def_prop_ro("size", &TensorArray3::len);
 
   py::class_<Strategy>(m, "Strategy")
-      .def(py::init<int, double, int, double, size_t, int, bool>(),
-           py::arg("method") =
+      .def(py::init<Truncation, double, Simplification, double, size_t, int,
+                    bool>(),
+           "method"_a =
                static_cast<int>(Truncation::RELATIVE_NORM_SQUARED_ERROR),
-           py::arg("tolerance") = 1e-8,
-           py::arg("simplify") = static_cast<int>(Simplification::VARIATIONAL),
-           py::arg("simplification_tolerance") = 1e-8,
-           py::arg("max_bond_dimension") = 0x7fffffff,
-           py::arg("max_sweeps") = 16, py::arg("normalize") = false)
-      .def("replace", &Strategy::replace,
-           py::arg("method") = py::cast<py::none>(Py_None),
-           py::arg("tolerance") = py::cast<py::none>(Py_None),
-           py::arg("simplify") = py::cast<py::none>(Py_None),
-           py::arg("simplification_tolerance") = py::cast<py::none>(Py_None),
-           py::arg("max_bond_dimension") = py::cast<py::none>(Py_None),
-           py::arg("max_sweeps") = py::cast<py::none>(Py_None),
-           py::arg("normalize") = py::cast<py::none>(Py_None))
+           "tolerance"_a = 1e-8,
+           "simplify"_a = static_cast<int>(Simplification::VARIATIONAL),
+           "simplification_tolerance"_a = 1e-8,
+           "max_bond_dimension"_a = 0x7fffffff, "max_sweeps"_a = 16,
+           "normalize"_a = false)
+      .def("replace", &Strategy::replace, "method"_a = py::none(),
+           "tolerance"_a = py::none(), "simplify"_a = py::none(),
+           "simplification_tolerance"_a = py::none(),
+           "max_bond_dimension"_a = py::none(), "max_sweeps"_a = py::none(),
+           "normalize"_a = py::none())
       .def("get_method", &Strategy::get_method)
       .def("get_simplification_method", &Strategy::get_simplification_method)
       .def("get_tolerance", &Strategy::get_tolerance)
@@ -149,10 +144,8 @@ PYBIND11_MODULE(core, m) {
     error : float, default=0.0
         Accumulated truncation error in the previous tensors.
 										   )doc")
-      .def(py::init<const MPS &, double>(), py::arg("state"),
-           py::arg("error") = 0.0)
-      .def(py::init<py::list, double>(), py::arg("state"),
-           py::arg("error") = 0.0)
+      .def(py::init<const MPS &, double>(), "state"_a, "error"_a = 0.0)
+      .def(py::init<py::list, double>(), "state"_a, "error"_a = 0.0)
       .def(
           "copy", &MPS::copy,
           R"doc(Return a shallow copy of the MPS, without duplicating the tensors.)doc")
@@ -214,7 +207,7 @@ PYBIND11_MODULE(core, m) {
 			 Upper bound for the actual error when approximating this state.
         )doc")
       .def("set_error", &MPS::set_error)
-      .def_property("_error", &MPS::error, &MPS::set_error)
+      .def_prop_rw("_error", &MPS::error, &MPS::set_error)
       .def("update_error", &MPS::update_error,
            R"doc(Register an increase in the truncation error.
 
@@ -238,13 +231,13 @@ PYBIND11_MODULE(core, m) {
           "__mul__",
           [](const MPS &state, const py::object &weight_or_mps) {
             if (py::isinstance<MPS>(weight_or_mps)) {
-              return py::cast(state * weight_or_mps.cast<const MPS &>());
+              return py::cast(state * py::cast<const MPS &>(weight_or_mps));
             } else if (py::isinstance<py::int_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::isinstance<py::float_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::iscomplex(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+              return py::cast(py::cast<std::complex<double>>(weight_or_mps) *
                               state);
             }
             throw py::type_error("Invalid argument to __mul__ by MPS");
@@ -254,14 +247,14 @@ PYBIND11_MODULE(core, m) {
           "__rmul__",
           [](const MPS &state, const py::object &weight_or_mps) {
             if (py::isinstance<py::int_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::isinstance<py::float_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::iscomplex(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+              return py::cast(py::cast<std::complex<double>>(weight_or_mps) *
                               state);
             } else if (py::isinstance<MPS>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<const MPS &>() * state);
+              return py::cast(py::cast<const MPS &>(weight_or_mps) * state);
             }
             throw py::type_error("Invalid argument to __rmul__ by MPS");
           },
@@ -276,8 +269,8 @@ PYBIND11_MODULE(core, m) {
       .def(
           "__sub__", [](const MPS &a, const MPSSum &b) { return a - b; },
           py::is_operator())
-      .def_property_readonly_static("__array_priority__",
-                                    [](const py::object &) { return 10000; });
+      .def_prop_ro_static("__array_priority__",
+                          [](const py::object &) { return 10000; });
 
   py::class_<CanonicalMPS, MPS>(m, "CanonicalMPS",
                                 R"doc(Canonical MPS class.
@@ -304,23 +297,20 @@ PYBIND11_MODULE(core, m) {
       .def(py::init<const CanonicalMPS &>())
       .def(py::init<const py::list &, py::object, double, py::object,
                     const Strategy &, bool>(),
-           py::arg("data"), py::arg("center") = CanonicalMPS::no_defined_center,
-           py::arg("error") = 0.0, py::arg("normalize") = py::none(),
-           py::arg("strategy") = DEFAULT_STRATEGY,
-           py::arg("is_canonical") = false)
+           "data"_a, "center"_a = CanonicalMPS::no_defined_center,
+           "error"_a = 0.0, "normalize"_a = py::none(),
+           "strategy"_a = DEFAULT_STRATEGY, "is_canonical"_a = false)
       .def(py::init<const MPS &, py::object, double, py::object,
                     const Strategy &, bool>(),
-           py::arg("data"), py::arg("center") = CanonicalMPS::no_defined_center,
-           py::arg("error") = 0.0, py::arg("normalize") = py::none(),
-           py::arg("strategy") = DEFAULT_STRATEGY,
-           py::arg("is_canonical") = false)
+           "data"_a, "center"_a = CanonicalMPS::no_defined_center,
+           "error"_a = 0.0, "normalize"_a = py::none(),
+           "strategy"_a = DEFAULT_STRATEGY, "is_canonical"_a = false)
       .def(py::init<const CanonicalMPS &, py::object, double, py::object,
                     const Strategy &, bool>(),
-           py::arg("data"), py::arg("center") = CanonicalMPS::no_defined_center,
-           py::arg("error") = 0.0, py::arg("normalize") = py::none(),
-           py::arg("strategy") = DEFAULT_STRATEGY,
-           py::arg("is_canonical") = false)
-      .def_property_readonly("center", &CanonicalMPS::center)
+           "data"_a, "center"_a = CanonicalMPS::no_defined_center,
+           "error"_a = 0.0, "normalize"_a = py::none(),
+           "strategy"_a = DEFAULT_STRATEGY, "is_canonical"_a = false)
+      .def_prop_ro("center", &CanonicalMPS::center)
       .def(
           "zero_state", &CanonicalMPS::zero_state,
           R"doc(Return a zero wavefunction with the same physical dimensions.)doc")
@@ -337,7 +327,7 @@ PYBIND11_MODULE(core, m) {
           "right_environment", &CanonicalMPS::right_environment,
           R"doc(Optimized version of :py:meth:`~seemps.state.MPS.right_environment)doc")
       .def("Schmidt_weights", &CanonicalMPS::Schmidt_weights,
-           py::arg("site") = CanonicalMPS::no_defined_center,
+           "site"_a = CanonicalMPS::no_defined_center,
            R"doc(Return the Schmidt weights for a bipartition around `site`.
 
         Parameters
@@ -351,7 +341,7 @@ PYBIND11_MODULE(core, m) {
         numbers: np.ndarray
             Vector of non-negative Schmidt weights.)doc")
       .def("entanglement_entropy", &CanonicalMPS::entanglement_entropy,
-           py::arg("site") = CanonicalMPS::no_defined_center,
+           "site"_a = CanonicalMPS::no_defined_center,
            R"doc(Compute the entanglement entropy of the MPS for a bipartition
         around `site`.
 
@@ -366,8 +356,7 @@ PYBIND11_MODULE(core, m) {
         float
             Von Neumann entropy of bipartition.)doc")
       .def("Renyi_entropy", &CanonicalMPS::Renyi_entropy,
-           py::arg("site") = CanonicalMPS::no_defined_center,
-           py::arg("alpha") = 2.0,
+           "site"_a = CanonicalMPS::no_defined_center, "alpha"_a = 2.0,
            R"doc(Compute the Renyi entropy of the MPS for a bipartition
         around `site`.
 
@@ -399,13 +388,13 @@ PYBIND11_MODULE(core, m) {
           "__mul__",
           [](const CanonicalMPS &state, const py::object &weight_or_mps) {
             if (py::isinstance<MPS>(weight_or_mps)) {
-              return py::cast(state * weight_or_mps.cast<const MPS &>());
+              return py::cast(state * py::cast<const MPS &>(weight_or_mps));
             } else if (py::isinstance<py::int_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::isinstance<py::float_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::iscomplex(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+              return py::cast(py::cast<std::complex<double>>(weight_or_mps) *
                               state);
             }
             throw py::type_error("Invalid argument to __mul__ by CanonicalMPS");
@@ -415,14 +404,14 @@ PYBIND11_MODULE(core, m) {
           "__rmul__",
           [](const CanonicalMPS &state, const py::object &weight_or_mps) {
             if (py::isinstance<py::int_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::isinstance<py::float_>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<double>() * state);
+              return py::cast(py::cast<double>(weight_or_mps) * state);
             } else if (py::iscomplex(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<std::complex<double>>() *
+              return py::cast(py::cast<std::complex<double>>(weight_or_mps) *
                               state);
             } else if (py::isinstance<MPS>(weight_or_mps)) {
-              return py::cast(weight_or_mps.cast<const MPS &>() * state);
+              return py::cast(py::cast<const MPS &>(weight_or_mps) * state);
             }
             throw py::type_error(
                 "Invalid argument to __rmul__ by CanonicalMPS");
@@ -447,11 +436,11 @@ PYBIND11_MODULE(core, m) {
     states : list[MPS]
         List of matrix product states weighted.
 	   )doc")
-      .def(py::init<py::object, py::object, bool>(), py::arg("weights"),
-           py::arg("states"), py::arg("check_args") = true)
-      .def_property_readonly("weights", &MPSSum::weights)
-      .def_property_readonly("states", &MPSSum::states)
-      .def_property_readonly("size", &MPSSum::size)
+      .def(py::init<py::object, py::object, bool>(), "weights"_a, "states"_a,
+           "check_args"_a = true)
+      .def_prop_ro("weights", &MPSSum::weights)
+      .def_prop_ro("states", &MPSSum::states)
+      .def_prop_ro("size", &MPSSum::size)
       .def("copy", &MPSSum::copy)
       .def("deepcopy", &MPSSum::deepcopy)
       .def("__copy__", &MPSSum::copy)
@@ -479,8 +468,8 @@ PYBIND11_MODULE(core, m) {
           "delete_zero_components", &MPSSum::delete_zero_components,
           R"doc(Compute the norm-squared of the linear combination of weights and
     states and eliminate states that are zero or have zero weight.)doc")
-      .def_property_readonly_static("__array_priority__",
-                                    [](const py::object &) { return 10000; })
+      .def_prop_ro_static("__array_priority__",
+                          [](const py::object &) { return 10000; })
       .def("__mul__", &MPSSum::times_object, py::is_operator())
       .def("__rmul__", &MPSSum::times_object, py::is_operator());
 
@@ -501,7 +490,7 @@ PYBIND11_MODULE(core, m) {
         Scalar product.
 		 )doc");
   m.def(
-      "_begin_environment", &_begin_environment, py::arg("D") = int(1),
+      "_begin_environment", &_begin_environment, "D"_a = int(1),
       R"doc(Initiate the computation of a left environment from two MPS. The bond
     dimension χ defaults to 1. Other values are used for states in canonical
     form that we know how to open and close)doc");
@@ -523,14 +512,12 @@ PYBIND11_MODULE(core, m) {
   m.def("schmidt_weights", &schmidt_weights);
   m.def(
       "_update_in_canonical_form_right", &_update_in_canonical_form_right,
-      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
-      py::arg("overwrite") = false,
+      "state"_a, "tensor"_a, "site"_a, "strategy"_a, "overwrite"_a = false,
       R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process)doc");
   m.def(
       "_update_in_canonical_form_left", &_update_in_canonical_form_left,
-      py::arg("state"), py::arg("tensor"), py::arg("site"), py::arg("strategy"),
-      py::arg("overwrite") = false,
+      "state"_a, "tensor"_a, "site"_a, "strategy"_a, "overwrite"_a = false,
       R"doc(Insert a tensor in canonical form into the MPS Ψ at the given site.
     Update the neighboring sites in the process)doc");
   m.def("_canonicalize", &_canonicalize,

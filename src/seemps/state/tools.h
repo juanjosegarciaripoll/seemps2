@@ -1,10 +1,12 @@
 #pragma once
 #include <iterator>
 #include "core.h"
-#include <pybind11/complex.h>
 
-namespace pybind11 {
+namespace nanobind {
 
+inline list empty_list(npy_intp size) { return steal<list>(PyList_New(size)); }
+
+#if 1
 class python_list_iterator {
   list list_;
   size_t index_;
@@ -17,16 +19,20 @@ public:
   using pointer = object *;
 
   class reference {
-    const list &list_;
+    list list_;
     size_t index_;
 
   public:
-    reference(const list &list, size_t index) : list_{list}, index_{index} {}
-    auto operator=(object p) const { return list_[index_] = p; }
-    auto operator=(const reference &r) const {
-      return list_[index_] = r.list_[r.index_];
+    reference(list list, size_t index) : list_{list}, index_{index} {}
+    auto operator=(object p) {
+      list_[index_] = p;
+      return p;
     }
-    operator object() const { return list_[index_]; }
+    auto operator=(const reference &r) {
+      list_[index_] = r.list_[r.index_];
+      return r;
+    }
+    operator object() { return list_[index_]; }
   };
 
   python_list_iterator(const python_list_iterator &) = default;
@@ -55,7 +61,7 @@ public:
     return retval;
   }
 
-  reference operator*() const { return reference(list_, index_); }
+  reference operator*() { return reference(list_, index_); }
 };
 
 class python_list_const_iterator {
@@ -107,7 +113,18 @@ public:
 
   auto operator*() const { return list_[index_]; }
 };
+#endif
 
+#if 0
+inline auto begin(list &l) { return l.begin(); }
+inline auto end(list &l) { return l.end(); }
+
+inline auto begin(const list &l) { return l.begin(); }
+inline auto end(const list &l) { return l.end(); }
+
+inline auto begin_const(list &l) { return l.begin(); }
+inline auto end_const(list &l) { return l.end(); }
+#else
 inline auto begin(list &l) { return python_list_iterator(l, 0); }
 inline auto end(list &l) { return python_list_iterator(l, l.size()); }
 
@@ -120,6 +137,7 @@ inline auto begin_const(list &l) { return python_list_const_iterator(l, 0); }
 inline auto end_const(list &l) {
   return python_list_const_iterator(l, l.size());
 }
+#endif
 
 list copy(const list &l);
 
@@ -131,4 +149,6 @@ double abs(const object &w);
 
 inline bool iscomplex(const object &w) { return PyComplex_Check(w.ptr()); }
 
-} // namespace pybind11
+bool is_true(const object &o);
+
+} // namespace nanobind

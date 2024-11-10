@@ -60,11 +60,11 @@ public:
   MPS as_mps() const { return *this; }
   MPS deepcopy() const;
 
-  py::int_ dimension() const;
+  int dimension() const;
 
   py::list physical_dimensions() const;
 
-  py::int_ max_bond_dimension() const;
+  int max_bond_dimension() const;
 
   py::list bond_dimensions() const;
 
@@ -186,7 +186,7 @@ public:
 
   Environment right_environment(int site) const;
 
-  py::list Schmidt_weights(int site = no_defined_center) const;
+  py::object Schmidt_weights(int site = no_defined_center) const;
 
   double entanglement_entropy(int center) const;
 

@@ -1,10 +1,11 @@
+#include <numeric>
 #include "mps.h"
 
 namespace seemps {
 
 CanonicalMPS CanonicalMPS::deepcopy() const {
   auto output = copy();
-  std::transform(output.begin(), output.end(), output.begin(), py::copy);
+  std::transform(output.begin(), output.end(), output.begin(), array_copy);
   return output;
 }
 
@@ -26,7 +27,7 @@ int CanonicalMPS::interpret_center_object(const py::object &center,
   if (center.is_none()) {
     return default_value;
   }
-  return interpret_center(center.cast<int>());
+  return interpret_center(py::cast<int>(center));
 }
 
 CanonicalMPS::CanonicalMPS(const py::list &data, py::object center,
@@ -38,7 +39,7 @@ CanonicalMPS::CanonicalMPS(const py::list &data, py::object center,
     auto new_error_squared = _canonicalize(*this, center_, strategy_);
     update_error(new_error_squared);
   }
-  if (normalize.cast<bool>() ||
+  if (py::is_true(normalize) ||
       (normalize.is_none() && strategy.get_normalize_flag())) {
     normalize_in_place();
   }
@@ -53,7 +54,8 @@ CanonicalMPS::CanonicalMPS(const MPS &data, py::object center, double error,
     auto new_error_squared = _canonicalize(*this, center_, strategy_);
     update_error(new_error_squared);
   }
-  if (normalize.cast<bool>() ||
+  // TODO: avoid using py::cast for bool() Use truth checker instead
+  if (py::is_true(normalize) ||
       (normalize.is_none() && strategy.get_normalize_flag())) {
     normalize_in_place();
   }
@@ -64,13 +66,13 @@ CanonicalMPS::CanonicalMPS(const CanonicalMPS &data, py::object center,
                            const Strategy &strategy, bool is_canonical)
     : MPS(data), strategy_{strategy} {
   if (!center.is_none()) {
-    auto i = center.cast<int>();
+    auto i = py::cast<int>(center);
     if (i != center_) {
       // TODO: Fix! Does not work!
-      recenter(center.cast<int>(), strategy);
+      recenter(i, strategy);
     }
   }
-  if (normalize.cast<bool>() ||
+  if (py::is_true(normalize) ||
       (normalize.is_none() && strategy.get_normalize_flag())) {
     normalize_in_place();
   }
@@ -122,7 +124,7 @@ Environment CanonicalMPS::right_environment(int site) const {
   return rho;
 }
 
-py::list CanonicalMPS::Schmidt_weights(int site) const {
+py::object CanonicalMPS::Schmidt_weights(int site) const {
   site = interpret_center(site);
   return schmidt_weights(
       ((site == center()) ? (*this) : copy().recenter(site, strategy_))
@@ -130,17 +132,18 @@ py::list CanonicalMPS::Schmidt_weights(int site) const {
 }
 
 double CanonicalMPS::entanglement_entropy(int center) const {
-  const py::list s = Schmidt_weights(center);
-  return std::accumulate(
-      py::begin(s), py::end(s), 0.0,
-      [](double entropy, const py::object schmidt_weight) -> double {
-        auto w = schmidt_weight.cast<double>();
-        return entropy - w * std::log2(w);
-      });
+  const auto s =
+      py::cast<py::ndarray<double, py::ndim<1>>>(Schmidt_weights(center));
+  auto v = s.view();
+  double output = 0.0;
+  for (size_t i = 0; i < v.shape(0); i++) {
+    auto w = v(i);
+    output -= w * std::log2(w);
+  }
+  return output;
 }
 
 double CanonicalMPS::Renyi_entropy(int center, double alpha) const {
-  const py::list s = Schmidt_weights(center);
   if (alpha < 0) {
     std::invalid_argument("Invalid Renyi entropy power");
   }
@@ -149,13 +152,15 @@ double CanonicalMPS::Renyi_entropy(int center, double alpha) const {
   } else if (alpha == 1) {
     alpha = 1 - 1e-9;
   }
-  return std::log(
-             std::accumulate(py::begin(s), py::end(s), 0.0,
-                             [=](double sum, const py::object schmidt_weight) {
-                               double w = schmidt_weight.cast<double>();
-                               return sum + std::pow(w, alpha);
-                             })) /
-         (1 - alpha);
+  const auto s =
+      py::cast<py::ndarray<double, py::ndim<1>>>(Schmidt_weights(center));
+  auto v = s.view();
+  double output = 0.0;
+  for (size_t i = 0; i < v.shape(0); i++) {
+    auto w = v(i);
+    output += std::pow(w, alpha);
+  }
+  return output;
 }
 
 double CanonicalMPS::update_canonical(py::object A, int direction,

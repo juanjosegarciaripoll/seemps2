@@ -1,11 +1,12 @@
 #include <iostream>
+#include <vector>
 #include "core.h"
 #include "tensors.h"
 
 namespace seemps {
 
 py::object _matmul(const py::object &A, const py::object &B) {
-  auto numpy = py::module_::import("numpy");
+  auto numpy = py::module_::import_("numpy");
   auto matmul = numpy.attr("matmul");
   return matmul(A, B);
 }

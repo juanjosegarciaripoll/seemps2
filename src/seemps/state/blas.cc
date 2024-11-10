@@ -35,7 +35,7 @@ static void load_wrapper(py::dict &__pyx_capi__, const char *name,
 #if 1
   // This copes with a bug in pybind11, which uses
   // static_cast to cast a void* to the pointer.
-  pointer = reinterpret_cast<f *>(wrapper.get_pointer<void>());
+  pointer = reinterpret_cast<f *>(wrapper.data());
 #else
   pointer = wrapper.get_pointer<f>();
 #endif
@@ -43,7 +43,7 @@ static void load_wrapper(py::dict &__pyx_capi__, const char *name,
 
 void load_scipy_wrappers() {
   {
-    auto cython_blas = py::module_::import("scipy.linalg.cython_blas");
+    auto cython_blas = py::module_::import_("scipy.linalg.cython_blas");
     py::dict __pyx_capi__ = cython_blas.attr("__pyx_capi__");
     load_wrapper(__pyx_capi__, "ddot", ddot_ptr);
     load_wrapper(__pyx_capi__, "zdotc", zdotc_ptr);
@@ -51,7 +51,7 @@ void load_scipy_wrappers() {
     load_wrapper(__pyx_capi__, "zgemm", zgemm_ptr);
   }
   {
-    auto cython_lapack = py::module_::import("scipy.linalg.cython_lapack");
+    auto cython_lapack = py::module_::import_("scipy.linalg.cython_lapack");
     py::dict __pyx_capi__ = cython_lapack.attr("__pyx_capi__");
     load_wrapper(__pyx_capi__, "dgesvd", dgesvd_ptr);
     load_wrapper(__pyx_capi__, "zgesvd", zgesvd_ptr);

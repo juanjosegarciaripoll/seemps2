@@ -69,8 +69,7 @@ py::object _update_right_environment(const py::object &B, const py::object &A,
 
 Weight _end_environment(const py::object &rho) {
   auto A = to_array(rho);
-  return py::reinterpret_steal<py::object>(
-      PyArray_GETITEM(A, static_cast<char *>(PyArray_DATA(A))));
+  return py::steal(PyArray_GETITEM(A, static_cast<char *>(PyArray_DATA(A))));
 }
 
 /*
@@ -82,7 +81,7 @@ Weight _join_environments(const py::object &rhoL, const py::object &rhoR) {
   if (array_dim(rhoL, 0) == 1) {
     return _end_environment(rhoL) * _end_environment(rhoR);
   }
-  return py::reinterpret_steal<py::object>(PyArray_InnerProduct(
+  return py::steal(PyArray_InnerProduct(
       PyArray_Ravel(to_array(rhoL), NPY_CORDER),
       PyArray_Ravel(reinterpret_cast<PyArrayObject *>(
                         PyArray_SwapAxes(to_array(rhoR), 0, 1)),

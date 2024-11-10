@@ -33,7 +33,7 @@ public:
   auto end() { return data_.end(); }
 
   py::object data() const {
-    py::list output(size());
+    auto output = py::empty_list(size());
     std::copy(data_.begin(), data_.end(), py::begin(output));
     return output;
   }
@@ -90,13 +90,13 @@ public:
       return getitem(PyLong_AsLong(object));
     } else if (PySlice_Check(object)) {
       Py_ssize_t length = len(), start, stop, step, slicelength;
-      py::slice slice = site;
+      auto slice = py::cast<py::slice>(site);
       auto ok = PySlice_GetIndicesEx(site.ptr(), length, &start, &stop, &step,
                                      &slicelength);
       if (ok < 0) {
         throw std::out_of_range("Invalide slize into TensorArray");
       }
-      py::list output(slicelength);
+      auto output = py::empty_list(slicelength);
       for (Py_ssize_t i = 0; i < slicelength; ++i) {
         output[i] = data_[start];
         start += step;
@@ -113,10 +113,10 @@ public:
         setitem(PyLong_AsLong(object), std::move(A));
         return py::none();
       } else if (PySlice_Check(object)) {
-        size_t length = data_.size(), start, stop, step, slicelength;
-        py::slice slice = site;
-        py::sequence new_data = A;
-        slice.compute(length, &start, &stop, &step, &slicelength);
+        size_t length = data_.size();
+        auto slice = py::cast<py::slice>(site);
+        auto new_data = py::cast<py::sequence>(A);
+        auto [start, stop, step, slicelength] = slice.compute(length);
         for (size_t i = 0; start < stop; ++i) {
           setitem(start, new_data[i]);
           start += step;

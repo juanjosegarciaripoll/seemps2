@@ -4,8 +4,8 @@ namespace seemps {
 
 MPSSum::MPSSum(py::object weights, py::object states, bool check_args) {
   if (!check_args) {
-    weights_ = std::move(weights);
-    mps_ = std::move(states);
+    weights_ = py::list(weights);
+    mps_ = py::list(states);
   } else {
     auto L = py::len(weights);
     if (L != py::len(states)) {
@@ -18,10 +18,10 @@ MPSSum::MPSSum(py::object weights, py::object states, bool check_args) {
     weights_ = py::list();
     mps_ = py::list();
     for (int i = 0; i < L; ++i) {
-      auto wi = weights[py::int_(i)];
-      auto si = states[py::int_(i)];
+      auto wi = weights[i];
+      auto si = states[i];
       if (py::isinstance<MPSSum>(si)) {
-        append(wi, si.cast<MPSSum>());
+        append(wi, py::cast<MPSSum>(si));
       } else if (py::isinstance<MPS>(si)) {
         append(wi, si);
       } else {
@@ -33,7 +33,8 @@ MPSSum::MPSSum(py::object weights, py::object states, bool check_args) {
   size_ = mps(0).size();
 }
 
-MPSSum::MPSSum(const MPS &mps) : weights_(1), mps_(1), size_{mps.size()} {
+MPSSum::MPSSum(const MPS &mps)
+    : weights_{py::empty_list(1)}, mps_{py::empty_list(1)}, size_{mps.size()} {
   weights_[0] = 1.0;
   mps_[0] = py::cast(mps);
 }
@@ -47,11 +48,9 @@ MPSSum MPSSum::deepcopy() const {
   std::for_each(py::begin(mps_), py::end(mps_), [&](py::object a) -> void {
     py::object mps_copy;
     if (py::isinstance<MPS>(a)) {
-      mps_copy = py::cast(a.cast<MPS &>().deepcopy());
-    } else if (py::isinstance<CanonicalMPS>(a)) {
-      mps_copy = py::cast(a.cast<CanonicalMPS &>().deepcopy());
+      mps_copy = py::cast(py::cast<MPS &>(a).deepcopy());
     } else {
-      mps_copy = py::copy(a);
+      mps_copy = py::cast(py::cast<CanonicalMPS &>(a).deepcopy());
     }
     mps_list.append(mps_copy);
   });
@@ -62,7 +61,7 @@ MPSSum MPSSum::conj() const {
   auto output = copy();
   for (size_t i = 0; i < sum_size(); ++i) {
     output.weights_[i] = py::conj(output.weights_[i]);
-    output.mps_[i].cast<MPS &>().conj_in_place();
+    py::cast<MPS &>(output.mps_[i]).conj_in_place();
   }
   return output;
 }
@@ -70,11 +69,11 @@ MPSSum MPSSum::conj() const {
 double MPSSum::norm_squared() const {
   double output = 0.0;
   for (size_t i = 0; i < sum_size(); ++i) {
-    auto wi_conj = std::conj(weight(i).cast<std::complex<double>>());
+    auto wi_conj = std::conj(py::cast<std::complex<double>>(weight(i)));
     const auto &si = mps(i);
     for (size_t j = i; j < sum_size(); ++j) {
-      auto wj = weight(j).cast<std::complex<double>>();
-      auto sij = scprod(si, mps(j)).cast<std::complex<double>>();
+      auto wj = py::cast<std::complex<double>>(weight(j));
+      auto sij = py::cast<std::complex<double>>(scprod(si, mps(j)));
       auto s = (wi_conj * wj * sij).real() * ((i == j) ? 1 : 2);
       output += s;
     }
@@ -85,8 +84,8 @@ double MPSSum::norm_squared() const {
 double MPSSum::error() const {
   double output = 0.0;
   for (size_t i = 0; i < sum_size(); ++i) {
-    auto wi = weights_[i].cast<std::complex<double>>();
-    auto error = mps_[i].cast<const MPS &>().error();
+    auto wi = py::cast<std::complex<double>>(weights_[i]);
+    auto error = py::cast<const MPS &>(mps_[i]).error();
     output += std::abs(wi) * error;
   }
   return output;
@@ -94,7 +93,7 @@ double MPSSum::error() const {
 
 Weight MPSSum::weight(int site) const { return weights_[site]; }
 
-MPS &MPSSum::mps(int site) const { return mps_[site].cast<MPS &>(); }
+MPS &MPSSum::mps(int site) const { return py::cast<MPS &>(mps_[site]); }
 
 double MPSSum::norm() const { return std::sqrt(norm_squared()); }
 
@@ -113,29 +112,29 @@ void MPSSum::append(const Weight &factor, const MPSSum &states) {
 
 static double state_norm_squared(const py::object &state) {
   if (py::isinstance<CanonicalMPS>(state)) {
-    return state.cast<const CanonicalMPS &>().norm_squared();
+    return py::cast<const CanonicalMPS &>(state).norm_squared();
   } else {
-    return state.cast<const MPS &>().norm_squared();
+    return py::cast<const MPS &>(state).norm_squared();
   }
 }
 
 double MPSSum::delete_zero_components() {
   double c = 0.0;
-  py::list final_weights(0);
-  py::list final_states(0);
+  py::list final_weights;
+  py::list final_states;
   for (int i = 0; i < sum_size(); ++i) {
-    std::complex<double> wi = weights_[i].cast<std::complex<double>>();
+    std::complex<double> wi = py::cast<std::complex<double>>(weights_[i]);
     if (wi.real() != 0.0 || wi.imag() != 0) {
       auto wic = std::conj(wi);
       auto statei = mps_[i];
-      const auto &si = statei.cast<const MPS &>();
+      const auto &si = py::cast<const MPS &>(statei);
       auto ni = (wic * wi).real() * state_norm_squared(statei);
       if (ni) {
-        for (int j = 0; j < final_weights.size(); ++j) {
-          auto wj = final_weights[j].cast<std::complex<double>>();
-          auto sj = final_states[j].cast<const MPS &>();
-          c += 2 *
-               (wic * wj * scprod(si, sj).cast<std::complex<double>>()).real();
+        for (int j = 0; j < py::len(final_weights); ++j) {
+          auto wj = py::cast<std::complex<double>>(final_weights[j]);
+          auto sj = py::cast<const MPS &>(final_states[j]);
+          c += 2 * (wic * wj * py::cast<std::complex<double>>(scprod(si, sj)))
+                       .real();
         }
         final_weights.append(weights_[i]);
         final_states.append(statei);
@@ -146,7 +145,7 @@ double MPSSum::delete_zero_components() {
   auto L = final_weights.size();
   if (L == 0) {
     final_weights.append(py::cast(0.0));
-    final_states.append(mps_[0].cast<const MPS &>().zero_state());
+    final_states.append(py::cast<const MPS &>(mps_[0]).zero_state());
     weights_ = std::move(final_weights);
     mps_ = std::move(final_states);
     return 0.0;

@@ -17,9 +17,9 @@
 #endif
 #include <numpy/arrayobject.h>
 
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/complex.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/complex.h>
 
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer) // for clang
@@ -35,8 +35,10 @@
 
 namespace seemps {
 
-namespace py = pybind11;
+namespace py = nanobind;
 
-using namespace pybind11::literals;
+using namespace nanobind::literals;
 
 } // namespace seemps
+
+#include "tools.h"

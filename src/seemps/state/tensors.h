@@ -3,7 +3,6 @@
 #include <limits>
 #include "core.h"
 #include <numpy/arrayobject.h>
-#include <pybind11/numpy.h>
 
 namespace seemps {
 
@@ -101,12 +100,12 @@ inline auto array_dims(const py::object &a) {
 }
 
 inline py::object array_cast(const py::object &a, int type) {
-  return py::reinterpret_steal<py::object>(
+  return py::steal(
       reinterpret_cast<PyObject *>(PyArray_Cast(to_array(a), type)));
 }
 
 inline py::object array_getcontiguous(const py::object &a) {
-  return py::reinterpret_steal<py::object>(
+  return py::steal(
       reinterpret_cast<PyObject *>(PyArray_GETCONTIGUOUS(to_array(a))));
 }
 
@@ -124,8 +123,7 @@ template <class Dimensions>
 inline py::object array_reshape(const py::object &a, const Dimensions &d) {
   PyArray_Dims dims = {const_cast<npy_intp *>(&(*std::begin(d))),
                        static_cast<int>(std::size(d))};
-  return py::reinterpret_steal<py::object>(
-      PyArray_Newshape(to_array(a), &dims, NPY_CORDER));
+  return py::steal(PyArray_Newshape(to_array(a), &dims, NPY_CORDER));
 }
 
 // TODO: Make this more general
@@ -143,14 +141,14 @@ inline auto as_3tensor(const py::object &A, npy_intp a, npy_intp b,
 }
 
 inline auto array_copy(const py::object &A) {
-  return py::reinterpret_steal<py::object>(
-      PyArray_FROM_OF(A.ptr(), NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED |
-                                   NPY_ARRAY_ENSURECOPY));
+  return py::steal(PyArray_FROM_OF(A.ptr(), NPY_ARRAY_C_CONTIGUOUS |
+                                                NPY_ARRAY_ALIGNED |
+                                                NPY_ARRAY_ENSURECOPY));
 }
 
 inline auto matrix_product(const py::object &a, const py::object &b) {
 #if 0
-  return py::reinterpret_steal<py::object>(
+  return py::steal(
 										   PyArray_MatrixProduct(a.ptr(), b.ptr()));
 #else
   return gemm(a, GEMM_NORMAL, b, GEMM_NORMAL);
@@ -158,42 +156,41 @@ inline auto matrix_product(const py::object &a, const py::object &b) {
 }
 
 inline py::object empty_like_array(const py::object &a) {
-  return py::reinterpret_steal<py::object>(
+  return py::steal(
       PyArray_SimpleNew(array_ndim(a), array_dims(a), array_type(a)));
 }
 
 inline py::object empty_vector(npy_intp size, int type) {
   const npy_intp dims[1] = {size};
-  return py::reinterpret_steal<py::object>(PyArray_SimpleNew(1, dims, type));
+  return py::steal(PyArray_SimpleNew(1, dims, type));
 }
 
 inline py::object empty_matrix(npy_intp rows, npy_intp cols, int type) {
   const npy_intp dims[2] = {rows, cols};
-  return py::reinterpret_steal<py::object>(PyArray_SimpleNew(2, dims, type));
+  return py::steal(PyArray_SimpleNew(2, dims, type));
 }
 
 template <class Dimensions>
 inline py::object zero_array(const Dimensions &dims, int type = NPY_DOUBLE) {
   auto the_dims = const_cast<npy_intp *>(&(*std::begin(dims)));
   auto rank = static_cast<int>(std::size(dims));
-  return py::reinterpret_steal<py::object>(
-      PyArray_ZEROS(rank, the_dims, type, 0));
+  return py::steal(PyArray_ZEROS(rank, the_dims, type, 0));
 }
 
 inline py::object zero_like_array(const py::object &a) {
-  return py::reinterpret_steal<py::object>(
+  return py::steal(
       PyArray_ZEROS(array_ndim(a), array_dims(a), array_type(a), 0));
 }
 
 inline py::object zero_matrix(npy_intp rows, npy_intp cols,
                               int type = NPY_DOUBLE) {
   const npy_intp dims[2] = {rows, cols};
-  return py::reinterpret_steal<py::object>(PyArray_ZEROS(2, dims, type, 0));
+  return py::steal(PyArray_ZEROS(2, dims, type, 0));
 }
 
 inline py::object zero_vector(npy_intp size, int type = NPY_DOUBLE) {
   const npy_intp dims[1] = {size};
-  return py::reinterpret_steal<py::object>(PyArray_ZEROS(1, dims, type, 0));
+  return py::steal(PyArray_ZEROS(1, dims, type, 0));
 }
 
 py::object eye(npy_intp rows, npy_intp cols);
@@ -205,7 +202,7 @@ inline py::object array_conjugate(const py::object &a) {
     return a;
   } else {
     auto output = empty_like_array(a);
-    return py::reinterpret_steal<py::object>(reinterpret_cast<PyObject *>(
+    return py::steal(reinterpret_cast<PyObject *>(
         PyArray_Conjugate(to_array(a), to_array(output))));
     return output;
   }

@@ -33,7 +33,8 @@ public:
   Strategy &operator=(Strategy &&) = default;
   ~Strategy() = default;
 
-  Strategy(int a_method, double a_tolerance, int a_simplification_method,
+  Strategy(Truncation a_method, double a_tolerance,
+           Simplification a_simplification_method,
            double a_simplification_tolerance, size_t a_bond_dimension,
            int a_num_sweeps, bool a_normalize_flag);
 
@@ -43,11 +44,9 @@ public:
                    py::object a_bond_dimension, py::object a_num_sweeps,
                    py::object a_normalize_flag) const;
 
-  int get_method() const { return static_cast<int>(method); }
+  auto get_method() const { return method; }
 
-  int get_simplification_method() const {
-    return static_cast<int>(simplification_method);
-  }
+  auto get_simplification_method() const { return simplification_method; }
 
   double get_tolerance() const { return tolerance; }
 
@@ -65,8 +64,8 @@ public:
     return simplification_method != Simplification::DO_NOT_SIMPLIFY;
   }
 
-  Strategy &set_method(int value);
-  Strategy &set_simplification_method(int value);
+  Strategy &set_method(Truncation value);
+  Strategy &set_simplification_method(Simplification value);
   Strategy &set_tolerance(double value);
   Strategy &set_simplification_tolerance(double value);
   Strategy &set_max_bond_dimension(size_t value);
@@ -77,9 +76,6 @@ public:
 private:
   std::string truncation_name() const;
   std::string simplification_name() const;
-
-  static Truncation truncation_from_int(int value);
-  static Simplification simplification_from_int(int value);
 };
 
 double destructively_truncate_vector(const py::object a, const Strategy &s);

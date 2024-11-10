@@ -1,16 +1,17 @@
 #include <iostream>
+#include <vector>
 #include "core.h"
 #include "tensors.h"
 #include "strategy.h"
 
 namespace seemps {
 
-Strategy::Strategy(int a_method, double a_tolerance,
-                   int a_simplification_method,
+Strategy::Strategy(Truncation a_method, double a_tolerance,
+                   Simplification a_simplification_method,
                    double a_simplification_tolerance, size_t a_bond_dimension,
                    int a_num_sweeps, bool a_normalize_flag)
-    : method{truncation_from_int(a_method)}, tolerance{a_tolerance},
-      simplification_method{simplification_from_int(a_simplification_method)},
+    : method{a_method}, tolerance{a_tolerance},
+      simplification_method{a_simplification_method},
       simplification_tolerance{a_simplification_tolerance},
       max_bond_dimension{a_bond_dimension}, max_sweeps{a_num_sweeps},
       normalize{a_normalize_flag} {
@@ -35,51 +36,38 @@ Strategy Strategy::replace(py::object a_method, py::object a_tolerance,
                            py::object a_normalize_flag) const {
   Strategy output = *this;
   if (!a_method.is_none()) {
-    output.method = truncation_from_int(py::int_(a_method));
+    output.method = py::cast<Truncation>(a_method);
   }
   if (!a_tolerance.is_none()) {
     output.set_tolerance(py::cast<double>(a_tolerance));
   }
   if (!a_simplification_method.is_none()) {
     output.set_simplification_method(
-        simplification_from_int(py::int_(a_simplification_method)));
+        py::cast<Simplification>(a_simplification_method));
   }
   if (!a_simplification_tolerance.is_none()) {
-    output.set_simplification_tolerance(py::float_(a_simplification_tolerance));
+    output.set_simplification_tolerance(
+        py::cast<double>(a_simplification_tolerance));
   }
   if (!a_bond_dimension.is_none()) {
-    output.set_max_bond_dimension(py::int_(a_bond_dimension));
+    output.set_max_bond_dimension(py::cast<int>(a_bond_dimension));
   }
   if (!a_num_sweeps.is_none()) {
-    output.set_max_sweeps(py::int_(a_num_sweeps));
+    output.set_max_sweeps(py::cast<int>(a_num_sweeps));
   }
   if (!a_normalize_flag.is_none()) {
-    output.normalize = py::cast<bool>(a_normalize_flag);
+    output.normalize = py::is_true(a_normalize_flag);
   }
   return output;
 }
 
-Truncation Strategy::truncation_from_int(int value) {
-  if (value < 0 || value > 3) {
-    throw std::invalid_argument("Invalid Strategy Truncation");
-  }
-  return static_cast<Truncation>(value);
-}
-
-Simplification Strategy::simplification_from_int(int value) {
-  if (value < 0 || value > 2) {
-    throw std::invalid_argument("Invalid Strategy Simplification");
-  }
-  return static_cast<Simplification>(value);
-}
-
-Strategy &Strategy::set_method(int value) {
-  method = truncation_from_int(value);
+Strategy &Strategy::set_method(Truncation value) {
+  method = value;
   return *this;
 }
 
-Strategy &Strategy::set_simplification_method(int value) {
-  simplification_method = simplification_from_int(value);
+Strategy &Strategy::set_simplification_method(Simplification value) {
+  simplification_method = value;
   return *this;
 }
 

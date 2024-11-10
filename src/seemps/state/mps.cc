@@ -1,23 +1,23 @@
+#include <numeric>
 #include "mps.h"
 
 namespace seemps {
 
 MPS MPS::deepcopy() const {
   auto output = copy();
-  std::transform(output.begin(), output.end(), output.begin(), py::copy);
+  std::transform(output.begin(), output.end(), output.begin(), array_copy);
   return output;
 }
 
-py::int_ MPS::dimension() const {
-  return std::accumulate(
-      begin(), end(), py::int_(1),
-      [](py::int_ total_dimension, const py::object &tensor) {
-        return total_dimension * py::int_(array_dim(tensor, 1));
-      });
+int MPS::dimension() const {
+  return std::accumulate(begin(), end(), int(1),
+                         [](int total_dimension, const py::object &tensor) {
+                           return total_dimension * int(array_dim(tensor, 1));
+                         });
 }
 
 py::list MPS::physical_dimensions() const {
-  py::list output(size());
+  auto output = py::empty_list(size());
   std::transform(
       begin(), end(), py::begin(output),
       [](const py::object &a) -> auto { return py::int_(array_dim(a, 1)); });
@@ -25,7 +25,7 @@ py::list MPS::physical_dimensions() const {
 }
 
 py::list MPS::bond_dimensions() const {
-  py::list output(size() + 1);
+  auto output = py::empty_list(size() + 1);
   auto start = py::begin(output);
   *start = py::int_(array_dim(data_[0], 0));
   std::transform(begin(), end(), ++start, [](const py::object &a) -> auto {
@@ -34,10 +34,10 @@ py::list MPS::bond_dimensions() const {
   return output;
 }
 
-py::int_ MPS::max_bond_dimension() const {
-  return std::accumulate(begin(), end(), py::int_(1),
-                         [](py::int_ i, const py::object &a) -> auto {
-                           return std::max<py::int_>(i, array_dim(a, 1));
+int MPS::max_bond_dimension() const {
+  return std::accumulate(begin(), end(), int(1),
+                         [](int i, const py::object &a) -> auto {
+                           return std::max<int>(i, array_dim(a, 1));
                          });
 }
 
