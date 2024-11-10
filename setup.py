@@ -23,7 +23,12 @@ if sys.platform == "linux":
         sanitize = os.environ["SANITIZE"]
         if not sanitize in ["address", "leak"]:
             raise Exception(f"Unknown or unsupported sanitize option {sanitize}")
-        extra_args = ["-g", "-fno-omit-frame-pointer", f"-fsanitize={sanitize}"]
+        extra_args = [
+            "-g",
+            "-fno-omit-frame-pointer",
+            f"-fsanitize={sanitize}",
+            f"-fsanitize-recover={sanitize}",
+        ]
         extra_compile_args += extra_args
         extra_link_args += extra_args
 else:
@@ -33,9 +38,8 @@ else:
         sanitize = os.environ["SANITIZE"]
         if not sanitize in ["address", "leak"]:
             raise Exception(f"Unknown or unsupported sanitize option {sanitize}")
-        extra_args = ["-g", f"/fsanitize={sanitize}"]
-        extra_compile_args += extra_args
-        extra_link_args += extra_args + ["/INFERASANLIBS"]
+        extra_compile_args += ["/Z7", f"/fsanitize={sanitize}"]
+        extra_link_args += ["/DEBUG", "/INFERASANLIBS"]
 
 extra_dependencies = [
     s.replace("\\", "/") for s in glob.glob("src/**/*.h", recursive=True)

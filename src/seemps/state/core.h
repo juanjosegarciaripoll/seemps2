@@ -21,6 +21,18 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/complex.h>
 
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer) // for clang
+#define __SANITIZE_ADDRESS__         // GCC already sets this
+#endif
+#endif
+
+#if defined(__SANITIZE_ADDRESS__) && (defined(__clang__) || defined(__GNUC__))
+#define ASAN_IGNORE_FUNCTION __attribute__((no_sanitize_address))
+#else
+#define ASAN_IGNORE_FUNCTION
+#endif
+
 namespace seemps {
 
 namespace py = pybind11;

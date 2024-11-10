@@ -44,6 +44,7 @@ public:
     std::copy(py::begin(new_data), py::end(new_data), data_.begin());
   }
 
+  ASAN_IGNORE_FUNCTION
   py::object getitem(int k) const {
     auto L = len();
     if (k < 0) {
