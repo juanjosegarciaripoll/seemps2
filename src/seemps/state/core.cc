@@ -40,6 +40,8 @@ PYBIND11_MODULE(core, m) {
 
   m.def("_destructive_svd", &destructive_svd);
 
+  m.def("_select_svd_driver", &select_svd_driver);
+
   py::object OK_LOADED = py::cast(ok_loaded());
 
   m.attr("STATUS") = OK_LOADED;

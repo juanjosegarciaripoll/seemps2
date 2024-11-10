@@ -19,6 +19,14 @@ void (*zgesvd_ptr)(char *jobu, char *jobvt, int *m, int *n,
                    std::complex<double> *u, int *ldu, std::complex<double> *vt,
                    int *ldvt, std::complex<double> *work, int *lwork,
                    double *rwork, int *info);
+void (*dgesdd_ptr)(char *jobz, int *m, int *n, double *a, int *lda, double *s,
+                   double *u, int *ldu, double *vt, int *ldvt, double *work,
+                   int *lwork, int *iwork, int *info);
+void (*zgesdd_ptr)(char *jobz, int *m, int *n, std::complex<double> *a,
+                   int *lda, double *s, std::complex<double> *u, int *ldu,
+                   std::complex<double> *vt, int *ldvt,
+                   std::complex<double> *work, int *lwork, double *rwork,
+                   int *iwork, int *info);
 
 template <class f>
 static void load_wrapper(py::dict &__pyx_capi__, const char *name,
@@ -47,6 +55,8 @@ void load_scipy_wrappers() {
     py::dict __pyx_capi__ = cython_lapack.attr("__pyx_capi__");
     load_wrapper(__pyx_capi__, "dgesvd", dgesvd_ptr);
     load_wrapper(__pyx_capi__, "zgesvd", zgesvd_ptr);
+    load_wrapper(__pyx_capi__, "dgesdd", dgesdd_ptr);
+    load_wrapper(__pyx_capi__, "zgesdd", zgesdd_ptr);
   }
 }
 } // namespace seemps

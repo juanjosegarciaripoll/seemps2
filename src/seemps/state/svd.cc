@@ -3,6 +3,19 @@
 
 namespace seemps {
 
+static bool _use_gesdd = false;
+
+void select_svd_driver(std::string which) {
+  if (which == "gesvd") {
+    _use_gesdd = false;
+  } else if (which == "gesdd") {
+    _use_gesdd = true;
+  } else {
+    std::string message = "Unknown svd driver " + which;
+    std::invalid_argument(message.c_str());
+  }
+}
+
 py::object schmidt_weights(py::object A) {
   if (!is_array(A) || array_ndim(A) != 3) {
     throw std::invalid_argument(
@@ -68,6 +81,56 @@ static int _zgesvd(std::complex<double> *A, std::complex<double> *U, double *s,
   return info;
 }
 
+static int _dgesdd(double *A, double *U, double *s, double *VT, int m, int n,
+                   int r) {
+  int lwork, info;
+  char jobz = (A == U || A == VT) ? 'O' : 'S';
+  double work_temp;
+  auto iwork = std::make_unique<int>(8 * r);
+
+  // Ask for an estimate of temporary storage needed
+  lwork = -1;
+  dgesdd_ptr(&jobz, &m, &n, A, &m, s, U, &m, VT, &r, &work_temp, &lwork,
+             iwork.get(), &info);
+  if (info != 0) {
+    return info;
+  }
+
+  // Create space in memory for temporary array
+  lwork = int(work_temp);
+  auto work = std::make_unique<double[]>(static_cast<int>(work_temp));
+
+  // Perform computation using LAPACK
+  dgesdd_ptr(&jobz, &m, &n, A, &m, s, U, &m, VT, &r, work.get(), &lwork,
+             iwork.get(), &info);
+  return info;
+}
+
+static int _zgesdd(std::complex<double> *A, std::complex<double> *U, double *s,
+                   std::complex<double> *VT, int m, int n, int r) {
+  int lwork, info;
+  char jobz = (A == U || A == VT) ? 'O' : 'S';
+  int lrwork = r * std::max(5 * r + 7, 2 * std::max(m, n) + 2 * r + 1);
+  std::complex<double> work_temp;
+  auto iwork = std::make_unique<int>(8 * r);
+  auto rwork = std::make_unique<double[]>(lrwork);
+
+  // Ask for an estimate of temporary storage needed
+  lwork = -1;
+  zgesdd_ptr(&jobz, &m, &n, A, &m, s, U, &m, VT, &r, &work_temp, &lwork,
+             rwork.get(), iwork.get(), &info);
+  if (info != 0) {
+    return info;
+  }
+
+  lwork = static_cast<int>(work_temp.real());
+  auto work = std::make_unique<std::complex<double>[]>(lwork);
+
+  zgesdd_ptr(&jobz, &m, &n, A, &m, s, U, &m, VT, &r, work.get(), &lwork,
+             rwork.get(), iwork.get(), &info);
+  return info;
+}
+
 /*
  * In Fortran, we have the singular value decomposition
  *
@@ -90,25 +153,37 @@ std::tuple<py::object, py::object, py::object> destructive_svd(py::object A) {
   auto type = array_type(A);
   int err;
   py::object U, s, VT;
-  A = array_getcontiguous(A);
-  if (r == n) {
-    // U matrix is destructively overwritten into A
-    VT = empty_matrix(n, r, type);
-    U = A;
-  } else {
-    U = empty_matrix(r, m, type);
-    VT = A;
-  }
-  s = empty_vector(r, NPY_DOUBLE);
   switch (type) {
   case NPY_DOUBLE:
-    err = _dgesvd(array_data<double>(A), array_data<double>(U),
-                  array_data<double>(s), array_data<double>(VT), m, n, r);
+    A = array_getcontiguous(A);
+    if (r == n) {
+      // U matrix is destructively overwritten into A
+      VT = empty_matrix(n, r, type);
+      U = A;
+    } else {
+      U = empty_matrix(r, m, type);
+      VT = A;
+    }
+    s = empty_vector(r, NPY_DOUBLE);
+    err = (_use_gesdd ? _dgesdd : _dgesvd)(
+        array_data<double>(A), array_data<double>(U), array_data<double>(s),
+        array_data<double>(VT), m, n, r);
     break;
   case NPY_COMPLEX128:
-    err = _zgesvd(array_data<std::complex<double>>(A),
-                  array_data<std::complex<double>>(U), array_data<double>(s),
-                  array_data<std::complex<double>>(VT), m, n, r);
+    A = array_getcontiguous(A);
+    if (r == n) {
+      // U matrix is destructively overwritten into A
+      VT = empty_matrix(n, r, type);
+      U = A;
+    } else {
+      U = empty_matrix(r, m, type);
+      VT = A;
+    }
+    s = empty_vector(r, NPY_DOUBLE);
+    err = (_use_gesdd ? _zgesdd : _zgesvd)(
+        array_data<std::complex<double>>(A),
+        array_data<std::complex<double>>(U), array_data<double>(s),
+        array_data<std::complex<double>>(VT), m, n, r);
     break;
   case NPY_COMPLEX64:
     return destructive_svd(array_cast(A, NPY_COMPLEX128));
