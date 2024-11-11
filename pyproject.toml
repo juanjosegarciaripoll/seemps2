@@ -26,6 +26,13 @@ wheel.py-api = "cp312"
 wheel.packages = ["src/seemps"]
 wheel.exclude = ["*.cc", "*.h"]
 
+[[tool.scikit-build.overrides]]
+#
+# Option for adding address sanitizer
+if.env.SANITIZE = "address"
+cmake.define.USE_ASAN = "ON"
+cmake.build-type = "Debug"
+
 [tool.ruff]
 exclude = [
     ".git",

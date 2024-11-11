@@ -4,6 +4,31 @@ cmake_minimum_required(VERSION 3.15...3.27)
 # Set up the project and ensure there is a working C++ compiler
 project(seemps LANGUAGES CXX)
 
+# Whether to use ASAN
+option(USE_ASAN "Use Address Sanitizer during build" FALSE)
+option(ASAN_TYPE "Address Sanitizer type" "address")
+include(CheckCXXCompilerFlag)
+if (USE_ASAN)
+  set(ASAN_TYPE "$ENV{SANITIZE}")
+  if (NOT ASAN_TYPE STREQUAL "address")
+	message(FATAL_ERROR "Unknown value of SANITIZE environment variable: ${ASAN_TYPE}")
+  endif ()
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    message("Looking for -fsanitize=${ASAN_TYPE}")
+    set(CMAKE_REQUIRED_FLAGS "-Werror -fsanitize=${ASAN_TYPE}")
+    check_cxx_compiler_flag(-fsanitize=${ASAN_TYPE} HAVE_FLAG_SANITIZER)
+    if (HAVE_FLAG_SANITIZER)
+        message("Adding -fsanitize=${ASAN_TYPE}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=${ASAN_TYPE} -fno-omit-frame-pointer")
+        set(DCMAKE_C_FLAGS "${DCMAKE_C_FLAGS} -fsanitize=${ASAN_TYPE} -fno-omit-frame-pointer")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=${ASAN_TYPE}")
+        set(DCMAKE_MODULE_LINKER_FLAGS "${DCMAKE_MODULE_LINKER_FLAGS} -fsanitize=${ASAN_TYPE}")
+    else ()
+        message("-fsanitize=${flag} unavailable")
+    endif ()
+  endif ()
+endif ()
+
 # Warn if the user invokes CMake directly
 if (NOT SKBUILD)
   message(WARNING "\
@@ -26,7 +51,7 @@ if (NOT SKBUILD)
   You may optionally add -Ceditable.rebuild=true to auto-rebuild when
   the package is imported. Otherwise, you need to rerun the above
   after editing C++ files.")
-endif()
+endif ()
 
 # Try to import all Python components potentially needed by nanobind
 find_package(Python 3.8
@@ -35,9 +60,6 @@ find_package(Python 3.8
 
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
-
-# Find pybind11
-find_package(pybind11 CONFIG REQUIRED)
 
 
 # We are now ready to compile the actual extension module
@@ -69,8 +91,6 @@ nanobind_add_module(
 
 # We need to add the Numpy headers to this project
 target_include_directories(core PRIVATE ${Python_NumPy_INCLUDE_DIRS})
-
-target_link_libraries(core PRIVATE pybind11::headers)
 
 # Silence Numpy warnings
 target_compile_definitions(core PRIVATE NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION)

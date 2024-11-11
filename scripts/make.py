@@ -5,7 +5,7 @@ import sys
 import shutil
 import subprocess
 
-inplace: bool = True
+incremental: bool = True
 use_sanitizer: str = "no"
 ld_preload: str = ""
 valgrind: list[str] = []
@@ -91,12 +91,12 @@ def check() -> bool:
 
 def build() -> bool:
     env = os.environ.copy()
+    extra = []
     if use_sanitizer != "no":
         env["SANITIZE"] = use_sanitizer
-    if inplace:
-        return run([python, "setup.py", "build_ext", "-j", "4", "--inplace"], env=env)
-    else:
-        return run([python, "setup.py", "build", "-j", "4"], env=env)
+    if incremental:
+        extra = ["--no-build-isolation", "-ve"] + extra
+    return run(["pip", "install"] + extra + ["."], env=env)
 
 
 def install() -> bool:
@@ -106,8 +106,7 @@ def install() -> bool:
 for option in sys.argv[1:]:
     match option:
         case "here":
-            inplace = True
-            os.environ["PYTHONPATH"] = os.getcwd() + "/src"
+            incremental = True
         case "leak":
             use_sanitizer = "leak"
         case "asan":
