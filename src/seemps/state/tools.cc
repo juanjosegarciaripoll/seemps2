@@ -30,4 +30,12 @@ list copy(const list &l) {
 
 bool is_true(const object &o) { return bool(bool_(o)); }
 
+list empty_list(npy_intp l) {
+  auto output = steal<list>(PyList_New(l));
+  for (npy_intp i = 0; i < l; ++i) {
+    PyList_SET_ITEM(output.ptr(), i, Py_None);
+  }
+  return output;
+}
+
 } // namespace nanobind

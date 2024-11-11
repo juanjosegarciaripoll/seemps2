@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include "core.h"
+#include <nanobind/make_iterator.h>
 
 namespace seemps {
 template <int rank> class TensorArray {
@@ -32,11 +33,7 @@ public:
   auto begin() { return data_.begin(); }
   auto end() { return data_.end(); }
 
-  py::object data() const {
-    auto output = py::empty_list(size());
-    std::copy(data_.begin(), data_.end(), py::begin(output));
-    return output;
-  }
+  py::object data() const { return py::copy_to_list(begin(), end()); }
 
   void set_data(py::list new_data) {
     auto L = new_data.size();
@@ -127,7 +124,15 @@ public:
     throw std::invalid_argument("Invalid index into TensorArray");
   }
 
+#if 1
   py::object __iter__() const { return py::iter(data()); }
+#else
+  ASAN_IGNORE_FUNCTION
+  auto __iter__() const {
+    return py::make_iterator(py::type<TensorArray<rank>>(), "iterator", begin(),
+                             end());
+  }
+#endif
 
   size_t len() const { return data_.size(); }
   size_t size() const { return data_.size(); }

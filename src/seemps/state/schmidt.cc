@@ -75,8 +75,7 @@ double _canonicalize(TensorArray3 &state, int center,
   return err;
 }
 
-std::tuple<py::object, py::object, double>
-left_orth_2site(py::object AA, const Strategy &strategy) {
+py::tuple left_orth_2site(py::object AA, const Strategy &strategy) {
   if (!is_array(AA) || array_ndim(AA) != 4) {
     throw std::invalid_argument("left_orth_2site requires a 4D tensor");
   }
@@ -88,13 +87,12 @@ left_orth_2site(py::object AA, const Strategy &strategy) {
       destructive_svd(array_reshape(AA, array_dims_t{a * d1, d2 * b}));
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
-  return {as_3tensor(matrix_resize(U, -1, D), a, d1, D),
-          as_3tensor(as_matrix(s, D, 1) * matrix_resize(V, D, -1), D, d2, b),
-          err};
+  return py::make_tuple(
+      as_3tensor(matrix_resize(U, -1, D), a, d1, D),
+      as_3tensor(as_matrix(s, D, 1) * matrix_resize(V, D, -1), D, d2, b), err);
 }
 
-std::tuple<py::object, py::object, double>
-right_orth_2site(py::object AA, const Strategy &strategy) {
+py::tuple right_orth_2site(py::object AA, const Strategy &strategy) {
   if (!is_array(AA) || array_ndim(AA) != 4) {
     throw std::invalid_argument("left_orth_2site requires a 4D tensor");
   }
@@ -106,8 +104,8 @@ right_orth_2site(py::object AA, const Strategy &strategy) {
       destructive_svd(array_reshape(AA, array_dims_t{a * d1, d2 * b}));
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
-  return {as_3tensor(matrix_resize(U, -1, D) * s, a, d1, D),
-          as_3tensor(matrix_resize(V, D, -1), D, d2, b), err};
+  return py::make_tuple(as_3tensor(matrix_resize(U, -1, D) * s, a, d1, D),
+                        as_3tensor(matrix_resize(V, D, -1), D, d2, b), err);
 }
 
 double _update_canonical_2site_left(TensorArray3 &state, const py::object &A,

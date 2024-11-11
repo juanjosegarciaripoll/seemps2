@@ -4,7 +4,7 @@
 
 namespace nanobind {
 
-inline list empty_list(npy_intp size) { return steal<list>(PyList_New(size)); }
+list empty_list(npy_intp size);
 
 #if 1
 class python_list_iterator {
@@ -150,5 +150,14 @@ double abs(const object &w);
 inline bool iscomplex(const object &w) { return PyComplex_Check(w.ptr()); }
 
 bool is_true(const object &o);
+
+template <class iterator> list copy_to_list(iterator begin, iterator end) {
+  // TODO: Presize list
+  list output;
+  for (; begin != end; ++begin) {
+    output.append(*begin);
+  }
+  return output;
+}
 
 } // namespace nanobind

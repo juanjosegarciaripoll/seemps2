@@ -35,10 +35,8 @@ _update_in_canonical_form_left(TensorArray3 &state, const py::object &A,
                                bool overwrite = false);
 double _canonicalize(TensorArray3 &state, int center,
                      const Strategy &truncation);
-std::tuple<py::object, py::object, double>
-left_orth_2site(py::object AA, const Strategy &strategy);
-std::tuple<py::object, py::object, double>
-right_orth_2site(py::object AA, const Strategy &strategy);
+py::tuple left_orth_2site(py::object AA, const Strategy &strategy);
+py::tuple right_orth_2site(py::object AA, const Strategy &strategy);
 double _update_canonical_2site_left(TensorArray3 &state, const py::object &A,
                                     int site, const Strategy &strategy);
 double _update_canonical_2site_right(TensorArray3 &state, const py::object &A,
