@@ -6,7 +6,7 @@ import shutil
 import subprocess
 
 incremental: bool = True
-use_sanitizer: str = "no"
+use_sanitizer: str = "no" if "SANITIZE" not in os.environ else os.environ["SANITIZE"]
 ld_preload: str = ""
 valgrind: list[str] = []
 python: str = "python" if sys.platform == "win32" else "python3"
