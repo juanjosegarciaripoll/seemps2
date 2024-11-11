@@ -83,9 +83,11 @@ class CanonicalMPS(MPS):
             normalize is None and self.strategy.get_normalize_flag()
         ):
             A = self[actual_center]
-            N = np.linalg.norm(A)
+            N = np.linalg.norm(A.reshape(-1))
             if N:
-                self[actual_center] = A / np.linalg.norm(A)
+                self[actual_center] = A / N
+            else:
+                warnings.warn("Refusing to noramlize zero vector")
 
     @classmethod
     def from_vector(
@@ -352,11 +354,11 @@ class CanonicalMPS(MPS):
         """Normalize the state by updating the central tensor."""
         n = self.center
         A = self._data[n]
-        N = np.linalg.norm(A)
-        if N == 0:
-            warnings.warn("Refusing to normalize zero vector")
-        else:
+        N = np.linalg.norm(A.reshape(-1))
+        if N:
             self._data[n] = A / N
+        else:
+            warnings.warn("Refusing to normalize zero vector")
         return self
 
     def __copy__(self):
