@@ -14,7 +14,7 @@ Hence, we can write
 and the VT and U matrices are actually the usual U and VT from Numpy.
 """
 
-def _svd(cnp.ndarray A) -> tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray]:
+def _destructive_svd(cnp.ndarray A) -> tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray]:
     if (cnp.PyArray_Check(A) == 0 or
         cnp.PyArray_NDIM(A) != 2):
         raise ValueError("Invalid argument to SVD")
@@ -22,7 +22,7 @@ def _svd(cnp.ndarray A) -> tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray]:
 
 cdef bint __use_gesdd = 1
 
-def _select_lapack_driver(name: str):
+def _select_svd_driver(name: str):
     global __use_gesdd
     if name == "gesvd":
         __use_gesdd = 0
