@@ -35,7 +35,10 @@ NB_MODULE(core, m) {
 
   m.def("_contract_nrjl_ijk_klm", &contract_nrjl_ijk_klm);
 
-  m.def("_destructive_svd", &destructive_svd);
+  m.def("_destructive_svd", [](py::object A) {
+    auto t = destructive_svd(A);
+    return py::make_tuple(std::get<0>(t), std::get<1>(t), std::get<2>(t));
+  });
 
   m.def("_select_svd_driver", &select_svd_driver);
 
