@@ -17,20 +17,18 @@ int MPS::dimension() const {
 }
 
 py::list MPS::physical_dimensions() const {
-  auto output = py::empty_list(size());
-  std::transform(
-      begin(), end(), py::begin(output),
-      [](const py::object &a) -> auto { return py::int_(array_dim(a, 1)); });
+  py::list output;
+  for (auto a : *this) {
+    output.append(array_dim(a, 1));
+  }
   return output;
 }
 
 py::list MPS::bond_dimensions() const {
-  auto output = py::empty_list(size() + 1);
-  auto start = py::begin(output);
-  *start = py::int_(array_dim(data_[0], 0));
-  std::transform(begin(), end(), ++start, [](const py::object &a) -> auto {
-    return py::int_(array_dim(a, 2));
-  });
+  auto output = py::make_list(1);
+  for (auto a : *this) {
+    output.append(array_dim(a, 2));
+  }
   return output;
 }
 

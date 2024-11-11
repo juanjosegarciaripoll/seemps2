@@ -34,10 +34,8 @@ MPSSum::MPSSum(py::object weights, py::object states, bool check_args) {
 }
 
 MPSSum::MPSSum(const MPS &mps)
-    : weights_{py::empty_list(1)}, mps_{py::empty_list(1)}, size_{mps.size()} {
-  weights_[0] = 1.0;
-  mps_[0] = py::cast(mps);
-}
+    : weights_{py::make_list(1.0)}, mps_{py::make_list(mps)},
+      size_{mps.size()} {}
 
 MPSSum MPSSum::copy() const {
   return MPSSum(py::copy(weights_), py::copy(mps_), false);

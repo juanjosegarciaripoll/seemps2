@@ -4,8 +4,6 @@
 
 namespace nanobind {
 
-list empty_list(npy_intp size);
-
 #if 1
 class python_list_iterator {
   list list_;
@@ -158,6 +156,22 @@ template <class iterator> list copy_to_list(iterator begin, iterator end) {
     output.append(*begin);
   }
   return output;
+}
+
+template <rv_policy policy = rv_policy::automatic, typename... Args>
+list make_list(Args &&...args) {
+  auto result = steal<list>(PyList_New((Py_ssize_t)sizeof...(Args)));
+
+  size_t nargs = 0;
+  PyObject *o = result.ptr();
+
+  (NB_LIST_SET_ITEM(o, nargs++,
+                    detail::make_caster<Args>::from_cpp(
+                        (detail::forward_t<Args>)args, policy, nullptr)
+                        .ptr()),
+   ...);
+
+  return result;
 }
 
 } // namespace nanobind

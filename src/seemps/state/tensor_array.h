@@ -93,9 +93,9 @@ public:
       if (ok < 0) {
         throw std::out_of_range("Invalide slize into TensorArray");
       }
-      auto output = py::empty_list(slicelength);
+      py::list output;
       for (Py_ssize_t i = 0; i < slicelength; ++i) {
-        output[i] = data_[start];
+        output.append(data_[start]);
         start += step;
       }
       return output;

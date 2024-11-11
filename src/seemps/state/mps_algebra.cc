@@ -3,13 +3,7 @@
 namespace seemps {
 
 MPSSum operator+(const MPS &a, const MPS &b) {
-  auto weights = py::empty_list(2);
-  auto states = py::empty_list(2);
-  weights[0] = 1.0;
-  weights[1] = 1.0;
-  states[0] = a;
-  states[1] = b;
-  return MPSSum(weights, states, false);
+  return MPSSum(py::make_list(1.0, 1.0), py::make_list(a, b), false);
 }
 
 MPSSum operator+(const MPSSum &a, const MPSSum &b) {
@@ -26,19 +20,13 @@ MPSSum operator+(const MPSSum &a, const MPS &b) {
 }
 
 MPSSum operator-(const MPS &a, const MPS &b) {
-  auto weights = py::empty_list(2);
-  auto states = py::empty_list(2);
-  weights[0] = 1.0;
-  weights[1] = -1.0;
-  states[0] = a;
-  states[1] = b;
-  return MPSSum(weights, states, false);
+  return MPSSum(py::make_list(1.0, -1.0), py::make_list(a, b), false);
 }
 
 static py::list rescale(const py::object &a, const py::list &b) {
-  auto c = py::empty_list(py::len(b));
-  std::transform(begin(b), end(b), begin(c),
-                 [&](py::object b_i) -> auto { return a * b_i; });
+  py::list c;
+  std::for_each(begin(b), end(b),
+                [&](py::object b_i) -> auto { return c.append(a * b_i); });
   return c;
 }
 
