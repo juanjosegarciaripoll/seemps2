@@ -8,13 +8,9 @@ from cpython cimport (
     )
 
 
-cdef (int, double) __update_in_canonical_form_right(
+cdef double __update_in_canonical_form_right(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
 ):
-    assert PyArray_Check(someA) and (PyArray_NDIM(someA) == 3)
-    if site + 1 == PyList_GET_SIZE(state):
-        PyList_SetItem(state, site, someA)
-        return site, 0.0
     cdef:
         cnp.ndarray A = _copy_array(someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
@@ -35,25 +31,28 @@ cdef (int, double) __update_in_canonical_form_right(
     # np.einsum("ab,bic->aic", sV, state[site])
     state[site] = __contract_last_and_first(
         _as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), state[site])
-    return site, err
+    return err
 
 
-def _update_in_canonical_form_right(state, A, site, truncation):
+def _update_in_canonical_form_right(state, A, site, truncation) -> tuple[int, float]:
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    assert PyList_Check(state)
-    return __update_in_canonical_form_right(state, <cnp.ndarray>A, site, truncation)
+    #
+    # Invariants:
+    #  - state is a list
+    #  - A is an np.ndarray of rank 3
+    #
+    if site + 1 == PyList_GET_SIZE(state):
+        PyList_SetItem(state, site, A)
+        return site, 0.0
+    return site+1, __update_in_canonical_form_right(state, <cnp.ndarray>A, site, truncation)
 
 
-cdef (int, double) __update_in_canonical_form_left(
+cdef double __update_in_canonical_form_left(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
 ):
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
-    assert PyArray_Check(someA) and (PyArray_NDIM(someA) == 3)
-    if site == 0:
-        PyList_SetItem(state, 0, someA)
-        return site, 0.0
     cdef:
         cnp.ndarray A = _copy_array(someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
@@ -72,11 +71,18 @@ cdef (int, double) __update_in_canonical_form_left(
     state[site] = _as_3tensor(_resize_matrix(V, D, -1), D, i, b)
     site -= 1
     state[site] = __contract_last_and_first(state[site], _resize_matrix(U, -1, D) * s)
-    return site, err
+    return err
 
-def _update_in_canonical_form_left(state, A, site, truncation):
-    assert PyList_Check(state)
-    return __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
+def _update_in_canonical_form_left(state, A, site, truncation) -> tuple[int, float]:
+    #
+    # Invariants:
+    #  - state is a list
+    #  - A is an np.ndarray of rank 3
+    #
+    if site == 0:
+        PyList_SetItem(state, 0, A)
+        return 0, 0.0
+    return site-1, __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
 
 
 def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float:
@@ -86,16 +92,14 @@ def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float
     assert PyList_Check(state)
     cdef:
         Py_ssize_t i, L = PyList_GET_SIZE(state)
-        double err = 0.0, errk
+        double err = 0.0
         cnp.ndarray A
     for i in range(0, center):
         A = state[i]
-        _, errk = __update_in_canonical_form_right(state, A, i, truncation)
-        err += errk
+        err += __update_in_canonical_form_right(state, A, i, truncation)
     for i in range(L - 1, center, -1):
         A = state[i]
-        _, errk = __update_in_canonical_form_left(state, A, i, truncation)
-        err += errk
+        err += __update_in_canonical_form_left(state, A, i, truncation)
     return err
 
 
