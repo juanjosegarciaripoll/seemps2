@@ -262,11 +262,34 @@ NB_MODULE(core, m) {
             throw py::type_error("Invalid argument to __rmul__ by MPS");
           },
           py::is_operator())
-      .def(py::self + py::self)
-      .def(py::self - py::self)
-      // .def(py::self + MPSSum())
       .def(
-          "__add__", [](const MPS &a, const MPSSum &b) { return a + b; },
+          "__add__",
+          [](const py::object &a_mps, const py::object &b_mps_or_sum) {
+            if (py::isinstance<MPS>(b_mps_or_sum)) {
+              return MPSSum(py::make_list(1.0, 1.0),
+                            py::make_list(a_mps, b_mps_or_sum), true);
+            } else if (py::isinstance<MPSSum>(b_mps_or_sum)) {
+              auto &b = py::cast<const MPSSum &>(b_mps_or_sum);
+              return MPSSum(py::make_list(1.0) + b.weights(),
+                            py::make_list(a_mps) + b.states(), true);
+            }
+            throw py::type_error("Invalid argument to __add__ by MPS");
+          },
+          py::is_operator())
+      .def(
+          "__sub__",
+          [](const py::object &a_mps, const py::object &b_mps_or_sum) {
+            if (py::isinstance<MPS>(b_mps_or_sum)) {
+              return MPSSum(py::make_list(1.0, -1.0),
+                            py::make_list(a_mps, b_mps_or_sum), true);
+            } else if (py::isinstance<MPSSum>(b_mps_or_sum)) {
+              auto &b = py::cast<const MPSSum &>(b_mps_or_sum);
+              return MPSSum(py::make_list(1.0) +
+                                rescale(py::float_(-1.0), b.weights()),
+                            py::make_list(a_mps) + b.states(), true);
+            }
+            throw py::type_error("Invalid argument to __sub__ by MPS");
+          },
           py::is_operator())
       // .def(py::self - MPSSum())
       .def(
@@ -461,11 +484,19 @@ NB_MODULE(core, m) {
       .def(py::self - py::self)
       // .def(py:self + MPS())
       .def(
-          "__add__", [](const MPSSum &a, const MPS &b) { return a + b; },
+          "__add__",
+          [](const MPSSum &a, const py::object &b) -> auto {
+            return MPSSum(a.weights() + py::make_list(1.0),
+                          a.states() + py::make_list(b), true);
+          },
           py::is_operator())
       // .def(py:self - MPS())
       .def(
-          "__sub__", [](const MPSSum &a, const MPS &b) { return a - b; },
+          "__sub__",
+          [](const MPSSum &a, const py::object &b) -> auto {
+            return MPSSum(a.weights() + py::make_list(-1.0),
+                          a.states() + py::make_list(b), true);
+          },
           py::is_operator())
       .def(
           "delete_zero_components", &MPSSum::delete_zero_components,

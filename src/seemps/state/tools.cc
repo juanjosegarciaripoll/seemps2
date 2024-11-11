@@ -32,6 +32,13 @@ list copy(const list &l) {
   return output;
 }
 
+list rescale(const object &factor, const list &b) {
+  list c;
+  std::for_each(begin(b), end(b),
+                [&](object b_i) -> auto { return c.append(factor * b_i); });
+  return c;
+}
+
 bool is_true(const object &o) { return bool(bool_(o)); }
 
 } // namespace nanobind

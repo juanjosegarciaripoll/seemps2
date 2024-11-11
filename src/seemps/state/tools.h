@@ -139,6 +139,8 @@ inline auto end_const(list &l) {
 
 list copy(const list &l);
 
+list rescale(const object &factor, const list &b);
+
 object conj(const object &w);
 
 object real(const object &w);

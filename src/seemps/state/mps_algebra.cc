@@ -16,18 +16,13 @@ MPSSum operator+(const MPSSum &a, const MPS &b) {
   auto output = a.copy();
   output.weights().append(1.0);
   output.states().append(b);
+  py::print(py::cast(b));
+  py::print(output.states());
   return output;
 }
 
 MPSSum operator-(const MPS &a, const MPS &b) {
   return MPSSum(py::make_list(1.0, -1.0), py::make_list(a, b), false);
-}
-
-static py::list rescale(const py::object &a, const py::list &b) {
-  py::list c;
-  std::for_each(begin(b), end(b),
-                [&](py::object b_i) -> auto { return c.append(a * b_i); });
-  return c;
 }
 
 MPSSum operator-(const MPSSum &a, const MPSSum &b) {
