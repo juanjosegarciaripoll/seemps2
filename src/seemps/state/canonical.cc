@@ -136,7 +136,7 @@ double CanonicalMPS::entanglement_entropy(int center) const {
       py::cast<py::ndarray<double, py::ndim<1>>>(Schmidt_weights(center));
   auto v = s.view();
   double output = 0.0;
-  for (size_t i = 0; i < v.shape(0); i++) {
+  for (size_t i = 0; i < v.shape(0); ++i) {
     auto w = v(i);
     output -= w * std::log2(w);
   }
@@ -156,11 +156,11 @@ double CanonicalMPS::Renyi_entropy(int center, double alpha) const {
       py::cast<py::ndarray<double, py::ndim<1>>>(Schmidt_weights(center));
   auto v = s.view();
   double output = 0.0;
-  for (size_t i = 0; i < v.shape(0); i++) {
+  for (size_t i = 0; i < v.shape(0); ++i) {
     auto w = v(i);
     output += std::pow(w, alpha);
   }
-  return output;
+  return std::log(output) / (1 - alpha);
 }
 
 double CanonicalMPS::update_canonical(py::object A, int direction,
