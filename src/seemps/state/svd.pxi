@@ -20,7 +20,7 @@ def _destructive_svd(cnp.ndarray A) -> tuple[cnp.ndarray, cnp.ndarray, cnp.ndarr
         raise ValueError("Invalid argument to SVD")
     return __svd(A)
 
-cdef bint __use_gesdd = 1
+cdef bint __use_gesdd = 0
 
 def _select_svd_driver(name: str):
     global __use_gesdd
