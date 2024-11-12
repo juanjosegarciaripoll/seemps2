@@ -1,6 +1,5 @@
 from __future__ import annotations
 import warnings
-from math import sqrt
 import numpy as np
 from typing import Optional, Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
@@ -254,14 +253,14 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, error_squared = _update_in_canonical_form_right(
+            self.center, error = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, error_squared = _update_in_canonical_form_left(
+            self.center, error = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
-        self._error += sqrt(error_squared)
+        self._error += error
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -281,11 +280,9 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = _left_orth_2site(
-            AA, strategy
-        )
+        self._data[site], self._data[site + 1], error = _left_orth_2site(AA, strategy)
         self.center = site + 1
-        self._error += sqrt(error_squared)
+        self._error += error
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
         """Split a two-site tensor into two one-site tensors by
@@ -304,11 +301,9 @@ class CanonicalMPS(MPS):
             Truncation strategy, including relative tolerances and maximum
             bond dimensions
         """
-        self._data[site], self._data[site + 1], error_squared = _right_orth_2site(
-            AA, strategy
-        )
+        self._data[site], self._data[site + 1], error = _right_orth_2site(AA, strategy)
         self.center = site
-        self._error += sqrt(error_squared)
+        self._error += error
 
     def _interpret_center(self, center: int) -> int:
         """Converts `center` into an integer in `[0,self.size)`, with the

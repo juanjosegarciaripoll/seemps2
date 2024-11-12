@@ -24,7 +24,7 @@ cdef double __update_in_canonical_form_right(
         cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
         #
         # Truncate and store in state
-        double err = truncation._truncate(s, truncation)
+        double err = sqrt(truncation._truncate(s, truncation))
         Py_ssize_t D = PyArray_SIZE(s)
     state[site] = _as_3tensor(_resize_matrix(U, -1, D), a, i, D)
     site += 1
@@ -66,7 +66,7 @@ cdef double __update_in_canonical_form_left(
         cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
         #
         # Truncate and store in state
-        double err = truncation._truncate(s, truncation)
+        double err = sqrt(truncation._truncate(s, truncation))
         Py_ssize_t D = PyArray_SIZE(s)
     state[site] = _as_3tensor(_resize_matrix(V, D, -1), D, i, b)
     site -= 1
@@ -119,8 +119,6 @@ def _left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarr
     """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
     that 'B' is a left-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
-    assert (PyArray_Check(AA) and
-            PyArray_NDIM(<cnp.ndarray>AA) == 4)
     cdef:
         cnp.ndarray A = <cnp.ndarray>AA
         Py_ssize_t a = PyArray_DIM(A, 0)
@@ -140,7 +138,7 @@ def _left_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndarr
     return (
         _as_3tensor(_resize_matrix(U, -1, D), a, d1, D),
         _as_3tensor(_as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), D, d2, b),
-        err,
+        sqrt(err),
     )
 
 
@@ -148,8 +146,6 @@ def _right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndar
     """Split a tensor AA[a,b,c,d] into B[a,b,r] and C[r,c,d] such
     that 'C' is a right-isometry, truncating the size 'r' according
     to the given 'strategy'. Tensor 'AA' may be overwritten."""
-    assert (PyArray_Check(AA) and
-            PyArray_NDIM(<cnp.ndarray>AA) == 4)
     cdef:
         cnp.ndarray A = <cnp.ndarray>AA
         Py_ssize_t a = PyArray_DIM(A, 0)
@@ -169,5 +165,5 @@ def _right_orth_2site(object AA, Strategy strategy) -> tuple[np.ndarray, np.ndar
     return (
         _as_3tensor(_resize_matrix(U, -1, D) * s, a, d1, D),
         _as_3tensor(_resize_matrix(V, D, -1), D, d2, b),
-        err,
+        sqrt(err),
     )
