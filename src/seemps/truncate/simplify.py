@@ -67,8 +67,9 @@ def simplify(
     # If we only do canonical forms, not variational optimization, a second
     # pass on that initial guess suffices
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(state, center=start, strategy=strategy)
-        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(state, center=start, strategy=strategy).recenter(
+            -1 - start, strategy
+        )
         if logger:
             logger(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
@@ -184,8 +185,9 @@ def simplify_mps_sum(
     start = 0 if direction > 0 else -1
     # CANONICAL_FORM implements a simplification based on two passes
     if strategy.get_simplification_method() == Simplification.CANONICAL_FORM:
-        mps = CanonicalMPS(sum_state.join(), center=start, strategy=strategy)
-        mps = CanonicalMPS(mps, center=-1 - start, strategy=strategy)
+        mps = CanonicalMPS(sum_state.join(), center=start, strategy=strategy).recenter(
+            -1 - start, strategy
+        )
         if logger:
             logger(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
