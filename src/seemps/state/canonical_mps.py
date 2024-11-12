@@ -21,6 +21,7 @@ from .core import (
     _update_in_canonical_form_right,
     _update_in_canonical_form_left,
     _canonicalize,
+    _recanonicalize,
 )
 from .mps import MPS
 
@@ -233,7 +234,7 @@ class CanonicalMPS(MPS):
 
     def update_canonical(
         self, A: Tensor3, direction: int, truncation: Strategy
-    ) -> float:
+    ) -> None:
         """Update the state, replacing the tensor at `self.center`
         and moving the center to `self.center + direction`.
 
@@ -261,7 +262,6 @@ class CanonicalMPS(MPS):
                 self._data, A, self.center, truncation
             )
         self._error += sqrt(error_squared)
-        return error_squared
 
     # TODO: check if `site` is not needed, as it should be self.center
     def update_2site_right(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -340,14 +340,16 @@ class CanonicalMPS(MPS):
         CanonicalMPS
             This same object.
         """
-        center = self._interpret_center(center)
-        old = self.center
-        if strategy is None:
-            strategy = self.strategy
-        if center != old:
-            dr = +1 if center > old else -1
-            for i in range(old, center, dr):
-                self.update_canonical(self._data[i], dr, strategy)
+        newcenter = self._interpret_center(center)
+        oldcenter = self.center
+        if newcenter != oldcenter:
+            self._error += _recanonicalize(
+                self._data,
+                oldcenter,
+                newcenter,
+                self.strategy if strategy is None else strategy,
+            )
+            self.center = newcenter
         return self
 
     def normalize_inplace(self) -> CanonicalMPS:

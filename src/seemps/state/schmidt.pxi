@@ -85,11 +85,23 @@ def _update_in_canonical_form_left(state, A, site, truncation) -> tuple[int, flo
     return site-1, __update_in_canonical_form_left(state, <cnp.ndarray>A, site, truncation)
 
 
+def _recanonicalize(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation) -> float:
+    cdef double err = 0.0
+    while oldcenter > newcenter:
+        err += __update_in_canonical_form_left(state, state[oldcenter],
+                                               oldcenter, truncation)
+        oldcenter -= 1
+    while oldcenter < newcenter:
+        err += __update_in_canonical_form_right(state, state[oldcenter],
+                                                oldcenter, truncation)
+        oldcenter += 1
+    return err
+
+
 def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float:
     """Update a list of `Tensor3` objects to be in canonical form
     with respect to `center`."""
     # TODO: Revise the cumulative error update. Does it follow update_error()?
-    assert PyList_Check(state)
     cdef:
         Py_ssize_t i, L = PyList_GET_SIZE(state)
         double err = 0.0
