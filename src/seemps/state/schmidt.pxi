@@ -4,9 +4,16 @@ from cpython cimport (
     PyList_SetItem,
     PyList_SetItem,
     PyList_GET_ITEM,
-    PyTuple_GET_ITEM
+    PyTuple_GET_ITEM,
+    Py_INCREF,
     )
 
+cdef void state_set(list state, Py_ssize_t n, cnp.ndarray A) noexcept:
+     Py_INCREF(A)
+     PyList_SetItem(state, n, A)
+
+cdef inline cnp.ndarray state_get(list state, Py_ssize_t n) noexcept:
+     return <cnp.ndarray>PyList_GET_ITEM(state, n)
 
 cdef double __update_in_canonical_form_right(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
@@ -19,18 +26,19 @@ cdef double __update_in_canonical_form_right(
         #
         # Split tensor
         tuple svd = __svd(_as_2tensor(A, a * i, b))
-        cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
-        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
-        cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
         #
-        # Truncate and store in state
+        # Truncate Schmidt decomposition
+        cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
         double err = sqrt(truncation._truncate(s, truncation))
         Py_ssize_t D = PyArray_SIZE(s)
-    state[site] = _as_3tensor(_resize_matrix(U, -1, D), a, i, D)
+        #
+        # Build new state tensors
+        cnp.ndarray U = _resize_matrix(<cnp.ndarray>PyTuple_GET_ITEM(svd, 0), -1, D)
+        cnp.ndarray V = _resize_matrix(<cnp.ndarray>PyTuple_GET_ITEM(svd, 2), D, -1)
+    state_set(state, site, _as_3tensor(U, a, i, D))
     site += 1
-    # np.einsum("ab,bic->aic", sV, state[site])
-    state[site] = __contract_last_and_first(
-        _as_2tensor(s, D, 1) * _resize_matrix(V, D, -1), state[site])
+    state_set(state, site, __contract_last_and_first(_as_2tensor(s, D, 1) * V,
+                                                     state_get(state, site)))
     return err
 
 
@@ -60,17 +68,17 @@ cdef double __update_in_canonical_form_left(
         Py_ssize_t b = PyArray_DIM(A, 2)
         tuple svd = __svd(_as_2tensor(A, a, i * b))
         #
-        # Split tensor
-        cnp.ndarray U = <cnp.ndarray>PyTuple_GET_ITEM(svd, 0)
+        # Truncate Schmidt decomposition
         cnp.ndarray s = <cnp.ndarray>PyTuple_GET_ITEM(svd, 1)
-        cnp.ndarray V = <cnp.ndarray>PyTuple_GET_ITEM(svd, 2)
-        #
-        # Truncate and store in state
         double err = sqrt(truncation._truncate(s, truncation))
         Py_ssize_t D = PyArray_SIZE(s)
-    state[site] = _as_3tensor(_resize_matrix(V, D, -1), D, i, b)
+        #
+        # Build new state tensors
+        cnp.ndarray U = _resize_matrix(<cnp.ndarray>PyTuple_GET_ITEM(svd, 0), -1, D)
+        cnp.ndarray V = _resize_matrix(<cnp.ndarray>PyTuple_GET_ITEM(svd, 2), D, -1)
+    state_set(state, site, _as_3tensor(V, D, i, b))
     site -= 1
-    state[site] = __contract_last_and_first(state[site], _resize_matrix(U, -1, D) * s)
+    state_set(state, site, __contract_last_and_first(state_get(state, site), U * s))
     return err
 
 def _update_in_canonical_form_left(state, A, site, truncation) -> tuple[int, float]:
@@ -88,11 +96,11 @@ def _update_in_canonical_form_left(state, A, site, truncation) -> tuple[int, flo
 def _recanonicalize(list[Tensor3] state, int oldcenter, int newcenter, Strategy truncation) -> float:
     cdef double err = 0.0
     while oldcenter > newcenter:
-        err += __update_in_canonical_form_left(state, state[oldcenter],
+        err += __update_in_canonical_form_left(state, state_get(state, oldcenter),
                                                oldcenter, truncation)
         oldcenter -= 1
     while oldcenter < newcenter:
-        err += __update_in_canonical_form_right(state, state[oldcenter],
+        err += __update_in_canonical_form_right(state, state_get(state, oldcenter),
                                                 oldcenter, truncation)
         oldcenter += 1
     return err
@@ -105,13 +113,10 @@ def _canonicalize(list[Tensor3] state, int center, Strategy truncation) -> float
     cdef:
         Py_ssize_t i, L = PyList_GET_SIZE(state)
         double err = 0.0
-        cnp.ndarray A
     for i in range(0, center):
-        A = state[i]
-        err += __update_in_canonical_form_right(state, A, i, truncation)
+        err += __update_in_canonical_form_right(state, state_get(state, i), i, truncation)
     for i in range(L - 1, center, -1):
-        A = state[i]
-        err += __update_in_canonical_form_left(state, A, i, truncation)
+        err += __update_in_canonical_form_left(state, state_get(state, i), i, truncation)
     return err
 
 
