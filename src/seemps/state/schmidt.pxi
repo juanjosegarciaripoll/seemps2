@@ -12,7 +12,7 @@ cdef double __update_in_canonical_form_right(
     list[Tensor3] state, object someA, Py_ssize_t site, Strategy truncation
 ):
     cdef:
-        cnp.ndarray A = _copy_array(someA)
+        cnp.ndarray A = _copy_array(<cnp.ndarray>someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
         Py_ssize_t i = PyArray_DIM(A, 1)
         Py_ssize_t b = PyArray_DIM(A, 2)
@@ -45,7 +45,7 @@ def _update_in_canonical_form_right(state, A, site, truncation) -> tuple[int, fl
     if site + 1 == PyList_GET_SIZE(state):
         PyList_SetItem(state, site, A)
         return site, 0.0
-    return site+1, __update_in_canonical_form_right(state, <cnp.ndarray>A, site, truncation)
+    return site+1, __update_in_canonical_form_right(state, A, site, truncation)
 
 
 cdef double __update_in_canonical_form_left(
@@ -54,7 +54,7 @@ cdef double __update_in_canonical_form_left(
     """Insert a tensor in canonical form into the MPS state at the given site.
     Update the neighboring sites in the process."""
     cdef:
-        cnp.ndarray A = _copy_array(someA)
+        cnp.ndarray A = _copy_array(<cnp.ndarray>someA)
         Py_ssize_t a = PyArray_DIM(A, 0)
         Py_ssize_t i = PyArray_DIM(A, 1)
         Py_ssize_t b = PyArray_DIM(A, 2)
