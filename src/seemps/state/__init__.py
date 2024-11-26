@@ -7,6 +7,7 @@ from .core import (
     NO_TRUNCATION,
     MAX_BOND_DIMENSION,
 )
+from .array import TensorArray
 from .mps import MPS
 from .mpssum import MPSSum
 from .canonical_mps import CanonicalMPS
@@ -32,6 +33,7 @@ __all__ = [
     "DEFAULT_TOLERANCE",
     "NO_TRUNCATION",
     "MAX_BOND_DIMENSION",
+    "TensorArray",
     "MPS",
     "MPSSum",
     "CanonicalMPS",

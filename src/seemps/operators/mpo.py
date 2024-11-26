@@ -5,7 +5,7 @@ import numpy as np
 import opt_einsum  # type: ignore
 from ..tools import InvalidOperation
 from ..typing import Tensor4, Operator, Weight
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, array
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
     begin_mpo_environment,
@@ -37,7 +37,7 @@ def _mpo_multiply_tensor(A, B):
     ).reshape(c * a, i, d * b)
 
 
-class MPO(array.TensorArray):
+class MPO(TensorArray):
     """Matrix Product Operator class.
 
     This implements a bare-bones Matrix Product Operator object with open
@@ -47,8 +47,8 @@ class MPO(array.TensorArray):
 
     Parameters
     ----------
-    data: list[Tensor4]
-        List of four-legged tensors forming the structure.
+    data: Sequence[Tensor4]
+        Sequence of four-legged tensors forming the structure.
     strategy: Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for algorithms.
     """
@@ -57,14 +57,14 @@ class MPO(array.TensorArray):
 
     __array_priority__ = 10000
 
-    def __init__(self, data: list[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
+    def __init__(self, data: Sequence[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
         super().__init__(data)
         self.strategy = strategy
 
     def copy(self) -> MPO:
         """Return a shallow copy of the MPO, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
-        return MPO(self._data, self.strategy)
+        return MPO(self, self.strategy)
 
     def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
@@ -93,12 +93,13 @@ class MPO(array.TensorArray):
             else:
                 phase = 0.0
                 factor = 0.0
-            mpo_mult = self.copy()
-            mpo_mult._data = [
-                (factor if i > 0 else (factor * phase)) * A
-                for i, A in enumerate(mpo_mult._data)
-            ]
-            return mpo_mult
+            return MPO(
+                [
+                    (factor if i > 0 else (factor * phase)) * A
+                    for i, A in enumerate(self)
+                ],
+                self.strategy,
+            )
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPO:
@@ -111,12 +112,13 @@ class MPO(array.TensorArray):
             else:
                 phase = 0.0
                 factor = 0.0
-            mpo_mult = self.copy()
-            mpo_mult._data = [
-                (factor if i > 0 else (factor * phase)) * A
-                for i, A in enumerate(mpo_mult._data)
-            ]
-            return mpo_mult
+            return MPO(
+                [
+                    (factor if i > 0 else (factor * phase)) * A
+                    for i, A in enumerate(self)
+                ],
+                self.strategy,
+            )
         raise InvalidOperation("*", n, self)
 
     def __pow__(self, n: int) -> MPOList:
@@ -128,21 +130,19 @@ class MPO(array.TensorArray):
     # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPO."""
-        return [A.shape[2] for A in self._data]
+        return [A.shape[2] for A in self]
 
     def bond_dimensions(self) -> list[int]:
         """Return the bond dimensions of the MPO."""
-        return [A.shape[-1] for A in self._data][:-1]
+        return [A.shape[-1] for A in self][:-1]
 
     def max_bond_dimension(self) -> int:
         """Return the largest bond dimension."""
-        return max(A.shape[0] for A in self._data)
+        return max(A.shape[0] for A in self)
 
     @property
     def T(self) -> MPO:
-        output = self.copy()
-        output._data = [A.transpose(0, 2, 1, 3) for A in output._data]
-        return output
+        return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
 
     def tomatrix(self) -> Operator:
         """Convert this MPO to a dense or sparse matrix."""
@@ -154,7 +154,7 @@ class MPO(array.TensorArray):
         Di = 1  # Total physical dimension so far
         Dj = 1
         out = np.array([[[1.0]]])
-        for A in self._data:
+        for A in self:
             _, i, j, b = A.shape
             out = np.einsum("lma,aijb->limjb", out, A)
             Di *= i
@@ -164,7 +164,7 @@ class MPO(array.TensorArray):
 
     def set_strategy(self, strategy) -> MPO:
         """Return MPO with the given strategy."""
-        return MPO(data=self._data, strategy=strategy)
+        return MPO(self, strategy)
 
     @overload
     def apply(
@@ -215,14 +215,14 @@ class MPO(array.TensorArray):
             assert self.size == state.size
             for i, (w, mps) in enumerate(zip(state.weights, state.states)):
                 Ostate = w * MPS(
-                    [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, mps._data)],
+                    [_mpo_multiply_tensor(A, B) for A, B in zip(self, mps)],
                     error=mps.error(),
                 )
                 state = Ostate if i == 0 else state + Ostate
         elif isinstance(state, MPS):
             assert self.size == state.size
             state = MPS(
-                [_mpo_multiply_tensor(A, B) for A, B in zip(self._data, state._data)],
+                [_mpo_multiply_tensor(A, B) for A, B in zip(self, state)],
                 error=state.error(),
             )
         else:
@@ -329,15 +329,10 @@ class MPO(array.TensorArray):
         elif not isinstance(ket, MPS):
             raise Exception("MPS required")
         left = right = begin_mpo_environment()
-        operators = self._data
         for i in range(0, center):
-            left = update_left_mpo_environment(
-                left, bra[i].conj(), operators[i], ket[i]
-            )
+            left = update_left_mpo_environment(left, bra[i].conj(), self[i], ket[i])
         for i in range(self.size - 1, center - 1, -1):
-            right = update_right_mpo_environment(
-                right, bra[i].conj(), operators[i], ket[i]
-            )
+            right = update_right_mpo_environment(right, bra[i].conj(), self[i], ket[i])
         return join_mpo_environments(left, right)
 
 
@@ -414,9 +409,7 @@ class MPOList(object):
 
     @property
     def T(self) -> MPOList:
-        output = self.copy()
-        output.mpos = [A.T for A in reversed(output.mpos)]
-        return output
+        return MPOList([A.T for A in reversed(self.mpos)], self.strategy)
 
     # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
