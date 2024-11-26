@@ -1,5 +1,6 @@
 from .core import (
     Strategy,
+    TensorArray,
     Truncation,
     Simplification,
     DEFAULT_STRATEGY,
@@ -32,6 +33,7 @@ __all__ = [
     "DEFAULT_TOLERANCE",
     "NO_TRUNCATION",
     "MAX_BOND_DIMENSION",
+    "TensorArray",
     "MPS",
     "MPSSum",
     "CanonicalMPS",

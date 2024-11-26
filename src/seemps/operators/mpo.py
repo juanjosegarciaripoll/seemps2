@@ -5,8 +5,7 @@ import numpy as np
 import opt_einsum  # type: ignore
 from ..tools import InvalidOperation
 from ..typing import Tensor4, Operator, Weight
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy
-from ..state.core import TensorArray
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
     begin_mpo_environment,
@@ -48,8 +47,8 @@ class MPO(TensorArray):
 
     Parameters
     ----------
-    data: list[Tensor4]
-        List of four-legged tensors forming the structure.
+    data: Sequence[Tensor4]
+        Sequence of four-legged tensors forming the structure.
     strategy: Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for algorithms.
     """
@@ -58,9 +57,7 @@ class MPO(TensorArray):
 
     __array_priority__ = 10000
 
-    def __init__(
-        self, data: MPO | Sequence[Tensor4], strategy: Strategy = DEFAULT_STRATEGY
-    ):
+    def __init__(self, data: Sequence[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
         super().__init__(data)
         self.strategy = strategy
 
@@ -115,11 +112,10 @@ class MPO(TensorArray):
             else:
                 phase = 0.0
                 factor = 0.0
-            mpo_mult = self.copy()
             return MPO(
                 [
                     (factor if i > 0 else (factor * phase)) * A
-                    for i, A in enumerate(mpo_mult)
+                    for i, A in enumerate(self)
                 ],
                 self.strategy,
             )
@@ -141,8 +137,8 @@ class MPO(TensorArray):
         return [A.shape[-1] for A in self][:-1]
 
     def max_bond_dimension(self) -> int:
-        """Return the maximum bond dimensions of the MPO."""
-        return max(A.shape[-1] for A in self)
+        """Return the largest bond dimension."""
+        return max(A.shape[0] for A in self)
 
     @property
     def T(self) -> MPO:
@@ -413,9 +409,7 @@ class MPOList(object):
 
     @property
     def T(self) -> MPOList:
-        output = self.copy()
-        output.mpos = [A.T for A in reversed(output.mpos)]
-        return output
+        return MPOList([A.T for A in reversed(self.mpos)], self.strategy)
 
     # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
