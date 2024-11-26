@@ -38,7 +38,7 @@ class TestChebyshevCoefficients(TestCase):
             0.000000000000040,
             0.000000000000001,
         ]
-        assert np.allclose(list(cheb_coeffs), correct_coeffs)
+        self.assertSimilar(list(cheb_coeffs), correct_coeffs)
 
     def test_estimate_order(self):
         """Assert that the estimated coefficients and accuracy in norm-inf are below a tolerance."""
@@ -52,8 +52,8 @@ class TestChebyshevCoefficients(TestCase):
         mps = cheb2mps(proj_coeffs, domain=domain, strategy=NO_TRUNCATION)
         y_vec = f(domain.to_vector())
         y_mps = mps.to_vector()
-        assert proj_coeffs.coef[-1] <= tolerance
-        assert max(abs(y_mps - y_vec)) <= tolerance
+        self.assertTrue(proj_coeffs.coef[-1] <= tolerance)
+        self.assertSimilar(y_mps, y_vec, atol=tolerance)
 
     def assertSimilarSeries(self, s1, s2, tol=1e-15):
         """Ensure two Chebyshev series are close up to tolerance."""
