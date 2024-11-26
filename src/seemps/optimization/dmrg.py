@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable, Optional, Union
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
-from opt_einsum import contract  # type: ignore
+from opt_einsum import contract_expression  # type: ignore
 from ..tools import make_logger
 from ..typing import Tensor4, Vector
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, random_mps
@@ -25,6 +25,17 @@ class QuadraticForm:
     left_env: list[MPOEnvironment]
     right_env: list[MPOEnvironment]
     site: int
+
+    # Precompute the usual opt_einsum paths for this DMRG algorithm
+    _contractor: Callable[
+        [np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray
+    ] = contract_expression(
+        "acb,cikjld,edf,bklf->aije",
+        (100, 120, 100),
+        (120, 2, 2, 2, 2, 120),
+        (100, 120, 100),
+        (100, 2, 2, 100),
+    )
 
     def __init__(self, H: MPO, state: CanonicalMPS, start: int = 0):
         self.H = H
@@ -61,14 +72,11 @@ class QuadraticForm:
         a, c, b = L.shape
         e, d, f = R.shape
 
-        def perform_contraction(v: Vector) -> Vector:
-            v = v.reshape(b, k, l, f)
-            v = contract("acb,cikjld,edf,bklf->aije", L, H12, R, v)
-            return v
-
         return scipy.sparse.linalg.LinearOperator(
             shape=(b * k * l * f, b * k * l * f),
-            matvec=perform_contraction,
+            matvec=lambda v: self._contractor(L, H12, R, v.reshape(b, k, l, f)).reshape(
+                -1
+            ),
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
         )
 
