@@ -3,7 +3,7 @@
 
 namespace seemps {
 
-static bool _use_gesdd = false;
+static bool _use_gesdd = true;
 
 void select_svd_driver(std::string which) {
   if (which == "gesvd") {
