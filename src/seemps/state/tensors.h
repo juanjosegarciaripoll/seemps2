@@ -64,6 +64,7 @@ void load_scipy_wrappers();
 std::complex<double> array_vdot(const py::object &A, const py::object &B);
 
 inline PyArrayObject *to_array(const py::object &a) {
+  assert(PyArray_Check(a.ptr()));
   return reinterpret_cast<PyArrayObject *>(a.ptr());
 }
 
