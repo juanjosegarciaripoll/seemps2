@@ -3,7 +3,7 @@ from typing import Callable, Optional, Union
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
 from ..tools import make_logger
-from ..typing import Tensor4, Vector
+from ..typing import Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, random_mps
 from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
