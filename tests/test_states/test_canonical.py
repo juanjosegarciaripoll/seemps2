@@ -166,6 +166,10 @@ class TestCanonicalForm(MPSStatesFixture):
         with self.assertRaises(Exception):
             CanonicalMPS(mps, center=-11)
 
+    def test_canonical_recenter_returns_same_object(self):
+        mps = CanonicalMPS(product_state([1.0, 0.0], 10), center=0)
+        self.assertIs(mps, mps.recenter(-1))
+
     def test_canonical_Schmidt_weights(self):
         mps = CanonicalMPS(product_state([1.0, 0.0], 10), center=0)
         self.assertSimilar(mps.Schmidt_weights(), [1.0])
