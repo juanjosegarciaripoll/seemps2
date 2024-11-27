@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import overload, Union, Optional, Sequence
 import warnings
 import numpy as np
-import opt_einsum  # type: ignore
 from ..tools import InvalidOperation
 from ..typing import Tensor4, Operator, Weight
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
@@ -526,9 +525,13 @@ class MPOList(object):
             # A, B, args[1],... are the tensors of the MPO to
             # join. They are applied to the MPS in this order, hence the
             # particular position of elements in opt_einsum
-            # TODO: Remove dependency on opt_einsum
-            return opt_einsum.contract("aijb,cjkd->acikbd", B, A).reshape(
-                a * c, d, d, b * e
+            # return opt_einsum.contract("aijb,cjkd->acikbd", B, A).reshape(
+            #    a * c, d, d, b * e
+            # )
+            # aijbc,cjkd->aibckd->acikbd
+            aux = np.tensordot(B, A, ((2,), (1,)))
+            return np.ascontiguousarray(
+                aux.transpose(0, 3, 1, 4, 2, 5).reshape(a * c, d, d, b * e)
             )
 
         return join(*[mpo[i] for mpo in self.mpos])
