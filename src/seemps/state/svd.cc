@@ -86,7 +86,7 @@ static int _dgesdd(double *A, double *U, double *s, double *VT, int m, int n,
   int lwork, info;
   char jobz = (A == U || A == VT) ? 'O' : 'S';
   double work_temp;
-  auto iwork = std::make_unique<int>(8 * r);
+  auto iwork = std::make_unique<int[]>(8 * r);
 
   // Ask for an estimate of temporary storage needed
   lwork = -1;
@@ -112,7 +112,7 @@ static int _zgesdd(std::complex<double> *A, std::complex<double> *U, double *s,
   char jobz = (A == U || A == VT) ? 'O' : 'S';
   int lrwork = r * std::max(5 * r + 7, 2 * std::max(m, n) + 2 * r + 1);
   std::complex<double> work_temp;
-  auto iwork = std::make_unique<int>(8 * r);
+  auto iwork = std::make_unique<int[]>(8 * r);
   auto rwork = std::make_unique<double[]>(lrwork);
 
   // Ask for an estimate of temporary storage needed
