@@ -25,3 +25,19 @@ class TestTwoSiteEvolutionFold(TestCase):
         )
         fast_contraction = seemps.state._contractions._contract_nrjl_ijk_klm(U, A, B)
         self.assertSimilar(exact_contraction, fast_contraction)
+
+
+class TestDMRGHamiltonianContraction(TestCase):
+    def test_contract_A_B(self):
+        from seemps.optimization.dmrg import _dmrg_contractor
+
+        L = self.rng.normal(size=(10, 5, 10))
+        R = self.rng.normal(size=(13, 6, 13))
+        H12 = self.rng.normal(size=(5, 3, 3, 2, 2, 6))
+        v = self.rng.normal(size=(10, 3, 2, 13))
+
+        exact_contraction = np.einsum(
+            "acb,cikjld,edf,bklf->aije", L, H12, R, v
+        ).reshape(-1)
+        fast_contraction = _dmrg_contractor(L, H12, R, v)
+        self.assertSimilar(exact_contraction, fast_contraction)
