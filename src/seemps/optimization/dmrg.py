@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Callable, Optional, Union
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
-from opt_einsum import contract  # type: ignore
 from ..tools import make_logger
 from ..typing import Tensor4, Vector
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, random_mps
@@ -16,6 +15,37 @@ from ..state.environments import (
 from ..mpo import MPO
 from ..hamiltonians import NNHamiltonian
 from .descent import OptimizeResults
+from numpy import tensordot
+
+
+def _dmrg_contractor(L, H12, R, v):
+    """This sequence comes from
+    a = opt_einsum.contract_path(
+        "acb,cikjld,edf,bklf->aije",
+        ArrayShaped((100, 120, 100)),
+        ArrayShaped((120, 2, 2, 2, 2, 120)),
+        ArrayShaped((100, 120, 100)),
+        ArrayShaped((100, 2, 2, 100)),
+    )
+    print(a)
+
+                 Naive scaling:  10
+         Optimized scaling:  8
+          Naive FLOP count:  9.216e+13
+      Optimized FLOP count:  6.528e+9
+       Theoretical speedup:  1.412e+4
+      Largest intermediate:  4.800e+6 elements
+    --------------------------------------------------------------------------------
+    scaling        BLAS                current                             remaining
+    --------------------------------------------------------------------------------
+       6           GEMM        bklf,acb->klfac                cikjld,edf,klfac->aije
+       8           TDOT    klfac,cikjld->faijd                       edf,faijd->aije
+       6           TDOT        faijd,edf->aije                            aije->aije)
+    ([(0, 3), (0, 2), (0, 1)],   Complete contraction:  abc,cijkld,def,bklf->aije
+    """
+    aux = tensordot(v, L, ((0,), (2,)))
+    aux = tensordot(aux, H12, ((0, 1, 4), (2, 4, 0)))
+    return tensordot(aux, R, ((0, 4), (2, 1))).reshape(-1)
 
 
 class QuadraticForm:
@@ -61,14 +91,9 @@ class QuadraticForm:
         a, c, b = L.shape
         e, d, f = R.shape
 
-        def perform_contraction(v: Vector) -> Vector:
-            v = v.reshape(b, k, l, f)
-            v = contract("acb,cikjld,edf,bklf->aije", L, H12, R, v)
-            return v
-
         return scipy.sparse.linalg.LinearOperator(
             shape=(b * k * l * f, b * k * l * f),
-            matvec=perform_contraction,
+            matvec=lambda v: _dmrg_contractor(L, H12, R, v.reshape(b, k, l, f)),
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
         )
 
