@@ -197,9 +197,9 @@ public:
 
   double update_2site_left(py::object AA, int site, const Strategy &strategy);
 
-  const CanonicalMPS &recenter(int new_center);
+  void recenter(int new_center);
 
-  const CanonicalMPS &recenter(int new_center, const Strategy &strategy);
+  void recenter(int new_center, const Strategy &strategy);
 
   int center() const { return center_; }
 };

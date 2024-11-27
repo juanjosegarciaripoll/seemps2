@@ -401,8 +401,15 @@ NB_MODULE(core, m) {
       .def("update_2site_right", &CanonicalMPS::update_2site_right)
       .def("update_2site_left", &CanonicalMPS::update_2site_left)
       .def("recenter",
-           py::overload_cast<int, const Strategy &>(&CanonicalMPS::recenter))
-      .def("recenter", py::overload_cast<int>(&CanonicalMPS::recenter))
+           [](py::object &mps, int new_center, const Strategy &strategy) {
+             py::cast<CanonicalMPS &>(mps).recenter(new_center, strategy);
+             return mps;
+           })
+      .def("recenter",
+           [](py::object &mps, int new_center) {
+             py::cast<CanonicalMPS &>(mps).recenter(new_center);
+             return mps;
+           })
       .def("normalize_inplace", &CanonicalMPS::normalize_in_place)
       .def("copy", &CanonicalMPS::copy)
       .def("deepcopy", &CanonicalMPS::deepcopy)

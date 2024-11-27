@@ -126,9 +126,13 @@ Environment CanonicalMPS::right_environment(int site) const {
 
 py::object CanonicalMPS::Schmidt_weights(int site) const {
   site = interpret_center(site);
-  return schmidt_weights(
-      ((site == center()) ? (*this) : copy().recenter(site, strategy_))
-          .center_tensor());
+  if (site == center()) {
+    auto mps = copy();
+    mps.recenter(site);
+    return schmidt_weights(mps.center_tensor());
+  } else {
+    return schmidt_weights(center_tensor());
+  }
 }
 
 double CanonicalMPS::entanglement_entropy(int center) const {
@@ -195,12 +199,9 @@ double CanonicalMPS::update_2site_left(py::object AA, int site,
   return update_error(error_squared);
 }
 
-const CanonicalMPS &CanonicalMPS::recenter(int new_center) {
-  return recenter(new_center, strategy_);
-}
+void CanonicalMPS::recenter(int new_center) { recenter(new_center, strategy_); }
 
-const CanonicalMPS &CanonicalMPS::recenter(int new_center,
-                                           const Strategy &strategy) {
+void CanonicalMPS::recenter(int new_center, const Strategy &strategy) {
 
   new_center = interpret_center(new_center);
   while (center() < new_center) {
@@ -209,7 +210,6 @@ const CanonicalMPS &CanonicalMPS::recenter(int new_center,
   while (center() > new_center) {
     update_canonical(center_tensor(), -1, strategy);
   }
-  return *this;
 }
 
 } // namespace seemps
