@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple, List
+from typing import Callable, Optional, Tuple, List, Iterable, Any
 import json
 import time
 import gc
@@ -78,6 +78,7 @@ class BenchmarkItem:
             sizes = [2**i for i in range(1, 7)]
         times = []
         for s in sizes:
+            args: Iterable[Any]
             if setup is None:
                 args = []
             else:
@@ -179,14 +180,11 @@ class BenchmarkSet:
             for g in b.groups:
                 for i in g.items:
                     output.add((g.name, i.name))
-        output = list(output)
-        output.sort(key=lambda p: "\b".join(p))
-        return output
+        return sorted(list(output), key=lambda p: "\b".join(p))
 
 
 @dataclass
 class BenchmarkItemAggregate:
-
     columns: List[str]
     sizes: List[int]
     times: np.ndarray = field(default_factory=lambda: np.zeros((0, 0)))
