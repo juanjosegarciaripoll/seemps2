@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union, Any, Optional
+from typing import Callable, Union, Any
 import scipy.linalg  # type: ignore
 import dataclasses
 import numpy as np
@@ -27,9 +27,9 @@ class OptimizeResults:
     message : str
         Message explaining why the algorithm stoped, both when it converged,
         and when it did not.
-    trajectory : Optional[Vector]
+    trajectory : Vector | None
         Vector of computed energies in the optimization trajectory.
-    variances : Optional[Vector]
+    variances : Vector | None
         Vector of computed energy variance in the optimization trajectory.
     """
 
@@ -48,9 +48,9 @@ def gradient_descent(
     tol: float = 1e-13,
     k_mean=10,
     tol_variance: float = 1e-14,
-    tol_up: Optional[float] = None,
+    tol_up: float | None = None,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
+    callback: Callable[[MPS, OptimizeResults], Any] | None = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by gradient descent.
 
@@ -68,10 +68,10 @@ def gradient_descent(
         If energy fluctuates up below this tolerance, continue the optimization.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
-    strategy : Optional[Strategy]
+    strategy : Strategy | None
         Linear combination of MPS truncation strategy. Defaults to
         DESCENT_STRATEGY.
-    callback : Optional[Callable[[MPS, OptimizeResults],Any]]
+    callback : Callable[[MPS, OptimizeResults],Any] | None
         A callable called after each iteration (defaults to None).
 
     Results

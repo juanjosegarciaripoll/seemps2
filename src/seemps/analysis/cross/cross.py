@@ -3,7 +3,6 @@ import scipy.linalg  # type: ignore
 import dataclasses
 import functools
 
-from typing import Optional
 from copy import deepcopy
 
 from .black_box import BlackBox
@@ -20,7 +19,7 @@ class CrossStrategy:
     tol_sampling: float = 1e-10
     norm_sampling: float = np.inf
     num_samples: int = 1000
-    tol_norm_2: Optional[float] = None
+    tol_norm_2: float | None = None
     rng: np.random.Generator = dataclasses.field(
         default_factory=lambda: np.random.default_rng()
     )
@@ -70,8 +69,8 @@ class CrossResults:
     mps: MPS
     evals: int
     points: np.ndarray
-    callback_output: Optional[VectorLike] = None
-    trajectories: Optional[VectorLike] = None
+    callback_output: VectorLike | None = None
+    trajectories: VectorLike | None = None
 
 
 class CrossInterpolation:
@@ -91,8 +90,8 @@ class CrossInterpolation:
         self.mps = random_mps(black_box.physical_dimensions)
         self.previous_mps: MPS = deepcopy(self.mps)
         self.previous_error: float = np.inf
-        self.mps_indices: Optional[np.ndarray] = None
-        self.func_samples: Optional[np.ndarray] = None
+        self.mps_indices: np.ndarray | None = None
+        self.func_samples: np.ndarray | None = None
 
     def sample_fiber(self, k: int) -> np.ndarray:
         i_l, i_s, i_g = self.I_l[k], self.I_s[k], self.I_g[k]
@@ -103,7 +102,7 @@ class CrossInterpolation:
         self,
         num_samples: int,
         norm_error: float,
-        allowed_indices: Optional[list[int]] = None,
+        allowed_indices: list[int] | None = None,
         rng: np.random.Generator = np.random.default_rng(),
     ) -> float:
         if self.mps_indices is None:
@@ -262,7 +261,7 @@ def _check_convergence(
     evals = cross.black_box.evals - cross_strategy.num_samples  # subtract error evals
     if logger:
         logger(
-            f"Cross sweep {1+sweep:3d} with error({cross_strategy.num_samples} samples "
+            f"Cross sweep {1 + sweep:3d} with error({cross_strategy.num_samples} samples "
             f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={evals}"
         )
     if cross_strategy.tol_norm_2 is not None:

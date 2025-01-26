@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union, Any, Optional
+from typing import Callable, Union, Any
 import numpy as np
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
@@ -28,9 +28,9 @@ class MPSArnoldiRepresentation:
     tol_ill_conditioning: float
     gamma: float
     orthogonalize: bool
-    _eigenvector: Optional[CanonicalMPS]
-    _energy: Optional[float]
-    _variance: Optional[float]
+    _eigenvector: CanonicalMPS | None
+    _energy: float | None
+    _variance: float | None
 
     def __init__(
         self,
@@ -154,16 +154,16 @@ class MPSArnoldiRepresentation:
 
 def arnoldi_eigh(
     operator: MPO,
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
     maxiter: int = 100,
     nvectors: int = 10,
     tol: float = 1e-13,
     tol_ill: float = np.finfo(float).eps * 10,  # type: ignore
-    tol_up: Optional[float] = None,
+    tol_up: float | None = None,
     upward_moves: int = 5,
     gamma: float = -0.75,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
+    callback: Callable[[MPS, OptimizeResults], Any] | None = None,
 ) -> OptimizeResults:
     """Ground state search of Hamiltonian `H` by the Arnoldi method.
 
@@ -171,7 +171,7 @@ def arnoldi_eigh(
     ----------
     H : Union[MPO, MPOList, MPOSum]
         Hamiltonian in MPO form.
-    guess : Optional[MPS]
+    guess : MPS | None
         Initial guess of the ground state. If None, defaults to a random
         MPS deduced from the operator's dimensions.
     maxiter : int
@@ -187,10 +187,10 @@ def arnoldi_eigh(
     gamma : float
         If nonzero, convergence acceleration factor. Default is 0.0 (no inertia).
         Alternatively, provide -0.75.
-    strategy : Optional[Strategy]
+    strategy : Strategy | None
         Linear combination of MPS truncation strategy. Defaults to
         DESCENT_STRATEGY.
-    callback : Optional[Callable[[MPS, OptimizeResults], Any]]
+    callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
     Results

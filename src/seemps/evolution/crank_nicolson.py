@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 import numpy as np
 
@@ -19,7 +19,7 @@ def crank_nicolson(
     tol_cgs: float = 1e-14,
     maxiter_cgs: int = 50,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
@@ -43,7 +43,7 @@ def crank_nicolson(
         Maximum number of iterations of the CGS algorithm.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.

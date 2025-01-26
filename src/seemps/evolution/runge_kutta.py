@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
-from typing import Union, Optional, Callable
+from typing import Union, Callable
 from ..state import MPS, Strategy, DEFAULT_STRATEGY, scprod
 from ..operators import MPO
 from ..truncate import simplify
@@ -14,7 +14,7 @@ def runge_kutta(
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
@@ -34,7 +34,7 @@ def runge_kutta(
         Integration steps, if not defined by `t_span`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.
@@ -87,7 +87,7 @@ def runge_kutta_fehlberg(
     steps: int = 1000,
     tolerance: float = 1e-8,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
@@ -109,7 +109,7 @@ def runge_kutta_fehlberg(
         Tolerance for determination of evolution step.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.

@@ -1,13 +1,11 @@
 from __future__ import annotations
 import numpy as np
-from typing import Union, Optional
+from typing import Union
 from ..typing import Vector, Operator
 from ..mpo import MPOList, MPO
 
 
-def qubo_mpo(
-    J: Optional[Operator] = None, h: Optional[Vector] = None, **kwdargs
-) -> MPO:
+def qubo_mpo(J: Operator | None = None, h: Vector | None = None, **kwdargs) -> MPO:
     """Return the MPO associated to a QUBO operator.
 
     The operator is defined according to the mathematical notation
@@ -17,9 +15,9 @@ def qubo_mpo(
 
     Parameters
     ----------
-    J : Optional[Operator]
+    J : Operator | None
         Matrix of Ising coupling between qubits (Default value = None)
-    h : Optional[Vector] :
+    h : Vector | None :
         Vector of local magnetic fields (Default value = None)
     **kwdargs :
         Other arguments accepted by :class:`MPO`
@@ -69,8 +67,8 @@ def qubo_mpo(
 
 
 def qubo_exponential_mpo(
-    J: Optional[Operator] = None,
-    h: Optional[Vector] = None,
+    J: Operator | None = None,
+    h: Vector | None = None,
     beta: float = -1.0,
     **kwdargs,
 ) -> Union[MPO, MPOList]:
@@ -85,9 +83,9 @@ def qubo_exponential_mpo(
 
     Parameters
     ----------
-    J : Optional[Operator]
+    J : Operator | None
         Matrix of Ising coupling between qubits (Default value = None)
-    h : Optional[Vector] :
+    h : Vector | None :
         Vector of local magnetic fields (Default value = None)
     beta : float :
         Exponential prefactor (Default value = -1.0)

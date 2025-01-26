@@ -1,7 +1,7 @@
 from __future__ import annotations
 import warnings
 import numpy as np
-from typing import Optional, Sequence, Iterable
+from typing import Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
 from .schmidt import (
     _vector2mps,
@@ -58,8 +58,8 @@ class CanonicalMPS(MPS):
     def __init__(
         self,
         data: Iterable[Tensor3],
-        center: Optional[int] = None,
-        normalize: Optional[bool] = None,
+        center: int | None = None,
+        normalize: bool | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
         is_canonical: bool = False,
         **kwdargs,
@@ -162,7 +162,7 @@ class CanonicalMPS(MPS):
             ρ = _update_right_environment(A, A, ρ)
         return ρ
 
-    def Schmidt_weights(self, site: Optional[int] = None) -> Vector:
+    def Schmidt_weights(self, site: int | None = None) -> Vector:
         """Return the Schmidt weights for a bipartition around `site`.
 
         Parameters
@@ -186,7 +186,7 @@ class CanonicalMPS(MPS):
         # bipartitions, but we can also optimizze [0, self.center) [self.center, self.size)
         return _schmidt_weights(self._data[site])
 
-    def entanglement_entropy(self, site: Optional[int] = None) -> float:
+    def entanglement_entropy(self, site: int | None = None) -> float:
         """Compute the entanglement entropy of the MPS for a bipartition
         around `site`.
 
@@ -204,7 +204,7 @@ class CanonicalMPS(MPS):
         s = self.Schmidt_weights(site)
         return -np.sum(s * np.log2(s))
 
-    def Renyi_entropy(self, site: Optional[int] = None, alpha: float = 2.0) -> float:
+    def Renyi_entropy(self, site: int | None = None, alpha: float = 2.0) -> float:
         """Compute the Renyi entropy of the MPS for a bipartition
         around `site`.
 
@@ -317,9 +317,7 @@ class CanonicalMPS(MPS):
             return center
         raise IndexError()
 
-    def recenter(
-        self, center: int, strategy: Optional[Strategy] = None
-    ) -> CanonicalMPS:
+    def recenter(self, center: int, strategy: Strategy | None = None) -> CanonicalMPS:
         """Update destructively the state to be in canonical form with respect
         to a different site.
 

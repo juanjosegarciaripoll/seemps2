@@ -1,9 +1,6 @@
 from __future__ import annotations
-
-from typing import Callable, Optional, Union
-
+from typing import Callable, Union
 import numpy as np
-
 from ..analysis.operators import id_mpo
 from ..cgs import cgs
 from ..operators import MPO, MPOSum
@@ -18,7 +15,7 @@ def euler(
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using the Euler method.
@@ -66,7 +63,7 @@ def euler(
         Integration steps, if not defined by `t_span`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.
@@ -107,7 +104,7 @@ def euler2(
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using the 2nd order Euler method.
@@ -132,7 +129,7 @@ def euler2(
         Integration steps, if not defined by `t_span`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.
@@ -174,7 +171,7 @@ def implicit_euler(
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
     tolerance: float = 1e-10,
 ):
@@ -195,7 +192,7 @@ def implicit_euler(
         Integration steps, if not defined by `t_span`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
     itime : bool, default = 1e-10
         Whether to solve the imaginary time evolution problem.

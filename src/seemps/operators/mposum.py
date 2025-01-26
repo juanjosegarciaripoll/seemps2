@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import warnings
-from typing import Union, Sequence, Optional
+from typing import Union, Sequence
 from ..typing import Weight, Operator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from .mpo import MPO, MPOList
@@ -15,7 +15,7 @@ class MPOSum(object):
     ----------
     mpos : list[MPO]
         The operators to combine
-    weights : Optional[VectorLike]
+    weights : VectorLike | None
         An optional sequence of weights to apply
     strategy : Strategy
         Truncation strategy when applying the MPO's.
@@ -30,7 +30,7 @@ class MPOSum(object):
     def __init__(
         self,
         mpos: Sequence[Union[MPO, MPOList]],
-        weights: Optional[list[Weight]] = None,
+        weights: list[Weight] | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         self.mpos = mpos = list(mpos)
@@ -131,8 +131,8 @@ class MPOSum(object):
     def apply(
         self,
         state: Union[MPS, MPSSum],
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication A @ state between an MPOSum 'A' and
         a Matrix Product State 'state'."""
@@ -208,7 +208,7 @@ class MPOSum(object):
             DR += b
         return B
 
-    def join(self, strategy: Optional[Strategy] = None) -> MPO:
+    def join(self, strategy: Strategy | None = None) -> MPO:
         """Create an `MPO` by combining all tensors from all states in the linear
         combination.
 
@@ -223,7 +223,7 @@ class MPOSum(object):
             strategy=self.strategy if strategy is None else strategy,
         )
 
-    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+    def expectation(self, bra: MPS, ket: MPS | None = None) -> Weight:
         """Expectation value of MPOList on one or two MPS states.
 
         If one state is given, this state is interpreted as :math:`\\psi`
@@ -237,7 +237,7 @@ class MPOSum(object):
         bra : MPS
             The state :math:`\\psi` on which the expectation value
             is computed.
-        ket : Optional[MPS]
+        ket : MPS | None
             The ket component of the expectation value. Defaults to `bra`.
 
         Returns

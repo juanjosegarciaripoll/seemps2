@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
 from ..tools import make_logger
@@ -126,13 +126,13 @@ class QuadraticForm:
 
 def dmrg(
     H: Union[MPO, NNHamiltonian],
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
     maxiter: int = 20,
     tol: float = 1e-10,
-    tol_up: Optional[float] = None,
-    tol_eigs: Optional[float] = None,
+    tol_up: float | None = None,
+    tol_eigs: float | None = None,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
 ) -> OptimizeResults:
     """Compute the ground state of a Hamiltonian represented as MPO using the
     two-site DMRG algorithm.
@@ -142,7 +142,7 @@ def dmrg(
     H : MPO | NNHamiltonian
         The Hermitian operator that is to be diagonalized. It may be also a
         nearest-neighbor Hamiltonian that is implicitly converted to MPO.
-    guess : Optional[MPS]
+    guess : MPS | None
         An initial guess for the ground state.
     maxiter : int
         Maximum number of steps of the DMRG. Each step is a sweep that runs
@@ -151,13 +151,13 @@ def dmrg(
         Tolerance in the energy to detect convergence of the algorithm.
     tol_up : float, default = `tol`
         If energy fluctuates up below this tolerance, continue the optimization.
-    tol_eigs : Optional[float], default = `tol`
+    tol_eigs : float | None, default = `tol`
         Tolerance of Scipy's eigsh() solver, used internally. Zero means use
         machine precision.
     strategy : Strategy
         Truncation strategy to keep bond dimensions in check. Defaults to
         `DEFAULT_STRATEGY`, which is very strict.
-    callback : Optional[Callable[[MPS, OptimizeResults], Any]]
+    callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
     Returns

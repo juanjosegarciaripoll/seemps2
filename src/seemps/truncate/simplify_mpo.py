@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union
 from math import isqrt
 
 from ..operators import MPO, MPOList, MPOSum
@@ -31,7 +31,7 @@ def simplify_mpo(
     operator: Union[MPO, MPOList, MPOSum],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
     mpo_strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
     """Simplify an MPO state transforming it into another one with a smaller bond

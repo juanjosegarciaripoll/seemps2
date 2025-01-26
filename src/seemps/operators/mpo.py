@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import overload, Union, Optional, Sequence
+from typing import overload, Union, Sequence
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
@@ -169,23 +169,23 @@ class MPO(TensorArray):
     def apply(
         self,
         state: MPS,
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> MPS: ...
 
     @overload
     def apply(
         self,
         state: MPSSum,
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> MPS: ...
 
     def apply(
         self,
         state: Union[MPS, MPSSum],
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
@@ -248,7 +248,7 @@ class MPO(TensorArray):
     def extend(
         self,
         L: int,
-        sites: Optional[Sequence[int]] = None,
+        sites: Sequence[int] | None = None,
         dimensions: Union[int, list[int]] = 2,
     ) -> MPO:
         """Enlarge an MPO so that it acts on a larger Hilbert space with 'L' sites.
@@ -294,7 +294,7 @@ class MPO(TensorArray):
                 D = A.shape[-1]
         return MPO(data, strategy=self.strategy)
 
-    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+    def expectation(self, bra: MPS, ket: MPS | None = None) -> Weight:
         """Expectation value of MPO on one or two MPS states.
 
         If one state is given, this state is interpreted as :math:`\\psi`
@@ -308,7 +308,7 @@ class MPO(TensorArray):
         bra : MPS
             The state :math:`\\psi` on which the expectation value
             is computed.
-        ket : Optional[MPS]
+        ket : MPS | None
             The ket component of the expectation value. Defaults to `bra`.
 
         Returns
@@ -439,16 +439,16 @@ class MPOList(object):
     def apply(
         self,
         state: MPS,
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> MPS: ...
 
     @overload
     def apply(
         self,
         state: MPSSum,
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> MPS | MPSSum: ...
 
     # TODO: Describe how `strategy` and simplify act as compared to
@@ -456,8 +456,8 @@ class MPOList(object):
     def apply(
         self,
         state: Union[MPS, MPSSum],
-        strategy: Optional[Strategy] = None,
-        simplify: Optional[bool] = None,
+        strategy: Strategy | None = None,
+        simplify: bool | None = None,
     ) -> Union[MPS, MPSSum]:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
@@ -500,7 +500,7 @@ class MPOList(object):
         return self.apply(b)
 
     def extend(
-        self, L: int, sites: Optional[list[int]] = None, dimensions: int = 2
+        self, L: int, sites: list[int] | None = None, dimensions: int = 2
     ) -> MPOList:
         """Enlarge an MPOList so that it acts on a larger Hilbert space with 'L' sites.
 
@@ -536,7 +536,7 @@ class MPOList(object):
 
         return join(*[mpo[i] for mpo in self.mpos])
 
-    def join(self, strategy: Optional[Strategy] = None) -> MPO:
+    def join(self, strategy: Strategy | None = None) -> MPO:
         """Create an `MPO` by combining all tensors from all MPOs.
 
         Returns
@@ -550,7 +550,7 @@ class MPOList(object):
             strategy=self.strategy if strategy is None else strategy,
         )
 
-    def expectation(self, bra: MPS, ket: Optional[MPS] = None) -> Weight:
+    def expectation(self, bra: MPS, ket: MPS | None = None) -> Weight:
         """Expectation value of MPOList on one or two MPS states.
 
         If one state is given, this state is interpreted as :math:`\\psi`
@@ -564,7 +564,7 @@ class MPOList(object):
         bra : MPS
             The state :math:`\\psi` on which the expectation value
             is computed.
-        ket : Optional[MPS]
+        ket : MPS | None
             The ket component of the expectation value. Defaults to `bra`.
 
         Returns

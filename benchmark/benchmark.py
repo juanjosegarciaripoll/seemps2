@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple, List, Iterable, Any
+from typing import Callable, Tuple, List, Iterable, Any
 import json
 import time
 import gc
@@ -70,8 +70,8 @@ class BenchmarkItem:
     def run(
         name: str,
         function: Callable,
-        setup: Optional[Callable[[int], tuple]] = None,
-        sizes: Optional[List[int]] = None,
+        setup: Callable[[int], tuple] | None = None,
+        sizes: List[int] | None = None,
         limit: float = 0.2,
     ):
         if sizes == None:
@@ -102,9 +102,7 @@ class BenchmarkGroup:
             name=name, items=[BenchmarkItem.run(*item) for item in items]
         )
 
-    def maybe_find_item(
-        self, name: str, error: bool = False
-    ) -> Optional[BenchmarkItem]:
+    def maybe_find_item(self, name: str, error: bool = False) -> BenchmarkItem | None:
         for it in self.items:
             if it.name == name:
                 return it
@@ -135,7 +133,7 @@ class BenchmarkSet:
     groups: List[BenchmarkGroup]
     environment: str
 
-    def write(self, filename: Optional[str] = None):
+    def write(self, filename: str | None = None):
         if not filename:
             filename = self.name + ".json"
         with open(filename, "w") as f:
@@ -148,7 +146,7 @@ class BenchmarkSet:
             "groups": [item.tojson() for item in self.groups],
         }
 
-    def maybe_find_group(self, name: str) -> Optional[BenchmarkGroup]:
+    def maybe_find_group(self, name: str) -> BenchmarkGroup | None:
         for g in self.groups:
             if g.name == name:
                 return g

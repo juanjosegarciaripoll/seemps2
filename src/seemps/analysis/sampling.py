@@ -1,7 +1,5 @@
 from __future__ import annotations
 import numpy as np
-from typing import Optional
-
 from ..state import MPS
 
 
@@ -34,7 +32,7 @@ def evaluate_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
 def random_mps_indices(
     physical_dimensions: list[int],
     num_indices: int = 1000,
-    allowed_indices: Optional[list[int]] = None,
+    allowed_indices: list[int] | None = None,
     rng: np.random.Generator = np.random.default_rng(),
 ):
     """

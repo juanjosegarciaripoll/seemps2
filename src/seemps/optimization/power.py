@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union, Optional, Any
+from typing import Callable, Union, Any
 import dataclasses
 import numpy as np
 from ..tools import make_logger
@@ -19,16 +19,16 @@ def power_method(
     H: Union[MPO, MPOList, MPOSum],
     inverse: bool = False,
     shift: float = 0.0,
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
     maxiter: int = 1000,
     maxiter_cgs: int = 50,
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
-    tol_cgs: Optional[float] = None,
-    tol_up: Optional[float] = None,
+    tol_cgs: float | None = None,
+    tol_up: float | None = None,
     upward_moves: int = 5,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, OptimizeResults], Any]] = None,
+    callback: Callable[[MPS, OptimizeResults], Any] | None = None,
 ) -> PowerMethodOptimizeResults:
     """Ground state search of Hamiltonian `H` by power method.
 
@@ -36,7 +36,7 @@ def power_method(
     ----------
     H : Union[MPO, MPOList, MPOSum]
         Hamiltonian in MPO form.
-    guess : Optional[MPS]
+    guess : MPS | None
         Initial guess of the ground state. If None, defaults to a random
         MPS deduced from the operator's dimensions.
     maxiter : int
@@ -49,10 +49,10 @@ def power_method(
         If energy fluctuates up below this tolerance, continue the optimization.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
-    strategy : Optional[Strategy]
+    strategy : Strategy | None
         Linear combination of MPS truncation strategy. Defaults to
         DESCENT_STRATEGY.
-    callback : Optional[Callable[[MPS, OptimizeResults], Any]]
+    callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
     Results

@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import TypeVar, Union, Optional
+from typing import TypeVar, Union
 from ..typing import Tensor3
 from ..state import Strategy, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY
 from ..truncate import simplify
@@ -281,7 +281,7 @@ def _mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
 def mps_tensor_product(
     mps_list: list[MPS],
     mps_order: str = "A",
-    strategy: Optional[Strategy] = None,
+    strategy: Strategy | None = None,
     simplify_steps: bool = False,
 ) -> Union[MPS, CanonicalMPS]:
     """
@@ -328,7 +328,7 @@ def mps_tensor_product(
 def mps_tensor_sum(
     mps_list: list[MPS],
     mps_order: str = "A",
-    strategy: Optional[Strategy] = None,
+    strategy: Strategy | None = None,
     simplify_steps: bool = False,
 ) -> Union[MPS, CanonicalMPS]:
     """

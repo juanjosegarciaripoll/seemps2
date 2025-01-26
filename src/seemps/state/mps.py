@@ -3,7 +3,7 @@ import math
 import warnings
 import numpy as np
 from math import sqrt
-from typing import Optional, Union, Sequence, Iterable
+from typing import Union, Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
@@ -256,7 +256,7 @@ class MPS(array.TensorArray):
         return _join_environments(OL, ρR)
 
     def expectation2(
-        self, Opi: Operator, Opj: Operator, i: int, j: Optional[int] = None
+        self, Opi: Operator, Opj: Operator, i: int, j: int | None = None
     ) -> Weight:
         """Compute the expectation value :math:`\\langle\\psi|O_i Q_j|\\psi\\rangle`
         of two operators `O` and `Q` acting on the `i`-th and `j`-th subsystems.
@@ -378,9 +378,9 @@ class MPS(array.TensorArray):
     def extend(
         self,
         L: int,
-        sites: Optional[Sequence[int]] = None,
+        sites: Sequence[int] | None = None,
         dimensions: Union[int, list[int]] = 2,
-        state: Optional[Vector] = None,
+        state: Vector | None = None,
     ):
         """Enlarge an MPS so that it lives in a Hilbert space with `L` sites.
 

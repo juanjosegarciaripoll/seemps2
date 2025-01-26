@@ -1,7 +1,7 @@
 from __future__ import annotations
 import warnings
 import numpy as np
-from typing import Optional, Union
+from typing import Union
 from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod
@@ -226,7 +226,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
         return self
 
     def add_interaction_term(
-        self, i: int, op1: Operator, op2: Optional[Operator] = None
+        self, i: int, op1: Operator, op2: Operator | None = None
     ) -> "ConstantNNHamiltonian":
         """Add an interaction term to this Hamiltonian, acting in 'site' and 'site+1'.
         If 'op2' is None, then 'op1' is interpreted as an operator acting on both
@@ -287,8 +287,8 @@ class ConstantTIHamiltonian(ConstantNNHamiltonian):
     def __init__(
         self,
         size: int,
-        interaction: Optional[Operator] = None,
-        local_term: Optional[Operator] = None,
+        interaction: Operator | None = None,
+        local_term: Operator | None = None,
     ):
         if local_term is not None:
             dimension = len(local_term)
@@ -315,7 +315,7 @@ class HeisenbergHamiltonian(ConstantTIHamiltonian):
         Number of spins on which this Hamiltonian operates.
     """
 
-    def __init__(self, size: int, field: Optional[Vector] = None):
+    def __init__(self, size: int, field: Vector | None = None):
         Hint = 0.25 * (sp.kron(σx, σx) + sp.kron(σy, σy) + sp.kron(σz, σz)).real
         if field is None:
             Hlocal = None

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Optional
+from typing import Callable
 from math import sqrt
 import numpy as np
 from scipy.fft import dct  # type: ignore
@@ -20,10 +20,10 @@ from .factories import mps_interval, mps_affine
 
 def interpolation_coefficients(
     func: Callable,
-    order: Optional[int] = None,
+    order: int | None = None,
     start: float = -1.0,
     stop: float = +1.0,
-    domain: Optional[Interval] = None,
+    domain: Interval | None = None,
     interpolated_nodes: str = "zeros",
 ) -> np.polynomial.Chebyshev:
     """
@@ -68,10 +68,10 @@ def interpolation_coefficients(
 
 def projection_coefficients(
     func: Callable,
-    order: Optional[int] = None,
+    order: int | None = None,
     start: float = -1.0,
     stop: float = +1.0,
-    domain: Optional[Interval] = None,
+    domain: Interval | None = None,
 ) -> np.polynomial.Chebyshev:
     """
     Returns the coefficients for the Chebyshev projection of a function using
@@ -113,7 +113,7 @@ def estimate_order(
     func: Callable,
     start: float = -1,
     stop: float = +1,
-    domain: Optional[Interval] = None,
+    domain: Interval | None = None,
     tolerance: float = float(np.finfo(np.float64).eps),
     initial_order: int = 2,
     max_order: int = 2**12,  # 4096
@@ -143,8 +143,8 @@ def estimate_order(
 
 def cheb2mps(
     coefficients: np.polynomial.Chebyshev,
-    initial_mps: Optional[MPS] = None,
-    domain: Optional[Interval] = None,
+    initial_mps: MPS | None = None,
+    domain: Interval | None = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     clenshaw: bool = True,
     rescale: bool = True,
@@ -241,7 +241,7 @@ def cheb2mps(
                 strategy=strategy,
             )
             logger(
-                f"MPS Clenshaw step {i+1}/{steps}, maxbond={y_i.max_bond_dimension()}, error={y_i.error():6e}"
+                f"MPS Clenshaw step {i + 1}/{steps}, maxbond={y_i.max_bond_dimension()}, error={y_i.error():6e}"
             )
         f_mps = simplify(
             MPSSum(
@@ -277,7 +277,7 @@ def cheb2mps(
                 strategy=strategy,
             )
             logger(
-                f"MPS expansion step {i+1}/{steps}, maxbond={f_mps.max_bond_dimension()}, error={f_mps.error():6e}"
+                f"MPS expansion step {i + 1}/{steps}, maxbond={f_mps.max_bond_dimension()}, error={f_mps.error():6e}"
             )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
     logger.close()
@@ -337,7 +337,7 @@ def cheb2mpo(
                 strategy=strategy,
             )
             logger(
-                f"MPO Clenshaw step {i+1}/{steps}, maxbond={y_i.max_bond_dimension()}"
+                f"MPO Clenshaw step {i + 1}/{steps}, maxbond={y_i.max_bond_dimension()}"
             )
         f_mpo = simplify_mpo(
             MPOSum([y_i, MPOList([initial_mpo, y_i_plus_1])], weights=[1, -1]),
@@ -361,7 +361,7 @@ def cheb2mpo(
                 strategy=strategy,
             )
             logger(
-                f"MPO expansion step {i+1}/{steps}, maxbond={f_mpo.max_bond_dimension()}"
+                f"MPO expansion step {i + 1}/{steps}, maxbond={f_mpo.max_bond_dimension()}"
             )
             T_i, T_i_plus_1 = T_i_plus_1, T_i_plus_2
     return f_mpo

@@ -2,14 +2,14 @@ import math
 import numpy as np
 from scipy.special import loggamma  # type: ignore
 
-from typing import Iterator, Optional
+from typing import Iterator
 
 from ..operators import MPO
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..register.transforms import mpo_weighted_shifts
 
 
-def auto_sigma(M, dx, time=0.0, lower_bound: Optional[float] = None) -> float:
+def auto_sigma(M, dx, time=0.0, lower_bound: float | None = None) -> float:
     if lower_bound is None:
         lower_bound = 3 * dx
 
@@ -88,7 +88,6 @@ def hdaf_kernel(
     time: float = 0.0,
     derivative: int = 0,
 ) -> np.ndarray:
-
     if time == 0:  # Spread under the free propagator
         st = s0
     else:
@@ -109,7 +108,7 @@ def hdaf_mpo(
     num_qubits: int,
     dx: float,
     M: int,
-    s0: Optional[float] = None,
+    s0: float | None = None,
     time: float = 0.0,
     derivative: int = 0,
     periodic: bool = True,
@@ -129,7 +128,7 @@ def hdaf_mpo(
         The grid stepsize.
     M : int
         The order of the highest Hermite polynomial (must be an even integer).
-    s0 : Optional[float], default=None
+    s0 : float | None, default=None
         The width of the HDAF Gaussian weight. If not provided, a suitable
         width will be computed based on `M` and `dx`.
     time : float, default=0.0

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import dok_matrix, csc_array  # type: ignore
-from typing import Callable, Optional
+from typing import Callable
 from functools import lru_cache
 
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
@@ -184,7 +184,7 @@ class LagrangeBuilder:
     def __init__(
         self,
         order: int,
-        local_order: Optional[int] = None,
+        local_order: int | None = None,
     ):
         self.d = order
         self.m = local_order if local_order else order
@@ -248,7 +248,9 @@ class LagrangeBuilder:
             gamma_res = (
                 -gamma
                 if gamma < 0
-                else self.d - (gamma - self.d) if gamma > self.d else gamma
+                else self.d - (gamma - self.d)
+                if gamma > self.d
+                else gamma
             )
             if j == gamma_res:
                 P += self.local_angular_cardinal(theta, gamma)

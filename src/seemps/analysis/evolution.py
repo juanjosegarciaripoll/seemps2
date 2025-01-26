@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, Callable, Optional, Any
+from typing import Union, Any, Callable
 from math import sqrt
 import numpy as np
 import dataclasses
@@ -19,7 +19,7 @@ class EvolutionResults:
         The estimate for the ground state.
     energy : float
         Estimate for the ground state energy.
-    trajectory : Optional[Vector]
+    trajectory : Vector | None
         Vector of computed energies in the evolution trajectory.
     Δβ : float or List
         Steps size or steps sizes for each iteration.
@@ -40,7 +40,7 @@ def euler(
     Δβ: float = 0.01,
     maxiter: int = 1000,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, EvolutionResults], Any]] = None,
+    callback: Callable[[MPS, EvolutionResults], Any] | None = None,
 ) -> EvolutionResults:
     """Euler method for arrays.
 
@@ -54,10 +54,10 @@ def euler(
         Step size (defaults to 0.01).
     maxiter : int
         Maximum number of iterations (defaults to 1000)
-    strategy : Optional[Strategy]
+    strategy : Strategy | None
         Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
-    callback : Optional[Callable[[MPS, EvolutionResults], Any]]
+    callback : Callable[[MPS, EvolutionResults], Any] | None
         A callable called after each iteration (defaults to None).
 
     Results
@@ -88,7 +88,7 @@ def improved_euler(
     Δβ: float = 0.01,
     maxiter: int = 1000,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, EvolutionResults], Any]] = None,
+    callback: Callable[[MPS, EvolutionResults], Any] | None = None,
 ):
     """Improved Euler method for arrays. See `euler` for a description of
     parameters and results.
@@ -118,7 +118,7 @@ def runge_kutta(
     Δβ: float = 0.01,
     maxiter: int = 1000,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, EvolutionResults], Any]] = None,
+    callback: Callable[[MPS, EvolutionResults], Any] | None = None,
 ) -> EvolutionResults:
     """Runge-Kutta method for arrays. See `euler` for a description of
     parametrs and results.
@@ -157,7 +157,7 @@ def runge_kutta_fehlberg(
     tol_rk: float = 1e-8,
     tol_residual: float = 1e-8,
     strategy: Strategy = DESCENT_STRATEGY,
-    callback: Optional[Callable[[MPS, EvolutionResults], Any]] = None,
+    callback: Callable[[MPS, EvolutionResults], Any] | None = None,
 ) -> EvolutionResults:
     """Runge-Kutta method for arrays.
 
@@ -178,10 +178,10 @@ def runge_kutta_fehlberg(
         from target (dfaults to 1e-8).
     tol_residual : float
         Tolerance in relative residual at which algorithm stops (defaults to 1e-10).
-    strategy : Optional[Strategy]
+    strategy : Strategy | None
         Truncation strategy when applying MPO. Defaults to DESCENT_STRATEGY, thereby
         using whatever strategy the MPO has defined.
-    callback : Optional[Callable[[MPS, EvolutionResults], Any]]
+    callback : Callable[[MPS, EvolutionResults], Any] | None
         A callable called after each iteration (defaults to None).
 
     Results

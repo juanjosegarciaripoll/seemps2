@@ -39,7 +39,7 @@ def mpo_flip(operator):
 
 class Space:
     """Coordinate grid class.
-    
+
     Class to encode the definition space of a discretized multidimensional function.
 
     Parameters
@@ -50,7 +50,7 @@ class Space:
         Position space intervals [a_i,b_i] for each dimension i.
     closed : bool
         If closed is True, the position space intervals are closed (symmetrically defined).
-        If False, the interval is open. (Optional, defaults to True).
+        If False, the interval is open. (defaults to True).
     order : str, optional
             The order in which sites are organized. Default is "A" (sequential).
     """
@@ -151,7 +151,7 @@ class Space:
         Returns
         -------
         list[tuple]
-            List of tuples (n, k), where `n` is the dimension and `k` is the significant digit 
+            List of tuples (n, k), where `n` is the dimension and `k` is the significant digit
             of the qubits used for storing that dimension.
         """
         coordinates_tuples = []

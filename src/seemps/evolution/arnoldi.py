@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, Optional, Callable
+from typing import Union, Callable
 import numpy as np
 from ..optimization.arnoldi import MPSArnoldiRepresentation
 from ..typing import Vector
@@ -14,7 +14,7 @@ def arnoldi(
     steps: int = 1000,
     order: int = 6,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using a variable order Arnoldi
@@ -37,7 +37,7 @@ def arnoldi(
         Maximum order of the Arnoldi representation.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
-    callback : Optional[Callable[[float, MPS], Any]]
+    callback : Callable[[float, MPS], Any]
         A callable called after each iteration (defaults to None).
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.

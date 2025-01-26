@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from math import sqrt
 from numpy import pi as π
-from typing import Union, Optional
+from typing import Union
 from .typing import Vector
 from .state import MPS, MPSSum
 from .mpo import MPO, MPOList
@@ -162,7 +162,7 @@ def qft_wavefunction(Ψ: Vector) -> Vector:
 
 
 def qft_nd_mpo(
-    sites: list[int], N: Optional[int] = None, sign: int = -1, **kwargs
+    sites: list[int], N: int | None = None, sign: int = -1, **kwargs
 ) -> MPOList:
     """Create an MPOList object representing a Quantum Fourier Transform
     for subset of qubits in a quantum register with `N` qubits.
@@ -236,7 +236,7 @@ def qft_nd_mpo(
     return MPOList([make_layer(sites[i:]) for i in range(len(sites))], **kwargs)
 
 
-def iqft_nd_mpo(sites: list[int], N: Optional[int] = None, **kwargs) -> MPOList:
+def iqft_nd_mpo(sites: list[int], N: int | None = None, **kwargs) -> MPOList:
     """Create an MPOList object representing the inverse Quantum Fourier Transform
     for subset of qubits in a quantum register with `N` qubits.
 

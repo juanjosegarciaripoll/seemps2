@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Union
+from typing import Union
 import warnings
 from math import sqrt
 import numpy as np
@@ -8,7 +8,7 @@ from .mps import MPS
 
 
 def product_state(
-    vectors: Union[VectorLike, list[VectorLike]], length: Optional[int] = None
+    vectors: Union[VectorLike, list[VectorLike]], length: int | None = None
 ) -> MPS:
     """Create a product state :class:`MPS`.
 
@@ -136,7 +136,7 @@ def random_uniform_mps(
     D: int = 1,
     truncate: bool = True,
     complex: bool = False,
-    rng: Optional[np.random.Generator] = None,
+    rng: np.random.Generator | None = None,
 ) -> MPS:
     """Create a random state with `N` elements of dimension `d` and bond
     dimension `D`.
@@ -170,7 +170,7 @@ def random_mps(
     D: int = 1,
     truncate: bool = True,
     complex: bool = False,
-    rng: Optional[np.random.Generator] = None,
+    rng: np.random.Generator | None = None,
 ) -> MPS:
     """Create a random state with `N` elements of dimension `d` and bond
     dimension `D`.

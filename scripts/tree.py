@@ -1,6 +1,6 @@
 import sys
 import types
-from typing import Any, Optional
+from typing import Any
 
 if "./" not in sys.path:
     sys.path += ["./"]
@@ -10,11 +10,11 @@ import seemps
 
 def module_tree_recurse(
     object: Any,
-    name: Optional[str] = None,
+    name: str | None = None,
     prefix="",
     remove_hidden=True,
     remove_builtins=True,
-    root_path: Optional[str] = None,
+    root_path: str | None = None,
     shown: set = set(),
 ):
     if name is None:

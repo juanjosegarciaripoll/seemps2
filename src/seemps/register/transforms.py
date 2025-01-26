@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Optional, Iterable
+from typing import Iterable
 from ..typing import VectorLike
 from ..mpo import MPO
 
@@ -115,7 +115,7 @@ def mpo_shifts(
 
 
 def twoscomplement(
-    L: int, control: int = 0, sites: Optional[Iterable[int]] = None, **kwdargs
+    L: int, control: int = 0, sites: Iterable[int] | None = None, **kwdargs
 ) -> MPO:
     """Return an MPO that performs a two's complement of the selected qubits
     depending on a 'control' qubit in a register with L qubits.
@@ -134,7 +134,7 @@ def twoscomplement(
 
     control : int :
         (Default value = 0)
-    sites : Optional[Iterable[int]] :
+    sites : Iterable[int] | None :
         (Default value = None)
     **kwdargs :
 
@@ -142,7 +142,7 @@ def twoscomplement(
 
     control: int :
          (Default value = 0)
-    sites: Optional[Iterable[int]] :
+    sites: Iterable[int] | None :
          (Default value = None)
 
     Returns

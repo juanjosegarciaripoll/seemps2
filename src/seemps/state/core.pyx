@@ -73,13 +73,13 @@ cdef class Strategy:
             raise AssertionError("Invalid method argument passed to Strategy")
 
     def replace(self,
-                 method: Optional[Truncation] = None,
-                 tolerance: Optional[float] = None,
-                 simplification_tolerance: Optional[float] = None,
-                 max_bond_dimension: Optional[int] = None,
-                 normalize: Optional[bool] = None,
-                 simplify: Optional[int] = None,
-                 max_sweeps: Optional[int] = None):
+                 method: Truncation | None = None,
+                 tolerance: float | None = None,
+                 simplification_tolerance: float | None = None,
+                 max_bond_dimension: int | None = None,
+                 normalize: bool | None = None,
+                 simplify: int | None = None,
+                 max_sweeps: int | None = None):
         return Strategy(method = self.method if method is None else method,
                         tolerance = self.tolerance if tolerance is None else tolerance,
                         simplification_tolerance = self.simplification_tolerance if simplification_tolerance is None else simplification_tolerance,

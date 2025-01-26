@@ -1,4 +1,3 @@
-from typing import Optional
 from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
 import numpy as np
 
@@ -29,13 +28,13 @@ class Strategy:
     ): ...
     def replace(
         self: Strategy,
-        method: Optional[int] = None,
-        tolerance: Optional[float] = None,
-        simplification_tolerance: Optional[float] = None,
-        max_bond_dimension: Optional[int] = None,
-        max_sweeps: Optional[int] = None,
-        normalize: Optional[bool] = None,
-        simplify: Optional[int] = None,
+        method: int | None = None,
+        tolerance: float | None = None,
+        simplification_tolerance: float | None = None,
+        max_bond_dimension: int | None = None,
+        max_sweeps: int | None = None,
+        normalize: bool | None = None,
+        simplify: int | None = None,
     ) -> Strategy: ...
     def set_normalization(self: Strategy, normalize: bool) -> Strategy: ...
     def get_tolerance(self) -> float: ...
@@ -56,7 +55,7 @@ DEFAULT_STRATEGY: Strategy
 def destructively_truncate_vector(s: Vector, strategy: Strategy) -> float: ...
 def _contract_nrjl_ijk_klm(U: Unitary, A: Tensor3, B: Tensor3) -> Tensor4: ...
 def _contract_last_and_first(A: np.ndarray, B: np.ndarray) -> np.ndarray: ...
-def _begin_environment(D: Optional[int] = 1) -> Environment: ...
+def _begin_environment(D: int | None = 1) -> Environment: ...
 def _update_right_environment(
     B: Tensor3, A: Tensor3, rho: Environment
 ) -> Environment: ...

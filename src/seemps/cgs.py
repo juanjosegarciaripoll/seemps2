@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Callable, Any, Union
+from typing import Callable, Any, Union
 from .state import (
     MPS,
     MPSSum,
@@ -17,11 +17,11 @@ from .tools import make_logger
 def cgs(
     A: Union[MPO, MPOList, MPOSum],
     b: Union[MPS, MPSSum],
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
     maxiter: int = 100,
     strategy: Strategy = DEFAULT_STRATEGY,
     tolerance: float = DEFAULT_TOLERANCE,
-    callback: Optional[Callable[[MPS, float], Any]] = None,
+    callback: Callable[[MPS, float], Any] | None = None,
 ) -> tuple[CanonicalMPS, float]:
     """Approximate solution of :math:`A \\psi = b`.
 

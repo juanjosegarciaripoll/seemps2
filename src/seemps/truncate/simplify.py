@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Union
+from typing import Union
 from math import sqrt
 import numpy as np
 from ..tools import make_logger
@@ -34,7 +34,7 @@ def simplify(
     state: Union[MPS, MPSSum],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
 ) -> CanonicalMPS:
     """Simplify an MPS state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
@@ -152,7 +152,7 @@ def simplify_mps_sum(
     sum_state: MPSSum,
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
 ) -> CanonicalMPS:
     """Approximate a linear combination of MPS :math:`\\sum_i w_i \\psi_i` by
     another one with a smaller bond dimension, sweeping until convergence is achieved.
@@ -286,7 +286,7 @@ def combine(
     states: list[MPS],
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-    guess: Optional[MPS] = None,
+    guess: MPS | None = None,
 ) -> CanonicalMPS:
     """Deprecated, use `simplify` instead."""
     return simplify_mps_sum(MPSSum(weights, states))

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Union
+from typing import Union
 from .typing import Operator, Weight, Vector
 import numpy as np
 from .state.environments import (
@@ -33,7 +33,7 @@ def expectation1(state: MPS, O: Operator, i: int) -> Weight:
 
 
 def expectation2(
-    state: MPS, O: Operator, Q: Operator, i: int, j: Optional[int] = None
+    state: MPS, O: Operator, Q: Operator, i: int, j: int | None = None
 ) -> Weight:
     """Compute the expectation value :math:`\\langle\\psi|O_i Q_j|\\psi\\rangle`
     of two operators `O` and `Q` acting on the `i`-th and `j`-th subsystems.

@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg  # type: ignore
 import dataclasses
 import functools
-from typing import Optional, Callable
+from typing import Callable
 
 from .cross import (
     CrossInterpolation,
@@ -47,8 +47,8 @@ class CrossStrategyMaxvol(CrossStrategy):
 def cross_maxvol(
     black_box: BlackBox,
     cross_strategy: CrossStrategyMaxvol = CrossStrategyMaxvol(),
-    initial_points: Optional[np.ndarray] = None,
-    callback: Optional[Callable] = None,
+    initial_points: np.ndarray | None = None,
+    callback: Callable | None = None,
 ) -> CrossResults:
     """
     Computes the MPS representation of a black-box function using the tensor cross-approximation (TCI)
