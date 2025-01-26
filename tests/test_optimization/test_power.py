@@ -7,11 +7,10 @@ import seemps.tools
 
 class TestPowerMethod(TestOptimizeCase):
     def solve(self, H: MPO, state: MPS, **kwdargs) -> OptimizeResults:
-        maxiter = kwdargs.get("maxiter", 100)
+        if "maxiter" not in kwdargs:
+            kwdargs["maxiter"] = 100
         shift = 4.0
-        results = power_method(
-            H, inverse=True, shift=shift, guess=state, maxiter=maxiter, **kwdargs
-        )
+        results = power_method(H, inverse=True, shift=shift, guess=state, **kwdargs)
         results.energy -= shift
         results.trajectory = [E - shift for E in results.trajectory]
         return results

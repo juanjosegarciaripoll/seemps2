@@ -6,5 +6,6 @@ from .tools import TestOptimizeCase
 
 class TestGradientDescent(TestOptimizeCase):
     def solve(self, H: MPO, state: MPS, **kwdargs) -> OptimizeResults:
-        maxiter = kwdargs.get("maxiter", 100)
-        return gradient_descent(H, state, maxiter=maxiter, **kwdargs)
+        if "maxiter" not in kwdargs:
+            kwdargs["maxiter"] = 100
+        return gradient_descent(H, state, **kwdargs)
