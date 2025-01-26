@@ -60,3 +60,10 @@ plugins = ["numpy.typing.mypy_plugin"]
 # TODO: Require scipy-stubs, numpy-stubs, etc.
 warn_incomplete_stub = false
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "numpy<2.2",
+    "mypy",
+    "ruff>=0.9.3",
+]
