@@ -1,6 +1,6 @@
 import seemps.state
 from seemps.state import CanonicalMPS, GHZ, scprod, DEFAULT_STRATEGY, random_uniform_mps
-from seemps.truncate import simplify
+import seemps.truncate
 from benchmark import BenchmarkSet, BenchmarkGroup
 import numpy as np
 import sys
@@ -45,7 +45,7 @@ def canonicalize(state, strategy):
 
 
 def simplify(state, strategy):
-    return simplify(state, strategy=strategy)
+    return seemps.truncate.simplify(state, strategy=strategy)
 
 
 def run_all():
