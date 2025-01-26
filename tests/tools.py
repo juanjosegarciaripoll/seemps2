@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 import scipy.sparse as sp  # type: ignore
-import seemps.state
+import seemps
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
 
 
@@ -23,7 +23,7 @@ def identical_lists(l1, l2):
 
 class TestCase(unittest.TestCase):
     rng = np.random.default_rng(seed=0x1232388472)
-    seemps_version = seemps.state.core.__version__
+    seemps_version = seemps.version
 
     def assertEqualTensors(self, a, b) -> None:
         if not (

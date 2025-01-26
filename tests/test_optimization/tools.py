@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 import unittest
 from abc import abstractmethod
+from typing import Any
 from math import sqrt
 from seemps.state import MPS, product_state
 from seemps.operators import MPO
@@ -41,7 +42,7 @@ class TestItimeCase(TestCase):
         return callback_func, norms
 
     @abstractmethod
-    def solve(self, H: MPO, state: MPS, **kwdargs) -> EvolutionResults:
+    def solve(self, H: MPO, state: MPS, **kwdargs) -> Any:
         raise Exception("solve() not implemented")
 
     def test_eigenvalue_solver_with_local_field(self):

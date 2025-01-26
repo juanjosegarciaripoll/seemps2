@@ -5,5 +5,6 @@ from .tools import TestOptimizeCase
 
 
 class TestArnoldiEigH(TestOptimizeCase):
-    def solve(self, H: MPO, state: MPS, tol=1e-10, **kwdargs) -> OptimizeResults:
+    def solve(self, H: MPO, state: MPS, **kwdargs) -> OptimizeResults:
+        tol = kwdargs.get("tol", 1e-10)
         return arnoldi_eigh(H, state, tol=tol, **kwdargs)

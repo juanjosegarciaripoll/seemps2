@@ -36,24 +36,6 @@ def finite_differences_v(n, Δx, closed=True):
 
 
 class TestFiniteDifferences(tools.TestCase):
-    def test_finite_differences(self):
-        for n in range(2, 10):
-            qubits_per_dimension = [n]
-            dims = [2**n for n in qubits_per_dimension]
-            L = 10
-            space = Space(qubits_per_dimension, L=[[-L / 2, L / 2]])
-            x = space.x[0]
-            Δx = space.dx[0]
-            v = gaussian(x)
-            fd_sol = finite_differences_v(n, Δx, closed=True) @ v
-            ψ = MPS.from_vector(v, [2] * n, normalize=False, strategy=NO_TRUNCATION)
-            fd_mps_sol = (
-                finite_differences_mpo(n, Δx, closed=True, strategy=NO_TRUNCATION) @ ψ
-            )
-            self.assertSimilar(fd_sol, fd_mps_sol)
-
-
-class TestFiniteDifferences(tools.TestCase):
     def Down(self, nqubits: int, periodic: bool = False) -> csr_matrix:
         """Moves f[i] to f[i-1]"""
         L = 2**nqubits
@@ -120,26 +102,7 @@ class TestFiniteDifferences(tools.TestCase):
         D = self.Down(2, periodic=False)
         self.assertSimilar(D2, (D - D.T) / (2.0 * dx))
 
-    def test_second_derivative_two_qubits_perodic(self):
-        dx = 0.1
-        D2 = smooth_finite_differences_mpo(
-            2, order=2, filter=3, periodic=False, dx=dx
-        ).to_matrix()
-        dx2 = dx * dx
-        self.assertSimilar(
-            D2,
-            [
-                [-2 / dx2, 1 / dx2, 0, 0],
-                [1 / dx2, -2 / dx2, 1 / dx2, 0],
-                [0, 1 / dx2, -2 / dx2, 1 / dx2],
-                [0, 0, 1 / dx2, -2 / dx2],
-            ],
-        )
-        D = self.Down(2, periodic=False)
-        I = eye(4)
-        self.assertSimilar(D2, (D - 2 * I + D.T) / dx2)
-
-    def test_second_derivative_two_qubits_perodic(self):
+    def test_second_derivative_two_qubits_non_perodic(self):
         dx = 0.1
         D2 = smooth_finite_differences_mpo(
             2, order=2, filter=3, periodic=False, dx=dx

@@ -27,7 +27,8 @@ def module_tree_recurse(
         if "__path__" in module.__dict__:
             output = module.__path__[0]
         else:
-            output = module.__spec__.origin
+            spec = module.__spec__
+            output = None if spec is None else spec.origin
         return output
 
     def outside_module(object: Any):

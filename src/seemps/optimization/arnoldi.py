@@ -67,7 +67,7 @@ class MPSArnoldiRepresentation:
             v = simplify(v, strategy=self.strategy)
         if self.orthogonalize and len(self.V):
             w = np.linalg.solve(self.N, [-scprod(vi, v) for vi in self.V])
-            v = simplify(MPSSum([1] + w.tolist(), [v] + self.V), strategy=self.strategy)
+            v = simplify(MPSSum([1] + w.tolist(), [v] + self.V), strategy=self.strategy)  # type: ignore
         n = np.asarray([scprod(vi, v) for vi in self.V]).reshape(-1, 1)
         new_N = np.block([[self.N, n], [n.T.conj(), 1.0]])
         if (

@@ -85,4 +85,11 @@ def _right_orth_2site(
 def _select_svd_driver(which: str): ...
 def _destructive_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
+class GemmOrder:
+    GEMM_NORMAL = 0
+    GEMM_TRANSPOSE = 1
+    GEMM_ADJOINT = 2
+
+def _gemm(B: np.ndarray, BT: int, A: np.ndarray, AT: int) -> np.ndarray: ...
+
 from .mps import MPS  # noqa: E402

@@ -6,7 +6,8 @@ import seemps.tools
 
 
 class TestPowerMethod(TestOptimizeCase):
-    def solve(self, H: MPO, state: MPS, maxiter=100, **kwdargs) -> OptimizeResults:
+    def solve(self, H: MPO, state: MPS, **kwdargs) -> OptimizeResults:
+        maxiter = kwdargs.get("maxiter", 100)
         shift = 4.0
         results = power_method(
             H, inverse=True, shift=shift, guess=state, maxiter=maxiter, **kwdargs
