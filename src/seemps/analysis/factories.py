@@ -1,8 +1,8 @@
 from __future__ import annotations
 import numpy as np
-from typing import TypeVar, Union
+from typing import TypeVar
 from ..typing import Tensor3
-from ..state import Strategy, MPS, MPSSum, CanonicalMPS, DEFAULT_STRATEGY
+from ..state import Strategy, MPS, MPSSum, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .mesh import Interval, RegularInterval, ChebyshevInterval
 
@@ -139,7 +139,7 @@ def mps_cos(
     return simplify(0.5 * (mps_1 + mps_2), strategy=strategy)
 
 
-_State = TypeVar("_State", bound=Union[MPS, MPSSum])
+_State = TypeVar("_State", bound=(MPS | MPSSum))
 
 
 def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
@@ -150,7 +150,7 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
 
     Parameters
     ----------
-    mps : Union[MPS, MPSSum]
+    mps : MPS | MPSSum
         The MPS to be transformed.
     orig : tuple
         A tuple (x0, x1) representing the original interval.
@@ -159,7 +159,7 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
 
     Returns
     -------
-    mps_affine : Union[MPS, MPSSum]
+    mps_affine : MPS | MPSSum
         The MPS affinely transformed from (x0, x1) to (u0, u1).
     """
     x0, x1 = orig
@@ -283,7 +283,7 @@ def mps_tensor_product(
     mps_order: str = "A",
     strategy: Strategy | None = None,
     simplify_steps: bool = False,
-) -> Union[MPS, CanonicalMPS]:
+) -> MPS:
     """
     Returns the tensor product of a list of MPS, with the sites arranged
     according to the specified MPS order.
@@ -330,7 +330,7 @@ def mps_tensor_sum(
     mps_order: str = "A",
     strategy: Strategy | None = None,
     simplify_steps: bool = False,
-) -> Union[MPS, CanonicalMPS]:
+) -> MPS:
     """
     Returns the tensor sum of a list of MPS, with the sites arranged
     according to the specified MPS order.

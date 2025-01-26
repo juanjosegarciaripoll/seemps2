@@ -1,6 +1,4 @@
-from typing import Union
 from math import isqrt
-
 from ..operators import MPO, MPOList, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..truncate import SIMPLIFICATION_STRATEGY, simplify
@@ -28,7 +26,7 @@ def mps_as_mpo(
 
 
 def simplify_mpo(
-    operator: Union[MPO, MPOList, MPOSum],
+    operator: MPO | MPOList | MPOSum,
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
     guess: MPS | None = None,
@@ -39,7 +37,7 @@ def simplify_mpo(
 
     Parameters
     ----------
-    operator : Union[MPO, MPOList, MPOSum]
+    operator : MPO | MPOList | MPOSum
         MPO to simplify. If given as `MPOList` or `MPOSum`, it is joined to `MPO`
         before the simplification.
     strategy : Strategy, default=SIMPLIFICATION_STRATEGY

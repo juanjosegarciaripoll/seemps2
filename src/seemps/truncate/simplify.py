@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Union
 from math import sqrt
 import numpy as np
 from ..tools import make_logger
@@ -31,7 +30,7 @@ SIMPLIFICATION_STRATEGY = Strategy(
 
 
 def simplify(
-    state: Union[MPS, MPSSum],
+    state: MPS | MPSSum,
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
     guess: MPS | None = None,

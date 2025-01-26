@@ -1,7 +1,6 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
-from typing import Union
 from ..typing import Operator, Vector
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..state._contractions import _contract_nrjl_ijk_klm
@@ -32,7 +31,7 @@ known_operators = {
 }
 
 
-def interpret_operator(op: Union[str, Operator]) -> Operator:
+def interpret_operator(op: str | Operator) -> Operator:
     O: Operator
     if isinstance(op, str):
         O = known_operators.get(op.upper(), None)
@@ -133,7 +132,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
     def __init__(
         self,
         register_size: int,
-        operator: Union[str, Operator],
+        operator: str | Operator,
         same_parameter: bool = False,
         default_parameters: Vector | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
@@ -208,7 +207,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
     def __init__(
         self,
         register_size: int,
-        operator: Union[str, Operator],
+        operator: str | Operator,
         direction: int | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):

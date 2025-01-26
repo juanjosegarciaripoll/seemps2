@@ -74,7 +74,7 @@ class BenchmarkItem:
         sizes: List[int] | None = None,
         limit: float = 0.2,
     ):
-        if sizes == None:
+        if sizes is None:
             sizes = [2**i for i in range(1, 7)]
         times = []
         for s in sizes:

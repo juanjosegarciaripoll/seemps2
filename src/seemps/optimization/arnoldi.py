@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union, Any
+from typing import Callable, Any
 import numpy as np
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
@@ -123,7 +123,7 @@ class MPSArnoldiRepresentation:
             self._variance = abs(H_v.norm_squared() - energy * energy)
         return self._energy, self._variance
 
-    def exponential(self, factor: Union[complex, float]) -> CanonicalMPS:
+    def exponential(self, factor: complex) -> CanonicalMPS:
         # self.H contains <Vi|H|Vj> for all Krylov vectors |Vi>
         # self.N contains <Vi|Vj>
         # The action H |w> on a state |w> = \sum_i wi |Vi>
@@ -169,7 +169,7 @@ def arnoldi_eigh(
 
     Parameters
     ----------
-    H : Union[MPO, MPOList, MPOSum]
+    H : MPO | MPOList | MPOSum
         Hamiltonian in MPO form.
     guess : MPS | None
         Initial guess of the ground state. If None, defaults to a random

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
-from typing import overload, TypeVar, Sequence, Iterable, Union, Iterator
+from typing import overload, TypeVar, Sequence, Iterable, Iterator
 
 _T = TypeVar("_T", bound="TensorArray")
 
@@ -35,7 +35,7 @@ class TensorArray(Sequence[NDArray]):
     @overload
     def __getitem__(self, k: slice) -> Sequence[NDArray]: ...
 
-    def __getitem__(self, k: Union[int, slice]) -> Union[NDArray, Sequence[NDArray]]:
+    def __getitem__(self, k: int | slice) -> NDArray | Sequence[NDArray]:
         #
         # Get MP matrix at position `k`. If 'A' is an MP, we can now
         # do A[k]

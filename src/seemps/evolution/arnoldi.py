@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, Callable
+from typing import Callable
 import numpy as np
 from ..optimization.arnoldi import MPSArnoldiRepresentation
 from ..typing import Vector
@@ -9,7 +9,7 @@ from ..operators import MPO
 
 def arnoldi(
     H: MPO,
-    t_span: Union[float, tuple[float, float], Vector],
+    t_span: float | tuple[float, float] | Vector,
     state: MPS,
     steps: int = 1000,
     order: int = 6,

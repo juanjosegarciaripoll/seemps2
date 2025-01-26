@@ -1,15 +1,15 @@
 from __future__ import annotations
 from numpy.typing import NDArray, ArrayLike
 import scipy.sparse  # type: ignore
-from typing import TypeAlias, Union
+from typing import TypeAlias
 
-Weight: TypeAlias = Union[float, complex]
+Weight: TypeAlias = float | complex
 """A real or complex number."""
 
 Unitary: TypeAlias = NDArray
 """Unitary matrix in :class:`numpy.ndarray` dense format."""
 
-Operator: TypeAlias = Union[NDArray, scipy.sparse.sparray]
+Operator: TypeAlias = NDArray | scipy.sparse.sparray
 """An operator, either in :class:`np.ndarray` or sparse matrix format."""
 
 DenseOperator: TypeAlias = NDArray

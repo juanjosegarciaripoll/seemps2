@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union
+from typing import Callable
 import numpy as np
 import scipy.sparse.linalg  # type: ignore
 from ..tools import make_logger
@@ -125,7 +125,7 @@ class QuadraticForm:
 
 
 def dmrg(
-    H: Union[MPO, NNHamiltonian],
+    H: MPO | NNHamiltonian,
     guess: MPS | None = None,
     maxiter: int = 20,
     tol: float = 1e-10,

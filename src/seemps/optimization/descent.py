@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union, Any
+from typing import Callable, Any
 import scipy.linalg  # type: ignore
 import dataclasses
 import numpy as np
@@ -42,8 +42,8 @@ class OptimizeResults:
 
 
 def gradient_descent(
-    H: Union[MPO, MPOList, MPOSum],
-    guess: Union[MPS, MPSSum],
+    H: MPO | MPOList | MPOSum,
+    guess: MPS | MPSSum,
     maxiter=1000,
     tol: float = 1e-13,
     k_mean=10,
@@ -56,7 +56,7 @@ def gradient_descent(
 
     Parameters
     ----------
-    H : Union[MPO, MPOList, MPOSum]
+    H : MPO | MPOList | MPOSum
         Hamiltonian in MPO form.
     state : MPS | MPSSum
         Initial guess of the ground state.

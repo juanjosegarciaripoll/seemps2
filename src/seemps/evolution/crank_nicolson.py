@@ -1,9 +1,6 @@
 from __future__ import annotations
-
-from typing import Callable, Union
-
+from typing import Callable
 import numpy as np
-
 from ..analysis.operators import id_mpo
 from ..cgs import cgs
 from ..operators import MPO, MPOSum
@@ -13,7 +10,7 @@ from ..typing import Vector
 
 def crank_nicolson(
     H: MPO,
-    t_span: Union[float, tuple[float, float], Vector],
+    t_span: float | tuple[float, float] | Vector,
     state: MPS,
     steps: int = 1000,
     tol_cgs: float = 1e-14,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import warnings
-from typing import Union, Sequence
+from typing import Sequence
 from ..typing import Weight, Operator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from .mpo import MPO, MPOList
@@ -13,7 +13,7 @@ class MPOSum(object):
 
     Parameters
     ----------
-    mpos : list[MPO]
+    mpos : list[MPO | MPOList]
         The operators to combine
     weights : VectorLike | None
         An optional sequence of weights to apply
@@ -21,7 +21,7 @@ class MPOSum(object):
         Truncation strategy when applying the MPO's.
     """
 
-    mpos: list[Union[MPO, MPOList]]
+    mpos: list[MPO | MPOList]
     weights: list[Weight]
     size: int
 
@@ -29,7 +29,7 @@ class MPOSum(object):
 
     def __init__(
         self,
-        mpos: Sequence[Union[MPO, MPOList]],
+        mpos: Sequence[MPO | MPOList],
         weights: list[Weight] | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
@@ -47,7 +47,7 @@ class MPOSum(object):
     def copy(self) -> MPOSum:
         return MPOSum(self.mpos, self.weights, self.strategy)
 
-    def __add__(self, A: Union[MPO, MPOList, MPOSum]):
+    def __add__(self, A: MPO | MPOList | MPOSum):
         """Add an MPO or an MPOSum from the MPOSum."""
         if isinstance(A, MPO):
             new_weights = self.weights + [1]
@@ -62,7 +62,7 @@ class MPOSum(object):
             raise TypeError(f"Cannot add an MPOSum to an object of type {type(A)}")
         return MPOSum(mpos=new_mpos, weights=new_weights, strategy=self.strategy)
 
-    def __sub__(self, A: Union[MPO, MPOSum, MPOList]):
+    def __sub__(self, A: MPO | MPOList | MPOSum):
         """Subtract an MPO, MPOList or MPOSum from the MPOSum."""
         if isinstance(A, MPO):
             new_weights = self.weights + [-1]
@@ -79,7 +79,7 @@ class MPOSum(object):
             )
         return MPOSum(mpos=new_mpos, weights=new_weights, strategy=self.strategy)
 
-    def __mul__(self, n: Weight) -> MPOSum:
+    def __rmul__(self, n: Weight) -> MPOSum:
         """Multiply an MPOSum quantum state by an scalar n (MPOSum * n)"""
         # TODO: Find a simpler test that also keeps mypy happy
         # about the type of 'n' after this if. This problem is also
@@ -92,8 +92,8 @@ class MPOSum(object):
             strategy=self.strategy,
         )
 
-    def __rmul__(self, n: Union[MPO, MPOSum, MPOList]) -> MPOSum:
-        """Multiply an MPOSum quantum state by an scalar n (MPOSum * n)"""
+    def __mul__(self, n: Weight) -> MPOSum:
+        """Multiply an MPOSum operator by an scalar n (MPOSum * n)"""
         if not isinstance(n, (int, float, complex)):
             raise Exception(f"Cannot multiply MPOSum by {n}")
         return MPOSum(
@@ -130,10 +130,10 @@ class MPOSum(object):
 
     def apply(
         self,
-        state: Union[MPS, MPSSum],
+        state: MPS | MPSSum,
         strategy: Strategy | None = None,
         simplify: bool | None = None,
-    ) -> Union[MPS, MPSSum]:
+    ) -> MPS | MPSSum:
         """Implement multiplication A @ state between an MPOSum 'A' and
         a Matrix Product State 'state'."""
         output = MPSSum(
@@ -149,7 +149,7 @@ class MPOSum(object):
             return truncate.simplify(output, strategy=strategy)
         return output
 
-    def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
+    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
         """Implement multiplication A @ b between an MPOSum 'A' and
         a Matrix Product State 'b'."""
         return self.apply(b)

@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import Callable, Union
+from typing import Callable
 
 from ..mesh import Interval, Mesh, mps_to_mesh_matrix
 from ..sampling import evaluate_mps
@@ -40,7 +40,7 @@ class BlackBoxLoadMPS(BlackBox):
     ----------
     func : Callable
         The multivariate scalar function to be represented as MPS.
-    domain : Union[Interval, Mesh]
+    domain : Interval | Mesh
         The domain where the function is discretized.
     base : int, default=2
         The required base or physical dimension of the MPS.
@@ -73,7 +73,7 @@ class BlackBoxLoadMPS(BlackBox):
     def __init__(
         self,
         func: Callable,
-        domain: Union[Interval, Mesh],
+        domain: Interval | Mesh,
         base: int = 2,
         mps_order: str = "A",
     ):

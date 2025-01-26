@@ -3,7 +3,7 @@ import math
 import warnings
 import numpy as np
 from math import sqrt
-from typing import Union, Sequence, Iterable
+from typing import Sequence, Iterable
 from ..tools import InvalidOperation
 from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array
@@ -156,7 +156,7 @@ class MPS(array.TensorArray):
         """
         return cls.from_vector(state.reshape(-1), state.shape, strategy, normalize)
 
-    def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
+    def __add__(self, state: MPS | MPSSum) -> MPSSum:
         """Represent `self + state` as :class:`.MPSSum`."""
         match state:
             case MPS():
@@ -166,7 +166,7 @@ class MPS(array.TensorArray):
             case _:
                 raise InvalidOperation("+", self, state)
 
-    def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
+    def __sub__(self, state: MPS | MPSSum) -> MPSSum:
         """Represent `self - state` as :class:`.MPSSum`"""
         match state:
             case MPS():
@@ -176,7 +176,7 @@ class MPS(array.TensorArray):
             case _:
                 raise InvalidOperation("-", self, state)
 
-    def __mul__(self, n: Union[Weight, MPS]) -> MPS:
+    def __mul__(self, n: Weight | MPS) -> MPS:
         """Compute `n * self` where `n` is a scalar."""
         match n:
             case int() | float() | complex():
@@ -294,7 +294,7 @@ class MPS(array.TensorArray):
                 OQL = _update_left_environment(A, A, OQL)
         return _join_environments(OQL, self.right_environment(j))
 
-    def all_expectation1(self, operator: Union[Operator, list[Operator]]) -> Vector:
+    def all_expectation1(self, operator: Operator | list[Operator]) -> Vector:
         """Vector of expectation values of the given operator acting on all
         possible sites of the MPS.
 
@@ -379,7 +379,7 @@ class MPS(array.TensorArray):
         self,
         L: int,
         sites: Sequence[int] | None = None,
-        dimensions: Union[int, list[int]] = 2,
+        dimensions: int | list[int] = 2,
         state: Vector | None = None,
     ):
         """Enlarge an MPS so that it lives in a Hilbert space with `L` sites.
@@ -391,7 +391,7 @@ class MPS(array.TensorArray):
         sites : Iterable[int], optional
             Sequence of integers describing the sites that occupied by the
             tensors in this state.
-        dimensions : Union[int, list[int]], default = 2
+        dimensions : int | list[int], default = 2
             Dimension of the added sites. It can be the same integer or a list
             of integers with the same length as `sites`.
 

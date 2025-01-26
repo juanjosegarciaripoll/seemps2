@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, Any, Callable
+from typing import Any, Callable
 from math import sqrt
 import numpy as np
 import dataclasses
@@ -15,27 +15,27 @@ class EvolutionResults:
 
     Parameters
     ----------
-    state : Union[MPS, np.ndarray]
+    state : MPS | np.ndarray
         The estimate for the ground state.
     energy : float
         Estimate for the ground state energy.
     trajectory : Vector | None
         Vector of computed energies in the evolution trajectory.
-    Δβ : float or List
+    Δβ : float | list[float] | None
         Steps size or steps sizes for each iteration.
     β : np.ndarray
         Imaginary time evolution path.
     """
 
-    state: Union[MPS, np.ndarray]
+    state: MPS | np.ndarray
     energy: float
     trajectory: list[float] = dataclasses.field(default_factory=list)
-    Δβ: Union[float, list[float], None] = None
+    Δβ: float | list[float] | None = None
     β: list[float] = dataclasses.field(default_factory=list)
 
 
 def euler(
-    H: Union[MPO, MPOList, MPOSum],
+    H: MPO | MPOList | MPOSum,
     state: MPS,
     Δβ: float = 0.01,
     maxiter: int = 1000,
@@ -46,7 +46,7 @@ def euler(
 
     Parameters
     ----------
-    H : Union[MPO, MPOList, MPOSum]
+    H : MPO | MPOList | MPOSum
         Hamiltonian in MPO form.
     state : MPS
         Initial guess of the ground state.
@@ -83,7 +83,7 @@ def euler(
 
 
 def improved_euler(
-    H: Union[MPO, MPOList, MPOSum],
+    H: MPO | MPOList | MPOSum,
     state: MPS,
     Δβ: float = 0.01,
     maxiter: int = 1000,
@@ -113,7 +113,7 @@ def improved_euler(
 
 
 def runge_kutta(
-    H: Union[MPO, MPOList, MPOSum],
+    H: MPO | MPOList | MPOSum,
     state: MPS,
     Δβ: float = 0.01,
     maxiter: int = 1000,
@@ -150,7 +150,7 @@ def runge_kutta(
 
 
 def runge_kutta_fehlberg(
-    H: Union[MPO, MPOList, MPOSum],
+    H: MPO | MPOList | MPOSum,
     state: MPS,
     Δβ: float = 0.01,
     maxiter: int = 1000,
@@ -163,7 +163,7 @@ def runge_kutta_fehlberg(
 
     Parameters
     ----------
-    H : Union[MPO, MPOList, MPOSum]
+    H : MPO | MPOList | MPOSum
         Hamiltonian in MPO form.
     state : MPS
         Initial guess of the ground state.

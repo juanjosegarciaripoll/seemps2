@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
-from typing import Union, Iterable
+from typing import Iterable
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, Tensor3
 from .environments import scprod
@@ -38,7 +38,7 @@ class MPSSum:
     def __init__(
         self,
         weights: Iterable[Weight],
-        states: Iterable[Union[MPS, MPSSum]],
+        states: Iterable[MPS | MPSSum],
         check_args: bool = True,
     ):
         if check_args:
@@ -70,7 +70,7 @@ class MPSSum:
     def __copy__(self) -> MPSSum:
         return self.copy()
 
-    def __add__(self, state: Union[MPS, MPSSum]) -> MPSSum:
+    def __add__(self, state: MPS | MPSSum) -> MPSSum:
         """Add `self + state`, incorporating it to the lists."""
         match state:
             case MPS():
@@ -82,7 +82,7 @@ class MPSSum:
             case _:
                 raise InvalidOperation("+", self, state)
 
-    def __sub__(self, state: Union[MPS, MPSSum]) -> MPSSum:
+    def __sub__(self, state: MPS | MPSSum) -> MPSSum:
         """Subtract `self - state`, incorporating it to the lists."""
         match state:
             case MPS():
@@ -211,7 +211,6 @@ class MPSSum:
                 self.weights = final_weights
                 self.states = final_states
         return abs(c)
-
 
 
 from .canonical_mps import CanonicalMPS  # noqa: E402

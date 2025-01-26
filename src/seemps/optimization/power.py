@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Union, Any
+from typing import Callable, Any
 import dataclasses
 import numpy as np
 from ..tools import make_logger
@@ -16,7 +16,7 @@ class PowerMethodOptimizeResults(OptimizeResults):
 
 
 def power_method(
-    H: Union[MPO, MPOList, MPOSum],
+    H: MPO | MPOList | MPOSum,
     inverse: bool = False,
     shift: float = 0.0,
     guess: MPS | None = None,
@@ -34,7 +34,7 @@ def power_method(
 
     Parameters
     ----------
-    H : Union[MPO, MPOList, MPOSum]
+    H : MPO | MPOList | MPOSum
         Hamiltonian in MPO form.
     guess : MPS | None
         Initial guess of the ground state. If None, defaults to a random

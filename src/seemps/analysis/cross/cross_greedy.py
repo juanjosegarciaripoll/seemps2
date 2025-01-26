@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg  # type: ignore
-from typing import Union, Callable
+from typing import Callable
 from dataclasses import dataclass
 
 from .cross import (
@@ -155,8 +155,8 @@ class CrossInterpolationGreedy(CrossInterpolation):
         G_cores = [self.Q_to_G(Q, j_l) for Q, j_l in zip(self.Q_factors, self.J_l[1:])]
         self.mps = MPS(G_cores + [self.fibers[-1]])
 
-    # _Index = TypeVar("_Index", bound=Union[np.intp, np.ndarray, slice])
-    _Index = Union[np.intp, np.ndarray, slice]
+    # _Index = TypeVar("_Index", bound=(np.intp | np.ndarray | slice))
+    _Index = np.intp | np.ndarray | slice
 
     def sample_superblock(
         self, k: int, j_l: _Index = slice(None), j_g: _Index = slice(None)

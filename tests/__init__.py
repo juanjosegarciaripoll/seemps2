@@ -9,8 +9,6 @@ from . import (
     test_linear_form,
     test_qft,
     test_register,
-    test_strategy,
-    test_tools,
     test_truncate,
     test_optimization,
     test_evolution,

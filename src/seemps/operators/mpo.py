@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import overload, Union, Sequence
+from typing import overload, Sequence
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
@@ -65,7 +65,7 @@ class MPO(TensorArray):
         # We use the fact that TensorArray duplicates the list
         return MPO(self, self.strategy)
 
-    def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
+    def __add__(self, A: MPO | MPOList | MPOSum) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
         if isinstance(A, (MPO, MPOList)):
             return MPOSum([self, A], [1.0, 1.0])
@@ -73,7 +73,7 @@ class MPO(TensorArray):
             return MPOSum([self] + A.mpos, [1.0] + A.weights, A.strategy)
         raise TypeError(f"Cannod add MPO and {type(A)}")
 
-    def __sub__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
+    def __sub__(self, A: MPO | MPOList | MPOSum) -> MPOSum:
         """Represent `self - A` as :class:`.MPOSum`."""
         if isinstance(A, (MPO, MPOList)):
             return MPOSum([self, A], [1.0, -1.0])
@@ -83,7 +83,7 @@ class MPO(TensorArray):
 
     # TODO: The deep copy also copies the tensors. This should be improved.
     def __mul__(self, n: Weight) -> MPO:
-        """Multiply an MPO by a scalar `n * self`"""
+        """Multiply an MPO by a scalar `self * n`"""
         if isinstance(n, (int, float, complex)):
             absn = abs(n)
             if absn:
@@ -102,7 +102,7 @@ class MPO(TensorArray):
         raise InvalidOperation("*", self, n)
 
     def __rmul__(self, n: Weight) -> MPO:
-        """Multiply an MPO by a scalar `self * self`"""
+        """Multiply an MPO by a scalar `n * self`"""
         if isinstance(n, (int, float, complex)):
             absn = abs(n)
             if absn:
@@ -183,10 +183,10 @@ class MPO(TensorArray):
 
     def apply(
         self,
-        state: Union[MPS, MPSSum],
+        state: MPS | MPSSum,
         strategy: Strategy | None = None,
         simplify: bool | None = None,
-    ) -> Union[MPS, MPSSum]:
+    ) -> MPS | MPSSum:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
 
@@ -237,7 +237,7 @@ class MPO(TensorArray):
     @overload
     def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
-    def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
+    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
         """Implement multiplication `self @ b`."""
         return self.apply(b)
 
@@ -249,7 +249,7 @@ class MPO(TensorArray):
         self,
         L: int,
         sites: Sequence[int] | None = None,
-        dimensions: Union[int, list[int]] = 2,
+        dimensions: int | list[int] = 2,
     ) -> MPO:
         """Enlarge an MPO so that it acts on a larger Hilbert space with 'L' sites.
 
@@ -260,7 +260,7 @@ class MPO(TensorArray):
         sites : Iterable[int], optional
             Sequence of integers describing the sites that occupied by the
             tensors in this state.
-        dimensions : Union[int, list[int]], default = 2
+        dimensions : int | list[int], default = 2
             Dimension of the added sites. It can be the same integer or a list
             of integers with the same length as `sites`.
 
@@ -378,7 +378,7 @@ class MPOList(object):
         """Shallow copy of the MPOList, without copying the MPOs themselves."""
         return MPOList(self.mpos.copy(), self.strategy)
 
-    def __add__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
+    def __add__(self, A: MPO | MPOList | MPOSum) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
         if isinstance(A, (MPO, MPOList)):
             return MPOSum([self, A], [1.0, 1.0])
@@ -386,7 +386,7 @@ class MPOList(object):
             return MPOSum([self] + A.mpos, [1.0] + A.weights, A.strategy)
         raise TypeError(f"Cannod add MPO and {type(A)}")
 
-    def __sub__(self, A: Union[MPO, MPOList, MPOSum]) -> MPOSum:
+    def __sub__(self, A: MPO | MPOList | MPOSum) -> MPOSum:
         """Represent `self - A` as :class:`.MPOSum`."""
         if isinstance(A, (MPO, MPOList)):
             return MPOSum([self, A], [1.0, -1.0])
@@ -455,10 +455,10 @@ class MPOList(object):
     # the values provided by individual operators.
     def apply(
         self,
-        state: Union[MPS, MPSSum],
+        state: MPS | MPSSum,
         strategy: Strategy | None = None,
         simplify: bool | None = None,
-    ) -> Union[MPS, MPSSum]:
+    ) -> MPS | MPSSum:
         """Implement multiplication `A @ state` between a matrix-product operator
         `A` and a matrix-product state `state`.
 
@@ -495,7 +495,7 @@ class MPOList(object):
     @overload
     def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
-    def __matmul__(self, b: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
+    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
         """Implement multiplication `self @ b`."""
         return self.apply(b)
 

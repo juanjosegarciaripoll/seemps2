@@ -12,7 +12,7 @@ def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x23773
     U2 = U.reshape(4, 4)
     try:
         from ncon import ncon  # type: ignore
-    except:
+    except ImportError:
         pass
     path_info = []
     try:
@@ -21,7 +21,7 @@ def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x23773
         path_info = contract_expression(
             "ijk,klm,nrjl -> inrm", A.shape, B.shape, U.shape, optimize="optimal"
         )
-    except:
+    except ImportError:
         pass
 
     def method1():

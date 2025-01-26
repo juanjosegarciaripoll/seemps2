@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Union
 import warnings
 from math import sqrt
 import numpy as np
@@ -8,7 +7,7 @@ from .mps import MPS
 
 
 def product_state(
-    vectors: Union[VectorLike, list[VectorLike]], length: int | None = None
+    vectors: VectorLike | list[VectorLike], length: int | None = None
 ) -> MPS:
     """Create a product state :class:`MPS`.
 

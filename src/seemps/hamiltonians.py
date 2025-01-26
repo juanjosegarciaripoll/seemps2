@@ -1,7 +1,6 @@
 from __future__ import annotations
 import warnings
 import numpy as np
-from typing import Union
 from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod
@@ -170,7 +169,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
     interactions: list[Operator]
     """List of operators :math:`h_{i,i+1}`."""
 
-    def __init__(self, size: int, dimension: Union[int, list[int]]):
+    def __init__(self, size: int, dimension: int | list[int]):
         #
         # Create a nearest-neighbor interaction Hamiltonian with fixed
         # local terms and interactions.

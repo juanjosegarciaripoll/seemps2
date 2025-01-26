@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Union
 from .typing import Operator, Weight, Vector
 import numpy as np
 from .state.environments import (
@@ -56,7 +55,7 @@ def expectation2(
     return state.expectation2(O, Q, i, j)
 
 
-def all_expectation1(state: MPS, O: Union[list[Operator], Operator]) -> Vector:
+def all_expectation1(state: MPS, O: list[Operator] | Operator) -> Vector:
     """Vector of expectation values :math:`v_i = \\langle\\psi|O_i|\\psi\\rangle`
     of local operators acting on individual sites of the MPS.
 

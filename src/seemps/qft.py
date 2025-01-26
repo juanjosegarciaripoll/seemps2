@@ -2,7 +2,6 @@ from __future__ import annotations
 import numpy as np
 from math import sqrt
 from numpy import pi as π
-from typing import Union
 from .typing import Vector
 from .state import MPS, MPSSum
 from .mpo import MPO, MPOList
@@ -81,7 +80,7 @@ def iqft_mpo(N: int, **kwargs) -> MPOList:
     return qft_mpo(N, +1, **kwargs)
 
 
-def qft(state: Union[MPS, MPSSum], **kwargs) -> Union[MPS, MPSSum]:
+def qft(state: MPS | MPSSum, **kwargs) -> MPS | MPSSum:
     """Apply the quantum Fourier transform onto a quantum register
     of qubits encoded in the matrix-product 'state'.
 
@@ -100,7 +99,7 @@ def qft(state: Union[MPS, MPSSum], **kwargs) -> Union[MPS, MPSSum]:
     return qft_mpo(state.size, sign=-1, **kwargs).apply(state)
 
 
-def iqft(state: Union[MPS, MPSSum], **kwargs) -> Union[MPS, MPSSum]:
+def iqft(state: MPS | MPSSum, **kwargs) -> MPS | MPSSum:
     """Apply the inverse quantum Fourier transform onto a quantum register
     of qubits encoded in the matrix-product 'state'.
 
@@ -119,7 +118,7 @@ def iqft(state: Union[MPS, MPSSum], **kwargs) -> Union[MPS, MPSSum]:
     return qft_mpo(state.size, sign=+1, **kwargs).apply(state)
 
 
-def qft_flip(state: Union[MPS, MPSSum]) -> Union[MPS, MPSSum]:
+def qft_flip(state: MPS | MPSSum) -> MPS | MPSSum:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform.
 

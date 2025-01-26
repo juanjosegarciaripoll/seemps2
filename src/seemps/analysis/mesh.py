@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
-from typing import Union, Sequence, Iterator, overload
+from typing import Sequence, Iterator, overload
 from ..typing import Vector
 
 import numpy as np
@@ -56,7 +56,7 @@ class Interval(ABC):
     def __getitem__(self, idx: int) -> float: ...
 
     @abstractmethod
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]: ...  # type: ignore
+    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray: ...  # type: ignore
 
     def to_vector(self) -> np.ndarray:
         return np.array([self[idx] for idx in range(self.size)])
@@ -85,7 +85,7 @@ class IntegerInterval(Interval):
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray:
         super()._validate_index(idx)
         return self.start + idx * self.step
 
@@ -126,7 +126,7 @@ class RegularInterval(Interval):
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray:
         super()._validate_index(idx)
         return self.start_displaced + idx * self.step
 
@@ -150,7 +150,7 @@ class ChebyshevInterval(Interval):
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
-    def __getitem__(self, idx: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray:
         super()._validate_index(idx)
         if self.endpoints:  # Chebyshev extrema
             nodes = np.cos(np.pi * idx / (self.size - 1))
@@ -191,9 +191,7 @@ class Mesh:
         self.dimension = len(intervals)
         self.dimensions = tuple(interval.size for interval in self.intervals)
 
-    def __getitem__(
-        self, indices: Union[Sequence[int], np.ndarray]
-    ) -> Union[float, Vector]:
+    def __getitem__(self, indices: Sequence[int] | np.ndarray) -> float | Vector:
         """Return the vector of coordinates of a point in the mesh.
 
         The input can take different shapes for a D-dimensional mesh:

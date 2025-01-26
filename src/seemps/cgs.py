@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Any, Union
+from typing import Callable, Any
 from .state import (
     MPS,
     MPSSum,
@@ -15,8 +15,8 @@ from .tools import make_logger
 
 # TODO: Write tests for this
 def cgs(
-    A: Union[MPO, MPOList, MPOSum],
-    b: Union[MPS, MPSSum],
+    A: MPO | MPOList | MPOSum,
+    b: MPS | MPSSum,
     guess: MPS | None = None,
     maxiter: int = 100,
     strategy: Strategy = DEFAULT_STRATEGY,

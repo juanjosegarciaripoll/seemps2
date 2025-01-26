@@ -1,8 +1,6 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
-from typing import Union
-
 from ..state import MPS, Strategy, scprod, DEFAULT_STRATEGY
 from ..truncate import simplify
 from ..qft import iqft, qft_flip
@@ -14,9 +12,7 @@ from .cross import cross_dmrg, BlackBoxLoadMPS, CrossStrategyDMRG
 # implement 'mps_trapezoidal' for any base.
 
 
-def integrate_mps(
-    mps: MPS, domain: Union[Interval, Mesh], mps_order: str = "A"
-) -> Union[complex, float]:
+def integrate_mps(mps: MPS, domain: Interval | Mesh, mps_order: str = "A") -> complex:
     """
     Returns the integral of a multivariate function represented as a MPS.
     Uses the 'best possible' quadrature rule according to the intervals that compose the mesh.
@@ -27,7 +23,7 @@ def integrate_mps(
     ----------
     mps : MPS
         The MPS representation of the multivariate function to be integrated.
-    domain : Union[Interval, Mesh]
+    domain : Interval | Mesh
         An object defining the discretization domain of the function.
         Can be either an `Interval` or a `Mesh` given by a collection of intervals.
         The quadrature rules are selected based on the properties of these intervals.
@@ -38,7 +34,7 @@ def integrate_mps(
 
     Returns
     -------
-    Union[complex, float]
+    complex
         The integral of the MPS representation of the function discretized in the given Mesh.
 
     Notes

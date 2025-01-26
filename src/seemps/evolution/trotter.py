@@ -1,6 +1,5 @@
 from __future__ import annotations
 from abc import abstractmethod, ABC
-from typing import Union
 from ..typing import Unitary
 import scipy.linalg  # type: ignore
 from ..hamiltonians import NNHamiltonian  # type: ignore
@@ -130,7 +129,7 @@ class Trotter(ABC):
         """
         raise Exception("Called abstract method Trotter.apply")
 
-    def __matmul__(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+    def __matmul__(self, state: MPS) -> CanonicalMPS:
         return self.apply(state)
 
 
@@ -163,7 +162,7 @@ class Trotter2ndOrder(Trotter):
     ):
         self.U = PairwiseUnitaries(H, 0.5 * dt, strategy)
 
-    def apply(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+    def apply(self, state: MPS) -> CanonicalMPS:
         """Apply a Trotter 2nd order unitary approximation onto an MPS `state`.
 
         Parameters
@@ -179,7 +178,7 @@ class Trotter2ndOrder(Trotter):
         state = self.U.apply(state)
         return self.U.apply_inplace(state)
 
-    def apply_inplace(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+    def apply_inplace(self, state: MPS) -> CanonicalMPS:
         """Apply a Trotter 2nd order unitary approximation onto an MPS `state`.
 
         Parameters
@@ -231,7 +230,7 @@ class Trotter3rdOrder(Trotter):
         self.Umid = PairwiseUnitaries(H, 0.5 * dt, strategy)
         self.U = PairwiseUnitaries(H, 0.25 * dt, strategy)
 
-    def apply(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+    def apply(self, state: MPS) -> CanonicalMPS:
         """Apply a Trotter 2nd order unitary approximation onto an MPS `state`.
 
         Parameters
@@ -248,7 +247,7 @@ class Trotter3rdOrder(Trotter):
         state = self.Umid.apply_inplace(state)
         return self.U.apply_inplace(state)
 
-    def apply_inplace(self, state: Union[MPS, CanonicalMPS]) -> CanonicalMPS:
+    def apply_inplace(self, state: MPS) -> CanonicalMPS:
         """Apply a Trotter 3rd order unitary approximation onto an MPS `state`.
 
         Parameters
