@@ -54,7 +54,7 @@ def run_many(commands: list[list[str]], *args, chain: bool = True, **kwdargs) ->
     return ok
 
 
-def run_output(command: str, *args, **kwdargs) -> str:
+def run_output(command: list[str], *args, **kwdargs) -> str:
     s = str(subprocess.check_output(command, *args, **kwdargs), encoding="utf-8")
     return s.rstrip(" \n\r")
 
@@ -107,7 +107,7 @@ def check(verbose=False) -> bool:
 
 def build() -> bool:
     env = os.environ.copy()
-    extra = []
+    extra: list[str] = []
     if use_sanitizer != "no":
         env["SANITIZE"] = use_sanitizer
     if debug:
