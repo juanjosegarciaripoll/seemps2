@@ -5,7 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "SeeMPS"
 version = "1.2"
-dependencies = ["numpy", "scipy", "h5py"]
+dependencies = [
+    "numpy",
+    "scipy",
+    "h5py",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/juanjosegarciaripoll/seemps"

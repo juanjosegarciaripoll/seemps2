@@ -114,3 +114,6 @@ ipynb_output_filter
 benchmark*.json
 *.cpp
 *.c
+
+# uv created files
+uv.lock
