@@ -66,4 +66,32 @@ dev = [
     "numpy<2.2",
     "mypy",
     "ruff>=0.9.3",
+	"basedpyright",
 ]
+
+[tool.basedpyright]
+# See https://github.com/DetachHead/basedpyright/blob/main/docs/configuration.md
+# TODO: Remove this option and report underscore function being imported
+reportPrivateUsage = false
+# TODO: Remove these once we have well defined values for the NDArray dtypes
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+# TODO: Remove these once we don't have variables with uppercase letters
+# (e.g. in hamiltonians.py 'H' is used as a variable)
+reportConstantRedefinition = false
+# TODO: Remove this option once we don't use Any anywhere
+reportAny = false
+reportExplicitAny = false
+# TODO: Explicitly ignore function output by assigning it to '_'
+reportUnusedCallResult = false
+# TODO: Explicitly install stubs for scipy, h5py
+reportMissingTypeStubs = false
+# TODO: Eliminate unused variables
+reportUnusedVariable = false
+reportUnusedParameter = false
+# TODO: Eliminate uses of Callable without arguments
+reportMissingTypeArgument = false
+# TODO: use @override whenever a new implementation for a method is
+# provided, even abstract methods, as per https://peps.python.org/pep-0698/
+reportImplicitOverride = false
