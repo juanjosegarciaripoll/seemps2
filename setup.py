@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup, Extension
+from setuptools import find_packages, setup, Extension  # type: ignore
 import glob
 import numpy as np
 import sys
@@ -8,8 +8,8 @@ import sys
 # but bad for production performance
 debug_library = False
 extra_compile_args = []
-from Cython.Build import cythonize
-import Cython.Compiler.Options
+from Cython.Build import cythonize  # type: ignore
+import Cython.Compiler.Options  # type: ignore
 
 # See https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html
 # for a deeper explanation of the choices here
