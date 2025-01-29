@@ -10,11 +10,12 @@ debug: bool = False
 use_sanitizer: str = "no" if "SANITIZE" not in os.environ else os.environ["SANITIZE"]
 ld_preload: str = ""
 valgrind: list[str] = []
-python: str = "python" if sys.platform == "win32" else "python3"
+python: list[str] = ["python" if sys.platform == "win32" else "python3"]
+uv_run: list[str] = []
 
 
 def run(command: list[str], *args, **kwdargs) -> bool:
-    print(f"Running command:\n{' '.join(command)}")
+    print(f"Running command:\n{' '.join(command)}", flush=True)
     return subprocess.run(command, *args, **kwdargs).returncode == 0
 
 
@@ -89,20 +90,47 @@ def clean() -> None:
     delete_files([r".*\.so", r".*\.pyd", r".*\.pyc"])
 
 
-def check(verbose=False) -> bool:
+def run_tests(verbose=False) -> bool:
     env = os.environ.copy()
     if use_sanitizer != "no":
         env["LD_PRELOAD"] = asan_library() + " " + cpp_library()
         print(f"LD_PRELOAD={env['LD_PRELOAD']}")
-    return run_many(
-        [
-            valgrind
-            + [python, "-m", "unittest", "discover", "-fv" if verbose else "-f"],
-            ["mypy", "src/seemps"],
-            ["ruff", "check", "src"],
-        ],
-        env=env,
+    return run(
+        valgrind
+        + uv_run
+        + python
+        + ["-m", "unittest", "discover", "-fv" if verbose else "-f"]
     )
+
+
+def mypy() -> bool:
+    return run(uv_run + ["mypy", "src/seemps"])
+
+
+def ruff() -> bool:
+    return run(uv_run + ["ruff", "check", "src"])
+
+
+def basedpyright() -> bool:
+    ok = True
+    output: str
+    try:
+        output = run_output(uv_run + ["basedpyright", "src/seemps"])
+    except subprocess.CalledProcessError as e:
+        output = str(e.output, encoding="utf-8")
+        ok = False
+    for line in output.split("\n"):
+        line = line.lstrip()
+        # Remove lines that only contain a file name, with nothing else
+        if ".py" in line[3:] and ":" not in line[3:]:
+            continue
+        print(line.lstrip())
+    return ok
+
+
+def check(verbose: bool = False) -> bool:
+    print(os.environ)
+    return run_tests() and mypy() and ruff() and basedpyright()
 
 
 def build() -> bool:
@@ -123,6 +151,9 @@ def install() -> bool:
 
 for option in sys.argv[1:]:
     match option:
+        case "uv":
+            uv_run = ["uv", "run"]
+            python = ["python"]
         case "debug":
             debug = True
         case "here":
@@ -157,5 +188,8 @@ for option in sys.argv[1:]:
         case "vcheck":
             if not check(True):
                 raise Exception("Tests failed")
+        case "pyright":
+            if not basedpyright():
+                raise Exception("Basedpyright failed")
         case _:
             raise Exception(f"Unknown option: {option}")
