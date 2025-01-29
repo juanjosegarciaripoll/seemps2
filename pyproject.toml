@@ -95,3 +95,9 @@ reportMissingTypeArgument = false
 # TODO: use @override whenever a new implementation for a method is
 # provided, even abstract methods, as per https://peps.python.org/pep-0698/
 reportImplicitOverride = false
+# TODO: unfortunately, we need cyclic imports
+reportImportCycles = false
+# TODO: we use isinstance(...) to assert types in some operations (e.g. addition
+# of MPO) because we cannot believe inputs are of the right type
+reportUnnecessaryIsInstance = false
+reportUnreachable = false
