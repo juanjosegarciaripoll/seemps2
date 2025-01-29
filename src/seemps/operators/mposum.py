@@ -25,7 +25,7 @@ class MPOSum(object):
     weights: list[Weight]
     size: int
 
-    __array_priority__ = 10000
+    __array_priority__: int = 10000
 
     def __init__(
         self,

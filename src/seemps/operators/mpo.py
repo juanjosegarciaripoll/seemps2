@@ -54,7 +54,7 @@ class MPO(TensorArray):
 
     strategy: Strategy
 
-    __array_priority__ = 10000
+    __array_priority__: int = 10000
 
     def __init__(self, data: Sequence[Tensor4], strategy: Strategy = DEFAULT_STRATEGY):
         super().__init__(data)
@@ -161,7 +161,7 @@ class MPO(TensorArray):
             out = out.reshape(Di, Dj, b)
         return out[:, :, 0]
 
-    def set_strategy(self, strategy) -> MPO:
+    def set_strategy(self, strategy: Strategy) -> MPO:
         """Return MPO with the given strategy."""
         return MPO(self, strategy)
 
@@ -362,7 +362,7 @@ class MPOList(object):
         MPOs. Not checked for consistency.
     """
 
-    __array_priority__ = 10000
+    __array_priority__: int = 10000
 
     mpos: list[MPO]
     strategy: Strategy

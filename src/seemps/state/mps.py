@@ -34,7 +34,7 @@ class MPS(array.TensorArray):
     # This class contains all the matrices and vectors that form
     # a Matrix-Product State.
     #
-    __array_priority__ = 10000
+    __array_priority__: int = 10000
 
     def __init__(
         self,
