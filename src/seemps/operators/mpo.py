@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import overload, Sequence
+from collections.abc import Sequence
+from typing import overload
 import warnings
 import numpy as np
 from ..tools import InvalidOperation

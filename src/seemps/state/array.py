@@ -1,7 +1,8 @@
 from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
-from typing import overload, TypeVar, Sequence, Iterable, Iterator
+from collections.abc import Sequence
+from typing import overload, TypeVar, Iterable, Iterator
 
 _T = TypeVar("_T", bound="TensorArray")
 

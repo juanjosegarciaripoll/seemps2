@@ -3,7 +3,8 @@ import math
 import warnings
 import numpy as np
 from math import sqrt
-from typing import Sequence, Iterable
+from collections.abc import Sequence
+from typing import Iterable
 from ..tools import InvalidOperation
 from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
 from . import array

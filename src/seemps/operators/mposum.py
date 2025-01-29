@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 import warnings
-from typing import Sequence
+from collections.abc import Sequence
 from ..typing import Weight, Operator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from .mpo import MPO, MPOList
