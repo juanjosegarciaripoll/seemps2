@@ -112,20 +112,7 @@ def ruff() -> bool:
 
 
 def basedpyright() -> bool:
-    ok = True
-    output: str
-    try:
-        output = run_output(uv_run + ["basedpyright", "src/seemps"])
-    except subprocess.CalledProcessError as e:
-        output = str(e.output, encoding="utf-8")
-        ok = False
-    for line in output.split("\n"):
-        line = line.lstrip()
-        # Remove lines that only contain a file name, with nothing else
-        if ".py" in line[3:] and ":" not in line[3:]:
-            continue
-        print(line.lstrip())
-    return ok
+    return run(uv_run + ["basedpyright", "src/seemps"])
 
 
 def check(verbose: bool = False) -> bool:
@@ -191,5 +178,8 @@ for option in sys.argv[1:]:
         case "pyright":
             if not basedpyright():
                 raise Exception("Basedpyright failed")
+        case "mypy":
+            if not mypy():
+                raise Exception("mypy failed")
         case _:
             raise Exception(f"Unknown option: {option}")
