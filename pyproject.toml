@@ -67,6 +67,7 @@ dev = [
     "mypy",
     "ruff>=0.9.3",
 	"basedpyright",
+    "opt_einsum",
 ]
 
 [tool.basedpyright]
