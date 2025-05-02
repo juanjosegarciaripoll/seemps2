@@ -67,7 +67,9 @@ dev = [
     "mypy",
     "ruff>=0.9.3",
 	"basedpyright",
-    "opt_einsum",
+    "opt_einsum", # To test contractions
+    "matplotlib", # For the examples
+    "ipykernel", # To run notebooks in VSCode
 ]
 
 [tool.basedpyright]

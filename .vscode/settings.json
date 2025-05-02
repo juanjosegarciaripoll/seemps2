@@ -1,5 +1,5 @@
 {
-    "python.formatting.provider": "black",
+    "python.formatting.provider": "ruff",
     "python.testing.unittestEnabled": false,
     "python.testing.unittestArgs": [
         "-v",
@@ -14,7 +14,7 @@
         "${workspaceFolder}"
     ],
     "python.analysis.extraPaths": [
-        "${workspaceFolder}"
+        "${workspaceFolder}/.venv/Lib/site-packages"
     ],
     "python.analysis.diagnosticSeverityOverrides": {
         "reportUnusedImport": "warning",
