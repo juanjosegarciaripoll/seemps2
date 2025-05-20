@@ -117,7 +117,6 @@ def basedpyright() -> bool:
 
 
 def check(verbose: bool = False) -> bool:
-    print(os.environ)
     return run_tests() and mypy() and ruff() and basedpyright()
 
 
@@ -160,9 +159,15 @@ parser.add_argument("--mypy", action="store_true", help="Run mypy")
 
 args = parser.parse_args()
 
+if args.verbose:
+    print(f"Running from directory {os.getcwd()}")
+    print("Environment variables:")
+    for key, value in os.environ.items():
+        print(f"{key} = {value}")
+
 debug = args.debug
 incremental = args.here
-if args.uv or "UV_RECURSION_DEPTH" in os.environ:
+if args.uv or "UV_RUN_RECURSION_DEPTH" in os.environ:
     uv_run = ["uv", "run"]
     python = ["python"]
 if args.leak:
