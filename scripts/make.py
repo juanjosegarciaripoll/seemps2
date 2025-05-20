@@ -4,6 +4,7 @@ import re
 import sys
 import shutil
 import subprocess
+import argparse
 
 incremental: bool = True
 debug: bool = False
@@ -136,50 +137,63 @@ def install() -> bool:
     return run(["pip", "install", "."])
 
 
-for option in sys.argv[1:]:
-    match option:
-        case "uv":
-            uv_run = ["uv", "run"]
-            python = ["python"]
-        case "debug":
-            debug = True
-        case "here":
-            incremental = True
-        case "leak":
-            use_sanitizer = "leak"
-            debug = True
-        case "memcheck":
-            valgrind = [
-                "valgrind",
-                "--leak-check=full",
-                "--show-leak-kinds=all",
-                "--track-origins=yes",
-                "--verbose",
-                "--log-file=valgrind-out.txt",
-            ]
-            if not check():
-                raise Exception("Tests failed")
-        case "asan":
-            use_sanitizer = "address"
-        case "clean":
-            clean()
-        case "build":
-            if not build():
-                raise Exception("Build failed")
-        case "install":
-            if not install():
-                raise Exception("Install failed")
-        case "check":
-            if not check():
-                raise Exception("Tests failed")
-        case "vcheck":
-            if not check(True):
-                raise Exception("Tests failed")
-        case "pyright":
-            if not basedpyright():
-                raise Exception("Basedpyright failed")
-        case "mypy":
-            if not mypy():
-                raise Exception("mypy failed")
-        case _:
-            raise Exception(f"Unknown option: {option}")
+parser = argparse.ArgumentParser(prog="make", description="SeeMPS build driver")
+parser.add_argument("--uv", action="store_true", help="Run jobs under 'uv'")
+parser.add_argument("--debug", action="store_true", help="Build debug versions")
+parser.add_argument("--here", action="store_true", help="Run jobs incrementally")
+parser.add_argument("--leak", action="store_true", help="Link against leak sanitizer")
+parser.add_argument(
+    "--memcheck", action="store_true", help="Run inside valgrind to check memory leaks"
+)
+parser.add_argument("--asan", action="store_true", help="Use ASAN as leak sanitizer")
+parser.add_argument(
+    "--clean",
+    action="store_true",
+    help="Clean temporary files (including C/C++ Cython files)",
+)
+parser.add_argument("--build", action="store_true", help="Build library")
+parser.add_argument("--install", action="store_true", help="Install library")
+parser.add_argument("--check", action="store_true", help="Run tests")
+parser.add_argument("--verbose", action="store_true", help="Verbose mode")
+parser.add_argument("--pyright", action="store_true", help="Run pyright")
+parser.add_argument("--mypy", action="store_true", help="Run mypy")
+
+args = parser.parse_args()
+
+debug = args.debug
+incremental = args.here
+if args.uv or "UV_RECURSION_DEPTH" in os.environ:
+    uv_run = ["uv", "run"]
+    python = ["python"]
+if args.leak:
+    use_sanitizer = "leak"
+    debug = True
+if args.memcheck:
+    valgrind = [
+        "valgrind",
+        "--leak-check=full",
+        "--show-leak-kinds=all",
+        "--track-origins=yes",
+        "--verbose",
+        "--log-file=valgrind-out.txt",
+    ]
+if args.asan:
+    use_sanitizer = "address"
+
+if args.clean:
+    clean()
+if args.build:
+    raise Exception("Build failed")
+if args.install:
+    if not install():
+        raise Exception("Install failed")
+if args.check:
+    if not check(args.verbose):
+        raise Exception("Tests failed")
+else:
+    if args.pyright:
+        if not basedpyright():
+            raise Exception("Basedpyright failed")
+    if args.mypy:
+        if not mypy():
+            raise Exception("mypy failed")
