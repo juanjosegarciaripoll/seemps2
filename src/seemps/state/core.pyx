@@ -31,7 +31,7 @@ class Simplification:
     VARIATIONAL = SIMPLIFICATION_VARIATIONAL
     VARIATIONAL_EXACT_GUESS = SIMPLIFICATION_VARIATIONAL_EXACT_GUESS
 
-DEFAULT_TOLERANCE = np.finfo(np.float64).eps
+DEFAULT_TOLERANCE = float(np.finfo(np.float64).eps)
 
 cdef class Strategy:
     def __init__(self,
