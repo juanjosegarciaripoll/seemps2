@@ -1,6 +1,6 @@
 from __future__ import annotations
 from numpy.typing import NDArray, ArrayLike
-import scipy.sparse  # type: ignore
+import scipy.sparse as sp  # type: ignore
 from typing import TypeAlias
 
 Weight: TypeAlias = float | complex
@@ -9,7 +9,10 @@ Weight: TypeAlias = float | complex
 Unitary: TypeAlias = NDArray
 """Unitary matrix in :class:`numpy.ndarray` dense format."""
 
-Operator: TypeAlias = NDArray | scipy.sparse.sparray
+SparseOperator: TypeAlias = sp.csr_matrix | sp.bsr_matrix | sp.coo_matrix
+"""An operator in sparse matrix format."""
+
+Operator: TypeAlias = NDArray | SparseOperator
 """An operator, either in :class:`np.ndarray` or sparse matrix format."""
 
 DenseOperator: TypeAlias = NDArray
@@ -33,6 +36,13 @@ Environment: TypeAlias = NDArray
 MPOEnvironment: TypeAlias = NDArray
 """Left or right environment of an MPS-MPO-MPS contraction."""
 
+
+def to_dense_operator(O: Operator) -> DenseOperator:
+    if sp.issparse(O):
+        return O.toarray()  # type: ignore # pyright: ignore[reportAttributeAccessIssue]
+    return O
+
+
 __all__ = [
     "NDArray",
     "Weight",
@@ -45,4 +55,5 @@ __all__ = [
     "Tensor4",
     "Environment",
     "MPOEnvironment",
+    "to_dense_operator",
 ]
