@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import warnings
 from collections.abc import Sequence
-from ..typing import Weight, Operator, Tensor4
+from ..typing import Weight, DenseOperator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from .mpo import MPO, MPOList
 from .. import truncate
@@ -108,12 +108,12 @@ class MPOSum(object):
         output.mpos = [A.T for A in output.mpos]
         return output
 
-    def tomatrix(self) -> Operator:
+    def tomatrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO."""
         warnings.warn("MPOSum.tomatrix() has been renamed to to_matrix()")
         return self.to_matrix()
 
-    def to_matrix(self) -> Operator:
+    def to_matrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO."""
         A = self.weights[0] * self.mpos[0].to_matrix()
         for i, mpo in enumerate(self.mpos[1:]):

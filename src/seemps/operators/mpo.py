@@ -4,7 +4,7 @@ from typing import overload
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
-from ..typing import Tensor4, Operator, Weight
+from ..typing import Tensor4, DenseOperator, Weight
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
@@ -144,12 +144,12 @@ class MPO(TensorArray):
     def T(self) -> MPO:
         return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
 
-    def tomatrix(self) -> Operator:
+    def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
         return self.to_matrix()
 
-    def to_matrix(self) -> Operator:
+    def to_matrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         Di = 1  # Total physical dimension so far
         Dj = 1
@@ -416,12 +416,12 @@ class MPOList(object):
         """Return the physical dimensions of the MPOList."""
         return self.mpos[0].dimensions()
 
-    def tomatrix(self) -> Operator:
+    def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
         return self.to_matrix()
 
-    def to_matrix(self) -> Operator:
+    def to_matrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         A = self.mpos[0].to_matrix()
         for mpo in self.mpos[1:]:
