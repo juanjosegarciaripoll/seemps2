@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Literal
 from math import sqrt
 import numpy as np
 from scipy.fft import dct  # type: ignore
@@ -24,7 +24,7 @@ def interpolation_coefficients(
     start: float = -1.0,
     stop: float = +1.0,
     domain: Interval | None = None,
-    interpolated_nodes: str = "zeros",
+    interpolated_nodes: Literal["zeros", "extrema"] = "zeros",
 ) -> np.polynomial.Chebyshev:
     """
     Returns the coefficients for the Chebyshev interpolation of a function on a given set
@@ -56,13 +56,16 @@ def interpolation_coefficients(
         order = estimate_order(func, start, stop, domain)
     if domain is not None:
         start, stop = domain.start, domain.stop
-    if interpolated_nodes == "zeros":
-        nodes = ChebyshevInterval(start, stop, order).to_vector()
-        coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
-    elif interpolated_nodes == "extrema":
-        nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
-        coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
-    coefficients[0] /= 2  # type: ignore
+    match interpolated_nodes:
+        case "zeros":
+            nodes = ChebyshevInterval(start, stop, order).to_vector()
+            coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
+        case "extrema":
+            nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
+            coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
+        case _:
+            raise TypeError("interpolated_nodes is not one of zeros | extrema")
+    coefficients[0] /= 2
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
