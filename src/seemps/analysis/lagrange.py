@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import dok_matrix, csc_array  # type: ignore
-from typing import Callable
+from typing import Callable, final
 from functools import lru_cache
 
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
@@ -176,6 +176,7 @@ def lagrange_local_rank_revealing(
     return MPS(tensors)
 
 
+@final
 class LagrangeBuilder:
     """
     Auxiliar class used to build the tensors required for MPS Lagrange interpolation.
@@ -189,6 +190,7 @@ class LagrangeBuilder:
         self.d = order
         self.m = local_order if local_order else order
         self.D = order + 1
+        # TODO: replace these 'for i' with np.arange
         self.c = np.array(
             [0.5 * (np.cos(np.pi * i / self.d) + 1) for i in range(self.d + 1)]
         )
@@ -200,7 +202,7 @@ class LagrangeBuilder:
         # Precompute cardinal terms
         self.den = self.c[:, np.newaxis] - self.c
         np.fill_diagonal(self.den, 1)
-        self.log_den = np.log(abs(self.den))
+        self.log_den = np.log(np.abs(self.den))
         self.sign_den = np.sign(self.den)
 
     @lru_cache(maxsize=None)  # Unbound cache
@@ -211,7 +213,7 @@ class LagrangeBuilder:
         """
         return int(np.argmin(abs(theta - self.angular_grid)))
 
-    def chebyshev_cardinal(self, x: np.ndarray, j: int, use_logs: bool) -> float:
+    def chebyshev_cardinal(self, x: np.ndarray, j: int, use_logs: bool) -> np.ndarray:
         """
         Evaluates the j-th Chebyshev cardinal function (the Lagrange interpolating
         polynomial for the Chebyshev-Lobatto nodes) at a given point x.
@@ -220,7 +222,7 @@ class LagrangeBuilder:
         num = np.delete(x[:, np.newaxis] - self.c, j, axis=1)
         if use_logs:  # Prevents overflow
             with np.errstate(divide="ignore"):  # Ignore warning of log(0)
-                log_num = np.log(abs(num))
+                log_num = np.log(np.abs(num))
             log_den = np.delete(self.log_den[j], j)
             log_div = np.sum(log_num - log_den, axis=1)
             sign_num = np.sign(num)
@@ -299,7 +301,8 @@ class LagrangeBuilder:
         A = np.zeros((self.D, 2, 1))
         for s in range(2):
             for i in range(self.D):
-                A[i, s, 0] = self.chebyshev_cardinal(np.array([0.5 * s]), i, use_logs)
+                x = np.array([0.5 * s])
+                A[i, s, :] = self.chebyshev_cardinal(np.array([0.5 * s]), i, use_logs)
         return A
 
     def A_C_sparse(self) -> csc_array:
