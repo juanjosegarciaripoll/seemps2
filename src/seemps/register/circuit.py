@@ -1,44 +1,41 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
-from ..typing import Operator, Vector
+from ..typing import DenseOperator, Operator, Vector
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..state._contractions import _contract_nrjl_ijk_klm
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 σx = np.array([[0.0, 1.0], [1.0, 0.0]])
 σz = np.array([[1.0, 0.0], [0.0, -1.0]])
 σy = -1j * σz @ σx
 id2 = np.eye(2)
+CNOT = np.array(
+    [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 0.0],
+    ]
+)
 
-known_operators = {
+known_operators: dict[str, DenseOperator] = {
     "SX": σx / 2.0,
     "SY": σy / 2.0,
     "SZ": σz / 2.0,
     "σX": σx,
     "σY": σy,
     "σZ": σz,
-    "CNOT": np.array(
-        [
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0, 0.0],
-        ]
-    ),
-    "CX": "CNOT",
+    "CNOT": CNOT,
+    "CX": CNOT,
     "CZ": np.diag([1.0, 1.0, 1.0, -1.0]),
 }
 
 
-def interpret_operator(op: str | Operator) -> Operator:
+def interpret_operator(op: str | Operator) -> DenseOperator:
     O: Operator
     if isinstance(op, str):
-        O = known_operators.get(op.upper(), None)
-        if O is None:
-            raise Exception(f"Unknown qubit operator '{op}'")
-        if isinstance(O, str):
-            return interpret_operator(O)
+        O = known_operators[op.upper()]
     elif not isinstance(op, np.ndarray) or op.ndim != 2 or op.shape[0] != op.shape[1]:
         raise Exception(f"Invalid qubit operator of type '{type(op)}")
     else:
@@ -46,9 +43,9 @@ def interpret_operator(op: str | Operator) -> Operator:
     return O
 
 
-class UnitaryCircuit:
+class UnitaryCircuit(ABC):
     register_size: int
-    stategy: Strategy
+    strategy: Strategy
 
     def __init__(
         self,
@@ -72,7 +69,7 @@ class UnitaryCircuit:
         )
 
 
-class ParameterizedCircuit(UnitaryCircuit):
+class ParameterizedCircuit(UnitaryCircuit, ABC):
     parameters: Vector
     parameters_size: int
 
@@ -127,12 +124,12 @@ class LocalRotationsLayer(ParameterizedCircuit):
     """
 
     factor: float = 1.0
-    operator: Operator
+    operator: DenseOperator
 
     def __init__(
         self,
         register_size: int,
-        operator: str | Operator,
+        operator: str | DenseOperator,
         same_parameter: bool = False,
         default_parameters: Vector | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
@@ -201,7 +198,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         Truncation strategy (Defaults to `DEFAULT_STRATEGY`)
     """
 
-    operator: Operator
+    operator: DenseOperator
     direction: int | None
 
     def __init__(
@@ -299,6 +296,8 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
             parameters = self.parameters
         for circuit, start, end in self.layers:
             state = circuit.apply_inplace(state, parameters[start:end])
+        if not isinstance(state, CanonicalMPS):
+            return CanonicalMPS(state)
         return state  # type: ignore
 
 
@@ -325,13 +324,11 @@ class VQECircuit(ParameterizedLayeredCircuit):
         default_parameters: Vector | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
-        if default_parameters is not None:
-            parameters_array = np.reshape(default_parameters, (-1, register_size))
-
-        def get_default_parameters(layer: int):
-            if default_parameters is None:
-                return None
-            return parameters_array[layer // 2, :]
+        parameters_seq: list[None] | np.ndarray
+        if default_parameters is None:
+            parameters_seq = [None] * layers
+        else:
+            parameters_seq = np.reshape(default_parameters, (-1, register_size))
 
         super().__init__(
             register_size,
@@ -340,7 +337,7 @@ class VQECircuit(ParameterizedLayeredCircuit):
                     register_size,
                     operator="Sy",
                     same_parameter=False,
-                    default_parameters=get_default_parameters(layer),
+                    default_parameters=parameters_seq[layer // 2],
                     strategy=strategy,
                 )
                 if (layer % 2 == 0)
