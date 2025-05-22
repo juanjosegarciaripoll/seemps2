@@ -93,8 +93,8 @@ class QuadraticForm:
 
         return scipy.sparse.linalg.LinearOperator(
             shape=(b * k * l * f, b * k * l * f),
-            matvec=lambda v: _dmrg_contractor(L, H12, R, v.reshape(b, k, l, f)),
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
+            matvec=lambda v: _dmrg_contractor(L, H12, R, v.reshape(b, k, l, f)),
         )
 
     def diagonalize(self, i: int, tol: float) -> tuple[float, Tensor4]:
