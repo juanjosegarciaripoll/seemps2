@@ -36,13 +36,13 @@ class TestCase(unittest.TestCase):
 
     def assertSimilar(self, A, B, **kwdargs) -> None:
         if sp.issparse(A):
-            A = A.todense()
+            A = A.toarray()
         elif isinstance(A, MPS) or isinstance(A, MPSSum):
             A = A.to_vector()
         else:
             A = np.asarray(A)
         if sp.issparse(B):
-            B = B.todense()
+            B = B.toarray()
         elif isinstance(B, MPS):
             B = B.to_vector()
         else:
@@ -104,11 +104,11 @@ class TestCase(unittest.TestCase):
 
 def similar(A, B, **kwdargs):
     if sp.issparse(A):
-        A = A.todense()
+        A = A.toarray()
     elif isinstance(A, MPS):
         A = A.to_vector()
     if sp.issparse(B):
-        B = B.todense()
+        B = B.toarray()
     elif isinstance(B, MPS):
         B = B.to_vector()
     return (A.shape == B.shape) and np.all(np.isclose(A, B, **kwdargs))
