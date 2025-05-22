@@ -353,8 +353,6 @@ class CanonicalMPS(MPS):
         N = np.linalg.norm(A.reshape(-1))
         if N:
             self._data[n] = A / N
-        else:
-            warnings.warn("Refusing to normalize zero vector")
         return self
 
     def __copy__(self):
