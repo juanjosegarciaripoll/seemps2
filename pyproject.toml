@@ -31,6 +31,7 @@ exclude = [
 	"dist",
 	"venv",
 	".flake8",
+	"scipy-stubs",
 ]
 
 # Same as Black.
@@ -66,10 +67,10 @@ dev = [
     "numpy<2.2",
     "mypy",
     "ruff>=0.9.3",
-	"basedpyright",
+    "basedpyright",
     "opt_einsum", # To test contractions
     "matplotlib", # For the examples
-    "ipykernel", # To run notebooks in VSCode
+    "ipykernel",
 ]
 
 [tool.basedpyright]
@@ -104,3 +105,9 @@ reportImportCycles = false
 # of MPO) because we cannot believe inputs are of the right type
 reportUnnecessaryIsInstance = false
 reportUnreachable = false
+reportUnnecessaryComparison = false
+# TODO: Remove all calls in initializers
+reportCallInDefaultInitializer = false
+# TODO: Rename imported functions with _ prefix
+reportPrivateLocalImportUsage = false
+reportUnknownArgumentType = false
