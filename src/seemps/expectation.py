@@ -1,6 +1,7 @@
 from __future__ import annotations
-from .typing import Operator, Weight, Vector
+from .typing import Operator, Weight, Vector, to_dense_operator
 import numpy as np
+import scipy.sparse as sp
 from .state.environments import (
     _begin_environment,
     _end_environment,
@@ -19,7 +20,7 @@ def expectation1(state: MPS, O: Operator, i: int) -> Weight:
     state : MPS
         Quantum state :math:`\\psi` used to compute the expectation value.
     O : Operator
-        Local observable acting onto the `i`-th subsystem
+        Local observable acting onto the mps.`i`-th subsystem
     i : int
         Index of site, in the range `[0, state.size)`
 
@@ -97,7 +98,9 @@ def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     # in a given canonical order or another
     rho = _begin_environment()
     for Ai, opi in zip(state, operator_list):
-        rho = _update_left_environment(Ai.conj(), np.matmul(opi, Ai), rho)
+        rho = _update_left_environment(
+            Ai.conj(), np.matmul(to_dense_operator(opi), Ai), rho
+        )
     return _end_environment(rho)
 
 
