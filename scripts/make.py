@@ -154,6 +154,7 @@ parser.add_argument("--build", action="store_true", help="Build library")
 parser.add_argument("--install", action="store_true", help="Install library")
 parser.add_argument("--check", action="store_true", help="Run tests")
 parser.add_argument("--verbose", action="store_true", help="Verbose mode")
+parser.add_argument("--tests", action="store_true", help="Run unit tests")
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
 
@@ -196,6 +197,9 @@ if args.check:
     if not check(args.verbose):
         raise Exception("Tests failed")
 else:
+    if args.tests:
+        if not run_tests(args.verbose):
+            raise Exception("Unit tests failed")
     if args.pyright:
         if not basedpyright():
             raise Exception("Basedpyright failed")
