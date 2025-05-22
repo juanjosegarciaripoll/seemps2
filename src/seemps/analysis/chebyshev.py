@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Callable, Literal
 from math import sqrt
 import numpy as np
+from numpy.typing import NDArray
 from scipy.fft import dct  # type: ignore
 
 from ..tools import make_logger
@@ -19,7 +20,7 @@ from .factories import mps_interval, mps_affine
 
 
 def interpolation_coefficients(
-    func: Callable,
+    func: Callable[[NDArray], NDArray],
     order: int | None = None,
     start: float = -1.0,
     stop: float = +1.0,
@@ -58,11 +59,11 @@ def interpolation_coefficients(
         start, stop = domain.start, domain.stop
     match interpolated_nodes:
         case "zeros":
-            nodes = ChebyshevInterval(start, stop, order).to_vector()
-            coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
+            nodes: NDArray = ChebyshevInterval(start, stop, order).to_vector()
+            coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # pyright: ignore[reportUnknownArgumentType]
         case "extrema":
             nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
-            coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
+            coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")  # pyright: ignore[reportUnknownArgumentType]
         case _:
             raise TypeError("interpolated_nodes is not one of zeros | extrema")
     coefficients[0] /= 2
@@ -136,7 +137,7 @@ def estimate_order(
     order = initial_order
     while order <= max_order:
         c = projection_coefficients(func, order, start, stop).coef
-        max_c_in_pairs = np.maximum(abs(c[::2]), abs(c[1::2]))
+        max_c_in_pairs = np.maximum(np.abs(c[::2]), np.abs(c[1::2]))
         c_below_tolerance = np.where(max_c_in_pairs < tolerance)[0]
         if c_below_tolerance.size > 0 and c_below_tolerance[0] != 0:
             return 2 * c_below_tolerance[0] + 1
