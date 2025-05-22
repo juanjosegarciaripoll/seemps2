@@ -13,7 +13,7 @@ class TestShifts(TestCase):
                 S[j % L, i] = 1.0
             elif 0 <= j < L:
                 S[j, i] = 1.0
-        return S.todense()
+        return S.toarray()
 
     def weighted_shift_matrix(
         self, L: int, weights: np.ndarray, shifts: np.ndarray, periodic: bool
