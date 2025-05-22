@@ -3,14 +3,14 @@ import warnings
 import numpy as np
 from math import sqrt
 import scipy.sparse as sp  # type: ignore
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from .mpo import MPO
 from .state import schmidt, core, DEFAULT_STRATEGY, Strategy
-from .typing import Operator, Vector
+from .typing import SparseOperator, Operator, Vector
 from .tools import σx, σy, σz
 
 
-class NNHamiltonian(object):
+class NNHamiltonian(ABC):
     """Abstract class representing a Hamiltonian for a 1D system with
     nearest-neighbor interactions.
 
@@ -58,13 +58,15 @@ class NNHamiltonian(object):
         Operator
             Some type of matrix in tensor or sparse-matrix form.
         """
-        return 0
+        d1 = self.dimension(i)
+        d2 = self.dimension(i + 1)
+        return sp.csr_matrix(tuple(), shape=(d1 * d2, d1 * d2))
 
     def tomatrix(self, t: float = 0.0) -> Operator:
         warnings.warn("Method Hamiltonian.tomatrix() has been renamed to_matrix()")
         return self.to_matrix(t)
 
-    def to_matrix(self, t: float = 0.0) -> Operator:
+    def to_matrix(self, t: float = 0.0) -> SparseOperator:
         """Compute the sparse matrix for this Hamiltonian at time `t`.
 
         Parameters
@@ -81,16 +83,16 @@ class NNHamiltonian(object):
         # both included
         dleft = 1
         # H is the Hamiltonian of sites 0 to i, this site included.
-        H = 0 * sp.eye(self.dimension(0))
+        H: sp.coo_matrix = 0 * sp.eye(self.dimension(0), format="coo")
         for i in range(self.size - 1):
             # We extend the existing Hamiltonian to cover site 'i+1'
             H = sp.kron(H, sp.eye(self.dimension(i + 1)))
             # We add now the interaction on the sites (i,i+1)
-            H += sp.kron(sp.eye(dleft if dleft else 1), self.interaction_term(i, t))
+            H = H + sp.kron(sp.eye(dleft if dleft else 1), self.interaction_term(i, t))
             # We extend the dimension covered
             dleft *= self.dimension(i)
 
-        return H
+        return H.tocsr()
 
     def to_mpo(self, t: float = 0.0, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
         """Compute the matrix-product operator for this Hamiltonian at time `t`.
@@ -258,10 +260,10 @@ class ConstantNNHamiltonian(NNHamiltonian):
             or H12.shape[1] != self.dimension(i) * self.dimension(i + 1)
         ):
             raise Exception("Invalid operators supplied to add_interaction_term()")
-        self.interactions[i] = self.interactions[i] + H12
+        self.interactions[i] = self.interactions[i] + H12  # type: ignore
         return self
 
-    def dimension(self, i) -> int:
+    def dimension(self, i: int) -> int:
         return self.dimensions[i]
 
     def interaction_term(self, i: int, t: float = 0.0) -> Operator:
