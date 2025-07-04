@@ -70,9 +70,9 @@ dev = [
     "basedpyright",
     "opt_einsum", # To test contractions
     "matplotlib", # For the examples
-	"optype[numpy]", # For typing tensors
+    "optype[numpy]", # For typing tensors
     "ipykernel",
-	"scipy-stubs",
+    "scipy-stubs",
 ]
 
 [tool.basedpyright]
