@@ -3,8 +3,6 @@ from abc import ABC, abstractmethod
 from itertools import product
 from collections.abc import Sequence, Iterator
 from typing import overload
-from ..typing import Vector
-
 import numpy as np
 
 
@@ -40,7 +38,7 @@ class Interval(ABC):
     def __len__(self) -> int:
         return self.size
 
-    def _validate_index(self, idx):
+    def _validate_index(self, idx: int | np.ndarray):
         if isinstance(idx, int):
             if not (0 <= idx < self.size):
                 raise IndexError("Index out of range")
@@ -75,6 +73,8 @@ class Interval(ABC):
 class IntegerInterval(Interval):
     """Equispaced integer discretization between `start` and `stop` with given `step`."""
 
+    step: int
+
     def __init__(self, start: int, stop: int, step: int = 1):
         self.step = step
         size = (stop - start + step - 1) // step
@@ -98,6 +98,12 @@ class RegularInterval(Interval):
     respectively setting the `endpoint_right` and `endpoint_left` flags.
     Defaults to a closed-left, open-right interval [start, stop).
     """
+
+    endpoint_left: bool
+    endpoint_right: bool
+    num_steps: int
+    step: float
+    start_displaced: float
 
     def __init__(
         self,
@@ -140,6 +146,8 @@ class ChebyshevInterval(Interval):
     If `endpoints` is set, returns the Chebyshev extrema, defined in the closed interval [a, b].
     Else, returns the Chebyshev zeros defined in the open interval (start, stop).
     """
+
+    endpoints: bool
 
     def __init__(self, start: float, stop: float, size: int, endpoints: bool = False):
         super().__init__(start, stop, size)
@@ -184,7 +192,6 @@ class Mesh:
 
     intervals: list[Interval]
     dimension: int
-    shape: tuple[int, ...]
     dimensions: tuple[int, ...]
 
     def __init__(self, intervals: list[Interval]):
