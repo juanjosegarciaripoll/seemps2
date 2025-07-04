@@ -226,6 +226,11 @@ class BlackBoxLoadMPO(BlackBox):
         mpo = mps_as_mpo(cross_results.mps) # Unfold into a MPO.
     """
 
+    mesh: Mesh
+    base_mpo: int
+    is_diagonal: bool
+    map_matrix: np.ndarray
+
     # TODO: Generalize for multivariate MPOs.
     def __init__(
         self,
@@ -234,21 +239,22 @@ class BlackBoxLoadMPO(BlackBox):
         base_mpo: int = 2,
         is_diagonal: bool = False,
     ):
-        super().__init__(func)
+        base = base_mpo * base_mpo
+        sites = int(np.lib.scimath.logn(base_mpo, mesh.dimensions[0]))
+        if not (mesh.dimension == 2 and mesh.dimensions[0] == mesh.dimensions[1]):
+            raise ValueError("The mesh must be bivariate for a 1d MPO")
+        if not base_mpo**sites == mesh.dimensions[0]:
+            raise ValueError(f"The mesh cannot be quantized with base {base_mpo}")
+
+        super().__init__(
+            func,
+            base=base,
+            sites_per_dimension=[sites],
+            physical_dimensions=[base] * sites,
+        )
         self.mesh = mesh
         self.base_mpo = base_mpo
         self.is_diagonal = is_diagonal
-
-        if not (mesh.dimension == 2 and mesh.dimensions[0] == mesh.dimensions[1]):
-            raise ValueError("The mesh must be bivariate for a 1d MPO")
-        self.sites = int(np.emath.logn(self.base_mpo, mesh.dimensions[0]))
-        if not self.base_mpo**self.sites == mesh.dimensions[0]:
-            raise ValueError(f"The mesh cannot be quantized with base {self.base_mpo}")
-
-        self.base = base_mpo**2
-        self.dimension = 1
-        self.physical_dimensions = [self.base] * self.sites
-        self.sites_per_dimension = [self.sites]
         self.map_matrix = mps_to_mesh_matrix(
             self.sites_per_dimension, base=self.base_mpo
         )
