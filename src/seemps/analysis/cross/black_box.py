@@ -312,19 +312,21 @@ class BlackBoxComposeMPS(BlackBox):
         mps = cross_results.mps
     """
 
-    def __init__(self, func: Callable, mps_list: list[MPS]):
-        super().__init__(func)
+    mps_list: list[MPS]
 
-        self.physical_dimensions = mps_list[0].physical_dimensions()
+    def __init__(self, func: Callable, mps_list: list[MPS]):
+        physical_dimensions = mps_list[0].physical_dimensions()
         for mps in mps_list:
-            if mps.physical_dimensions() != self.physical_dimensions:
+            if mps.physical_dimensions() != physical_dimensions:
                 raise ValueError("All MPS must have the same physical dimensions.")
 
-        self.base = self.physical_dimensions[0]  # Assume constant
+        super().__init__(
+            func,
+            base=physical_dimensions[0],  # Assumes constant
+            sites_per_dimension=[len(physical_dimensions)],
+            physical_dimensions=physical_dimensions,
+        )
         self.mps_list = mps_list
-        self.sites = len(self.physical_dimensions)
-        self.dimension = 1
-        self.sites_per_dimension = [self.sites]
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
         self.record_evaluations(len(mps_indices))
