@@ -60,10 +60,10 @@ def interpolation_coefficients(
     match interpolated_nodes:
         case "zeros":
             nodes: NDArray = ChebyshevInterval(start, stop, order).to_vector()
-            coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # pyright: ignore[reportUnknownArgumentType]
+            coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)
         case "extrema":
             nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
-            coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")  # pyright: ignore[reportUnknownArgumentType]
+            coefficients = 2.0 * dct(np.flip(func(nodes)), type=1, norm="forward")
         case _:
             raise TypeError("interpolated_nodes is not one of zeros | extrema")
     coefficients[0] /= 2
