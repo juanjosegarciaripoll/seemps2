@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from ..typing import Tensor3, Tensor4
+from ..typing import Tensor3, Tensor4, DenseOperator
+from ..state import MPS
 from ..state._contractions import _contract_last_and_first
 from ..state.environments import (
     _begin_environment,
@@ -27,7 +28,14 @@ class AntilinearForm:
         Position at which the `L` tensor is precomputed.
     """
 
-    def __init__(self, bra, ket, center=0):
+    bra: MPS
+    ket: MPS
+    size: int
+    R: list[DenseOperator]
+    L: list[DenseOperator]
+    center: int
+
+    def __init__(self, bra: MPS, ket: MPS, center: int = 0):
         assert bra.size == ket.size
         size = bra.size
         ρ = _begin_environment()
