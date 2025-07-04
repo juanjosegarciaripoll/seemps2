@@ -4,7 +4,7 @@ from typing import overload
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
-from ..typing import Tensor4, DenseOperator, Weight
+from ..typing import Tensor4, Tensor3, DenseOperator, Weight
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
@@ -15,7 +15,7 @@ from ..state.environments import (
 )
 
 
-def _mpo_multiply_tensor(A, B):
+def _mpo_multiply_tensor(A: Tensor4, B: Tensor3):
     # Implements
     # np.einsum("cjd,aijb->caidb", B, A)
     #
@@ -428,7 +428,9 @@ class MPOList(object):
             A = mpo.to_matrix() @ A
         return A
 
-    def set_strategy(self, strategy, strategy_components=None) -> MPOList:
+    def set_strategy(
+        self, strategy: Strategy, strategy_components: Strategy | None = None
+    ) -> MPOList:
         """Return MPOList with the given strategy."""
         if strategy_components is not None:
             mpos = [mpo.set_strategy(strategy_components) for mpo in self.mpos]
@@ -517,7 +519,7 @@ class MPOList(object):
     def _joined_tensors(self, i: int, L: int) -> Tensor4:
         """Join the tensors from all MPOs into bigger tensors."""
 
-        def join(A, *args):
+        def join(A: Tensor4, *args: Tensor4) -> Tensor4:
             if not args:
                 return A
             B = join(*args)
