@@ -10,7 +10,7 @@ from .finite_differences import tridiagonal_mpo
 from .space import Space, mpo_flip
 
 
-def twoscomplement(L, **kwdargs):
+def twoscomplement(L: int, strategy: Strategy = DEFAULT_STRATEGY):
     """Two's complement operation."""
     A0 = np.zeros((1, 2, 2, 2))
     A0[0, 0, 0, 0] = 1.0
@@ -21,7 +21,7 @@ def twoscomplement(L, **kwdargs):
     A[1, 1, 0, 1] = 1.0
     A[1, 0, 1, 1] = 1.0
     Aend = A[:, :, :, [0]] + A[:, :, :, [1]]
-    return MPO([A0] + [A] * (L - 2) + [Aend], **kwdargs)
+    return MPO([A0] + [A] * (L - 2) + [Aend], strategy)
 
 
 def fourier_interpolation_1D(
@@ -81,9 +81,10 @@ def fourier_interpolation_1D(
     U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
     ψfmps = iQFT_op @ (U2c @ Fψfmps)
     ψfmps = sqrt(2 ** (Mf - M0)) * ψfmps
+    factor = sqrt(2 ** (Mf - M0))
     if strategy.get_normalize_flag():
-        ψfmps = ψfmps.normalize_inplace()
-    return ψfmps, new_space
+        factor /= ψfmps.norm()
+    return factor * ψfmps, new_space
 
 
 def fourier_interpolation(
