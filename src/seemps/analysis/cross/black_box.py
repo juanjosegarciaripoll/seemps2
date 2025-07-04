@@ -174,7 +174,7 @@ class BlackBoxLoadTT(BlackBox):
     ):
         super().__init__(
             func,
-            base=np.inf,  # pyright: ignore[reportArgumentType] # TODO: Fix this hack
+            base=np.inf,  # type: ignore # pyright: ignore[reportArgumentType] # TODO: Fix this hack
             sites_per_dimension=[1] * len(mesh.dimensions),
             physical_dimensions=[interval.size for interval in mesh.intervals],
         )
