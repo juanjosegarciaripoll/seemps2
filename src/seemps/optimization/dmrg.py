@@ -255,8 +255,7 @@ def dmrg(
         direction = -direction
         last_E = E
     logger(
-        f"DMRG finished with {step} iterations:\n"
-        f"message = {results.message}\nconverged = {results.converged}"
+        f"DMRG finished with {step} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
     )
     logger.close()
     return results

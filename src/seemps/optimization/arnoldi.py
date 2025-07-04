@@ -254,8 +254,7 @@ def arnoldi_eigh(
                 break
             last_energy = energy
     logger(
-        f"Arnoldi finished with {step} iterations:\n"
-        f"message = {results.message}\nconverged = {results.converged}"
+        f"Arnoldi finished with {step} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
     )
     logger.close()
     return results

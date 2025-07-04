@@ -192,7 +192,7 @@ class Mesh:
         self.dimension = len(intervals)
         self.dimensions = tuple(interval.size for interval in self.intervals)
 
-    def __getitem__(self, indices: Sequence[int] | np.ndarray) -> float | Vector:
+    def __getitem__(self, indices: Sequence[int] | np.ndarray) -> np.ndarray:
         """Return the vector of coordinates of a point in the mesh.
 
         The input can take different shapes for a D-dimensional mesh:
@@ -205,13 +205,13 @@ class Mesh:
 
         Parameters
         ----------
-        indices : int | ArrayLike
+        indices : np.ndarray
             An integer, or an array-like structure indexing points
             in the mesh.
 
         Returns
         -------
-        points : float | np.ndarray[float]
+        points : np.ndarray[float]
             Coordinates of one or more points.
         """
         if isinstance(indices, int):

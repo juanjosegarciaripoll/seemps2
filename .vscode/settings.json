@@ -23,5 +23,8 @@
     },
     "python.testing.pytestArgs": [
         "-n4"
-    ]
+    ],
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "mypy-type-checker.reportingScope": "workspace",
+    "mypy-type-checker.cwd": "${workspaceFolder}/src"
 }
