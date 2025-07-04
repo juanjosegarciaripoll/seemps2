@@ -22,6 +22,7 @@ class BlackBox(ABC):
     sites_per_dimension: list
     physical_dimensions: list
     evals: int
+    allowed_indices: None | list[int]
 
     def __init__(
         self,
@@ -29,6 +30,7 @@ class BlackBox(ABC):
         base: int = 1,
         sites_per_dimension: list[int] = [],
         physical_dimensions: list[int] = [],
+        allowed_indices: None | list[int] = None,
     ):
         self.func = func
         self.base = base
@@ -38,6 +40,7 @@ class BlackBox(ABC):
         self.physical_dimensions = physical_dimensions
         assert self.sites == len(physical_dimensions)
         self.evals = 0
+        self.allowed_indices = allowed_indices
 
     @abstractmethod
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray: ...
@@ -251,17 +254,17 @@ class BlackBoxLoadMPO(BlackBox):
             base=base,
             sites_per_dimension=[sites],
             physical_dimensions=[base] * sites,
+            # If the MPO is diagonal, restrict the allowed indices for
+            # random sampling to the main diagonal.
+            allowed_indices=(
+                [s * base_mpo + s for s in range(base_mpo)] if is_diagonal else None
+            ),
         )
         self.mesh = mesh
         self.base_mpo = base_mpo
         self.is_diagonal = is_diagonal
         self.map_matrix = mps_to_mesh_matrix(
             self.sites_per_dimension, base=self.base_mpo
-        )
-
-        # If the MPO is diagonal, restrict the allowed indices for random sampling to the main diagonal.
-        self.allowed_indices = (
-            [s * base_mpo + s for s in range(base_mpo)] if self.is_diagonal else None
         )
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
