@@ -108,7 +108,6 @@ class MPS(array.TensorArray):
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
         center: int = -1,
-        **kwdargs,
     ) -> MPS:
         """Create a matrix-product state from a state vector.
 
@@ -123,6 +122,8 @@ class MPS(array.TensorArray):
             Default truncation strategy for algorithms working on this state.
         normalize : bool, default = True
             Whether the state is normalized to compensate truncation errors.
+        center : int, default = -1
+            Center of the canonicalized matrix product state
 
         Returns
         -------
@@ -138,7 +139,6 @@ class MPS(array.TensorArray):
         state: np.ndarray,
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
-        **kwdargs,
     ) -> MPS:
         """Create a matrix-product state from a tensor that represents a
         composite quantum system.
