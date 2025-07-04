@@ -77,6 +77,17 @@ class CrossInterpolation:
     """Auxiliar base class for TCI used to keep track of the required
     interpolation information."""
 
+    black_box: BlackBox
+    sites: int
+    I_l: list
+    I_g: list
+    I_s: list[np.ndarray]
+    mps: MPS
+    previous_mps: MPS
+    previous_error: float
+    mps_indices: np.ndarray | None
+    func_samples: np.ndarray | None
+
     def __init__(
         self,
         black_box: BlackBox,
@@ -88,10 +99,10 @@ class CrossInterpolation:
         self.I_s = [np.arange(s).reshape(-1, 1) for s in black_box.physical_dimensions]
         # Placeholders
         self.mps = random_mps(black_box.physical_dimensions)
-        self.previous_mps: MPS = deepcopy(self.mps)
-        self.previous_error: float = np.inf
-        self.mps_indices: np.ndarray | None = None
-        self.func_samples: np.ndarray | None = None
+        self.previous_mps = deepcopy(self.mps)
+        self.previous_error = np.inf
+        self.mps_indices = None
+        self.func_samples = None
 
     def sample_fiber(self, k: int) -> np.ndarray:
         i_l, i_s, i_g = self.I_l[k], self.I_s[k], self.I_g[k]
@@ -261,7 +272,7 @@ def _check_convergence(
     evals = cross.black_box.evals - cross_strategy.num_samples  # subtract error evals
     if logger:
         logger(
-            f"Cross sweep {1 + sweep:3d} with error({cross_strategy.num_samples} samples "
+            f"Cross sweep {1 + sweep:3d} with error({cross_strategy.num_samples} samples "+
             f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={evals}"
         )
     if cross_strategy.tol_norm_2 is not None:
