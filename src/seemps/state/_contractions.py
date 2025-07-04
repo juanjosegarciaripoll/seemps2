@@ -25,7 +25,7 @@ def _contract_last_and_first2(A: NDArray, B: NDArray) -> NDArray:
 
 
 try:
-    from .core import _contract_last_and_first, _contract_nrjl_ijk_klm
+    from .core import _contract_last_and_first, _contract_nrjl_ijk_klm  # pyright: ignore[reportUnusedImport]
 except Exception:
     raise Exception("Missing contractions from core.pyx")
     _contract_last_and_first = _contract_last_and_first2

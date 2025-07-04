@@ -1,7 +1,6 @@
 from __future__ import annotations
 from .typing import Operator, Weight, Vector, to_dense_operator
 import numpy as np
-import scipy.sparse as sp
 from .state.environments import (
     _begin_environment,
     _end_environment,

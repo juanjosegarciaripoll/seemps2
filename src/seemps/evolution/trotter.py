@@ -1,8 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod, ABC
 from ..typing import Unitary, to_dense_operator
-import scipy.linalg  # type: ignore
-import scipy.sparse as sp
+import scipy.linalg
 from ..hamiltonians import NNHamiltonian  # type: ignore
 from ..state import Strategy, DEFAULT_STRATEGY, MPS, CanonicalMPS
 from ..state._contractions import _contract_nrjl_ijk_klm
