@@ -1,7 +1,9 @@
 from __future__ import annotations
 from numpy.typing import NDArray, ArrayLike
 import scipy.sparse as sp  # type: ignore
-from typing import TypeAlias
+from typing import TypeAlias, Annotated
+
+Natural: TypeAlias = Annotated[int, ">=1"]
 
 Weight: TypeAlias = float | complex
 """A real or complex number."""

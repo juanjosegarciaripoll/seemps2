@@ -9,16 +9,16 @@ from .black_box import BlackBox
 from ..sampling import evaluate_mps, random_mps_indices
 from ...state import MPS, random_mps
 from ...tools import Logger
-from ...typing import VectorLike
+from ...typing import VectorLike, Natural
 
 
 @dataclasses.dataclass
 class CrossStrategy:
-    maxiter: int = 100
+    maxiter: Natural = 100
     maxbond: int = 1000
     tol_sampling: float = 1e-10
     norm_sampling: float = np.inf
-    num_samples: int = 1000
+    num_samples: Natural = 1000
     tol_norm_2: float | None = None
     rng: np.random.Generator = dataclasses.field(
         default_factory=lambda: np.random.default_rng()
@@ -28,7 +28,7 @@ class CrossStrategy:
 
     Parameters
     ----------
-    maxiter : int, default=100
+    maxiter : int (> 0), default=100
         Maximum number of sweeps allowed.
     maxbond : int, default=1000
         Maximum MPS bond dimension allowed.
@@ -44,6 +44,10 @@ class CrossStrategy:
     rng : np.random.Generator, default=np.random.default_rng()
         Random number generator used to initialize the algorithm and sample the error.
     """
+
+    def __post_init__(self) -> None:
+        assert self.maxiter > 0
+        assert self.num_samples > 0
 
 
 @dataclasses.dataclass
@@ -272,8 +276,8 @@ def _check_convergence(
     evals = cross.black_box.evals - cross_strategy.num_samples  # subtract error evals
     if logger:
         logger(
-            f"Cross sweep {1 + sweep:3d} with error({cross_strategy.num_samples} samples "+
-            f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={evals}"
+            f"Cross sweep {1 + sweep:3d} with error({cross_strategy.num_samples} samples "
+            + f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={evals}"
         )
     if cross_strategy.tol_norm_2 is not None:
         norm_increment = cross.norm_2_increment()

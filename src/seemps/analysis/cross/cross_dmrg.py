@@ -89,27 +89,28 @@ def cross_dmrg(
     cross = CrossInterpolationDMRG(black_box, initial_points)
     converged = False
     callback_output = []
+    forward = True
     with make_logger(2) as logger:
         for i in range(cross_strategy.maxiter):
             # Forward sweep
-            direction = True
+            forward = True
             for k in range(cross.sites - 1):
-                _update_dmrg(cross, k, direction, cross_strategy)
+                _update_dmrg(cross, k, forward, cross_strategy)
             if callback:
                 callback_output.append(callback(cross.mps, logger=logger))
             if converged := _check_convergence(cross, i, cross_strategy, logger):
                 break
             # Backward sweep
-            direction = False
+            forward = False
             for k in reversed(range(cross.sites - 1)):
-                _update_dmrg(cross, k, direction, cross_strategy)
+                _update_dmrg(cross, k, forward, cross_strategy)
             if callback:
                 callback_output.append(callback(cross.mps, logger=logger))
             if converged := _check_convergence(cross, i, cross_strategy, logger):
                 break
         if not converged:
             logger("Maximum number of TT-Cross iterations reached")
-    points = cross.indices_to_points(direction)
+    points = cross.indices_to_points(forward)
     return CrossResults(
         mps=cross.mps,
         points=points,

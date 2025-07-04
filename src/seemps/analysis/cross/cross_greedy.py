@@ -89,10 +89,11 @@ def cross_greedy(
     pivot_errors = np.zeros((black_box.sites - 1,))
     converged = False
     callback_output = []
+    forward = True
     with make_logger(2) as logger:
         for i in range(cross_strategy.maxiter):
             # Forward sweep
-            direction = True
+            forward = True
             for k in range(cross.sites - 1):
                 pivot_errors[k] = update_method(cross, k, cross_strategy)
             if callback:
@@ -103,7 +104,7 @@ def cross_greedy(
             ):
                 break
             # Backward sweep
-            direction = False
+            forward = False
             for k in reversed(range(cross.sites - 1)):
                 pivot_errors[k] = update_method(cross, k, cross_strategy)
             if callback:
@@ -115,7 +116,7 @@ def cross_greedy(
                 break
         if not converged:
             logger("Maximum number of TT-Cross iterations reached")
-    points = cross.indices_to_points(direction)
+    points = cross.indices_to_points(forward)
     return CrossResults(
         mps=cross.mps,
         points=points,
