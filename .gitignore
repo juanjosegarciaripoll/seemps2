@@ -106,6 +106,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# ruff
+.ruff_cache
+
 # our own generated files
 exportnb.py
 ipynb_output_filter
