@@ -6,7 +6,7 @@ from ..operators import MPO
 from ..qft import qft_mpo
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy
 from ..truncate import simplify
-from .finite_differences import mpo_combined
+from .finite_differences import tridiagonal_mpo
 from .space import Space, mpo_flip
 
 
@@ -154,7 +154,7 @@ def finite_differences_interpolation_1D(
     if False:
         derivative_mps = (
             space.extend(
-                mpo_combined(
+                tridiagonal_mpo(
                     len(space.sites[dim]), 0.5, 0, 0.5, closed=closed, strategy=strategy
                 ),
                 dim,
@@ -172,7 +172,7 @@ def finite_differences_interpolation_1D(
         derivative_mps = derivative_mps.extend(L=new_size, sites=sum(new_positions, []))
         derivative_mps = (
             new_space.extend(
-                mpo_combined(
+                tridiagonal_mpo(
                     len(new_space.sites[dim]), 0, 1, 0, closed=closed, strategy=strategy
                 ),
                 dim,
@@ -185,7 +185,7 @@ def finite_differences_interpolation_1D(
     else:
         # Shift operator for finite difference formulas
         Sup = space.extend(
-            mpo_combined(
+            tridiagonal_mpo(
                 len(space.sites[dim]), 0, 0, 1, closed=closed, strategy=strategy
             ),
             dim,
