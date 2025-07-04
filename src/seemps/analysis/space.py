@@ -23,7 +23,7 @@ def mpo_flip(operator: _Operator) -> _Operator:
             new_mpos.append(weight * mpo_flip(op))
         # TODO: Investigate why we need type: ignore here
         # The types should be compatible with the TypeVar
-        return MPOSum(new_mpos, operator.weights, operator.strategy)  # type: ignore
+        return MPOSum(new_mpos, operator.weights, operator.strategy)  # type: ignore # pyright: ignore[reportReturnType]
     if isinstance(operator, MPOList):
         return MPOList(
             [
