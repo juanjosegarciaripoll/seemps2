@@ -83,7 +83,7 @@ class NNHamiltonian(ABC):
         # both included
         dleft = 1
         # H is the Hamiltonian of sites 0 to i, this site included.
-        H: sp.coo_matrix = 0 * sp.eye(self.dimension(0), format="coo")
+        H: sp.bsr_matrix = sp.bsr_matrix((self.dimension(0),self.dimension(0)))
         for i in range(self.size - 1):
             # We extend the existing Hamiltonian to cover site 'i+1'
             H = sp.kron(H, sp.eye(self.dimension(i + 1)))
