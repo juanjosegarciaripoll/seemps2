@@ -503,7 +503,7 @@ class MPOList(object):
         return self.apply(b)
 
     def extend(
-        self, L: int, sites: list[int] | None = None, dimensions: int = 2
+        self, L: int, sites: list[int] | None = None, dimensions: int | list[int] = 2
     ) -> MPOList:
         """Enlarge an MPOList so that it acts on a larger Hilbert space with 'L' sites.
 
