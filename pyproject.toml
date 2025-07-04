@@ -64,7 +64,7 @@ ignore_missing_imports = true
 
 [dependency-groups]
 dev = [
-    "numpy<2.2",
+    "numpy",
     "mypy",
     "ruff>=0.9.3",
     "basedpyright",
