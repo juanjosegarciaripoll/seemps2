@@ -192,7 +192,12 @@ def runge_kutta_fehlberg(
     normalization_strategy = strategy.replace(normalize=True)
     state = CanonicalMPS(state, normalize=True)
     E = H.expectation(state, state).real
-    results = EvolutionResults(state=state, energy=E, trajectory=[E], Δβ=[Δβ], β=[0])
+    trajectory: list[float] = [E]
+    Δβ_list: list[float] = [Δβ]
+    β_list: list[float] = [0.0]
+    results = EvolutionResults(
+        state=state, energy=E, trajectory=trajectory, Δβ=Δβ_list, β=β_list
+    )
     i = 0
     while i < maxiter:
         H_state = H.apply(state)
@@ -276,13 +281,13 @@ def runge_kutta_fehlberg(
             continue
         E = H.expectation(state, state).real
         state = state_ord5
-        results.trajectory.append(E)
+        trajectory.append(E)
         if callback is not None:
             callback(state, results)
         if E < results.energy:
             results.energy, results.state = E, state
-            results.Δβ.append(Δβ)  # type: ignore
-        results.β.append(results.β[-1] + Δβ)
+            Δβ_list.append(Δβ)  # type: ignore
+        β_list.append(β_list[-1] + Δβ)
         if δ > 0:
             Δβ = 0.9 * Δβ * (tol_rk / δ) ** (1 / 5)
     return results
