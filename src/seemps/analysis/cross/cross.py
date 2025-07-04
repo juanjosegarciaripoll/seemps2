@@ -2,9 +2,8 @@ import numpy as np
 import scipy.linalg  # type: ignore
 import dataclasses
 import functools
-
 from copy import deepcopy
-
+from typing import TypeAlias
 from .black_box import BlackBox
 from ..sampling import evaluate_mps, random_mps_indices
 from ...state import MPS, random_mps
@@ -50,6 +49,11 @@ class CrossStrategy:
         assert self.num_samples > 0
 
 
+IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
+IndexVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.integer]]
+IndexSlice: TypeAlias = np.intp | IndexVector | slice
+
+
 @dataclasses.dataclass
 class CrossResults:
     """
@@ -83,7 +87,7 @@ class CrossInterpolation:
 
     black_box: BlackBox
     sites: int
-    I_l: list
+    I_l: list  # TODO: More precise annotation
     I_g: list
     I_s: list[np.ndarray]
     mps: MPS
@@ -186,7 +190,7 @@ class CrossInterpolation:
         return I_l, I_g
 
     @staticmethod
-    def combine_indices(*indices: np.ndarray) -> np.ndarray:
+    def combine_indices(*indices: IndexMatrix) -> IndexMatrix:
         """
         Computes the Cartesian product of a set of multi-indices arrays and arranges the
         result as concatenated indices in C order (column-major).
@@ -260,6 +264,7 @@ def maxvol_square(
     return I, B
 
 
+# WARNING: If this function is to be imported, do not use "_" in front.
 def _check_convergence(
     cross: CrossInterpolation,
     sweep: int,

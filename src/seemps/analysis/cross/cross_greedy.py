@@ -9,6 +9,9 @@ from .cross import (
     CrossStrategy,
     BlackBox,
     _check_convergence,
+    IndexMatrix,
+    IndexSlice,
+    IndexVector,
 )
 from ..sampling import random_mps_indices
 from ...state import MPS
@@ -126,6 +129,13 @@ def cross_greedy(
 
 
 class CrossInterpolationGreedy(CrossInterpolation):
+    mps: MPS
+    fibers: list[np.ndarray]  # TODO: More precise annotation
+    Q_factors: list[np.ndarray]
+    R_matrices: list[np.ndarray]
+    J_l: list
+    J_g: list
+
     def __init__(self, black_box: BlackBox, initial_point: np.ndarray):
         super().__init__(black_box, initial_point)
         self.fibers = [self.sample_fiber(k) for k in range(self.sites)]
@@ -138,13 +148,16 @@ class CrossInterpolationGreedy(CrossInterpolation):
 
         ## Translate the initial multiindices I_l and I_g to integer indices J_l and J_g
         ## TODO: Refactor
-        def get_row_indices(rows, all_rows):
+        ## WARNING: This looks superfishy
+        def get_row_indices(rows: IndexMatrix, all_rows: IndexMatrix) -> IndexMatrix:
             large_set = {tuple(row): idx for idx, row in enumerate(all_rows)}
             return np.array([large_set[tuple(row)] for row in rows])
 
         J_l = []
         J_g = []
         for k in range(self.sites - 1):
+            # WARNING: Is this correct? i_l and i_g and the values
+            # we add to J_l and J_g have the same value
             i_l = self.combine_indices(self.I_l[k], self.I_s[k])
             J_l.append(get_row_indices(self.I_l[k + 1], i_l))
             i_g = self.combine_indices(self.I_l[k], self.I_s[k])
@@ -156,11 +169,8 @@ class CrossInterpolationGreedy(CrossInterpolation):
         G_cores = [self.Q_to_G(Q, j_l) for Q, j_l in zip(self.Q_factors, self.J_l[1:])]
         self.mps = MPS(G_cores + [self.fibers[-1]])
 
-    # _Index = TypeVar("_Index", bound=(np.intp | np.ndarray | slice))
-    _Index = np.intp | np.ndarray | slice
-
     def sample_superblock(
-        self, k: int, j_l: _Index = slice(None), j_g: _Index = slice(None)
+        self, k: int, j_l: IndexSlice = slice(None), j_g: IndexSlice = slice(None)
     ) -> np.ndarray:
         i_ls = self.combine_indices(self.I_l[k], self.I_s[k])[j_l]
         i_ls = i_ls.reshape(1, -1) if i_ls.ndim == 1 else i_ls  # Prevent collapse to 1D
@@ -170,7 +180,7 @@ class CrossInterpolationGreedy(CrossInterpolation):
         return self.black_box[mps_indices].reshape((len(i_ls), len(i_sg)))
 
     def sample_skeleton(
-        self, k: int, j_l: _Index = slice(None), j_g: _Index = slice(None)
+        self, k: int, j_l: IndexSlice = slice(None), j_g: IndexSlice = slice(None)
     ) -> np.ndarray:
         r_l, r_s1, chi = self.mps[k].shape
         chi, r_s2, r_g = self.fibers[k + 1].shape
@@ -178,7 +188,9 @@ class CrossInterpolationGreedy(CrossInterpolation):
         R = self.fibers[k + 1].reshape(chi, r_s2 * r_g)[:, j_g]
         return _contract_last_and_first(G, R)
 
-    def update_indices(self, k: int, j_l: _Index, j_g: _Index) -> None:
+    def update_indices(
+        self, k: int, j_l: np.intp | IndexVector, j_g: np.intp | IndexVector
+    ) -> None:
         i_l = self.combine_indices(self.I_l[k], self.I_s[k])[j_l]
         i_g = self.combine_indices(self.I_s[k + 1], self.I_g[k + 1])[j_g]
         self.I_l[k + 1] = np.vstack((self.I_l[k + 1], i_l))
@@ -270,11 +282,7 @@ def _update_full_search(
     A = cross.sample_superblock(k)
     B = cross.sample_skeleton(k)
 
-    # TODO: Why do we need this function and not use |A-B| directly?
-    def error_function(A, B):
-        return np.abs(A - B)
-
-    diff = error_function(A, B)
+    diff = np.abs(A - B)
     j_l, j_g = np.unravel_index(np.argmax(diff), A.shape)
     pivot_error = diff[j_l, j_g]
 
@@ -307,19 +315,16 @@ def _update_partial_search(
     A_random = cross.sample_superblock(k, j_l=j_l_random, j_g=j_g_random)
     B_random = cross.sample_skeleton(k, j_l=j_l_random, j_g=j_g_random)
 
-    # TODO: Why do we need this function and not use |A-B| directly?
-    def error_function(A, B):
-        return np.abs(A - B)
-
-    diff = error_function(A_random, B_random)
+    diff = np.abs(A_random - B_random)
     i, j = np.unravel_index(np.argmax(diff), A_random.shape)
     j_l, j_g = j_l_random[i], j_g_random[j]
 
+    c_A = c_B = r_A = r_B = np.zeros(0)
     for iter in range(cross_strategy.maxiter_partial):
         # Traverse column residual
         c_A = cross.sample_superblock(k, j_g=j_g).reshape(-1)
         c_B = cross.sample_skeleton(k, j_g=j_g)
-        new_j_l = np.argmax(error_function(c_A, c_B))
+        new_j_l = np.argmax(np.abs(c_A - c_B))
         if new_j_l == j_l and iter > 0:
             break
         j_l = new_j_l
@@ -327,11 +332,11 @@ def _update_partial_search(
         # Traverse row residual
         r_A = cross.sample_superblock(k, j_l=j_l).reshape(-1)
         r_B = cross.sample_skeleton(k, j_l=j_l)
-        new_j_g = np.argmax(error_function(r_A, r_B))
+        new_j_g = np.argmax(np.abs(r_A - r_B))
         if new_j_g == j_g:
             break
         j_g = new_j_g
-    pivot_error = error_function(c_A[j_l], c_B[j_l])
+    pivot_error = np.abs(c_A[j_l] - c_B[j_l])
 
     if pivot_error >= cross_strategy.tol_pivot:
         cross.update_indices(k, j_l=j_l, j_g=j_g)
