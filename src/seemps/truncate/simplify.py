@@ -107,6 +107,7 @@ def simplify(
             f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
             + f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
         )
+    norm_mps_sqr = 0.0
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
@@ -136,7 +137,7 @@ def simplify(
     total_error_bound = state._error + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
-        last_tensor /= factor
+        last_tensor /= factor  # pyright: ignore[reportPossiblyUnboundVariable]
         total_error_bound /= factor
     mps._error = total_error_bound
     logger.close()
@@ -229,11 +230,12 @@ def simplify_mps_sum(
         )
 
     err = 2.0
+    norm_mps_sqr = 0.0
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
                 mps.update_2site_right(
-                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore # pyright: ignore[reportArgumentType]
                     n,
                     strategy,
                 )
@@ -243,7 +245,7 @@ def simplify_mps_sum(
         else:
             for n in reversed(range(0, size - 1)):
                 mps.update_2site_left(
-                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore # pyright: ignore[reportArgumentType]
                     n,
                     strategy,
                 )
@@ -271,7 +273,7 @@ def simplify_mps_sum(
     total_error_bound = sum_state.error() + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
-        last_tensor /= factor
+        last_tensor /= factor  # pyright: ignore[reportPossiblyUnboundVariable]
         total_error_bound /= factor
     mps._error = total_error_bound
     logger.close()
