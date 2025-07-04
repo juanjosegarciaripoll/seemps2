@@ -29,7 +29,7 @@ class TestTwoSiteEvolutionFold(TestCase):
 
 class TestDMRGHamiltonianContraction(TestCase):
     def test_contract_A_B(self):
-        from seemps.optimization.dmrg import _dmrg_contractor
+        from seemps.optimization.dmrg import DMRGMatrixOperator
 
         L = self.rng.normal(size=(10, 5, 10))
         R = self.rng.normal(size=(13, 6, 13))
@@ -39,5 +39,6 @@ class TestDMRGHamiltonianContraction(TestCase):
         exact_contraction = np.einsum(
             "acb,cikjld,edf,bklf->aije", L, H12, R, v
         ).reshape(-1)
-        fast_contraction = _dmrg_contractor(L, H12, R, v)
+        dmrg_contractor = DMRGMatrixOperator(L, H12, R)
+        fast_contraction = dmrg_contractor(v.reshape(-1))
         self.assertSimilar(exact_contraction, fast_contraction)
