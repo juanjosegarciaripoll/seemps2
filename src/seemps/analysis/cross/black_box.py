@@ -162,18 +162,20 @@ class BlackBoxLoadTT(BlackBox):
         tensor_train = cross_results.mps
     """
 
+    mesh: Mesh
+
     def __init__(
         self,
         func: Callable,
         mesh: Mesh,
     ):
-        super().__init__(func)
+        super().__init__(
+            func,
+            base=np.inf,  # pyright: ignore[reportArgumentType] # TODO: Fix this hack
+            sites_per_dimension=[1] * len(mesh.dimensions),
+            physical_dimensions=[interval.size for interval in mesh.intervals],
+        )
         self.mesh = mesh
-        self.base = np.inf  # type: ignore
-        self.sites_per_dimension = [1 for _ in self.mesh.dimensions]
-        self.sites = sum(self.sites_per_dimension)
-        self.dimension = len(self.sites_per_dimension)
-        self.physical_dimensions = [interval.size for interval in self.mesh.intervals]
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
         self.record_evaluations(len(mps_indices))
