@@ -1,11 +1,15 @@
 from __future__ import annotations
 import numpy as np
+from typing import TypeVar
 from ..operators import MPO, MPOList, MPOSum
 
 
 # TODO: This might not be the place to have this function
 # It should be under operators or in qft.
-def mpo_flip(operator):
+_Operator = TypeVar("_Operator", MPOSum, MPO, MPOList)
+
+
+def mpo_flip(operator: _Operator) -> _Operator:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform."""
     if isinstance(operator, MPO):
@@ -13,7 +17,14 @@ def mpo_flip(operator):
             [np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0]) for op in reversed(operator)],
             strategy=operator.strategy,
         )
-    elif isinstance(operator, MPOList):
+    if isinstance(operator, MPOSum):
+        new_mpos: list[MPO | MPOList] = []
+        for weight, op in zip(operator.weights, operator.mpos):
+            new_mpos.append(weight * mpo_flip(op))
+        # TODO: Investigate why we need type: ignore here
+        # The types should be compatible with the TypeVar
+        return MPOSum(new_mpos, operator.weights, operator.strategy)  # type: ignore
+    if isinstance(operator, MPOList):
         return MPOList(
             [
                 MPO(
@@ -27,14 +38,7 @@ def mpo_flip(operator):
             ],
             strategy=operator.strategy,
         )
-    elif isinstance(operator, MPOSum):
-        new_mpos = []
-        for weight, op in zip(operator.weights, operator.mpos):
-            new_mpos.append(weight * mpo_flip(op))
-        return MPOSum(
-            new_mpos,
-            strategy=operator.strategy,
-        )
+    raise Exception("Unknown operator type")
 
 
 class Space:
