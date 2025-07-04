@@ -15,18 +15,34 @@ class BlackBox(ABC):
     These objects are fundamental for the efficient implementation of TCI algorithms.
     """
 
+    func: Callable
     base: int
     sites: int
     dimension: int
     physical_dimensions: list
     sites_per_dimension: list
+    evals: int
 
-    def __init__(self, func: Callable):
+    def __init__(
+        self,
+        func: Callable,
+        base: int = 1,
+        sites_per_dimension: list[int] = [],
+        physical_dimensions: list[int] = [],
+    ):
         self.func = func
+        self.base = base
+        self.dimension = len(sites_per_dimension)
+        self.sites_per_dimension = sites_per_dimension
+        self.sites = len(physical_dimensions)
+        assert self.sites == sum(self.sites_per_dimension)
         self.evals = 0
 
     @abstractmethod
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray: ...
+
+    def record_evaluations(self, n: int = 1) -> None:
+        self.evals += n
 
 
 class BlackBoxLoadMPS(BlackBox):
@@ -97,7 +113,7 @@ class BlackBoxLoadMPS(BlackBox):
         )
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         # Transpose because of opposite conventions for mesh (dimension index last)
         # and cross (dimension index first).
         return self.func(self.mesh[mps_indices @ self.map_matrix].T)  # type: ignore
@@ -153,7 +169,7 @@ class BlackBoxLoadTT(BlackBox):
         self.physical_dimensions = [interval.size for interval in self.mesh.intervals]
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         return self.func(self.mesh[mps_indices].T)  # type: ignore
 
 
@@ -234,7 +250,7 @@ class BlackBoxLoadMPO(BlackBox):
         )
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         row_indices = (mps_indices // self.base_mpo) @ self.map_matrix
         col_indices = (mps_indices % self.base_mpo) @ self.map_matrix
         mesh_indices = np.hstack((row_indices, col_indices))
@@ -293,7 +309,7 @@ class BlackBoxComposeMPS(BlackBox):
         self.sites_per_dimension = [self.sites]
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         mps_values = []
         for mps in self.mps_list:
             mps_values.append(evaluate_mps(mps, mps_indices))
