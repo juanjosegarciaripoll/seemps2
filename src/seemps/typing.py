@@ -44,7 +44,7 @@ FloatOrArray = TypeVar("FloatOrArray", float, NDArray[np.floating])
 
 def to_dense_operator(O: Operator) -> DenseOperator:
     if sp.issparse(O):
-        return O.toarray()  # type: ignore # pyright: ignore[reportAttributeAccessIssue]
+        return O.toarray()  # type: ignore
     return O
 
 
