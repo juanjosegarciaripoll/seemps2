@@ -30,13 +30,13 @@ class NNHamiltonian(ABC):
     constant: bool
     """True if the Hamiltonian does not depend on time."""
 
-    def __init__(self, size: int):
+    def __init__(self, size: int, constant: bool = False):
         #
         # Create a nearest-neighbor interaction Hamiltonian
         # of a given size, initially empty.
         #
         self.size = size
-        self.constant = False
+        self.constant = constant
 
     @abstractmethod
     def dimension(self, i: int) -> int:
@@ -83,7 +83,7 @@ class NNHamiltonian(ABC):
         # both included
         dleft = 1
         # H is the Hamiltonian of sites 0 to i, this site included.
-        H: sp.bsr_matrix = sp.bsr_matrix((self.dimension(0),self.dimension(0)))
+        H: sp.bsr_matrix = sp.bsr_matrix((self.dimension(0), self.dimension(0)))
         for i in range(self.size - 1):
             # We extend the existing Hamiltonian to cover site 'i+1'
             H = sp.kron(H, sp.eye(self.dimension(i + 1)))
@@ -179,8 +179,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
         #  - local_term: operators acting on each site (can be different for each site)
         #  - int_left, int_right: list of L and R operators (can be different for each site)
         #
-        super(ConstantNNHamiltonian, self).__init__(size)
-        self.constant = True
+        super(ConstantNNHamiltonian, self).__init__(size, True)
         if isinstance(dimension, list):
             self.dimensions = dimension
             assert len(dimension) == size
@@ -292,7 +291,7 @@ class ConstantTIHamiltonian(ConstantNNHamiltonian):
         local_term: Operator | None = None,
     ):
         if local_term is not None:
-            dimension = len(local_term)
+            dimension = local_term.shape[0]
         elif interaction is not None:
             dimension = round(sqrt(interaction.shape[0]))
         else:
