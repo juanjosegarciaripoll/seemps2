@@ -1,9 +1,7 @@
 import math
 import numpy as np
 from scipy.special import loggamma  # type: ignore
-
-from typing import Iterator
-
+from collections.abc import Iterator
 from ..operators import MPO
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..register.transforms import mpo_weighted_shifts

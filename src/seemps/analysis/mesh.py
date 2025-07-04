@@ -1,8 +1,8 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
-from collections.abc import Sequence
-from typing import Iterator, overload
+from collections.abc import Sequence, Iterator
+from typing import overload
 from ..typing import Vector
 
 import numpy as np
