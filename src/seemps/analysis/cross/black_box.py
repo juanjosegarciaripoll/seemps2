@@ -19,8 +19,8 @@ class BlackBox(ABC):
     base: int
     sites: int
     dimension: int
-    physical_dimensions: list
     sites_per_dimension: list
+    physical_dimensions: list
     evals: int
 
     def __init__(
@@ -32,10 +32,11 @@ class BlackBox(ABC):
     ):
         self.func = func
         self.base = base
+        self.sites = sum(sites_per_dimension)
         self.dimension = len(sites_per_dimension)
         self.sites_per_dimension = sites_per_dimension
-        self.sites = len(physical_dimensions)
-        assert self.sites == sum(self.sites_per_dimension)
+        self.physical_dimensions = physical_dimensions
+        assert self.sites == len(physical_dimensions)
         self.evals = 0
 
     @abstractmethod
@@ -86,6 +87,10 @@ class BlackBoxLoadMPS(BlackBox):
         mps = cross_results.mps
     """
 
+    mesh: Mesh
+    mps_order: str  # TODO: Make this a Literal[] type with fixed alternatives
+    map_matrix: np.ndarray
+
     def __init__(
         self,
         func: Callable,
@@ -93,21 +98,23 @@ class BlackBoxLoadMPS(BlackBox):
         base: int = 2,
         mps_order: str = "A",
     ):
-        super().__init__(func)
-        self.mesh = Mesh([domain]) if not isinstance(domain, Mesh) else domain
-        self.base = base
+        mesh = Mesh([domain]) if not isinstance(domain, Mesh) else domain
+        sites_per_dimension = [
+            int(np.lib.scimath.logn(base, s)) for s in mesh.dimensions
+        ]
+        super().__init__(
+            func,
+            base=base,
+            sites_per_dimension=sites_per_dimension,
+            physical_dimensions=[base] * sum(sites_per_dimension),
+        )
+        self.mesh = mesh
         self.mps_order = mps_order
 
-        self.sites_per_dimension = [
-            int(np.emath.logn(base, s)) for s in self.mesh.dimensions
-        ]
         if not all(
             base**n == N for n, N in zip(self.sites_per_dimension, self.mesh.dimensions)
         ):
             raise ValueError(f"The mesh cannot be quantized with base {base}")
-        self.sites = sum(self.sites_per_dimension)
-        self.dimension = len(self.sites_per_dimension)
-        self.physical_dimensions = [self.base] * self.sites
         self.map_matrix = mps_to_mesh_matrix(
             self.sites_per_dimension, self.mps_order, self.base
         )
