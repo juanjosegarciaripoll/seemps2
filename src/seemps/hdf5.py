@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Any
-import h5py  # type: ignore
+from typing import Any, cast
+from .typing import Tensor3, Tensor4
+import h5py
 from .state import MPS
 from .mpo import MPO
 
@@ -8,11 +9,12 @@ from .mpo import MPO
 def _read_hdf5_item_as_path(
     item: h5py.File | h5py.Group | h5py.Dataset, output: list[tuple[str, Any]]
 ) -> list[tuple[str, Any]]:
-    for subitem in item.values():
-        if isinstance(subitem, h5py.Dataset):
-            output.append((subitem.name, subitem[()]))
-        else:
-            _read_hdf5_item_as_path(subitem, output)
+    if not isinstance(item, h5py.Dataset):
+        for subitem in item.values():
+            if isinstance(subitem, h5py.Dataset):
+                output.append((cast(str, subitem.name), subitem[()]))
+            else:
+                _read_hdf5_item_as_path(subitem, output)
     return output
 
 
@@ -89,15 +91,17 @@ def read_mps(parent: h5py.File | h5py.Group, name: str) -> MPS:
     """
     if name in parent:
         g = parent[name]
-        if (
-            isinstance(g, h5py.Group)
-            and g.attrs["type"] == "MPS"
-            and g.attrs["version"] == 1
-        ):
-            N = g["length"][()]
-            # rlim = g["rlim"][()]
-            # llim = g["llim"][()]
-            return MPS([g[f"MPS[{i}]"][()] for i in range(N)])
+        if isinstance(g, h5py.Group):
+            if g.attrs["type"] == "MPS" and g.attrs["version"] == 1:
+                N = cast(int, cast(h5py.Dataset, g["length"])[()])
+                # rlim = g["rlim"][()]
+                # llim = g["llim"][()]
+                return MPS(
+                    [
+                        cast(Tensor3, cast(h5py.Dataset, g[f"MPS[{i}]"])[()])
+                        for i in range(N)
+                    ]
+                )
     raise Exception(f"Unable to read MPS from HDF5 group {parent}")
 
 
@@ -142,8 +146,13 @@ def read_mpo(parent: h5py.File | h5py.Group, name: str) -> MPO:
             and g.attrs["type"] == "MPO"
             and g.attrs["version"] == 1
         ):
-            N = g["length"][()]
+            N = cast(int, cast(h5py.Dataset, g["length"])[()])
             # rlim = g["rlim"][()]
             # llim = g["llim"][()]
-            return MPO([g[f"MPO[{i}]"][()] for i in range(N)])
+            return MPO(
+                [
+                    cast(Tensor4, cast(h5py.Dataset, g[f"MPO[{i}]"])[()])
+                    for i in range(N)
+                ]
+            )
     raise Exception(f"Unable to read MPO from HDF5 group {parent}")
