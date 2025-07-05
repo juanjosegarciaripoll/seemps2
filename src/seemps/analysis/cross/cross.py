@@ -134,9 +134,9 @@ class CrossInterpolation:
         if self.func_samples is None:
             self.func_samples = self.black_box[self.mps_indices].reshape(-1)
         mps_samples = evaluate_mps(self.mps, self.mps_indices)
-        error = np.linalg.norm(self.func_samples - mps_samples, ord=norm_error)  # type: ignore
+        error = np.linalg.norm(self.func_samples - mps_samples, ord=norm_error)
         prefactor = np.prod(self.func_samples.shape) ** (1 / norm_error)
-        return error / prefactor  # type: ignore
+        return float(error / prefactor)
 
     def norm_2_increment(self) -> float:
         norm_increment = (
