@@ -55,9 +55,6 @@ skip-magic-trailing-comma = false
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
-[tool.mypy]
-plugins = ["numpy.typing.mypy_plugin"]
-
 # TODO: Require scipy-stubs, numpy-stubs, etc.
 warn_incomplete_stub = false
 ignore_missing_imports = true
