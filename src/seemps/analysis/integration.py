@@ -306,7 +306,7 @@ def mps_fejer(
     N = int(2**sites)
 
     # Encode 1/(1 - 4*k**2) term with TCI
-    def selector(k):
+    def selector(k: np.ndarray) -> np.ndarray:
         return np.where(k < N / 2, 2 / (1 - 4 * k**2), 2 / (1 - 4 * (N - k) ** 2))
 
     mps_k2 = cross_dmrg(

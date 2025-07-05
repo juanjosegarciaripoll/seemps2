@@ -2,12 +2,13 @@ from __future__ import annotations
 import numpy as np
 from math import sqrt
 from numpy import pi as π
-from .typing import Vector
-from .state import MPS, MPSSum
+from typing import TypeVar, overload
+from .typing import Vector, Tensor4
+from .state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
 from .mpo import MPO, MPOList
 
 
-def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:
+def qft_mpo(N: int, sign: int = -1, strategy: Strategy = DEFAULT_STRATEGY) -> MPOList:
     """Create an MPOList object representing a Quantum Fourier Transform
     for a quantum register with `N` qubits.
 
@@ -18,8 +19,9 @@ def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:
     sign : int, default = -1
         Sign (+1 or -1) in the exponent of the transform. Defaults to
         the sign of the direct quantum Fourier transform.
-    **kwargs :
-        Other arguments accepted by :class:`MPO`
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        Simplification strategies for the MPO intermediate and final
+        layers.
 
     Returns
     -------
@@ -27,7 +29,7 @@ def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:
         A sequence of :class:`MPO` that implements the transform.
     """
 
-    def fix_last(mpo_list):
+    def fix_last(mpo_list: list[Tensor4]) -> list[Tensor4]:
         A = mpo_list[-1]
         shape = A.shape
         A = np.sum(A, -1).reshape(shape[0], shape[1], shape[2], 1)
@@ -54,33 +56,26 @@ def qft_mpo(N: int, sign: int = -1, **kwargs) -> MPOList:
     #
     return MPOList(
         [
-            MPO(fix_last([noop] * n + [Hop] + rots[: N - n - 1]), **kwargs)
+            MPO(fix_last([noop] * n + [Hop] + rots[: N - n - 1]), strategy)
             for n in range(0, N)
         ],
-        **kwargs,
+        strategy,
     )
 
 
-def iqft_mpo(N: int, **kwargs) -> MPOList:
+def iqft_mpo(N: int, strategy: Strategy = DEFAULT_STRATEGY) -> MPOList:
     """:class:`MPOList` implementing the inverse quantum Fourier transform.
-
-    Parameters
-    ----------
-    N : int
-        Number of qubits in the MPO.
-    **kwargs :
-        Other arguments accepted by :class:`MPO`
+    Accepts the same arguments and return types as `qft_mpo`."""
+    return qft_mpo(N, +1, strategy)
 
 
-    Returns
-    -------
-    MPOList
-        A sequence of :class:`MPO` that implements the transform.
-    """
-    return qft_mpo(N, +1, **kwargs)
+@overload
+def qft(state: MPS, strategy: Strategy) -> MPS: ...
+@overload
+def qft(state: MPSSum, strategy: Strategy) -> MPS | MPSSum: ...
 
 
-def qft(state: MPS | MPSSum, **kwargs) -> MPS | MPSSum:
+def qft(state: MPS | MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPSSum:
     """Apply the quantum Fourier transform onto a quantum register
     of qubits encoded in the matrix-product 'state'.
 
@@ -96,29 +91,25 @@ def qft(state: MPS | MPSSum, **kwargs) -> MPS | MPSSum:
     MPS
         Transformed quantum state after application of operators.
     """
-    return qft_mpo(state.size, sign=-1, **kwargs).apply(state)
+    return qft_mpo(state.size, -1, strategy).apply(state)
 
 
-def iqft(state: MPS | MPSSum, **kwargs) -> MPS | MPSSum:
+@overload
+def iqft(state: MPS, strategy: Strategy) -> MPS: ...
+@overload
+def iqft(state: MPSSum, strategy: Strategy) -> MPS | MPSSum: ...
+
+
+def iqft(state: MPS | MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPSSum:
     """Apply the inverse quantum Fourier transform onto a quantum register
-    of qubits encoded in the matrix-product 'state'.
-
-    Parameters
-    ----------
-    state : MPS
-        Quantum register to transform
-    **kwargs :
-        Arguments accepted by :class:`MPO`
-
-    Returns
-    -------
-    MPS
-        Transformed quantum state after application of operators.
-    """
-    return qft_mpo(state.size, sign=+1, **kwargs).apply(state)
+    of qubits encoded in the matrix-product 'state'. See `qft`."""
+    return qft_mpo(state.size, +1, strategy).apply(state)
 
 
-def qft_flip(state: MPS | MPSSum) -> MPS | MPSSum:
+_State = TypeVar("_State", MPS, MPSSum)
+
+
+def qft_flip(state: _State) -> _State:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform.
 
@@ -161,7 +152,10 @@ def qft_wavefunction(Ψ: Vector) -> Vector:
 
 
 def qft_nd_mpo(
-    sites: list[int], N: int | None = None, sign: int = -1, **kwargs
+    sites: list[int],
+    N: int | None = None,
+    sign: int = -1,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPOList:
     """Create an MPOList object representing a Quantum Fourier Transform
     for subset of qubits in a quantum register with `N` qubits.
@@ -175,8 +169,8 @@ def qft_nd_mpo(
     sign : int, default = -1
         Sign (+1 or -1) in the exponent of the transform. Defaults to
         the sign of the direct quantum Fourier transform.
-    **kwargs :
-        Other arguments accepted by :class:`MPO`
+    strategy : Strategy, default = DEFAULT_STRATEGY
+        Simplification strategy used by the MPO at different stages.
 
     Returns
     -------
@@ -208,7 +202,7 @@ def qft_nd_mpo(
     # Place the Hadamard and rotations according to the instructions
     # in 'sites'. The first index is the control qubit, the other ones
     # are the following qubits in order of decreasing significance.
-    def make_layer(sites):
+    def make_layer(sites: list[int]) -> MPO:
         l = [noop] * N
         for i, ndx in enumerate(sites):
             if i == 0:
@@ -230,30 +224,15 @@ def qft_nd_mpo(
                 a, i, j, b = A.shape
                 l[n] = np.sum(A, -1).reshape(a, i, j, 1)
                 break
-        return MPO(l, **kwargs)
+        return MPO(l, strategy)
 
-    return MPOList([make_layer(sites[i:]) for i in range(len(sites))], **kwargs)
+    return MPOList([make_layer(sites[i:]) for i in range(len(sites))], strategy)
 
 
-def iqft_nd_mpo(sites: list[int], N: int | None = None, **kwargs) -> MPOList:
+def iqft_nd_mpo(
+    sites: list[int], N: int | None = None, strategy: Strategy = DEFAULT_STRATEGY
+) -> MPOList:
     """Create an MPOList object representing the inverse Quantum Fourier Transform
-    for subset of qubits in a quantum register with `N` qubits.
-
-    Parameters
-    ----------
-    sites : list[int]
-        List of qubits on which the transform acts
-    N : int, default = len(sites)
-        Number of qubits in the register.
-    sign : int, default = -1
-        Sign (+1 or -1) in the exponent of the transform. Defaults to
-        the sign of the direct quantum Fourier transform.
-    **kwargs :
-        Other arguments accepted by :class:`MPO`
-
-    Returns
-    -------
-    MPOList
-        A sequence of :class:`MPO` that implements the transform.
+    for subset of qubits in a quantum register with `N` qubits. See `qft_nd_mpo`.
     """
-    return qft_nd_mpo(sites, N=N, sign=+1, **kwargs)
+    return qft_nd_mpo(sites, N, +1, strategy)

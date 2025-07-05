@@ -1,6 +1,7 @@
 import numpy as np
-from scipy.sparse import dok_matrix, csc_array  # type: ignore
-from typing import Callable
+from numpy.typing import NDArray
+from scipy.sparse import csc_matrix  # type: ignore
+from typing import Callable, final
 from functools import lru_cache
 
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
@@ -99,12 +100,12 @@ def lagrange_rank_revealing(
     Ar = builder.A_R(use_logs)
 
     U_L, R = np.linalg.qr(Al.reshape((2, order + 1)))
-    tensors = [U_L.reshape(1, 2, 2)]
+    tensors: list[NDArray] = [U_L.reshape(1, 2, 2)]
     for _ in range(sites - 2):
         B = _contract_last_and_first(R, Ac)
         r1, s, r2 = B.shape
         ## SVD
-        U, S, V = _destructive_svd(B.reshape(r1 * s, r2))
+        U, S, V = _destructive_svd(B.reshape(-1, r2))
         destructively_truncate_vector(S, strategy)
         D = S.size
         U = U[:, :D]
@@ -159,7 +160,7 @@ def lagrange_local_rank_revealing(
     Ar = builder.A_R_sparse()
 
     U_L, R = np.linalg.qr(Al.reshape((2, order + 1)))
-    tensors = [U_L.reshape(1, 2, 2)]
+    tensors: list[NDArray] = [U_L.reshape(1, 2, 2)]
     for _ in range(sites - 2):
         B = R @ Ac
         r1 = B.shape[0]
@@ -176,6 +177,7 @@ def lagrange_local_rank_revealing(
     return MPS(tensors)
 
 
+@final
 class LagrangeBuilder:
     """
     Auxiliar class used to build the tensors required for MPS Lagrange interpolation.
@@ -189,6 +191,7 @@ class LagrangeBuilder:
         self.d = order
         self.m = local_order if local_order else order
         self.D = order + 1
+        # TODO: replace these 'for i' with np.arange
         self.c = np.array(
             [0.5 * (np.cos(np.pi * i / self.d) + 1) for i in range(self.d + 1)]
         )
@@ -200,7 +203,7 @@ class LagrangeBuilder:
         # Precompute cardinal terms
         self.den = self.c[:, np.newaxis] - self.c
         np.fill_diagonal(self.den, 1)
-        self.log_den = np.log(abs(self.den))
+        self.log_den = np.log(np.abs(self.den))
         self.sign_den = np.sign(self.den)
 
     @lru_cache(maxsize=None)  # Unbound cache
@@ -211,7 +214,7 @@ class LagrangeBuilder:
         """
         return int(np.argmin(abs(theta - self.angular_grid)))
 
-    def chebyshev_cardinal(self, x: np.ndarray, j: int, use_logs: bool) -> float:
+    def chebyshev_cardinal(self, x: np.ndarray, j: int, use_logs: bool) -> np.ndarray:
         """
         Evaluates the j-th Chebyshev cardinal function (the Lagrange interpolating
         polynomial for the Chebyshev-Lobatto nodes) at a given point x.
@@ -220,7 +223,7 @@ class LagrangeBuilder:
         num = np.delete(x[:, np.newaxis] - self.c, j, axis=1)
         if use_logs:  # Prevents overflow
             with np.errstate(divide="ignore"):  # Ignore warning of log(0)
-                log_num = np.log(abs(num))
+                log_num = np.log(np.abs(num))
             log_den = np.delete(self.log_den[j], j)
             log_div = np.sum(log_num - log_den, axis=1)
             sign_num = np.sign(num)
@@ -271,7 +274,7 @@ class LagrangeBuilder:
                 )
         return L
 
-    def A_L(self, func: Callable, start: float, stop: float) -> np.ndarray:
+    def A_L(self, func: Callable, start: float, stop: float) -> NDArray[np.float64]:
         """
         Returns the left-most MPS tensor required for Chebyshev interpolation.
         """
@@ -282,7 +285,7 @@ class LagrangeBuilder:
             )
         return A
 
-    def A_C(self, use_logs: bool = True) -> np.ndarray:
+    def A_C(self, use_logs: bool = True) -> NDArray[np.float64]:
         """
         Returns the central MPS tensor required for Chebyshev interpolation.
         """
@@ -292,40 +295,28 @@ class LagrangeBuilder:
                 A[i, s, :] = self.chebyshev_cardinal(0.5 * (s + self.c), i, use_logs)
         return A
 
-    def A_R(self, use_logs: bool = True) -> np.ndarray:
+    def A_R(self, use_logs: bool = True) -> NDArray[np.float64]:
         """
         Returns the right-most MPS tensor required for Chebyshev interpolation.
         """
         A = np.zeros((self.D, 2, 1))
         for s in range(2):
             for i in range(self.D):
-                A[i, s, 0] = self.chebyshev_cardinal(np.array([0.5 * s]), i, use_logs)
+                A[i, s, :] = self.chebyshev_cardinal(np.array([0.5 * s]), i, use_logs)
         return A
 
-    def A_C_sparse(self) -> csc_array:
+    def A_C_sparse(self) -> csc_matrix:
         """
         Returns the central MPS tensor required for local Chebyshev interpolation.
         For efficiency, it is represented as a (d+1, 2*(d+1)) sparse matrix (CSR).
         """
-        A = dok_matrix((self.D, 2 * self.D), dtype=np.float64)
-        for s in range(2):
-            for i in range(self.D):
-                # TODO: Vectorize this loop
-                for j, c_j in enumerate(self.c):
-                    val = self.local_chebyshev_cardinal(0.5 * (s + c_j), i)
-                    if val != 0:
-                        A[i, s * self.D + j] = val
-        return A.tocsc()
+        # TODO: verify whether we want csc_matrix
+        return csc_matrix(self.A_C().reshape(self.D, 2 * self.D))
 
-    def A_R_sparse(self) -> csc_array:
+    def A_R_sparse(self) -> csc_matrix:
         """
         Returns the right-most MPS tensor required for local Chebyshev interpolation.
         For efficiency, it is represented as a (d+1, 2) sparse matrix (CSR).
         """
-        A = dok_matrix((self.D, 2), dtype=np.float64)
-        for s in range(2):
-            for i in range(self.D):
-                val = self.local_chebyshev_cardinal(0.5 * s, i)
-                if val != 0:
-                    A[i, s] = val
-        return A.tocsc()
+        # TODO: verify whether we want csc_matrix
+        return csc_matrix(self.A_R().reshape(self.D, 2))

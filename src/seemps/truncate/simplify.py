@@ -72,8 +72,8 @@ def simplify(
         if logger:
             logger(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing two-pass "
-                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                + f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                + f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
         return mps
 
@@ -85,8 +85,8 @@ def simplify(
         if logger:
             logger(
                 f"SIMPLIFY state with |state|={mps.norm():5e}\nusing single-pass "
-                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                + f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                + f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
         return mps
 
@@ -105,8 +105,9 @@ def simplify(
     if logger:
         logger(
             f"SIMPLIFY state with |state|={norm_state_sqr**0.5} for "
-            f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
+            + f"{strategy.get_max_sweeps()} sweeps, with tolerance {simplification_tolerance}.\nStrategy: {strategy}",
         )
+    norm_mps_sqr = 0.0
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
@@ -127,8 +128,7 @@ def simplify(
         err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         if logger:
             logger(
-                f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
-                f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
+                f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, |mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
             )
         if err < simplification_tolerance or err > old_err:
             logger("Stopping, as tolerance reached")
@@ -137,7 +137,7 @@ def simplify(
     total_error_bound = state._error + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
-        last_tensor /= factor
+        last_tensor /= factor  # pyright: ignore[reportPossiblyUnboundVariable]
         total_error_bound /= factor
     mps._error = total_error_bound
     logger.close()
@@ -190,8 +190,8 @@ def simplify_mps_sum(
         if logger:
             logger(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing two-pass "
-                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                + f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                + f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
             logger.close()
         return mps
@@ -204,8 +204,8 @@ def simplify_mps_sum(
         if logger:
             logger(
                 f"COMBINE state with |state|={mps.norm():5e}\nusing single-pass "
-                f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
-                f"produces error {mps.error():5e}.\nStrategy: {strategy}",
+                + f"canonical form, with tolerance {strategy.get_tolerance():5e}\n"
+                + f"produces error {mps.error():5e}.\nStrategy: {strategy}",
             )
             logger.close()
         return mps
@@ -225,16 +225,17 @@ def simplify_mps_sum(
     if logger:
         logger(
             f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
-            f"sweeps with tolerance {simplification_tolerance:5e}.\nStrategy: {strategy}"
-            f"\nWeights: {weights}",
+            + f"sweeps with tolerance {simplification_tolerance:5e}.\nStrategy: {strategy}"
+            + f"\nWeights: {weights}",
         )
 
     err = 2.0
+    norm_mps_sqr = 0.0
     for sweep in range(max(1, strategy.get_max_sweeps())):
         if direction > 0:
             for n in range(0, size - 1):
                 mps.update_2site_right(
-                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore # pyright: ignore[reportArgumentType]
                     n,
                     strategy,
                 )
@@ -244,7 +245,7 @@ def simplify_mps_sum(
         else:
             for n in reversed(range(0, size - 1)):
                 mps.update_2site_left(
-                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore
+                    sum(w * f.tensor2site(direction) for w, f in zip(weights, forms)),  # type: ignore # pyright: ignore[reportArgumentType]
                     n,
                     strategy,
                 )
@@ -263,8 +264,7 @@ def simplify_mps_sum(
         err = 2 * abs(1.0 - mps_state_scprod.real / sqrt(norm_mps_sqr * norm_state_sqr))
         if logger:
             logger(
-                f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, "
-                f"|mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
+                f"sweep={sweep}, rel.err.={err:6g}, old err.={old_err:6g}, |mps|={norm_mps_sqr**0.5:6g}, tol={simplification_tolerance:6g}",
             )
         if err < simplification_tolerance or err > old_err:
             logger("Stopping, as tolerance reached")
@@ -273,7 +273,7 @@ def simplify_mps_sum(
     total_error_bound = sum_state.error() + sqrt(err)
     if normalize and norm_mps_sqr:
         factor = sqrt(norm_mps_sqr)
-        last_tensor /= factor
+        last_tensor /= factor  # pyright: ignore[reportPossiblyUnboundVariable]
         total_error_bound /= factor
     mps._error = total_error_bound
     logger.close()

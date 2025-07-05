@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import TypeVar
+from typing import TypeVar, cast
 from ..typing import Tensor3
 from ..state import Strategy, MPS, MPSSum, DEFAULT_STRATEGY
 from ..truncate import simplify
@@ -139,10 +139,12 @@ def mps_cos(
     return simplify(0.5 * (mps_1 + mps_2), strategy=strategy)
 
 
-_State = TypeVar("_State", bound=(MPS | MPSSum))
+_State = TypeVar("_State", MPS, MPSSum)
 
 
-def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
+def mps_affine(
+    mps: _State, orig: tuple[float, float], dest: tuple[float, float]
+) -> _State:
     """
     Applies an affine transformation to an MPS, mapping it from one interval [x0, x1] to another [u0, u1].
     This is a transformation u = a * x + b, with u0 = a * x0 + b and and  u1 = a * x1 + b.
@@ -152,9 +154,9 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
     ----------
     mps : MPS | MPSSum
         The MPS to be transformed.
-    orig : tuple
+    orig : tuple[float, float]
         A tuple (x0, x1) representing the original interval.
-    dest : tuple
+    dest : tuple[float, float]
         A tuple (u0, u1) representing the destination interval.
 
     Returns
@@ -166,14 +168,15 @@ def mps_affine(mps: _State, orig: tuple, dest: tuple) -> _State:
     u0, u1 = dest
     a = (u1 - u0) / (x1 - x0)
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
-    mps_affine = a * mps
+    new_mps = a * mps
     if abs(b) > np.finfo(np.float64).eps:
-        I = MPS([np.ones((1, 2, 1))] * len(mps_affine))
-        mps_affine = mps_affine + b * I
+        I = MPS([np.ones((1, 2, 1))] * new_mps.size)
+        displaced_mps = new_mps + b * I
         # Preserve the input type
         if isinstance(mps, MPS):
-            return mps_affine.join()
-    return mps_affine
+            return displaced_mps.join()
+        return displaced_mps
+    return cast(_State, new_mps)
 
 
 def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):

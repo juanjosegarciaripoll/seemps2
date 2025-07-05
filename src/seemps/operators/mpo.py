@@ -4,7 +4,7 @@ from typing import overload
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
-from ..typing import Tensor4, Operator, Weight
+from ..typing import Tensor4, Tensor3, DenseOperator, Weight
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
@@ -15,7 +15,7 @@ from ..state.environments import (
 )
 
 
-def _mpo_multiply_tensor(A, B):
+def _mpo_multiply_tensor(A: Tensor4, B: Tensor3):
     # Implements
     # np.einsum("cjd,aijb->caidb", B, A)
     #
@@ -144,12 +144,12 @@ class MPO(TensorArray):
     def T(self) -> MPO:
         return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
 
-    def tomatrix(self) -> Operator:
+    def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
         return self.to_matrix()
 
-    def to_matrix(self) -> Operator:
+    def to_matrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         Di = 1  # Total physical dimension so far
         Dj = 1
@@ -335,6 +335,15 @@ class MPO(TensorArray):
             right = update_right_mpo_environment(right, bra[i].conj(), self[i], ket[i])
         return join_mpo_environments(left, right)
 
+    def reverse(self) -> MPO:
+        return MPO(
+            [
+                np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0])
+                for op in reversed(self._data)
+            ],
+            self.strategy,
+        )
+
 
 class MPOList(object):
     """Sequence of matrix-product operators.
@@ -416,19 +425,21 @@ class MPOList(object):
         """Return the physical dimensions of the MPOList."""
         return self.mpos[0].dimensions()
 
-    def tomatrix(self) -> Operator:
+    def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
         return self.to_matrix()
 
-    def to_matrix(self) -> Operator:
+    def to_matrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix."""
         A = self.mpos[0].to_matrix()
         for mpo in self.mpos[1:]:
             A = mpo.to_matrix() @ A
         return A
 
-    def set_strategy(self, strategy, strategy_components=None) -> MPOList:
+    def set_strategy(
+        self, strategy: Strategy, strategy_components: Strategy | None = None
+    ) -> MPOList:
         """Return MPOList with the given strategy."""
         if strategy_components is not None:
             mpos = [mpo.set_strategy(strategy_components) for mpo in self.mpos]
@@ -501,7 +512,7 @@ class MPOList(object):
         return self.apply(b)
 
     def extend(
-        self, L: int, sites: list[int] | None = None, dimensions: int = 2
+        self, L: int, sites: list[int] | None = None, dimensions: int | list[int] = 2
     ) -> MPOList:
         """Enlarge an MPOList so that it acts on a larger Hilbert space with 'L' sites.
 
@@ -517,7 +528,7 @@ class MPOList(object):
     def _joined_tensors(self, i: int, L: int) -> Tensor4:
         """Join the tensors from all MPOs into bigger tensors."""
 
-        def join(A, *args):
+        def join(A: Tensor4, *args: Tensor4) -> Tensor4:
             if not args:
                 return A
             B = join(*args)
@@ -577,6 +588,9 @@ class MPOList(object):
         if ket is None:
             ket = bra
         return scprod(bra, self.apply(ket))  # type: ignore
+
+    def reverse(self) -> MPOList:
+        return MPOList([o.reverse() for o in self.mpos], self.strategy)
 
 
 from .. import truncate  # noqa: E402

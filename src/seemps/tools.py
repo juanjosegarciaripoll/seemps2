@@ -1,18 +1,20 @@
 from __future__ import annotations
 from math import cos, sin, sqrt
 import numpy as np
+from typing import Any
+from .typing import DenseOperator
 
 
 class InvalidOperation(TypeError):
     """Exception for operations with invalid or non-matching arguments."""
 
-    def __init__(self, op, *args):
+    def __init__(self, op: str, *args: Any):
         super().__init__(
             f"Invalid operation {op} between arguments of types {(type(x) for x in args)}"
         )
 
 
-def take_from_list(O, i):
+def take_from_list(O: list[Any] | Any, i: int):
     if isinstance(O, list):
         return O[i]
     else:
@@ -22,13 +24,13 @@ def take_from_list(O, i):
 class Logger:
     active: bool = False
 
-    def __call__(self, *args, **kwdargs):
+    def __call__(self, *args: Any, **kwdargs: Any):
         pass
 
     def __enter__(self) -> Logger:
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):  # pyright: ignore[reportMissingParameterType]
         pass
 
     def __bool__(self) -> bool:
@@ -46,6 +48,7 @@ NO_LOGGER = Logger()
 class VerboseLogger(Logger):
     old_prefix: str
     level: int
+    active: bool
 
     def __init__(self, level: int):
         global PREFIX
@@ -61,16 +64,18 @@ class VerboseLogger(Logger):
         return self.active
 
     def __enter__(self) -> Logger:
+        super().__enter__()
         return self
 
-    def __call__(self, *args, **kwdargs):
+    def __call__(self, *args: Any, **kwdargs: Any):
         if self.active:
             txt = " ".join([str(a) for a in args])
             txt = " ".join([PREFIX + a for a in txt.split("\n")])
             print(txt, **kwdargs)
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):  # pyright: ignore[reportMissingParameterType]
         self.close()
+        super().__exit__(exc_type, exc_value, traceback)
 
     def close(self):
         global PREFIX
@@ -90,7 +95,7 @@ def make_logger(level: int = 1) -> Logger:
 # TODO: Find a faster way to do logs. Currently `log` always gets called
 # We should find a way to replace calls to log in the code with an if-statement
 # that checks `DEBUG`
-def log(*args, debug_level=1):
+def log(*args: Any, debug_level: int = 1) -> None:
     """Optionally log informative messages to the console.
 
     Logging is only active when :var:`~seemps.tools.DEBUG` is True or an
@@ -107,7 +112,7 @@ def log(*args, debug_level=1):
         print(*args)
 
 
-def random_isometry(N, M=None):
+def random_isometry(N: int, M: int | None = None) -> DenseOperator:
     """Returns a random isometry with size `(M, N)`.
 
     Parameters
@@ -143,11 +148,11 @@ def random_Pauli():
     return cos(ϕ) * (cos(θ) * σx + sin(θ) * σy) + sin(ϕ) * σz
 
 
-def creation(d):
+def creation(d: int) -> DenseOperator:
     """Bosonic creation operator for a Hilbert space with occupations 0 to `d-1`."""
     return np.diag(sqrt(np.arange(1, d)), -1).astype(complex)
 
 
-def annihilation(d):
+def annihilation(d: int) -> DenseOperator:
     """Bosonic annihilation operator for a Hilbert space with occupations 0 to `d-1`."""
     return np.diag(sqrt(np.arange(1, d)), 1).astype(complex)

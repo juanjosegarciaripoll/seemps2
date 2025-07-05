@@ -31,6 +31,7 @@ exclude = [
 	"dist",
 	"venv",
 	".flake8",
+	"scipy-stubs",
 ]
 
 # Same as Black.
@@ -54,22 +55,15 @@ skip-magic-trailing-comma = false
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
 
-[tool.mypy]
-plugins = ["numpy.typing.mypy_plugin"]
-
-# TODO: Require scipy-stubs, numpy-stubs, etc.
-warn_incomplete_stub = false
-ignore_missing_imports = true
-
 [dependency-groups]
 dev = [
-    "numpy<2.2",
-    "mypy",
+    "numpy",
+    "mypy>1.16",
     "ruff>=0.9.3",
-	"basedpyright",
+    "basedpyright>1.29",
     "opt_einsum", # To test contractions
-    "matplotlib", # For the examples
-    "ipykernel", # To run notebooks in VSCode
+    "optype[numpy]", # For typing tensors
+    "scipy-stubs",
 ]
 
 [tool.basedpyright]
@@ -104,3 +98,15 @@ reportImportCycles = false
 # of MPO) because we cannot believe inputs are of the right type
 reportUnnecessaryIsInstance = false
 reportUnreachable = false
+reportUnnecessaryComparison = false
+# TODO: Remove all calls in initializers
+reportCallInDefaultInitializer = false
+# TODO: Rename imported functions with _ prefix
+reportPrivateLocalImportUsage = false
+reportUnknownArgumentType = false
+# TODO: Remove this to detect _check_convergence and other unused functions
+reportUnusedFunction=false
+
+[tool.mypy]
+warn_incomplete_stub = false
+ignore_missing_imports = true

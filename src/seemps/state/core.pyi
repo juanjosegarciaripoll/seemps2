@@ -1,15 +1,16 @@
-from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
+from enum import Enum
 import numpy as np
+from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
 
 MAX_BOND_DIMENSION: int
 
-class Truncation:
+class Truncation(Enum):
     DO_NOT_TRUNCATE = 0
     RELATIVE_SINGULAR_VALUE = 1
     RELATIVE_NORM_SQUARED_ERROR = 2
     ABSOLUTE_SINGULAR_VALUE = 3
 
-class Simplification:
+class Simplification(Enum):
     DO_NOT_SIMPLIFY = 0
     CANONICAL_FORM = 1
     VARIATIONAL = 2
@@ -18,23 +19,23 @@ class Simplification:
 class Strategy:
     def __init__(
         self: Strategy,
-        method: int = Truncation.RELATIVE_SINGULAR_VALUE,
+        method: Truncation = Truncation.RELATIVE_SINGULAR_VALUE,
         tolerance: float = 1e-8,
         simplification_tolerance: float = 1e-8,
         max_bond_dimension: int = 0x8FFFFFFF,
         max_sweeps: int = 16,
         normalize: bool = False,
-        simplify: int = Simplification.VARIATIONAL,
+        simplify: Simplification = Simplification.VARIATIONAL,
     ): ...
     def replace(
         self: Strategy,
-        method: int | None = None,
+        method: Truncation | None = None,
         tolerance: float | None = None,
         simplification_tolerance: float | None = None,
         max_bond_dimension: int | None = None,
         max_sweeps: int | None = None,
         normalize: bool | None = None,
-        simplify: int | None = None,
+        simplify: Simplification | None = None,
     ) -> Strategy: ...
     def set_normalization(self: Strategy, normalize: bool) -> Strategy: ...
     def get_tolerance(self) -> float: ...
@@ -85,9 +86,9 @@ def _select_svd_driver(which: str): ...
 def _destructive_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
 class GemmOrder:
-    GEMM_NORMAL = 0
-    GEMM_TRANSPOSE = 1
-    GEMM_ADJOINT = 2
+    GEMM_NORMAL: int = 0
+    GEMM_TRANSPOSE: int = 1
+    GEMM_ADJOINT: int = 2
 
 def _gemm(B: np.ndarray, BT: int, A: np.ndarray, AT: int) -> np.ndarray: ...
 

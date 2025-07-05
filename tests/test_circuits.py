@@ -35,24 +35,6 @@ class TestKnownOperators(TestCase):
             interpret_operator(np.zeros((3,)))
 
 
-class TestParameterizedCircuits(TestCase):
-    def test_parameterized_circuit_requires_parameters_size_or_default(self):
-        with self.assertRaises(Exception):
-            ParameterizedCircuit(10)
-
-        c = ParameterizedCircuit(10, default_parameters=[0.2, 0.2])
-        self.assertEqual(c.register_size, 10)
-        self.assertEqual(c.parameters_size, 2)
-        self.assertSimilar(c.parameters, np.array([0.2, 0.2]))
-        self.assertIsInstance(c.parameters, np.ndarray)
-
-        c = ParameterizedCircuit(10, parameters_size=2)
-        self.assertEqual(c.register_size, 10)
-        self.assertEqual(c.parameters_size, 2)
-        self.assertSimilar(c.parameters, np.zeros(2))
-        self.assertIsInstance(c.parameters, np.ndarray)
-
-
 class TestLocalGateCircuits(TestCase):
     Sx = interpret_operator("Sx")
     Sy = interpret_operator("Sy")

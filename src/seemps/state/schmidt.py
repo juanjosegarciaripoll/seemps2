@@ -3,9 +3,10 @@ import numpy as np
 import math
 from collections.abc import Sequence
 from numpy.typing import NDArray
+from typing import Literal
 from ..typing import VectorLike, Tensor3, Vector
 from .core import Strategy, DEFAULT_STRATEGY
-from scipy.linalg import svd as _scipy_svd  # type: ignore
+from scipy.linalg import svd as _scipy_svd
 from seemps.state.core import _destructive_svd, _left_orth_2site, _right_orth_2site
 
 #
@@ -13,12 +14,12 @@ from seemps.state.core import _destructive_svd, _left_orth_2site, _right_orth_2s
 # The "gesdd" algorithm is the default in Python and is faster, but it
 # may produced wrong results, specially in ill-conditioned matrices.
 #
-SVD_LAPACK_DRIVER = "gesvd"
+SVD_LAPACK_DRIVER: Literal["gesvd", "gesdd"] = "gesvd"
 
 
 def _schmidt_weights(A: Tensor3) -> Vector:
     d1, d2, d3 = A.shape
-    s = _scipy_svd(
+    s: Vector = _scipy_svd(
         A.reshape(d1 * d2, d3),
         full_matrices=False,
         compute_uv=False,
@@ -56,7 +57,7 @@ def _vector2mps(
         center = L + center
     if center < 0 or center >= L:
         raise Exception("Invalid value of center in _vector2mps")
-    err = 0.0
+    err: float = 0.0
     for i in range(center):
         output[i], ψ, new_err = _left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
@@ -68,9 +69,9 @@ def _vector2mps(
         )
         err += new_err
     if normalize:
-        N: float = np.linalg.norm(ψ.reshape(-1))  # type: ignore
+        N = np.linalg.norm(ψ.reshape(-1))
         ψ /= N
-        err /= N
+        err /= float(N)
     output[center] = ψ
     return output, err
 

@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import numpy as np
-
+from ..state import Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
 from ..register.transforms import mpo_weighted_shifts
 
 
-def mpo_combined(n, a, b, c, closed=True, **kwdargs):
+def tridiagonal_mpo(
+    n: int,
+    a: float,
+    b: float,
+    c: float,
+    closed: bool = True,
+    strategy: Strategy = DEFAULT_STRATEGY,
+):
     A = np.zeros((3, 2, 2, 3))
     # Internal bond dimension 0 is nothing, 1 is add 1, 2 is subtract 1
 
@@ -24,13 +31,15 @@ def mpo_combined(n, a, b, c, closed=True, **kwdargs):
         L = A[[0], :, :, :] + A[[1], :, :, :] + A[[2], :, :, :]
     else:
         L = A[[0], :, :, :]
-    return MPO([L] + [A] * (n - 2) + [R], **kwdargs)
+    return MPO([L] + [A] * (n - 2) + [R], strategy)
 
 
-def finite_differences_mpo(n, Δx, closed=True, **kwdargs):
+def finite_differences_mpo(
+    n: int, Δx: float, closed: bool = True, strategy: Strategy = DEFAULT_STRATEGY
+):
     if n == 1:
         raise Exception("finite_differences_mpo() does not work with length 1")
-    return (1 / Δx**2) * mpo_combined(n, -2, 1, 1, closed=closed, **kwdargs)
+    return (1 / Δx**2) * tridiagonal_mpo(n, -2, 1, 1, closed, strategy)
 
 
 _filtered_differences = {

@@ -1,40 +1,19 @@
 from __future__ import annotations
 import numpy as np
+from typing import TypeVar
+from ..typing import Vector
 from ..operators import MPO, MPOList, MPOSum
 
 
 # TODO: This might not be the place to have this function
 # It should be under operators or in qft.
-def mpo_flip(operator):
+_Operator = TypeVar("_Operator", MPOSum, MPO, MPOList)
+
+
+def mpo_flip(operator: _Operator) -> _Operator:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform."""
-    if isinstance(operator, MPO):
-        return MPO(
-            [np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0]) for op in reversed(operator)],
-            strategy=operator.strategy,
-        )
-    elif isinstance(operator, MPOList):
-        return MPOList(
-            [
-                MPO(
-                    [
-                        np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0])
-                        for op in reversed(mpo)
-                    ],
-                    strategy=operator.strategy,
-                )
-                for mpo in operator.mpos
-            ],
-            strategy=operator.strategy,
-        )
-    elif isinstance(operator, MPOSum):
-        new_mpos = []
-        for weight, op in zip(operator.weights, operator.mpos):
-            new_mpos.append(weight * mpo_flip(op))
-        return MPOSum(
-            new_mpos,
-            strategy=operator.strategy,
-        )
+    return operator.reverse()
 
 
 class Space:
@@ -46,7 +25,7 @@ class Space:
     ----------
     qubits_per_dimension : list[int]
         Number of qubits for each dimension.
-    L : list[list[floats]]
+    L : list[list[float]]
         Position space intervals [a_i,b_i] for each dimension i.
     closed : bool
         If closed is True, the position space intervals are closed (symmetrically defined).
@@ -55,7 +34,25 @@ class Space:
             The order in which sites are organized. Default is "A" (sequential).
     """
 
-    def __init__(self, qubits_per_dimension, L, closed=True, order="A"):
+    qubits_per_dimension: list[int]
+    grid_dimensions: list[int]
+    closed: bool
+    n_sites: int
+    order: str  # TODO: Replace with Literal
+    sites: list[list[int]]
+    L: list[tuple[float, float]]
+    a: list[float]
+    b: list[float]
+    dx: Vector
+    x: list[Vector]
+
+    def __init__(
+        self,
+        qubits_per_dimension: list[int],
+        L: list[tuple[float, float]],
+        closed: bool = True,
+        order: str = "A",  # TODO: Replace with Literal
+    ):
         """
         Initializes the Space object.
 
@@ -90,7 +87,7 @@ class Space:
             for i, dim in enumerate(self.grid_dimensions)
         ]
 
-    def increase_resolution(self, new_qubits_per_dimension):
+    def increase_resolution(self, new_qubits_per_dimension: list[int]) -> Space:
         """
         Creates a new Space object with increased resolution based on the new qubits per dimension.
 
@@ -186,7 +183,7 @@ class Space:
                         index += 1
         return sites
 
-    def extend(self, op, dim):
+    def extend(self, op: _Operator, dim: int) -> _Operator:
         """
         Extends an MPO acting on a 1D space to a multi-dimensional MPS.
 
@@ -199,12 +196,12 @@ class Space:
 
         Returns
         -------
-        MPS
-            The extended multi-dimensional MPS.
+        MPO
+            The extended multi-dimensional MPO.
         """
         return op.extend(self.n_sites, self.sites[dim])
 
-    def enlarge_dimension(self, dim, amount) -> Space:
+    def enlarge_dimension(self, dim: int, amount: int) -> Space:
         """
         Enlarges the specified dimension by adding more qubits.
 
@@ -241,6 +238,4 @@ class Space:
         new_positions = self.sites.copy()
         for d, n in enumerate(space.qubits_per_dimension):
             new_positions[d] = new_positions[d][:n]
-        new_positions = sum(new_positions, [])
-        new_positions.sort()
-        return new_positions
+        return sorted(sum(new_positions, []))

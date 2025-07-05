@@ -1,13 +1,13 @@
 from __future__ import annotations
-import warnings
 from math import sqrt
 import numpy as np
+from collections.abc import Iterable
 from ..typing import VectorLike, Tensor3
 from .mps import MPS
 
 
 def product_state(
-    vectors: VectorLike | list[VectorLike], length: int | None = None
+    vectors: VectorLike | Iterable[VectorLike], length: int | None = None
 ) -> MPS:
     """Create a product state :class:`MPS`.
 
@@ -26,14 +26,16 @@ def product_state(
         The quantum state in matrix-product state form.
     """
 
-    def to_tensor(v) -> Tensor3:
+    def to_tensor(v: VectorLike | Iterable[VectorLike]) -> Tensor3:
         v = np.asarray(v)
+        assert v.ndim == 1
         return v.reshape(1, v.size, 1)
 
     if length is not None:
         return MPS([to_tensor(vectors)] * length)  # type: ignore
-    else:
-        return MPS([to_tensor(v) for v in vectors])  # type: ignore
+    elif isinstance(vectors, Iterable):
+        return MPS([to_tensor(v) for v in vectors])
+    raise Exception("Invalid argument to product_state")
 
 
 def GHZ(n: int) -> MPS:
@@ -212,15 +214,6 @@ def random_mps(
         else:
             mps[i] = T
     return MPS(mps)
-
-
-def random(*args, **kwdargs) -> MPS:
-    """Deprecated version of :func:`random_uniform_mps`."""
-    warnings.warn(
-        "seemps.state.random() is deprecated, use random_uniform_mps()",
-        category=DeprecationWarning,
-    )
-    return random_uniform_mps(*args, **kwdargs)
 
 
 def gaussian(n: int, x0: float, w0: float, k0: float) -> MPS:

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Literal
 from math import sqrt
 import numpy as np
+from numpy.typing import NDArray
 from scipy.fft import dct  # type: ignore
 
 from ..tools import make_logger
@@ -19,12 +20,12 @@ from .factories import mps_interval, mps_affine
 
 
 def interpolation_coefficients(
-    func: Callable,
+    func: Callable[[NDArray], NDArray],
     order: int | None = None,
     start: float = -1.0,
     stop: float = +1.0,
     domain: Interval | None = None,
-    interpolated_nodes: str = "zeros",
+    interpolated_nodes: Literal["zeros", "extrema"] = "zeros",
 ) -> np.polynomial.Chebyshev:
     """
     Returns the coefficients for the Chebyshev interpolation of a function on a given set
@@ -56,13 +57,16 @@ def interpolation_coefficients(
         order = estimate_order(func, start, stop, domain)
     if domain is not None:
         start, stop = domain.start, domain.stop
-    if interpolated_nodes == "zeros":
-        nodes = ChebyshevInterval(start, stop, order).to_vector()
-        coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)  # type: ignore
-    elif interpolated_nodes == "extrema":
-        nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
-        coefficients = 2 * dct(np.flip(func(nodes)), type=1, norm="forward")
-    coefficients[0] /= 2  # type: ignore
+    match interpolated_nodes:
+        case "zeros":
+            nodes: NDArray = ChebyshevInterval(start, stop, order).to_vector()
+            coefficients = (1 / order) * dct(np.flip(func(nodes)), type=2)
+        case "extrema":
+            nodes = ChebyshevInterval(start, stop, order, endpoints=True).to_vector()
+            coefficients = 2.0 * dct(np.flip(func(nodes)), type=1, norm="forward")
+        case _:
+            raise TypeError("interpolated_nodes is not one of zeros | extrema")
+    coefficients[0] /= 2
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
@@ -133,7 +137,7 @@ def estimate_order(
     order = initial_order
     while order <= max_order:
         c = projection_coefficients(func, order, start, stop).coef
-        max_c_in_pairs = np.maximum(abs(c[::2]), abs(c[1::2]))
+        max_c_in_pairs = np.maximum(np.abs(c[::2]), np.abs(c[1::2]))
         c_below_tolerance = np.where(max_c_in_pairs < tolerance)[0]
         if c_below_tolerance.size > 0 and c_below_tolerance[0] != 0:
             return 2 * c_below_tolerance[0] + 1
@@ -210,7 +214,7 @@ def cheb2mps(
     else:
         raise ValueError("Either a domain or an initial MPS must be provided.")
     if rescale:
-        orig = tuple(coefficients.linspace(2)[0])
+        orig = (coefficients.domain[0], coefficients.domain[1])
         initial_mps = mps_affine(initial_mps, orig, (-1, 1))
 
     c = coefficients.coef
@@ -318,7 +322,7 @@ def cheb2mpo(
         MPO representation of the polynomial expansion.
     """
     if rescale:
-        orig = tuple(coefficients.linspace(2)[0])
+        orig = (coefficients.domain[0], coefficients.domain[1])
         initial_mpo = mpo_affine(initial_mpo, orig, (-1, 1))
     c = coefficients.coef
     I = MPO([np.eye(2).reshape(1, 2, 2, 1)] * len(initial_mpo))

@@ -3,10 +3,17 @@ import math
 import warnings
 import numpy as np
 from math import sqrt
-from collections.abc import Sequence
-from typing import Iterable
+from collections.abc import Sequence, Iterable
 from ..tools import InvalidOperation
-from ..typing import Environment, Weight, Vector, VectorLike, Operator, Tensor3
+from ..typing import (
+    Environment,
+    Weight,
+    Vector,
+    VectorLike,
+    to_dense_operator,
+    Operator,
+    Tensor3,
+)
 from . import array
 from .core import DEFAULT_STRATEGY, Strategy
 from .schmidt import _vector2mps
@@ -101,7 +108,6 @@ class MPS(array.TensorArray):
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
         center: int = -1,
-        **kwdargs,
     ) -> MPS:
         """Create a matrix-product state from a state vector.
 
@@ -116,6 +122,8 @@ class MPS(array.TensorArray):
             Default truncation strategy for algorithms working on this state.
         normalize : bool, default = True
             Whether the state is normalized to compensate truncation errors.
+        center : int, default = -1
+            Center of the canonicalized matrix product state
 
         Returns
         -------
@@ -131,7 +139,6 @@ class MPS(array.TensorArray):
         state: np.ndarray,
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
-        **kwdargs,
     ) -> MPS:
         """Create a matrix-product state from a tensor that represents a
         composite quantum system.
@@ -252,7 +259,7 @@ class MPS(array.TensorArray):
         """
         ρL = self.left_environment(site)
         A = self[site]
-        OL = _update_left_environment(A, np.matmul(O, A), ρL)
+        OL = _update_left_environment(A, np.matmul(to_dense_operator(O), A), ρL)
         ρR = self.right_environment(site)
         return _join_environments(OL, ρR)
 
@@ -277,6 +284,8 @@ class MPS(array.TensorArray):
         float | complex
             Expectation value.
         """
+        Opi = to_dense_operator(Opi)
+        Opj = to_dense_operator(Opj)
         if j is None:
             j = i + 1
         elif j == i:
@@ -325,7 +334,7 @@ class MPS(array.TensorArray):
             A = self[i]
             ρR = allρR[i]
             op_i = operator[i] if isinstance(operator, list) else operator
-            OρL = _update_left_environment(A, np.matmul(op_i, A), ρL)
+            OρL = _update_left_environment(A, np.matmul(to_dense_operator(op_i), A), ρL)
             output[i] = _join_environments(OρL, ρR)
             ρL = _update_left_environment(A, A, ρL)
         return np.array(output)
@@ -404,7 +413,7 @@ class MPS(array.TensorArray):
         Examples
         --------
         >>> import seemps.state
-        >>> mps = seemps.state.random(2, 10)
+        >>> mps = seemps.state.random_uniform_mps(2, 10)
         >>> mps.physical_dimensions()
         [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         >>> mps = mps.extend(12, [0, 2, 4, 5, 6, 7, 8, 9, 10, 11], 3)

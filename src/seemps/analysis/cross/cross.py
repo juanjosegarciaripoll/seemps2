@@ -2,23 +2,22 @@ import numpy as np
 import scipy.linalg  # type: ignore
 import dataclasses
 import functools
-
 from copy import deepcopy
-
+from typing import TypeAlias
 from .black_box import BlackBox
 from ..sampling import evaluate_mps, random_mps_indices
 from ...state import MPS, random_mps
 from ...tools import Logger
-from ...typing import VectorLike
+from ...typing import VectorLike, Natural
 
 
 @dataclasses.dataclass
 class CrossStrategy:
-    maxiter: int = 100
+    maxiter: Natural = 100
     maxbond: int = 1000
     tol_sampling: float = 1e-10
     norm_sampling: float = np.inf
-    num_samples: int = 1000
+    num_samples: Natural = 1000
     tol_norm_2: float | None = None
     rng: np.random.Generator = dataclasses.field(
         default_factory=lambda: np.random.default_rng()
@@ -28,7 +27,7 @@ class CrossStrategy:
 
     Parameters
     ----------
-    maxiter : int, default=100
+    maxiter : int (> 0), default=100
         Maximum number of sweeps allowed.
     maxbond : int, default=1000
         Maximum MPS bond dimension allowed.
@@ -44,6 +43,15 @@ class CrossStrategy:
     rng : np.random.Generator, default=np.random.default_rng()
         Random number generator used to initialize the algorithm and sample the error.
     """
+
+    def __post_init__(self) -> None:
+        assert self.maxiter > 0
+        assert self.num_samples > 0
+
+
+IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
+IndexVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.integer]]
+IndexSlice: TypeAlias = np.intp | IndexVector | slice
 
 
 @dataclasses.dataclass
@@ -77,6 +85,17 @@ class CrossInterpolation:
     """Auxiliar base class for TCI used to keep track of the required
     interpolation information."""
 
+    black_box: BlackBox
+    sites: int
+    I_l: list  # TODO: More precise annotation
+    I_g: list
+    I_s: list[np.ndarray]
+    mps: MPS
+    previous_mps: MPS
+    previous_error: float
+    mps_indices: np.ndarray | None
+    func_samples: np.ndarray | None
+
     def __init__(
         self,
         black_box: BlackBox,
@@ -88,10 +107,10 @@ class CrossInterpolation:
         self.I_s = [np.arange(s).reshape(-1, 1) for s in black_box.physical_dimensions]
         # Placeholders
         self.mps = random_mps(black_box.physical_dimensions)
-        self.previous_mps: MPS = deepcopy(self.mps)
-        self.previous_error: float = np.inf
-        self.mps_indices: np.ndarray | None = None
-        self.func_samples: np.ndarray | None = None
+        self.previous_mps = deepcopy(self.mps)
+        self.previous_error = np.inf
+        self.mps_indices = None
+        self.func_samples = None
 
     def sample_fiber(self, k: int) -> np.ndarray:
         i_l, i_s, i_g = self.I_l[k], self.I_s[k], self.I_g[k]
@@ -115,9 +134,9 @@ class CrossInterpolation:
         if self.func_samples is None:
             self.func_samples = self.black_box[self.mps_indices].reshape(-1)
         mps_samples = evaluate_mps(self.mps, self.mps_indices)
-        error = np.linalg.norm(self.func_samples - mps_samples, ord=norm_error)  # type: ignore
+        error = np.linalg.norm(self.func_samples - mps_samples, ord=norm_error)
         prefactor = np.prod(self.func_samples.shape) ** (1 / norm_error)
-        return error / prefactor  # type: ignore
+        return float(error / prefactor)
 
     def norm_2_increment(self) -> float:
         norm_increment = (
@@ -171,7 +190,7 @@ class CrossInterpolation:
         return I_l, I_g
 
     @staticmethod
-    def combine_indices(*indices: np.ndarray) -> np.ndarray:
+    def combine_indices(*indices: IndexMatrix) -> IndexMatrix:
         """
         Computes the Cartesian product of a set of multi-indices arrays and arranges the
         result as concatenated indices in C order (column-major).
@@ -245,6 +264,7 @@ def maxvol_square(
     return I, B
 
 
+# WARNING: If this function is to be imported, do not use "_" in front.
 def _check_convergence(
     cross: CrossInterpolation,
     sweep: int,
@@ -262,7 +282,7 @@ def _check_convergence(
     if logger:
         logger(
             f"Cross sweep {1 + sweep:3d} with error({cross_strategy.num_samples} samples "
-            f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={evals}"
+            + f"in norm-{cross_strategy.norm_sampling})={error}, maxbond={maxbond}, evals(cumulative)={evals}"
         )
     if cross_strategy.tol_norm_2 is not None:
         norm_increment = cross.norm_2_increment()

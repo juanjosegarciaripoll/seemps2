@@ -1,10 +1,15 @@
 from __future__ import annotations
 import numpy as np
 from ..typing import Vector, Operator
+from ..state import Strategy, DEFAULT_STRATEGY
 from ..mpo import MPOList, MPO
 
 
-def qubo_mpo(J: Operator | None = None, h: Vector | None = None, **kwdargs) -> MPO:
+def qubo_mpo(
+    J: Operator | None = None,
+    h: Vector | None = None,
+    strategy: Strategy = DEFAULT_STRATEGY,
+) -> MPO:
     """Return the MPO associated to a QUBO operator.
 
     The operator is defined according to the mathematical notation
@@ -18,7 +23,7 @@ def qubo_mpo(J: Operator | None = None, h: Vector | None = None, **kwdargs) -> M
         Matrix of Ising coupling between qubits (Default value = None)
     h : Vector | None :
         Vector of local magnetic fields (Default value = None)
-    **kwdargs :
+    strategy : Strategy, default = DEFAULT_STRATEGY
         Other arguments accepted by :class:`MPO`
 
     Returns
@@ -30,7 +35,7 @@ def qubo_mpo(J: Operator | None = None, h: Vector | None = None, **kwdargs) -> M
         #
         # Just magnetic field. A much simpler operator
         if h is None:
-            raise Exception("In QUBO_MPO, must provide either J or h")
+            raise Exception("Must provide either J or h")
         #
         data = []
         id2 = np.eye(2)
@@ -40,8 +45,7 @@ def qubo_mpo(J: Operator | None = None, h: Vector | None = None, **kwdargs) -> M
             A[1, :, :, 1] = id2
             A[0, :, :, 0] = id2
             data.append(A)
-        A = A[:, :, :, [1]]
-        data[-1] = A
+        data[-1] = data[-1][:, :, :, [1]]
         data[0] = data[0][[0], :, :, :]
     else:
         Jmatrix = np.asarray(J)
@@ -62,14 +66,14 @@ def qubo_mpo(J: Operator | None = None, h: Vector | None = None, **kwdargs) -> M
             data.append(A)
         data[-1] = data[-1][:, :, :, [1]]
         data[0] = data[0][[0], :, :, :]
-    return MPO(data, **kwdargs)
+    return MPO(data, strategy)
 
 
 def qubo_exponential_mpo(
     J: Operator | None = None,
     h: Vector | None = None,
     beta: float = -1.0,
-    **kwdargs,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO | MPOList:
     """Return the MPO associated to the exponential $\\exp(\\beta H)$ of
     a QUBO operator.
@@ -100,7 +104,7 @@ def qubo_exponential_mpo(
         #
         # Just magnetic field. A much simpler operator
         if h is None:
-            raise Exception("In QUBO_MPO, must provide either J or h")
+            raise Exception("Must provide either J or h")
         #
         data = []
         for i, hi in enumerate(h):
@@ -108,13 +112,13 @@ def qubo_exponential_mpo(
             A[0, 1, 1, 1] = np.exp(beta * hi)
             A[0, 0, 0, 0] = 1.0
             data.append(A)
-        return MPO(data, **kwdargs)
+        return MPO(data, strategy)
     else:
         Jmatrix = np.asarray(J)
         if h is not None:
             Jmatrix += np.diag(h)
         Jmatrix = (Jmatrix + Jmatrix.T) / 2
-        L = len(J)
+        L = len(Jmatrix)
         noop = np.eye(2).reshape(1, 2, 2, 1)
         out = []
         for i in range(L):
@@ -130,5 +134,5 @@ def qubo_exponential_mpo(
                 A[0, 1, 1, 0] = 1.0
                 data.append(A)
             data[-1] = A[:, :, :, [0]] + A[:, :, :, [1]]
-            out.append(MPO(data, **kwdargs))
+            out.append(MPO(data, strategy))
         return MPOList(out)

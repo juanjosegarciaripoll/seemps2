@@ -1,21 +1,23 @@
-import math
+from math import sqrt, log, ceil
 import numpy as np
 from scipy.special import loggamma  # type: ignore
-
-from typing import Iterator
-
+from typing import cast
+from collections.abc import Iterator
 from ..operators import MPO
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..register.transforms import mpo_weighted_shifts
+from ..typing import FloatOrArray
 
 
-def auto_sigma(M, dx, time=0.0, lower_bound: float | None = None) -> float:
+def auto_sigma(
+    M: int, dx: float, time: float = 0.0, lower_bound: float | None = None
+) -> float:
     if lower_bound is None:
         lower_bound = 3 * dx
 
-    s0 = hdaf_kernel(0, dx=dx, s0=1.0, M=M)  # type: ignore
+    s0: float = hdaf_kernel(0, dx=dx, s0=1.0, M=M)
 
-    return max(lower_bound, math.sqrt(time), s0)  # type:ignore
+    return max(lower_bound, sqrt(time), s0)
 
 
 def _asymptotic_factor(M: int, l: int, c: float) -> float:
@@ -37,14 +39,14 @@ def width_bound(s0: float, M: int, l: int, time: float, eps: float = 1e-16) -> f
     abs_st = (s0**4 + time**2) ** 0.25
 
     A = 0.5 / (s0**2 + (time / s0) ** 2)
-    B = -math.sqrt(M + l) / abs_st
+    B = -sqrt(M + l) / abs_st
 
     chi = _asymptotic_factor(M, l, c=0.5 * (s0 / abs_st) ** 2)
-    chi /= math.sqrt(2 * np.pi) * abs_st ** (l + 1)
+    chi /= sqrt(2 * np.pi) * abs_st ** (l + 1)
 
-    C = math.log(eps / chi)
+    C = log(eps / chi)
 
-    return 0.5 * (-B + math.sqrt(B**2 - 4 * A * C)) / A
+    return 0.5 * (-B + sqrt(B**2 - 4 * A * C)) / A
 
 
 def _hnl(
@@ -81,13 +83,13 @@ def _hnl(
 
 
 def hdaf_kernel(
-    x: np.ndarray,
+    x: FloatOrArray,
     dx: float,
     s0: float,
     M: int,
     time: float = 0.0,
     derivative: int = 0,
-) -> np.ndarray:
+) -> FloatOrArray:
     if time == 0:  # Spread under the free propagator
         st = s0
     else:
@@ -99,9 +101,7 @@ def hdaf_kernel(
     const /= np.sqrt(2 * np.pi) * st * (-1 * np.sqrt(2) * st) ** derivative
     gen = _hnl(y, c=-((0.5 * s0 / st) ** 2), l=derivative, d=const)
 
-    S = sum(next(gen) for _ in range(int(M) // 2 + 1))
-
-    return S  # type: ignore
+    return cast(FloatOrArray, sum(next(gen) for _ in range(int(M) // 2 + 1)))
 
 
 def hdaf_mpo(
@@ -155,9 +155,7 @@ def hdaf_mpo(
     tol = strategy.get_simplification_tolerance()
 
     # Make kernel vector
-    num_elems = math.ceil(
-        width_bound(s0=s0, M=M, l=derivative, time=time, eps=tol) / dx
-    )
+    num_elems = ceil(width_bound(s0=s0, M=M, l=derivative, time=time, eps=tol) / dx)
     num_elems = min(num_elems, 2 ** (num_qubits - 1))
     pos_half = dx * np.arange(num_elems)
     hdaf_vec_pos = hdaf_kernel(pos_half, dx, s0, M, time, derivative)

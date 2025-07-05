@@ -1,7 +1,8 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
-from typing import Iterable
+from collections.abc import Iterable, Sequence
+from typing import cast
 from ..tools import InvalidOperation
 from ..typing import Weight, Vector, Tensor3
 from .environments import scprod
@@ -55,9 +56,9 @@ class MPSSum:
                     raise ValueError(s)
             self.size = new_states[0].size
         else:
-            self.weights = weights  # type: ignore
-            self.states = states  # type: ignore
-            self.size = states[0].size  # type: ignore
+            self.weights = list(weights)
+            self.states = cast(list[MPS], list(states))
+            self.size = self.states[0].size
 
     def as_mps(self) -> MPS:
         return self.join()
@@ -110,7 +111,7 @@ class MPSSum:
 
     def to_vector(self) -> Vector:
         """Return the wavefunction of this quantum state."""
-        return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore
+        return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore # pyright: ignore[reportReturnType]
 
     def _joined_tensors(self, i: int, L: int) -> Tensor3:
         """Join the tensors from all MPS into bigger tensors."""
@@ -122,7 +123,7 @@ class MPSSum:
 
         DL: int = 0
         DR: int = 0
-        d: int
+        d: int = 0
         w: Weight = 0
         for A in As:
             a, d, b = A.shape
@@ -151,7 +152,7 @@ class MPSSum:
         L = self.size
         return MPS([self._joined_tensors(i, L) for i in range(L)])
 
-    def join_canonical(self, *args, **kwdargs) -> CanonicalMPS:
+    def join_canonical(self, *args, **kwdargs) -> CanonicalMPS:  # pyright: ignore[reportMissingParameterType]
         """Similar to join() but return canonical form"""
         return CanonicalMPS(self.join(), *args, **kwdargs)
 
@@ -212,6 +213,29 @@ class MPSSum:
                 self.states = final_states
         return abs(c)
 
+    # TODO: We have to change the signature and working of this function, so that
+    # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
+    # needed. In this case, 'dimensions' will only list the dimensions of the added
+    # sites, not all of them.
+    def extend(
+        self,
+        L: int,
+        sites: Sequence[int] | None = None,
+        dimensions: int | list[int] = 2,
+        state: Vector | None = None,
+    ) -> MPSSum:
+        return MPSSum(
+            self.weights,
+            [A.extend(L, sites, dimensions, state) for A in self.states],
+            check_args=False,
+        )
+
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402
+
+
+def to_mps(mps_or_sum: MPS | MPSSum) -> MPS:
+    if isinstance(mps_or_sum, MPSSum):
+        return mps_or_sum.join()
+    return mps_or_sum

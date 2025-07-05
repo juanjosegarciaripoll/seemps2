@@ -15,18 +15,38 @@ class BlackBox(ABC):
     These objects are fundamental for the efficient implementation of TCI algorithms.
     """
 
+    func: Callable
     base: int
     sites: int
     dimension: int
-    physical_dimensions: list
     sites_per_dimension: list
+    physical_dimensions: list
+    evals: int
+    allowed_indices: None | list[int]
 
-    def __init__(self, func: Callable):
+    def __init__(
+        self,
+        func: Callable,
+        base: int = 1,
+        sites_per_dimension: list[int] = [],
+        physical_dimensions: list[int] = [],
+        allowed_indices: None | list[int] = None,
+    ):
         self.func = func
+        self.base = base
+        self.sites = sum(sites_per_dimension)
+        self.dimension = len(sites_per_dimension)
+        self.sites_per_dimension = sites_per_dimension
+        self.physical_dimensions = physical_dimensions
+        assert self.sites == len(physical_dimensions)
         self.evals = 0
+        self.allowed_indices = allowed_indices
 
     @abstractmethod
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray: ...
+
+    def record_evaluations(self, n: int = 1) -> None:
+        self.evals += n
 
 
 class BlackBoxLoadMPS(BlackBox):
@@ -70,6 +90,10 @@ class BlackBoxLoadMPS(BlackBox):
         mps = cross_results.mps
     """
 
+    mesh: Mesh
+    mps_order: str  # TODO: Make this a Literal[] type with fixed alternatives
+    map_matrix: np.ndarray
+
     def __init__(
         self,
         func: Callable,
@@ -77,27 +101,29 @@ class BlackBoxLoadMPS(BlackBox):
         base: int = 2,
         mps_order: str = "A",
     ):
-        super().__init__(func)
-        self.mesh = Mesh([domain]) if not isinstance(domain, Mesh) else domain
-        self.base = base
+        mesh = Mesh([domain]) if not isinstance(domain, Mesh) else domain
+        sites_per_dimension = [
+            int(np.lib.scimath.logn(base, s)) for s in mesh.dimensions
+        ]
+        super().__init__(
+            func,
+            base=base,
+            sites_per_dimension=sites_per_dimension,
+            physical_dimensions=[base] * sum(sites_per_dimension),
+        )
+        self.mesh = mesh
         self.mps_order = mps_order
 
-        self.sites_per_dimension = [
-            int(np.emath.logn(base, s)) for s in self.mesh.dimensions
-        ]
         if not all(
             base**n == N for n, N in zip(self.sites_per_dimension, self.mesh.dimensions)
         ):
             raise ValueError(f"The mesh cannot be quantized with base {base}")
-        self.sites = sum(self.sites_per_dimension)
-        self.dimension = len(self.sites_per_dimension)
-        self.physical_dimensions = [self.base] * self.sites
         self.map_matrix = mps_to_mesh_matrix(
             self.sites_per_dimension, self.mps_order, self.base
         )
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         # Transpose because of opposite conventions for mesh (dimension index last)
         # and cross (dimension index first).
         return self.func(self.mesh[mps_indices @ self.map_matrix].T)  # type: ignore
@@ -139,21 +165,23 @@ class BlackBoxLoadTT(BlackBox):
         tensor_train = cross_results.mps
     """
 
+    mesh: Mesh
+
     def __init__(
         self,
         func: Callable,
         mesh: Mesh,
     ):
-        super().__init__(func)
+        super().__init__(
+            func,
+            base=np.inf,  # type: ignore # pyright: ignore[reportArgumentType] # TODO: Fix this hack
+            sites_per_dimension=[1] * len(mesh.dimensions),
+            physical_dimensions=[interval.size for interval in mesh.intervals],
+        )
         self.mesh = mesh
-        self.base = np.inf  # type: ignore
-        self.sites_per_dimension = [1 for _ in self.mesh.dimensions]
-        self.sites = sum(self.sites_per_dimension)
-        self.dimension = len(self.sites_per_dimension)
-        self.physical_dimensions = [interval.size for interval in self.mesh.intervals]
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         return self.func(self.mesh[mps_indices].T)  # type: ignore
 
 
@@ -201,6 +229,11 @@ class BlackBoxLoadMPO(BlackBox):
         mpo = mps_as_mpo(cross_results.mps) # Unfold into a MPO.
     """
 
+    mesh: Mesh
+    base_mpo: int
+    is_diagonal: bool
+    map_matrix: np.ndarray
+
     # TODO: Generalize for multivariate MPOs.
     def __init__(
         self,
@@ -209,32 +242,33 @@ class BlackBoxLoadMPO(BlackBox):
         base_mpo: int = 2,
         is_diagonal: bool = False,
     ):
-        super().__init__(func)
+        base = base_mpo * base_mpo
+        sites = int(np.lib.scimath.logn(base_mpo, mesh.dimensions[0]))
+        if not (mesh.dimension == 2 and mesh.dimensions[0] == mesh.dimensions[1]):
+            raise ValueError("The mesh must be bivariate for a 1d MPO")
+        if not base_mpo**sites == mesh.dimensions[0]:
+            raise ValueError(f"The mesh cannot be quantized with base {base_mpo}")
+
+        super().__init__(
+            func,
+            base=base,
+            sites_per_dimension=[sites],
+            physical_dimensions=[base] * sites,
+            # If the MPO is diagonal, restrict the allowed indices for
+            # random sampling to the main diagonal.
+            allowed_indices=(
+                [s * base_mpo + s for s in range(base_mpo)] if is_diagonal else None
+            ),
+        )
         self.mesh = mesh
         self.base_mpo = base_mpo
         self.is_diagonal = is_diagonal
-
-        if not (mesh.dimension == 2 and mesh.dimensions[0] == mesh.dimensions[1]):
-            raise ValueError("The mesh must be bivariate for a 1d MPO")
-        self.sites = int(np.emath.logn(self.base_mpo, mesh.dimensions[0]))
-        if not self.base_mpo**self.sites == mesh.dimensions[0]:
-            raise ValueError(f"The mesh cannot be quantized with base {self.base_mpo}")
-
-        self.base = base_mpo**2
-        self.dimension = 1
-        self.physical_dimensions = [self.base] * self.sites
-        self.sites_per_dimension = [self.sites]
         self.map_matrix = mps_to_mesh_matrix(
             self.sites_per_dimension, base=self.base_mpo
         )
 
-        # If the MPO is diagonal, restrict the allowed indices for random sampling to the main diagonal.
-        self.allowed_indices = (
-            [s * base_mpo + s for s in range(base_mpo)] if self.is_diagonal else None
-        )
-
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         row_indices = (mps_indices // self.base_mpo) @ self.map_matrix
         col_indices = (mps_indices % self.base_mpo) @ self.map_matrix
         mesh_indices = np.hstack((row_indices, col_indices))
@@ -278,22 +312,24 @@ class BlackBoxComposeMPS(BlackBox):
         mps = cross_results.mps
     """
 
-    def __init__(self, func: Callable, mps_list: list[MPS]):
-        super().__init__(func)
+    mps_list: list[MPS]
 
-        self.physical_dimensions = mps_list[0].physical_dimensions()
+    def __init__(self, func: Callable, mps_list: list[MPS]):
+        physical_dimensions = mps_list[0].physical_dimensions()
         for mps in mps_list:
-            if mps.physical_dimensions() != self.physical_dimensions:
+            if mps.physical_dimensions() != physical_dimensions:
                 raise ValueError("All MPS must have the same physical dimensions.")
 
-        self.base = self.physical_dimensions[0]  # Assume constant
+        super().__init__(
+            func,
+            base=physical_dimensions[0],  # Assumes constant
+            sites_per_dimension=[len(physical_dimensions)],
+            physical_dimensions=physical_dimensions,
+        )
         self.mps_list = mps_list
-        self.sites = len(self.physical_dimensions)
-        self.dimension = 1
-        self.sites_per_dimension = [self.sites]
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.evals += len(mps_indices)
+        self.record_evaluations(len(mps_indices))
         mps_values = []
         for mps in self.mps_list:
             mps_values.append(evaluate_mps(mps, mps_indices))

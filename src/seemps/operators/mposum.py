@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import warnings
 from collections.abc import Sequence
-from ..typing import Weight, Operator, Tensor4
+from ..typing import Weight, DenseOperator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from .mpo import MPO, MPOList
 from .. import truncate
@@ -24,6 +24,7 @@ class MPOSum(object):
     mpos: list[MPO | MPOList]
     weights: list[Weight]
     size: int
+    strategy: Strategy
 
     __array_priority__: int = 10000
 
@@ -108,19 +109,21 @@ class MPOSum(object):
         output.mpos = [A.T for A in output.mpos]
         return output
 
-    def tomatrix(self) -> Operator:
+    def tomatrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO."""
         warnings.warn("MPOSum.tomatrix() has been renamed to to_matrix()")
         return self.to_matrix()
 
-    def to_matrix(self) -> Operator:
+    def to_matrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO."""
-        A = self.weights[0] * self.mpos[0].to_matrix()
+        A: DenseOperator = self.weights[0] * self.mpos[0].to_matrix()
         for i, mpo in enumerate(self.mpos[1:]):
             A = A + self.weights[i + 1] * mpo.to_matrix()
         return A
 
-    def set_strategy(self, strategy, strategy_components=None) -> MPOSum:
+    def set_strategy(
+        self, strategy: Strategy, strategy_components: Strategy | None = None
+    ) -> MPOSum:
         """Return MPOSum with the given strategy."""
         if strategy_components is not None:
             mpos = [mpo.set_strategy(strategy_components) for mpo in self.mpos]
@@ -154,7 +157,12 @@ class MPOSum(object):
         a Matrix Product State 'b'."""
         return self.apply(b)
 
-    def extend(self, L, sites=None, dimensions=2) -> MPOSum:
+    def extend(
+        self,
+        L: int,
+        sites: list[int] | None = None,
+        dimensions: int | list[int] = 2,
+    ) -> MPOSum:
         """Enlarge an MPOSum so that it acts on a larger Hilbert space with 'L' sites.
 
         Parameters
@@ -191,7 +199,7 @@ class MPOSum(object):
 
         DL: int = 0
         DR: int = 0
-        d: int
+        d: int = 0
         w: Weight = 0
         for A in As:
             a, d, d, b = A.shape
@@ -247,3 +255,6 @@ class MPOSum(object):
             is the matrix-product operator.
         """
         return sum([m.expectation(bra, ket) for m in self.mpos])
+
+    def reverse(self) -> MPOSum:
+        return MPOSum([o.reverse() for o in self.mpos], self.weights, self.strategy)

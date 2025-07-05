@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod, ABC
-from ..typing import Unitary
-import scipy.linalg  # type: ignore
+from ..typing import Unitary, to_dense_operator
+import scipy.linalg
 from ..hamiltonians import NNHamiltonian  # type: ignore
 from ..state import Strategy, DEFAULT_STRATEGY, MPS, CanonicalMPS
 from ..state._contractions import _contract_nrjl_ijk_klm
@@ -26,10 +26,11 @@ class PairwiseUnitaries:
     """
 
     U: list[Unitary]
+    strategy: Strategy
 
     def __init__(self, H: NNHamiltonian, dt: float, strategy: Strategy):
         self.U = [
-            scipy.linalg.expm((-1j * dt) * H.interaction_term(k))
+            scipy.linalg.expm(to_dense_operator((-1j * dt) * H.interaction_term(k)))
             for k in range(H.size - 1)
         ]
         self.strategy = strategy

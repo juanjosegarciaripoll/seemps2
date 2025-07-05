@@ -18,34 +18,54 @@ from .descent import OptimizeResults
 from numpy import tensordot
 
 
-def _dmrg_contractor(L, H12, R, v):
-    """This sequence comes from
-    a = opt_einsum.contract_path(
-        "acb,cikjld,edf,bklf->aije",
-        ArrayShaped((100, 120, 100)),
-        ArrayShaped((120, 2, 2, 2, 2, 120)),
-        ArrayShaped((100, 120, 100)),
-        ArrayShaped((100, 2, 2, 100)),
-    )
-    print(a)
+class DMRGMatrixOperator(scipy.sparse.linalg.LinearOperator):
+    L: np.ndarray
+    R: np.ndarray
+    H12: np.ndarray
+    v_shape: tuple[int, int, int, int]
 
-                 Naive scaling:  10
-         Optimized scaling:  8
-          Naive FLOP count:  9.216e+13
-      Optimized FLOP count:  6.528e+9
-       Theoretical speedup:  1.412e+4
-      Largest intermediate:  4.800e+6 elements
-    --------------------------------------------------------------------------------
-    scaling        BLAS                current                             remaining
-    --------------------------------------------------------------------------------
-       6           GEMM        bklf,acb->klfac                cikjld,edf,klfac->aije
-       8           TDOT    klfac,cikjld->faijd                       edf,faijd->aije
-       6           TDOT        faijd,edf->aije                            aije->aije)
-    ([(0, 3), (0, 2), (0, 1)],   Complete contraction:  abc,cijkld,def,bklf->aije
-    """
-    aux = tensordot(v, L, ((0,), (2,)))
-    aux = tensordot(aux, H12, ((0, 1, 4), (2, 4, 0)))
-    return tensordot(aux, R, ((0, 4), (2, 1))).reshape(-1)
+    def __init__(self, L: np.ndarray, H12: np.ndarray, R: np.ndarray):
+        _, _, k, _, l, _ = H12.shape
+        _, _, b = L.shape
+        _, _, f = R.shape
+        self.L = L
+        self.R = R
+        self.H12 = H12
+        self.v_shape = (b, k, l, f)
+        super().__init__(
+            shape=(b * k * l * f, b * k * l * f),
+            dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
+        )
+
+    def _matvec(self, v: np.ndarray) -> np.ndarray:
+        """This sequence comes from
+        a = opt_einsum.contract_path(
+            "acb,cikjld,edf,bklf->aije",
+            ArrayShaped((100, 120, 100)),
+            ArrayShaped((120, 2, 2, 2, 2, 120)),
+            ArrayShaped((100, 120, 100)),
+            ArrayShaped((100, 2, 2, 100)),
+        )
+        print(a)
+
+                    Naive scaling:  10
+            Optimized scaling:  8
+            Naive FLOP count:  9.216e+13
+        Optimized FLOP count:  6.528e+9
+        Theoretical speedup:  1.412e+4
+        Largest intermediate:  4.800e+6 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+        6           GEMM        bklf,acb->klfac                cikjld,edf,klfac->aije
+        8           TDOT    klfac,cikjld->faijd                       edf,faijd->aije
+        6           TDOT        faijd,edf->aije                            aije->aije)
+        ([(0, 3), (0, 2), (0, 1)],   Complete contraction:  abc,cijkld,def,bklf->aije
+        """
+        v = v.reshape(self.v_shape)
+        aux = tensordot(v, self.L, ((0,), (2,)))
+        aux = tensordot(aux, self.H12, ((0, 1, 4), (2, 4, 0)))
+        return tensordot(aux, self.R, ((0, 4), (2, 1))).reshape(-1)
 
 
 class QuadraticForm:
@@ -82,19 +102,12 @@ class QuadraticForm:
         self.right_env = right_env
         self.site = start
 
-    def two_site_Hamiltonian(self, i: int) -> scipy.sparse.linalg.LinearOperator:
+    def two_site_Hamiltonian(self, i: int) -> DMRGMatrixOperator:
         assert i == self.site
-        L = self.left_env[i]
-        R = self.right_env[i + 1]
-        H12 = _contract_last_and_first(self.H[i], self.H[i + 1])
-        c, i, k, j, l, d = H12.shape
-        a, c, b = L.shape
-        e, d, f = R.shape
-
-        return scipy.sparse.linalg.LinearOperator(
-            shape=(b * k * l * f, b * k * l * f),
-            matvec=lambda v: _dmrg_contractor(L, H12, R, v.reshape(b, k, l, f)),
-            dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
+        return DMRGMatrixOperator(
+            self.left_env[i],
+            _contract_last_and_first(self.H[i], self.H[i + 1]),
+            self.right_env[i + 1],
         )
 
     def diagonalize(self, i: int, tol: float) -> tuple[float, Tensor4]:
@@ -173,6 +186,8 @@ def dmrg(
     >>> H = HeisenbergHamiltonian(10)
     >>> result = dmrg(H)
     """
+    if maxiter < 1:
+        raise Exception("maxiter cannot be zero or negative")
     if isinstance(H, NNHamiltonian):
         H = H.to_mpo()
     if guess is None:
@@ -208,6 +223,7 @@ def dmrg(
     E: float = np.inf
     last_E: float = E
     strategy = strategy.replace(normalize=True)
+    step: int = 0
     for step in range(maxiter):
         if direction > 0:
             for i in range(0, H.size - 1):
@@ -247,8 +263,7 @@ def dmrg(
         direction = -direction
         last_E = E
     logger(
-        f"DMRG finished with {step} iterations:\n"
-        f"message = {results.message}\nconverged = {results.converged}"
+        f"DMRG finished with {step + 1} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
     )
     logger.close()
     return results
