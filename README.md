@@ -1,4 +1,4 @@
-# SeeMPS 2.3
+# SeeMPS
 
 ## Introduction
 
@@ -37,9 +37,12 @@ The library is developed in a mixture of Python 3 and Cython, with the support
 of Numpy, Scipy and h5py. Installation instructions are provided in
 [the documentation](https://juanjosegarciaripoll.github.io/seemps2).
 
-Version: 2.1
-
 Authors:
 
 * Juan José García Ripoll (Institute of Fundamental Physics)
 * Paula García Molina (Institute of Fundmental Physics)
+* Juan José Rodríguez Aldavero (Institute of Fundamental Physics)
+
+Contributors:
+
+* Jorge Gidi
