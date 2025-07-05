@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Callable, Any
 import numpy as np
+import warnings
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
 from ..tools import make_logger
@@ -135,7 +136,9 @@ class MPSArnoldiRepresentation:
         w = np.zeros(len(self.V))
         w[0] = 1.0
         NinvH = scipy.linalg.inv(self.N) @ self.H
-        u = scipy.sparse.linalg.expm_multiply(factor * NinvH, w)
+        # TODO: Remove this type annotation once scipy-stubs fixes
+        # issue https://github.com/scipy/scipy-stubs/issues/705
+        u = scipy.sparse.linalg.expm_multiply(factor * NinvH, w)  # type: ignore # pyright: ignore[reportCallIssue, reportArgumentType]
         return simplify(MPSSum(u, self.V), strategy=self.strategy)
 
     def build_Krylov_basis(self, v: MPS, order: int) -> bool:
@@ -198,6 +201,12 @@ def arnoldi_eigh(
     OptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.
     """
+    if nvectors < 2:
+        warnings.warn("Setting nvectors at to the minimum of 2.")
+        nvectors = 2
+    if maxiter < nvectors:
+        warnings.warn("Setting maxiter at least equal to the number of vectors")
+        maxiter = nvectors
     if guess is None:
         guess = random_mps(operator.dimensions(), D=2)
     if tol_up is None:
@@ -221,6 +230,7 @@ def arnoldi_eigh(
     if callback is not None:
         callback(arnoldi.eigenvector(), results)
     last_energy = energy
+    step: int = 0
     for step in range(maxiter):
         v, success = arnoldi.add_vector(operator @ v)
         if not success and nvectors == 2:
@@ -244,7 +254,7 @@ def arnoldi_eigh(
                     results.message = f"Eigenvalue change {energy_change} fluctuates up above tolerance {tol_up}"
                     results.converged = True
                     break
-                print(f"Upwards energy fluctuation ignored {energy_change:5g}")
+                logger(f"Upwards energy fluctuation ignored {energy_change:5g}")
                 upward_moves -= 1
             if -abs(tol * energy) <= energy_change <= 0:
                 results.message = (
@@ -254,7 +264,7 @@ def arnoldi_eigh(
                 break
             last_energy = energy
     logger(
-        f"Arnoldi finished with {step} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
+        f"Arnoldi finished with {step + 1} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
     )
     logger.close()
     return results
