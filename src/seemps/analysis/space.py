@@ -13,33 +13,7 @@ _Operator = TypeVar("_Operator", MPOSum, MPO, MPOList)
 def mpo_flip(operator: _Operator) -> _Operator:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform."""
-    if isinstance(operator, MPO):
-        return MPO(
-            [np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0]) for op in reversed(operator)],
-            strategy=operator.strategy,
-        )
-    if isinstance(operator, MPOSum):
-        new_mpos: list[MPO | MPOList] = []
-        for weight, op in zip(operator.weights, operator.mpos):
-            new_mpos.append(weight * mpo_flip(op))
-        # TODO: Investigate why we need type: ignore here
-        # The types should be compatible with the TypeVar
-        return MPOSum(new_mpos, operator.weights, operator.strategy)  # type: ignore # pyright: ignore[reportReturnType]
-    if isinstance(operator, MPOList):
-        return MPOList(
-            [
-                MPO(
-                    [
-                        np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0])
-                        for op in reversed(mpo)
-                    ],
-                    strategy=operator.strategy,
-                )
-                for mpo in operator.mpos
-            ],
-            strategy=operator.strategy,
-        )
-    raise Exception("Unknown operator type")
+    return operator.reverse()
 
 
 class Space:
@@ -264,6 +238,4 @@ class Space:
         new_positions = self.sites.copy()
         for d, n in enumerate(space.qubits_per_dimension):
             new_positions[d] = new_positions[d][:n]
-        new_positions = sum(new_positions, [])
-        new_positions.sort()
-        return new_positions
+        return sorted(sum(new_positions, []))

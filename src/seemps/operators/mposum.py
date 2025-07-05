@@ -116,7 +116,7 @@ class MPOSum(object):
 
     def to_matrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO."""
-        A = self.weights[0] * self.mpos[0].to_matrix()
+        A: DenseOperator = self.weights[0] * self.mpos[0].to_matrix()
         for i, mpo in enumerate(self.mpos[1:]):
             A = A + self.weights[i + 1] * mpo.to_matrix()
         return A
@@ -255,3 +255,6 @@ class MPOSum(object):
             is the matrix-product operator.
         """
         return sum([m.expectation(bra, ket) for m in self.mpos])
+
+    def reverse(self) -> MPOSum:
+        return MPOSum([o.reverse() for o in self.mpos], self.weights, self.strategy)

@@ -335,6 +335,15 @@ class MPO(TensorArray):
             right = update_right_mpo_environment(right, bra[i].conj(), self[i], ket[i])
         return join_mpo_environments(left, right)
 
+    def reverse(self) -> MPO:
+        return MPO(
+            [
+                np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0])
+                for op in reversed(self._data)
+            ],
+            self.strategy,
+        )
+
 
 class MPOList(object):
     """Sequence of matrix-product operators.
@@ -579,6 +588,9 @@ class MPOList(object):
         if ket is None:
             ket = bra
         return scprod(bra, self.apply(ket))  # type: ignore
+
+    def reverse(self) -> MPOList:
+        return MPOList([o.reverse() for o in self.mpos], self.strategy)
 
 
 from .. import truncate  # noqa: E402
