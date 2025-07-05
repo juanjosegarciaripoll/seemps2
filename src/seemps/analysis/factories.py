@@ -171,10 +171,11 @@ def mps_affine(
     new_mps = a * mps
     if abs(b) > np.finfo(np.float64).eps:
         I = MPS([np.ones((1, 2, 1))] * new_mps.size)
-        new_mps = new_mps + b * I
+        displaced_mps = new_mps + b * I
         # Preserve the input type
         if isinstance(mps, MPS):
-            return new_mps.join()
+            return displaced_mps.join()
+        return displaced_mps
     return cast(_State, new_mps)
 
 
