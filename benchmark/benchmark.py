@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Callable, Tuple, List, Iterable, Any
+from collections.abc import Iterable
+from typing import Callable, Any
 import json
 import time
 import gc
@@ -15,8 +16,8 @@ class BenchmarkItem:
     """
 
     name: str
-    sizes: List[int]
-    times: List[float]
+    sizes: list[int]
+    times: list[float]
 
     def tojson(self):
         return {
@@ -26,7 +27,7 @@ class BenchmarkItem:
         }
 
     @classmethod
-    def fromjson(cls, data):
+    def fromjson(cls, data: dict):
         return BenchmarkItem(
             name=data["name"], sizes=data["sizes"], times=data["times"]
         )
@@ -71,19 +72,23 @@ class BenchmarkItem:
         name: str,
         function: Callable,
         setup: Callable[[int], tuple] | None = None,
-        sizes: List[int] | None = None,
+        sizes: list[int] | None = None,
         limit: float = 0.2,
     ):
         if sizes is None:
             sizes = [2**i for i in range(1, 7)]
         times = []
+
+        def run_function() -> None:
+            function(*args)
+
         for s in sizes:
             args: Iterable[Any]
             if setup is None:
                 args = []
             else:
                 args = setup(s)
-            timing = BenchmarkItem.autorange(lambda: function(*args), limit)
+            timing = BenchmarkItem.autorange(run_function, limit)
             times.append(timing)
             print(f"Executing item {name} at size {s} took {timing:5g} seconds")
         return BenchmarkItem(name=name, sizes=sizes, times=times)
@@ -92,10 +97,10 @@ class BenchmarkItem:
 @dataclass
 class BenchmarkGroup:
     name: str
-    items: List[BenchmarkItem]
+    items: list[BenchmarkItem]
 
     @staticmethod
-    def run(name: str, items: List[Tuple[str, Callable, Callable]]) -> "BenchmarkGroup":
+    def run(name: str, items: list[tuple[str, Callable, Callable]]) -> "BenchmarkGroup":
         print("-" * 50)
         print(f"Executing group {name}")
         return BenchmarkGroup(
@@ -121,7 +126,7 @@ class BenchmarkGroup:
         }
 
     @classmethod
-    def fromjson(cls, data):
+    def fromjson(cls, data: dict):
         name = data["name"]
         items = [BenchmarkItem.fromjson(item) for item in data["items"]]
         return BenchmarkGroup(name=name, items=items)
@@ -130,7 +135,7 @@ class BenchmarkGroup:
 @dataclass
 class BenchmarkSet:
     name: str
-    groups: List[BenchmarkGroup]
+    groups: list[BenchmarkGroup]
     environment: str
 
     def write(self, filename: str | None = None):
@@ -159,7 +164,7 @@ class BenchmarkSet:
         return group
 
     @classmethod
-    def fromjson(cls, data) -> "BenchmarkSet":
+    def fromjson(cls, data: dict) -> "BenchmarkSet":
         return BenchmarkSet(
             name=data["name"],
             environment=data["environment"],
@@ -172,7 +177,7 @@ class BenchmarkSet:
             return BenchmarkSet.fromjson(json.load(f))
 
     @staticmethod
-    def find_all_pairs(benchmarks: List["BenchmarkSet"]) -> List[Tuple[str, str]]:
+    def find_all_pairs(benchmarks: list["BenchmarkSet"]) -> list[tuple[str, str]]:
         output = set()
         for b in benchmarks:
             for g in b.groups:
@@ -183,11 +188,11 @@ class BenchmarkSet:
 
 @dataclass
 class BenchmarkItemAggregate:
-    columns: List[str]
-    sizes: List[int]
+    columns: list[str]
+    sizes: list[int]
     times: np.ndarray = field(default_factory=lambda: np.zeros((0, 0)))
 
-    def __init__(self, benchmarks: List[BenchmarkSet], group_name: str, item_name: str):
+    def __init__(self, benchmarks: list[BenchmarkSet], group_name: str, item_name: str):
         if not benchmarks:
             return
         items = []
