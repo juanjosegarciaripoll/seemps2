@@ -25,23 +25,8 @@ jobs:
       - name: Install the project
         run: uv sync --all-extras --dev
 
-      - name: Run unit tests
-        run: uv run scripts/make.py --tests
-
-      - name: Check types with mypy
-        run: uv run scripts/make.py --mypy
-
-      - name: Check types with pyright
-        run: uv run scripts/make.py --pyright
-
-      - name: Lint with ruff
-        run: uv run scripts/make.py --ruff
-
-      - name: Check docstrings with pydocstyle
-        run: uv run scripts/make.py --pydocstyle
-
-      - name: Check docstring consistency with darglint
-        run: uv run scripts/make.py --darglint
+      - name: Run unit tests and checks
+        run: uv run scripts/make.py --check
 
   build:
     needs: test
