@@ -214,7 +214,7 @@ def cheb2mps(
     else:
         raise ValueError("Either a domain or an initial MPS must be provided.")
     if rescale:
-        orig = tuple(coefficients.linspace(2)[0])
+        orig = (coefficients.domain[0], coefficients.domain[1])
         initial_mps = mps_affine(initial_mps, orig, (-1, 1))
 
     c = coefficients.coef
@@ -322,7 +322,7 @@ def cheb2mpo(
         MPO representation of the polynomial expansion.
     """
     if rescale:
-        orig = tuple(coefficients.linspace(2)[0])
+        orig = (coefficients.domain[0], coefficients.domain[1])
         initial_mpo = mpo_affine(initial_mpo, orig, (-1, 1))
     c = coefficients.coef
     I = MPO([np.eye(2).reshape(1, 2, 2, 1)] * len(initial_mpo))
