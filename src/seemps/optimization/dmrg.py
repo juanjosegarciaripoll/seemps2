@@ -19,6 +19,11 @@ from numpy import tensordot
 
 
 class DMRGMatrixOperator(scipy.sparse.linalg.LinearOperator):
+    L: np.ndarray
+    R: np.ndarray
+    H12: np.ndarray
+    v_shape: tuple[int, int, int, int]
+
     def __init__(self, L: np.ndarray, H12: np.ndarray, R: np.ndarray):
         _, _, k, _, l, _ = H12.shape
         _, _, b = L.shape
@@ -181,6 +186,8 @@ def dmrg(
     >>> H = HeisenbergHamiltonian(10)
     >>> result = dmrg(H)
     """
+    if maxiter < 1:
+        raise Exception("maxiter cannot be zero or negative")
     if isinstance(H, NNHamiltonian):
         H = H.to_mpo()
     if guess is None:
@@ -216,6 +223,7 @@ def dmrg(
     E: float = np.inf
     last_E: float = E
     strategy = strategy.replace(normalize=True)
+    step: int = 0
     for step in range(maxiter):
         if direction > 0:
             for i in range(0, H.size - 1):
@@ -255,7 +263,7 @@ def dmrg(
         direction = -direction
         last_E = E
     logger(
-        f"DMRG finished with {step} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
+        f"DMRG finished with {step + 1} iterations:\nmessage = {results.message}\nconverged = {results.converged}"
     )
     logger.close()
     return results
