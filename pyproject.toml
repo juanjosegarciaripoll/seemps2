@@ -62,13 +62,11 @@ ignore_missing_imports = true
 [dependency-groups]
 dev = [
     "numpy",
-    "mypy",
+    "mypy>1.16",
     "ruff>=0.9.3",
-    "basedpyright",
+    "basedpyright>1.29",
     "opt_einsum", # To test contractions
-    "matplotlib", # For the examples
     "optype[numpy]", # For typing tensors
-    "ipykernel",
     "scipy-stubs",
 ]
 
@@ -114,4 +112,4 @@ reportUnknownArgumentType = false
 reportUnusedFunction=false
 
 [tool.mypy]
-ignore_missing_imports = True
+ignore_missing_imports = true
