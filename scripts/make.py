@@ -156,6 +156,7 @@ parser.add_argument("--check", action="store_true", help="Run tests")
 parser.add_argument("--verbose", action="store_true", help="Verbose mode")
 parser.add_argument("--tests", action="store_true", help="Run unit tests")
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
+parser.add_argument("--ruff", action="store_true", help="Run ruff")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
 
 args = parser.parse_args()
@@ -206,3 +207,6 @@ else:
     if args.mypy:
         if not mypy():
             raise Exception("mypy failed")
+    if args.ruff:
+        if not ruff():
+            raise Exception("ruff failed")
