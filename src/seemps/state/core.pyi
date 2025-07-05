@@ -1,8 +1,8 @@
-from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
+from enum import Enum
 import numpy as np
+from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
 
 MAX_BOND_DIMENSION: int
-from enum import Enum
 
 class Truncation(Enum):
     DO_NOT_TRUNCATE = 0
