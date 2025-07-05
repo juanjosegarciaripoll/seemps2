@@ -1,1 +1,3 @@
-number = "2.3"
+from importlib.metadata import version
+
+number = version("seemps")
