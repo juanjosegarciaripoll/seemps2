@@ -116,8 +116,23 @@ def basedpyright() -> bool:
     return run(uv_run + ["basedpyright", "src/seemps"])
 
 
+def pydocstyle() -> bool:
+    return run(uv_run + ["ruff", "check", "--select", "D", "src/seemps"])
+
+
+def darglint() -> bool:
+    return run(uv_run + ["darglint", "src/seemps"])
+
+
 def check(verbose: bool = False) -> bool:
-    return run_tests() and mypy() and ruff() and basedpyright()
+    return (
+        run_tests()
+        and mypy()
+        and ruff()
+        and basedpyright()
+        and pydocstyle()
+        and darglint()
+    )
 
 
 def build() -> bool:
@@ -158,6 +173,8 @@ parser.add_argument("--tests", action="store_true", help="Run unit tests")
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
 parser.add_argument("--ruff", action="store_true", help="Run ruff")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
+parser.add_argument("--pydocstyle", action="store_true", help="Run pydocstyle")
+parser.add_argument("--darglint", action="store_true", help="Run darglint")
 
 args = parser.parse_args()
 
@@ -210,3 +227,9 @@ else:
     if args.ruff:
         if not ruff():
             raise Exception("ruff failed")
+    if args.pydocstyle:
+        if not pydocstyle():
+            raise Exception("pydocstyle failed")
+    if args.darglint:
+        if not darglint():
+            raise Exception("darglint failed")
