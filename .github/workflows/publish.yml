@@ -56,7 +56,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: test-pypi
+      name: testpypi
       url: https://test.pypi.org/p/seemps
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
