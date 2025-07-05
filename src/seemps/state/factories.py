@@ -1,10 +1,7 @@
 from __future__ import annotations
-from warnings import deprecated
-import warnings
 from math import sqrt
 import numpy as np
 from collections.abc import Iterable
-from typing import Any
 from ..typing import VectorLike, Tensor3
 from .mps import MPS
 
