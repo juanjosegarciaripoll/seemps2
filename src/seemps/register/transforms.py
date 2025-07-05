@@ -1,7 +1,8 @@
 from __future__ import annotations
 import numpy as np
-from typing import Iterable
-from ..typing import VectorLike
+from collections.abc import Iterable
+from ..typing import VectorLike, Tensor4
+from ..state import Strategy, DEFAULT_STRATEGY
 from ..mpo import MPO
 
 
@@ -80,7 +81,7 @@ def mpo_shifts(
         r = np.arange(shifts[0], shifts[1], dtype=int)
     else:
         r = np.asarray(shifts, dtype=int)
-    tensors = []
+    tensors: list[Tensor4] = []
     bits = np.arange(base).reshape(base, 1)
     for i in reversed(range(L)):
         #
@@ -103,6 +104,7 @@ def mpo_shifts(
         A[newr_matrix, news_matrix, bits, np.arange(r.size)] = 1.0
         tensors.append(A)
         r = newr
+    A = tensors[-1]
     if periodic:
         tensors[-1] = np.sum(A, 0).reshape((1,) + A.shape[1:])
     else:
@@ -115,7 +117,10 @@ def mpo_shifts(
 
 
 def twoscomplement(
-    L: int, control: int = 0, sites: Iterable[int] | None = None, **kwdargs
+    L: int,
+    control: int = 0,
+    sites: Iterable[int] | None = None,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
     """Return an MPO that performs a two's complement of the selected qubits
     depending on a 'control' qubit in a register with L qubits.
@@ -154,7 +159,7 @@ def twoscomplement(
     if sites is not None:
         sites = sorted(sites)
         out = twoscomplement(
-            len(sites), control=sites.index(control), sites=None, **kwdargs
+            len(sites), control=sites.index(control), sites=None, strategy=strategy
         )
         return out.extend(L, sites=sites)
     else:
@@ -171,4 +176,4 @@ def twoscomplement(
         data[0] = A[[0], :, :, :] + A[[1], :, :, :]
         A = data[-1]
         data[-1] = A[:, :, :, [0]] + A[:, :, :, [1]]
-        return MPO(data, **kwdargs)
+        return MPO(data, strategy)
