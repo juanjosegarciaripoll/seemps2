@@ -43,7 +43,7 @@ jobs:
         run: uv sync --dev
 
       - name: Build package
-        run: uv build
+        run: uv build --sdist
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
