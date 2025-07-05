@@ -112,3 +112,6 @@ reportPrivateLocalImportUsage = false
 reportUnknownArgumentType = false
 # TODO: Remove this to detect _check_convergence and other unused functions
 reportUnusedFunction=false
+
+[tool.mypy]
+ignore_missing_imports = True
