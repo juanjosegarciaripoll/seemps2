@@ -11,9 +11,7 @@ jobs:
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
-		  python-version: "3.12"
-          # Install a specific version of uv.
-          version: "0.7.16"
+          python-version: "3.11"
 
       - name: Install the project
         run: uv sync --all-extras --dev
@@ -24,7 +22,7 @@ jobs:
       - name: Check types with mypy
         run: uv run scripts/make.py --mypy
 
-      - name: Check types with basedpyright
+      - name: Check types with pyright
         run: uv run scripts/make.py --pyright
 
       - name: Lint with ruff
