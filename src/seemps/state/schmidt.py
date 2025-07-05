@@ -57,7 +57,7 @@ def _vector2mps(
         center = L + center
     if center < 0 or center >= L:
         raise Exception("Invalid value of center in _vector2mps")
-    err = 0.0
+    err: float = 0.0
     for i in range(center):
         output[i], ψ, new_err = _left_orth_2site(
             ψ.reshape(ψ.shape[0], dimensions[i], -1, ψ.shape[-1]), strategy
@@ -69,9 +69,9 @@ def _vector2mps(
         )
         err += new_err
     if normalize:
-        N: float = np.linalg.norm(ψ.reshape(-1))  # type: ignore
+        N = np.linalg.norm(ψ.reshape(-1))
         ψ /= N
-        err /= N
+        err /= float(N)
     output[center] = ψ
     return output, err
 
