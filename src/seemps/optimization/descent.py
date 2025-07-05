@@ -1,10 +1,18 @@
 from __future__ import annotations
 from typing import Callable, Any
-import scipy.linalg  # type: ignore
+import scipy.linalg
 import dataclasses
 import numpy as np
 from ..tools import make_logger
-from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Simplification, Strategy, scprod
+from ..state import (
+    DEFAULT_STRATEGY,
+    MPS,
+    MPSSum,
+    Simplification,
+    Strategy,
+    scprod,
+    to_mps,
+)
 from ..truncate.simplify import simplify
 from ..mpo import MPO, MPOList, MPOSum
 
@@ -67,9 +75,8 @@ def gradient_descent(
         If energy fluctuates up below this tolerance, continue the optimization.
     tol_variance : float
         Energy variance target (defaults to 1e-14).
-    strategy : Strategy | None
-        Linear combination of MPS truncation strategy. Defaults to
-        DESCENT_STRATEGY.
+    strategy : Strategy, default = DESCENT_STRATEGY
+        Linear combination of MPS truncation strategy.
     callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
@@ -107,7 +114,10 @@ def gradient_descent(
 
             """
             E = H.expectation(state).real
-            H_state = H.apply(state)  # type: ignore
+            # TODO: We need a more powerful function that acts on MPO's
+            # MPOList's and MPOSum's and returns an object that, when
+            # applied onto an MPS always returns an MPS.
+            H_state = to_mps(H.apply(state))
             avg_H2 = scprod(H_state, H_state).real
             variance = avg_H2 - scprod(state, H_state).real ** 2
             if callback is not None:

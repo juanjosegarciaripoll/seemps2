@@ -233,3 +233,9 @@ class MPSSum:
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402
+
+
+def to_mps(mps_or_sum: MPS | MPSSum) -> MPS:
+    if isinstance(mps_or_sum, MPSSum):
+        return mps_or_sum.join()
+    return mps_or_sum

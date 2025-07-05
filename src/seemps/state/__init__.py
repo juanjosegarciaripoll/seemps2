@@ -9,7 +9,7 @@ from .core import (
 )
 from .array import TensorArray
 from .mps import MPS
-from .mpssum import MPSSum
+from .mpssum import MPSSum, to_mps
 from .canonical_mps import CanonicalMPS
 from .factories import (
     AKLT,
@@ -47,6 +47,7 @@ __all__ = [
     "random_mps",
     "random_uniform_mps",
     "spin_wave",
+    "to_mps",
     "W",
     "scprod",
 ]
