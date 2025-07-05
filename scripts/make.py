@@ -87,7 +87,7 @@ def clean() -> None:
         if os.path.exists(path):
             print(f"Removing {path}")
             shutil.rmtree(path)
-    delete_directories(["SeeMPS.egg-info", "__pycache__"])
+    delete_directories(["seemps.egg-info", "__pycache__"])
     delete_files([r".*\.so", r".*\.pyd", r".*\.pyc"])
 
 

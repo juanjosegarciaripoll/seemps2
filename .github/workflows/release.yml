@@ -1,0 +1,78 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 2.3.2)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the project
+        run: uv sync --all-extras --dev
+
+      - name: Update version in pyproject.toml
+        run: |
+          sed -i 's/version = "[^"]*"/version = "${{ inputs.version }}"/' pyproject.toml
+
+      - name: Run tests before release
+        run: uv run scripts/make.py --check
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add pyproject.toml
+          git commit -m "Bump version to ${{ inputs.version }}" || exit 0
+
+      - name: Create Git tag
+        run: |
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+          git push origin main
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "v${{ inputs.version }}"
+          release_name: "seemps v${{ inputs.version }}"
+          body: |
+            ## Changes in v${{ inputs.version }}
+
+            <!-- Add release notes here -->
+
+            ## Installation
+
+            ```bash
+            pip install seemps==${{ inputs.version }}
+            ```
+
+            ## What's Changed
+            * See commit history for detailed changes
+
+            **Full Changelog**: https://github.com/juanjosegarciaripoll/seemps2/compare/v${{ inputs.version }}...HEAD
+          draft: false
+          prerelease: ${{ inputs.prerelease }}
