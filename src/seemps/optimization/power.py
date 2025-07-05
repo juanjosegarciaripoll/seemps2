@@ -87,7 +87,7 @@ def power_method(
     logger(f"power_method() invoked with {maxiter} iterations")
     total_steps = 0
 
-    def cgs_callback(state, residual):
+    def cgs_callback(state: MPS, residual: float) -> None:
         nonlocal total_steps
         total_steps += 1
 
