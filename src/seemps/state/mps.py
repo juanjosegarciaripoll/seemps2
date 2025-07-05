@@ -413,7 +413,7 @@ class MPS(array.TensorArray):
         Examples
         --------
         >>> import seemps.state
-        >>> mps = seemps.state.random(2, 10)
+        >>> mps = seemps.state.random_uniform_mps(2, 10)
         >>> mps.physical_dimensions()
         [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
         >>> mps = mps.extend(12, [0, 2, 4, 5, 6, 7, 8, 9, 10, 11], 3)
