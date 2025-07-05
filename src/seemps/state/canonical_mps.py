@@ -1,8 +1,7 @@
 from __future__ import annotations
 import warnings
 import numpy as np
-from collections.abc import Sequence
-from typing import Iterable
+from collections.abc import Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
 from .schmidt import (
     _vector2mps,
@@ -51,6 +50,8 @@ class CanonicalMPS(MPS):
     """
 
     center: int
+    strategy: Strategy
+    _error: float  # inherited, but Pyright wants us to confirm the type
 
     #
     # This class contains all the matrices and vectors that form
@@ -63,9 +64,9 @@ class CanonicalMPS(MPS):
         normalize: bool | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
         is_canonical: bool = False,
-        **kwdargs,
+        error: float = 0,
     ):
-        super().__init__(data, **kwdargs)
+        super().__init__(data, error)
         actual_center: int
         self.strategy = strategy
         if isinstance(data, CanonicalMPS):
@@ -98,7 +99,6 @@ class CanonicalMPS(MPS):
         strategy: Strategy = DEFAULT_STRATEGY,
         normalize: bool = True,
         center: int = 0,
-        **kwdargs,
     ) -> CanonicalMPS:
         """Create an MPS in canonical form starting from a state vector.
 
@@ -144,8 +144,9 @@ class CanonicalMPS(MPS):
 
     def norm_squared(self) -> float:
         """Norm-2 squared :math:`\\Vert{\\psi}\\Vert^2` of this MPS."""
-        A = self._data[self.center]
-        return np.vdot(A, A).real
+        A: np.ndarray = self._data[self.center]
+        # TODO: Find out why NumPy thinks np.vdot is of type bool
+        return np.vdot(A, A).real  # pyright: ignore[reportReturnType]
 
     def left_environment(self, site: int) -> Environment:
         """Optimized version of :py:meth:`~seemps.state.MPS.left_environment`"""
@@ -358,7 +359,7 @@ class CanonicalMPS(MPS):
     def __copy__(self):
         """Return a shallow copy of the CanonicalMPS, preserving the tensors."""
         return type(self)(
-            self, center=self.center, strategy=self.strategy, error=self.error
+            self, center=self.center, strategy=self.strategy, error=self._error
         )
 
     def copy(self):
