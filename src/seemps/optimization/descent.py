@@ -44,11 +44,10 @@ class OptimizeResults:
 def gradient_descent(
     H: MPO | MPOList | MPOSum,
     guess: MPS | MPSSum,
-    maxiter=1000,
+    maxiter: int = 1000,
     tol: float = 1e-13,
-    k_mean=10,
-    tol_variance: float = 1e-14,
     tol_up: float | None = None,
+    tol_variance: float = 1e-14,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Callable[[MPS, OptimizeResults], Any] | None = None,
 ) -> OptimizeResults:
@@ -71,7 +70,7 @@ def gradient_descent(
     strategy : Strategy | None
         Linear combination of MPS truncation strategy. Defaults to
         DESCENT_STRATEGY.
-    callback : Callable[[MPS, OptimizeResults],Any] | None
+    callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
     Results
@@ -79,6 +78,8 @@ def gradient_descent(
     OptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.
     """
+    if maxiter < 1:
+        raise Exception("maxiter cannot be zero or negative")
     if tol_up is None:
         tol_up = tol
     normalization_strategy = strategy.replace(normalize=True)
