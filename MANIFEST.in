@@ -1,0 +1,33 @@
+# Include essential project files
+include LICENSE
+include README.md
+include pyproject.toml
+
+# Include documentation
+recursive-include docs *
+
+# Include Python source files (should be automatic but explicit is better)
+recursive-include src *.py
+recursive-include src *.pyi
+
+# Include Cython source files for compilation
+recursive-include src *.pyx
+recursive-include src *.pxd  
+recursive-include src *.pxi
+
+# Include tests
+recursive-include tests *.py
+
+# Exclude build artifacts and compiled files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *~
+global-exclude *.so
+global-exclude *.pyd
+global-exclude build/*
+global-exclude dist/*
+global-exclude *.egg-info/*
+
+# Exclude compiled C files from source distribution
+# (Let users compile from .pyx instead)
+global-exclude *.c
