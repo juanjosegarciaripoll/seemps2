@@ -40,7 +40,8 @@ indent-width = 4
 
 [tool.ruff.lint]
 # Checks to ignore or add
-ignore = ["E741"]
+ignore = ["E741", "D103", "D100", "D104"]
+# select = ["D"]  # Enable pydocstyle checks
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -61,7 +62,8 @@ dev = [
     "mypy>1.16",
     "ruff>=0.9.3",
     "basedpyright>1.29",
-    "opt_einsum", # To test contractions
+    "darglint",      # Docstring-signature consistency
+    "opt_einsum",    # To test contractions
     "optype[numpy]", # For typing tensors
     "scipy-stubs",
 ]
@@ -107,6 +109,24 @@ reportUnknownArgumentType = false
 # TODO: Remove this to detect _check_convergence and other unused functions
 reportUnusedFunction=false
 
+[tool.pydocstyle]
+convention = "numpy"
+add-ignore = [
+    "D100",  # Missing docstring in public module
+    "D104",  # Missing docstring in public package
+    "D105",  # Missing docstring in magic method
+    "D107",  # Missing docstring in __init__
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
 [tool.mypy]
 warn_incomplete_stub = false
 ignore_missing_imports = true
+
+[tool.docformatter]
+recursive = true
+wrap-summaries = 88
+wrap-descriptions = 88
+blank = true
