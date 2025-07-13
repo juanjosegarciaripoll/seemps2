@@ -24,8 +24,6 @@ from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
 from .tools_analysis import reorder_tensor
 from ..tools import TestCase
 
-seemps.tools.DEBUG = 10
-
 
 def integration_callback(mps_quadrature: MPS):
     """
