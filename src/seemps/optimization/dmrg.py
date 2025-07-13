@@ -45,6 +45,7 @@ class DMRGMatrixOperator(scipy.sparse.linalg.LinearOperator):
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
         )
 
+    # TODO: implement _rmatvec() so that we can use bicg() in solve()
     def _matvec(self, v: np.ndarray) -> np.ndarray:
         """This sequence comes from
         a = opt_einsum.contract_path(
@@ -126,6 +127,17 @@ class QuadraticForm:
             Op, 1, which="SA", v0=v.reshape(-1), tol=tol
         )
         return eval[0], evec.reshape(v.shape)
+
+    def solve(
+        self, i: int, b: Tensor4, atol: float = 0, rtol: float = 1e-5
+    ) -> tuple[Tensor4, int, float]:
+        Op = self.two_site_Hamiltonian(i)
+        v = _contract_last_and_first(self.state[i], self.state[i + 1])
+        x, info = scipy.sparse.linalg.cg(
+            Op, b.reshape(-1), v.reshape(-1), atol=atol, rtol=rtol
+        )
+        res = np.linalg.norm(Op @ x - b.reshape(-1))
+        return x.reshape(v.shape), info, float(res)
 
     def update_2site_right(self, AB: Tensor4, i: int, strategy: Strategy) -> None:
         self.state.update_2site_right(AB, i, strategy)
@@ -282,7 +294,8 @@ def dmrg_solve(
     b: MPS,
     guess: MPS | None = None,
     maxiter: int = 20,
-    tol: float = DEFAULT_TOLERANCE,
+    atol: float = 0,
+    rtol: float = 1e-5,
     strategy: Strategy = DEFAULT_STRATEGY,
 ) -> tuple[MPS, float]:
     r"""Solve an inverse problem :math:`A x = b` for an MPO `A` and an MPS `b` using DMRG.
@@ -303,8 +316,10 @@ def dmrg_solve(
     maxiter : int, default = 20
         Maximum number of steps of the DMRG. Each step is a sweep that runs
         over every pair of neighborin sites. Defaults to 20.
-    tol : float, default = DEFAULT_TOLERANCE
-        Tolerance in the energy to detect convergence of the algorithm.
+    atol, rtol : float
+        Absolute and relative tolerance for the convergence of the algorithm.
+        `norm(A@x - b) <= max(rtol * norm(b), atol)`. Defaults are
+        `rtol=1e-5` and `atol=0`
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy to keep bond dimensions in check. Defaults to
         `DEFAULT_STRATEGY`, which is very strict.
@@ -320,9 +335,9 @@ def dmrg_solve(
         raise Exception("maxiter cannot be zero or negative")
     if guess is None:
         guess = b.copy()
-
+    tol = max(atol, rtol * b.norm())
     logger = make_logger()
-    logger(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
+    logger(f"DMRG solver initiated with maxiter={maxiter}, absolute tolerance={tol}")
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
     if guess.center == 0:
@@ -341,26 +356,29 @@ def dmrg_solve(
         if step:
             if direction > 0:
                 for i in range(0, A.size - 1):
-                    projA = QF.two_site_Hamiltonian(i)
-                    projb = LF.tensor2site(+1)
-                    AB, info = scipy.sparse.linalg.bicg(projA, projb)
+                    AB, info, local_residual = QF.solve(
+                        i, LF.tensor2site(+1), atol, rtol
+                    )
                     QF.update_2site_right(AB, i, strategy)
                     LF.update_right()
-                    local_residual = np.linalg.norm(projA @ AB - projb)
-                    logger(f"-> site={i}, error={local_residual}, bicg result={info}")
+                    logger(
+                        f"-> site={i}, error={local_residual}, converged={info == 0}"
+                    )
                     if info:
-                        message = "Local optimization with bicg() did not converge"
+                        message = "Local optimization with gmres() did not converge"
             else:
                 for i in range(A.size - 2, -1, -1):
-                    projA = QF.two_site_Hamiltonian(i)
-                    projb = LF.tensor2site(-1)
-                    AB, info = scipy.sparse.linalg.bicg(projA, projb)
+                    AB, info, local_residual = QF.solve(
+                        i, LF.tensor2site(-1), atol, rtol
+                    )
                     QF.update_2site_left(AB, i, strategy)
                     LF.update_left()
-                    local_residual = np.linalg.norm(projA @ AB - projb)
-                    logger(f"-> site={i}, error={local_residual}, bicg result={info}")
+                    logger(
+                        f"-> site={i}, error={local_residual}, converged={info == 0}"
+                    )
                     if info:
-                        message = "Local optimization with bicg() did not converge"
+                        message = "Local optimization with gmres() did not converge"
+            direction = -direction
 
         # In principle, E is the exact eigenvalue. However, we have
         # truncated the eigenvector, which means that the computation of
@@ -370,7 +388,6 @@ def dmrg_solve(
         if residual < tol:
             message = f"Algorithm converged below tolerance {tol}"
             break
-        direction = -direction
     logger(f"DMRG finished with {step + 1} iterations:\nmessage = {message}")
     logger.close()
     return QF.state, abs(residual)
