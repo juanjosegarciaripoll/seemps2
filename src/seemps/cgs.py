@@ -11,6 +11,7 @@ from .state import (
 from .operators import MPO, MPOList, MPOSum
 from .truncate import simplify
 from .tools import make_logger
+from . import tools
 
 
 # TODO: Write tests for this
@@ -19,15 +20,16 @@ def cgs(
     b: MPS | MPSSum,
     guess: MPS | None = None,
     maxiter: int = 100,
-    strategy: Strategy = DEFAULT_STRATEGY,
     tolerance: float = DEFAULT_TOLERANCE,
+    strategy: Strategy = DEFAULT_STRATEGY,
     callback: Callable[[MPS, float], Any] | None = None,
 ) -> tuple[CanonicalMPS, float]:
     """Approximate solution of :math:`A \\psi = b`.
 
     Given the :class:`MPO` `A` and the :class:`MPS` `b`, use the conjugate
     gradient method to estimate another MPS that solves the linear system of
-    equations :math:`A \\psi = b`.
+    equations :math:`A \\psi = b`. Convergence is determined by the
+    residual :math:`\\Vert{A \\psi - b}\\Vert` being smaller than `tol`.
 
     Parameters
     ----------
@@ -37,39 +39,39 @@ def cgs(
         Right-hand side of the equation
     maxiter : int, default = 100
         Maximum number of iterations
+    tol : float, default = DEFAULT_TOLERANCE
+        Error tolerance for the algorithm.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPS and MPO operations
-    tolerance : float, default = DEFAULT_TOLERANCE
-        Error tolerance for the algorithm.
 
     Results
     -------
     MPS
         Approximate solution to :math:`A ψ = b`
     float
-        Norm square of the residual :math:`\\Vert{A \\psi - b}\\Vert^2`
+        Norm-2 of the residual :math:`\\Vert{A \\psi - b}\\Vert`
     """
-    normb2 = b.norm_squared()
+    normb = b.norm()
     if strategy.get_normalize_flag():
         strategy = strategy.replace(normalize=False)
     x = simplify(b if guess is None else guess, strategy=strategy)
     r = b - A @ x
     p = simplify(r, strategy=strategy)
-    ρ = r.norm_squared()
+    residual = r.norm()
     with make_logger(2) as logger:
-        logger(f"CGS algorithm for {maxiter} iterations")
+        logger(f"CGS algorithm for {maxiter} iterations", flush=True)
         for i in range(maxiter):
-            α = ρ / A.expectation(p).real
-            x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
-            r = b - A @ x
-            ρ, ρold = r.norm_squared(), ρ
-            if callback is not None:
-                callback(x, ρ)
-            if ρ < tolerance * normb2:
+            if residual < tolerance * normb:
                 logger(
-                    f"CGS converged with residual {ρ} below relative tolerance {tolerance}"
+                    f"CGS converged with residual {residual} below relative tolerance {tolerance}"
                 )
                 break
-            p = simplify(MPSSum([1.0, ρ / ρold], [r, p]), strategy=strategy)
-            logger(f"CGS step {i:5}: |r|^2={ρ:5g} tol={tolerance:5g}")
-    return x, abs(ρ)
+            α = residual / A.expectation(p).real
+            x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
+            r = b - A @ x
+            residual, ρold = r.norm(), residual
+            if callback is not None:
+                callback(x, residual)
+            p = simplify(MPSSum([1.0, residual / ρold], [r, p]), strategy=strategy)
+            logger(f"CGS step {i:5}: |r|^2={residual:5g} tol={tolerance:5g}")
+    return x, abs(residual)
