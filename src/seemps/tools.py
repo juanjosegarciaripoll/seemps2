@@ -87,7 +87,7 @@ def make_logger(level: int = 1) -> Logger:
     `active` that determines whether logging is working. It also has a `__call__`
     method that allows invoking the object with the information to log, working
     as if it were a `print` statement."""
-    if level <= DEBUG:
+    if level > DEBUG:
         return NO_LOGGER
     return VerboseLogger(level)
 
