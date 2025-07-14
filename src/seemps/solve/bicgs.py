@@ -68,7 +68,7 @@ def bicgs_solve(
         for i in range(1, maxiter + 1):
             print(f"BICGS step {i}: rho = {norm_r}")
             v = simplify(A @ p, strategy)
-            alpha = rho / A.expectation(r0, p)
+            alpha = rho * rho / A.expectation(r0, p)
             h = simplify(x + alpha * p, strategy)
             s = simplify(r - alpha * v, strategy)
             residual = s.norm()
@@ -88,7 +88,7 @@ def bicgs_solve(
                 )
                 break
             rho_new = scprod(r0, r)
-            beta = (rho_new / rho) * (alpha / w)
+            beta = (rho_new / (rho * rho)) * (alpha / w)
             rho = abs(rho_new)
             p = simplify(r + beta * p - (beta * w) * v, strategy)
 

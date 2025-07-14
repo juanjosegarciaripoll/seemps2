@@ -64,7 +64,7 @@ def cgs_solve(
                     f"CGS converged with residual {residual} below relative tolerance {tolerance}"
                 )
                 break
-            α = residual / A.expectation(p).real
+            α = residual * residual / A.expectation(p).real
             x = simplify(MPSSum([1, α], [x, p]), strategy=strategy)
             r = b - A @ x
             residual, ρold = r.norm(), residual
