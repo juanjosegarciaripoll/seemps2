@@ -1,14 +1,14 @@
 import numpy as np
-from .problems import DMRG_PROBLEMS
+from .problems import CGS_PROBLEMS
 from .. import tools
-from seemps.solve.dmrg import dmrg_solve
+from seemps.solve import bicgs_solve
 
 
-class TestDMRGSolve(tools.TestCase):
+class TestBICGS(tools.TestCase):
     def test_basic_problems(self):
-        for p in DMRG_PROBLEMS:
+        for p in CGS_PROBLEMS:
             with self.subTest(msg=p.name):
-                x, r = dmrg_solve(
+                x, r = bicgs_solve(
                     p.invertible_mpo,
                     p.get_rhs(),
                     guess=p.get_rhs(),

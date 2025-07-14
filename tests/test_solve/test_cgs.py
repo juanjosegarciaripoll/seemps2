@@ -1,15 +1,14 @@
 import numpy as np
 from .problems import CGS_PROBLEMS
 from .. import tools
-from seemps.cgs import cgs
+from seemps.solve import cgs_solve
 
 
 class TestCGS(tools.TestCase):
     def test_basic_problems(self):
         for p in CGS_PROBLEMS:
-            print(f"Running {p.name}", flush=True)
             with self.subTest(msg=p.name):
-                x, r = cgs(
+                x, r = cgs_solve(
                     p.invertible_mpo,
                     p.get_rhs(),
                     guess=p.get_rhs(),
