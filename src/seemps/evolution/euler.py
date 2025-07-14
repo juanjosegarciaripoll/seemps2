@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable
 import numpy as np
 from ..analysis.operators import id_mpo
-from ..cgs import cgs
+from ..solve import cgs_solve
 from ..operators import MPO, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..truncate import simplify
@@ -221,7 +221,8 @@ def implicit_euler(
             idt = factor * (t - last_t)
             A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt]).join(strategy=strategy)
             B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt]).join(strategy=strategy)
-            state, _ = cgs(
+            # TODO: Fixed tolerance criteria
+            state, _ = cgs_solve(
                 A, B @ state, strategy=normalize_strategy, tolerance=tolerance
             )
         if callback is not None:

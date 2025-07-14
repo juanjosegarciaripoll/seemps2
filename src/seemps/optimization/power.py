@@ -7,7 +7,7 @@ from ..state import MPS, CanonicalMPS, Strategy, random_mps
 from ..truncate import simplify
 from ..mpo import MPO, MPOList, MPOSum
 from .descent import DESCENT_STRATEGY, OptimizeResults
-from ..cgs import cgs
+from ..solve import cgs_solve
 
 
 @dataclasses.dataclass
@@ -24,7 +24,7 @@ def power_method(
     maxiter_cgs: int = 50,
     tol: float = 1e-13,
     tol_variance: float = 1e-14,
-    tol_cgs: float | None = None,
+    tol_cgs: float = 1e-8,
     tol_up: float | None = None,
     upward_moves: int = 5,
     strategy: Strategy = DESCENT_STRATEGY,
@@ -112,7 +112,7 @@ def power_method(
                 )
                 results.converged = True
                 break
-            print("Upwards energy fluctuation ignored {energy_change:5g}")
+            logger("Upwards energy fluctuation ignored {energy_change:5g}")
             upward_moves -= 1
         if -abs(tol) < energy_change < 0:
             results.message = f"Energy converged within tolerance {tol:5g}"
@@ -128,15 +128,15 @@ def power_method(
         if total_steps > maxiter:
             break
         if inverse:
-            state, residual = cgs(
+            state, res = cgs_solve(
                 H,
                 state,
                 guess=(1 / energy) * state,
                 maxiter=maxiter_cgs,
                 tolerance=tol_cgs,
                 strategy=strategy,
-                callback=cgs_callback,
             )
+            logger(f"CGS error = {res}")
         else:
             state = simplify(H_v, strategy=strategy)
             total_steps += 1

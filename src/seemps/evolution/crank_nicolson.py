@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable
 import numpy as np
 from ..analysis.operators import id_mpo
-from ..cgs import cgs
+from ..solve import cgs_solve
 from ..operators import MPO, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..typing import Vector
@@ -13,7 +13,7 @@ def crank_nicolson(
     t_span: float | tuple[float, float] | Vector,
     state: MPS,
     steps: int = 1000,
-    tol_cgs: float = 1e-14,
+    tol_cgs: float = 1e-7,
     maxiter_cgs: int = 50,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: Callable | None = None,
@@ -73,7 +73,8 @@ def crank_nicolson(
     )
     for t in t_span:
         if t != last_t:
-            state, _ = cgs(
+            # TODO: Consider using dmrg_solve or other algorithm
+            state, _ = cgs_solve(
                 A,
                 B @ state,
                 guess=state,
