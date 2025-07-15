@@ -5,4 +5,5 @@ from . import (
     test_mpolist,
     test_mposum,
     test_mpo_expectation,
+    test_projectors,
 )
