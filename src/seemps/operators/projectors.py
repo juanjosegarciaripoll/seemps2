@@ -10,9 +10,17 @@ def identity_mpo(dimensions: Sequence[int], strategy: Strategy = NO_TRUNCATION) 
     return MPO([np.eye(d).reshape(1, d, d, 1) for d in dimensions], strategy)
 
 
-IndexSelector: TypeAlias = Sequence[int]
+IndexSelector: TypeAlias = Sequence[int | tuple[int, ...]]
+"""Sequence of basis states.
 
-ALL_STATES = -1
+This type is a sequence of objects that select basis states. Admitted
+values in the sequence include
+- An `int` representing one basis state
+- A tuple of one or more `int`, representing multiple basis states
+- A `ALL_STATES` object representing all basis states. 
+"""
+
+ALL_STATES: tuple[int] = tuple()
 
 
 def basis_states_projector_mpo(
@@ -53,19 +61,31 @@ def basis_states_projector_mpo(
     """
     tensors = []
     D = len(selectors)
+    ok = True
     for n, d in enumerate(dimensions):
         A = np.zeros((D, d, d, D))
         tensors.append(A)
         for i, s in enumerate(selectors):
-            which = s[n]
-            if which == ALL_STATES:
-                A[i, :, :, i] = np.eye(d)
-            elif not isinstance(which, int) or which < 0 or which >= d:
-                raise Exception(
-                    f"Invalid state selector {which} into Hilbert space of dimension {d}"
-                )
+            e = np.zeros(d)
+            w = s[n]
+            if isinstance(w, int):
+                if w < 0 or w >= d:
+                    ok = False
+                else:
+                    e[w] = 1.0
+            elif not isinstance(w, tuple):
+                ok = False
+            elif w == ALL_STATES:
+                e[:] = 1.0
             else:
-                A[i, which, which, i] = 1.0
+                for wi in w:
+                    if wi < 0 or wi >= d:
+                        ok = False
+                        break
+                    e[wi] = 1.0
+            if not ok:
+                raise Exception(f"Invalid basis state selector {w}")
+            A[i, :, :, i] = np.diag(e)
     tensors[0] = np.sum(tensors[0], 0)[np.newaxis, :, :, :]
     tensors[-1] = np.sum(tensors[-1], -1)[:, :, :, np.newaxis]
     return MPO(tensors, strategy)
