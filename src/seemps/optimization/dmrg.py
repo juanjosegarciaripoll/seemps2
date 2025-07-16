@@ -92,12 +92,12 @@ class QuadraticForm:
         env = right_env[-1]
         for i in range(size - 1, start, -1):
             right_env[i - 1] = env = update_right_mpo_environment(
-                env, state[i], H[i], state[i]
+                env, state[i].conj(), H[i], state[i]
             )
         env = left_env[0]
         for i in range(0, start):
             left_env[i + 1] = env = update_left_mpo_environment(
-                env, state[i], H[i], state[i]
+                env, state[i].conj(), H[i], state[i]
             )
         self.left_env = left_env
         self.right_env = right_env
@@ -136,7 +136,7 @@ class QuadraticForm:
         if i < self.size - 2:
             self.site = j = i + 1
             self.left_env[j] = update_left_mpo_environment(
-                self.left_env[i], self.state[i], self.H[i], self.state[i]
+                self.left_env[i], self.state[i].conj(), self.H[i], self.state[i]
             )
 
     def update_2site_left(self, AB: Tensor4, i: int, strategy: Strategy) -> None:
@@ -144,7 +144,7 @@ class QuadraticForm:
         if i > 0:
             j = i + 1
             self.right_env[i] = update_right_mpo_environment(
-                self.right_env[j], self.state[j], self.H[j], self.state[j]
+                self.right_env[j], self.state[j].conj(), self.H[j], self.state[j]
             )
             self.site = i - 1
 

@@ -55,8 +55,6 @@ def bicgs_solve(
     tolerance = max(rtol * normb, atol)
     x = simplify(b if guess is None else guess, strategy=strategy)
     p = r = r0 = simplify(b - A @ x, strategy)
-    # TODO: This algorithm is broken. Redo implementation
-    # In particular some norm's should be norm_squared...
     norm_r = rho = r0.norm()
     with make_logger(2) as logger:
         logger(f"BICCGS algorithm for {maxiter} iterations", flush=True)
@@ -66,9 +64,8 @@ def bicgs_solve(
             )
             return x, norm_r
         for i in range(1, maxiter + 1):
-            print(f"BICGS step {i}: rho = {norm_r}")
             v = simplify(A @ p, strategy)
-            alpha = rho * rho / A.expectation(r0, p)
+            alpha = rho / scprod(r0, v)
             h = simplify(x + alpha * p, strategy)
             s = simplify(r - alpha * v, strategy)
             residual = s.norm()
@@ -76,11 +73,12 @@ def bicgs_solve(
                 logger(
                     f"BICCGS converged with residual {residual} below tolerance {tolerance}"
                 )
+                x = h
                 break
             t = simplify(A @ s, strategy)
-            w = A.expectation(s) / t.norm_squared()
+            w = scprod(t, s) / t.norm_squared()
             x = simplify(h + w * s, strategy)
-            r = simplify(b - A @ x, strategy)
+            r = simplify(s - w * t, strategy)
             norm_r = r.norm()
             if norm_r < tolerance:
                 logger(
@@ -88,7 +86,7 @@ def bicgs_solve(
                 )
                 break
             rho_new = scprod(r0, r)
-            beta = (rho_new / (rho * rho)) * (alpha / w)
+            beta = (rho_new / rho) * (alpha / w)
             rho = abs(rho_new)
             p = simplify(r + beta * p - (beta * w) * v, strategy)
 
