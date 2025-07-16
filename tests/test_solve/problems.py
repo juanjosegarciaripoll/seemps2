@@ -45,7 +45,7 @@ def make_complex_problem(
         label = f"Complex operator and state in {n} qubits"
 
     if rhs is None:
-        rhs = random_mps([2]*n, complex=True)
+        rhs = random_mps([2]*n, complex=True, rng=np.random.default_rng(0))
 
     return MPOInverseProblem(label, 1j * id_mpo(n), rhs)
 
