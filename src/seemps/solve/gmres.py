@@ -61,9 +61,8 @@ def gmres_solve(
     if strategy.get_normalize_flag():
         strategy = strategy.replace(normalize=False)
     if guess is None:
-        x = b.zero_state()
-    else:
-        x = simplify(guess, strategy=strategy)
+        guess = b.zero_state()
+    x = simplify(guess, strategy=strategy)
 
     # Residual
     r = simplify(b - A @ x, strategy=strategy)
