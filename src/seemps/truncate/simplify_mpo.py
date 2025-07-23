@@ -6,23 +6,28 @@ from ..truncate import SIMPLIFICATION_STRATEGY, simplify
 
 def mpo_as_mps(mpo: MPO) -> MPS:
     """Recast MPO as MPS."""
-    _, i, j, _ = mpo[0].shape
-    return MPS([t.reshape(t.shape[0], i * j, t.shape[-1]) for t in mpo._data])
+    data = []
+    for site in mpo._data:
+        bl, i, j, br = site.shape
+        data.append(site.reshape(bl, i*j, br))
 
+    return MPS(data)
 
 def mps_as_mpo(
-    mps: MPS,
-    mpo_strategy: Strategy = DEFAULT_STRATEGY,
+        mps: MPS,
+        mpo_strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
     """Recast MPS as MPO."""
-    _, S, _ = mps[0].shape
-    s = isqrt(S)
-    if s**2 != S:
-        raise ValueError("The physical dimensions of the MPS must be a perfect square")
-    return MPO(
-        [t.reshape(t.shape[0], s, s, t.shape[-1]) for t in mps._data],
-        strategy=mpo_strategy,
-    )
+    data = []
+    for site in mps._data:
+        bl, p, br = site.shape
+        s = isqrt(p)
+        if s**2 != p:
+            raise ValueError("The physical dimensions of the MPS must be a perfect square")
+
+        data.append(site.reshape(bl, s, s, br))
+
+    return MPO(data, strategy=mpo_strategy)
 
 
 def simplify_mpo(
