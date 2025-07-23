@@ -135,7 +135,7 @@ def radau(
             state = radau_step(
                 L=H,
                 v=state,
-                dt=idt,
+                dt=-idt,
                 inv_tol=inv_tol,
                 strategy=normalize_strategy,
                 stages=stages,
