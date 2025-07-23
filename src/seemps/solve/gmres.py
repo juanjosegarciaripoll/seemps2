@@ -67,6 +67,7 @@ def gmres_solve(
     # Residual
     r = simplify(b - A @ x, strategy=strategy)
     residual = r.norm()
+    dtype = type(A[0][0, 0, 0, 0] * x[0][0, 0, 0] * b[0][0, 0, 0])
 
     with make_logger(2) as logger:
         logger(f"GMRES algorithm with {max_restarts=}, {nvectors=}", flush=True)
@@ -79,7 +80,7 @@ def gmres_solve(
                 break
 
             # Build Krylov subspace
-            H = np.zeros((nvectors + 1, nvectors), dtype=r[0].dtype)
+            H = np.zeros((nvectors + 1, nvectors), dtype=dtype)
             V = [r * (1 / residual)]
             for j in range(nvectors):
                 w = simplify(A @ V[j], strategy=strategy)
