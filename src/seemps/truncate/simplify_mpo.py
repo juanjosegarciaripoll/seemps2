@@ -6,9 +6,12 @@ from ..truncate import SIMPLIFICATION_STRATEGY, simplify
 
 def mpo_as_mps(mpo: MPO) -> MPS:
     """Recast MPO as MPS."""
-    _, i, j, _ = mpo[0].shape
-    return MPS([t.reshape(t.shape[0], i * j, t.shape[-1]) for t in mpo._data])
+    data = []
+    for site in mpo._data:
+        bl, i, j, br = site.shape
+        data.append(site.reshape(bl, i*j, br))
 
+    return MPS(data)
 
 def mps_as_mpo(
     mps: MPS,
