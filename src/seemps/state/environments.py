@@ -24,7 +24,7 @@ def update_left_mpo_environment(
     # ifac,cjie->faje
     aux = np.tensordot(aux, O, ([0, 3], [2, 0]))
     # faje,ajd-> def
-    aux = np.tensordot(aux, A, ((1, 2), (0, 1))).transpose(2, 1, 0)
+    aux = np.tensordot(aux, np.conj(A), ((1, 2), (0, 1))).transpose(2, 1, 0)
     return aux
 
 
@@ -33,7 +33,7 @@ def update_right_mpo_environment(
 ) -> MPOEnvironment:
     # output = opt_einsum.contract("def,ajd,cjie,bif->acb", rho, A, O, B)
     # ajd,def->ajef
-    aux = np.tensordot(A, rho, (2, 0))
+    aux = np.tensordot(np.conj(A), rho, (2, 0))
     # ajef,cjie->afci
     aux = np.tensordot(aux, O, ((1, 2), (1, 3)))
     # afci,bif->acb
