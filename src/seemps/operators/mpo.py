@@ -330,9 +330,9 @@ class MPO(TensorArray):
             raise Exception("MPS required")
         left = right = begin_mpo_environment()
         for i in range(0, center):
-            left = update_left_mpo_environment(left, bra[i].conj(), self[i], ket[i])
+            left = update_left_mpo_environment(left, bra[i], self[i], ket[i])
         for i in range(self.size - 1, center - 1, -1):
-            right = update_right_mpo_environment(right, bra[i].conj(), self[i], ket[i])
+            right = update_right_mpo_environment(right, bra[i], self[i], ket[i])
         return join_mpo_environments(left, right)
 
     def reverse(self) -> MPO:

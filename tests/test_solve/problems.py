@@ -38,6 +38,18 @@ def make_identity_problem(
     return MPOInverseProblem(label, id_mpo(n), rhs)
 
 
+def make_complex_problem(
+    n: int, rhs: MPS | None = None, label: str | None = None
+) -> MPOInverseProblem:
+    if label is None:
+        label = f"Complex operator and state in {n} qubits"
+
+    if rhs is None:
+        rhs = random_mps([2]*n, complex=True, rng=np.random.default_rng(0))
+
+    return MPOInverseProblem(label, 1j * id_mpo(n), rhs)
+
+
 def make_Laplacian_problem(
     n: int, rhs: np.ndarray | Sequence[float] | None = None, label: str | None = None
 ) -> MPOInverseProblem:
@@ -58,6 +70,7 @@ def make_Laplacian_problem(
 CGS_PROBLEMS = [
     make_identity_problem(2),
     make_identity_problem(3),
+    make_complex_problem(3),
     make_Laplacian_problem(3, [1.0]),
 ]
 
