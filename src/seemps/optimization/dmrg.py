@@ -121,13 +121,16 @@ class QuadraticForm:
         return eval[0], evec.reshape(v.shape)
 
     def solve(
-        self, i: int, b: Tensor4, atol: float = 0, rtol: float = 1e-5
+        self,
+        i: int,
+        b: Tensor4,
+        atol: float = 0,
+        rtol: float = 1e-5,
+        solver=scipy.sparse.linalg.bicgstab,
     ) -> tuple[Tensor4, int, float]:
         Op = self.two_site_Hamiltonian(i)
         v = _contract_last_and_first(self.state[i], self.state[i + 1])
-        x, info = scipy.sparse.linalg.cg(
-            Op, b.reshape(-1), v.reshape(-1), atol=atol, rtol=rtol
-        )
+        x, info = solver(Op, b.reshape(-1), v.reshape(-1), atol=atol, rtol=rtol)
         res = np.linalg.norm(Op @ x - b.reshape(-1))
         return x.reshape(v.shape), info, float(res)
 

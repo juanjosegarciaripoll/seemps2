@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+import scipy.sparse.linalg
 from ..tools import make_logger
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..truncate.simplify import AntilinearForm
@@ -15,6 +16,7 @@ def dmrg_solve(
     atol: float = 0,
     rtol: float = 1e-5,
     strategy: Strategy = DEFAULT_STRATEGY,
+    method: str = "bicgstab",
 ) -> tuple[MPS, float]:
     r"""Solve an inverse problem :math:`A x = b` for an MPO `A` and an MPS `b` using DMRG.
 
@@ -41,6 +43,8 @@ def dmrg_solve(
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy to keep bond dimensions in check. Defaults to
         `DEFAULT_STRATEGY`, which is very strict.
+    method: str, default = 'bicgstab'
+        One of 'cg', 'bicg', 'bicgstab'
 
     Returns
     -------
@@ -66,6 +70,15 @@ def dmrg_solve(
         direction = -1
         QF = QuadraticForm(A, guess, start=A.size - 2)
         LF = AntilinearForm(guess, b, center=A.size - 2)
+    match method:
+        case "cg":
+            solver = scipy.sparse.linalg.cg
+        case "bicg":
+            solver = scipy.sparse.linalg.bicg
+        case "bicgstab":
+            solver = scipy.sparse.linalg.bicgstab
+        case _:
+            raise Exception(f'Unknown solver "{method}"')
     strategy = strategy.replace(normalize=True)
     step: int = 0
     residual: float = np.inf
@@ -75,7 +88,7 @@ def dmrg_solve(
             if direction > 0:
                 for i in range(0, A.size - 1):
                     AB, info, local_residual = QF.solve(
-                        i, LF.tensor2site(+1), atol, rtol
+                        i, LF.tensor2site(+1), atol, rtol, solver=solver
                     )
                     QF.update_2site_right(AB, i, strategy)
                     LF.update_right()
@@ -87,7 +100,7 @@ def dmrg_solve(
             else:
                 for i in range(A.size - 2, -1, -1):
                     AB, info, local_residual = QF.solve(
-                        i, LF.tensor2site(-1), atol, rtol
+                        i, LF.tensor2site(-1), atol, rtol, solver=solver
                     )
                     QF.update_2site_left(AB, i, strategy)
                     LF.update_left()
