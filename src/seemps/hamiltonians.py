@@ -132,7 +132,9 @@ class NNHamiltonian(ABC):
             # new interaction
             A = tensors[i]
             a, j, k, b = A.shape
-            B = np.zeros((a, j, k, b + ds), dtype=U.dtype)
+            B = np.zeros(
+                (a, j, k, b + ds), dtype=np.result_type(U[0, 0] + A[0, 0, 0, 0])
+            )
             B[:, :, :, :b] = A
             B[0, :, :, 2:] = (U[:, :ds] * s).reshape(di, di, ds)
             B[1, :, :, 1] = np.eye(j)
@@ -142,7 +144,9 @@ class NNHamiltonian(ABC):
             # Similar operation for the next tensor
             A = tensors[i + 1]
             a, j, k, b = A.shape
-            B = np.zeros((a + ds, j, k, b), dtype=V.dtype)
+            B = np.zeros(
+                (a + ds, j, k, b), dtype=np.result_type(V[0, 0] + A[0, 0, 0, 0])
+            )
             B[:a, :, :, :] = A
             B[2:, :, :, 1] = (s.reshape(ds, 1) * V[:ds, :]).reshape(ds, dj, dj)
             B[1, :, :, 1] = np.eye(j)
