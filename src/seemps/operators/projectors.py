@@ -17,10 +17,10 @@ This type is a sequence of objects that select basis states. Admitted
 values in the sequence include
 - An `int` representing one basis state
 - A tuple of one or more `int`, representing multiple basis states
-- A `ALL_STATES` object representing all basis states. 
+- A `ALL_STATES` object representing all basis states.
 """
 
-ALL_STATES: tuple[int] = tuple()
+ALL_STATES: tuple = tuple()
 
 
 def basis_states_projector_mpo(
@@ -75,7 +75,7 @@ def basis_states_projector_mpo(
                     e[w] = 1.0
             elif not isinstance(w, tuple):
                 ok = False
-            elif w == ALL_STATES:
+            elif w is ALL_STATES:
                 e[:] = 1.0
             else:
                 for wi in w:
