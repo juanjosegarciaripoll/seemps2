@@ -43,12 +43,23 @@ class TensorArray(Sequence[NDArray]):
         #
         return self._data[k]  # type: ignore
 
-    def __setitem__(self, k: int, value: NDArray) -> NDArray:
+    @overload
+    def __setitem__(self, k: int, value: NDArray) -> NDArray: ...
+
+    @overload
+    def __setitem__(self, k: slice, value: Sequence[NDArray]) -> Sequence[NDArray]: ...
+
+    def __setitem__(
+        self, k: int | slice, value: NDArray | Sequence[NDArray]
+    ) -> NDArray | Sequence[NDArray]:
         #
         # Replace matrix at position `k` with new tensor `value`. If 'A'
         # is an MP, we can now do A[k] = value
         #
-        self._data[k] = value
+        if isinstance(k, slice):
+            self._data[k] = list(value)
+        else:
+            self._data[k] = value  # type: ignore[index]
         return value
 
     def __iter__(self) -> Iterator[NDArray]:
