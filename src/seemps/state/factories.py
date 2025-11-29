@@ -34,7 +34,7 @@ def product_state(
     if length is not None:
         return MPS([to_tensor(vectors)] * length)  # type: ignore
     elif isinstance(vectors, Iterable):
-        return MPS([to_tensor(v) for v in vectors])
+        return MPS([to_tensor(v) for v in list(vectors)])
     raise Exception("Invalid argument to product_state")
 
 

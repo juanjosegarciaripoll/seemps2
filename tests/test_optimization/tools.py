@@ -8,11 +8,12 @@ from seemps.state import MPS, product_state
 from seemps.operators import MPO
 from seemps.analysis.evolution import EvolutionResults
 from seemps.optimization.descent import OptimizeResults
+from seemps.typing import DenseOperator
 from ..tools import TestCase
 
 
 class TestItimeCase(TestCase):
-    Sz = np.diag([0.5, -0.5])
+    Sz: DenseOperator = np.diag([0.5, -0.5])
 
     def make_problem_and_solution(self, size: int) -> tuple[MPO, MPS]:
         A = np.zeros((2, 2, 2, 2))
@@ -55,14 +56,14 @@ class TestItimeCase(TestCase):
 
     def test_eigenvalue_solver_with_callback(self):
         N = 4
-        H, exact = self.make_problem_and_solution(N)
+        H, _ = self.make_problem_and_solution(N)
         guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         callback_func, norms = self.make_callback()
-        result = self.solve(H, guess, maxiter=10, callback=callback_func)
+        self.solve(H, guess, maxiter=10, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
 
 
-class TestOptimizeCase(TestItimeCase):
+class TestOptimizeCase(TestCase):
     Sz = np.diag([0.5, -0.5])
 
     @classmethod
@@ -106,10 +107,10 @@ class TestOptimizeCase(TestItimeCase):
 
     def test_eigenvalue_solver_with_callback(self):
         N = 4
-        H, exact = self.make_problem_and_solution(N)
+        H, _ = self.make_problem_and_solution(N)
         guess = product_state(np.asarray([1, 1]) / sqrt(2.0), N)
         callback_func, norms = self.make_callback()
-        result = self.solve(H, guess, maxiter=10, callback=callback_func)
+        self.solve(H, guess, maxiter=10, callback=callback_func)
         self.assertSimilar(norms, np.ones(len(norms)))
 
     def test_eigenvalue_solver_acknowledges_tolerance(self):

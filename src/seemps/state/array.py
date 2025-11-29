@@ -59,7 +59,7 @@ class TensorArray(Sequence[NDArray]):
         if isinstance(k, slice):
             self._data[k] = list(value)
         else:
-            self._data[k] = value  # type: ignore[index]
+            self._data[k] = value  # type: ignore
         return value
 
     def __iter__(self) -> Iterator[NDArray]:

@@ -1,7 +1,6 @@
 import numpy as np
 from seemps.state import NO_TRUNCATION
 from seemps.state.schmidt import _vector2mps
-from seemps.state.array import TensorArray
 from .. import tools
 
 
@@ -66,7 +65,7 @@ class TestMPSFromVector(tools.TestCase):
         for N in range(1, 10):
             v = self.rng.normal(size=(2**N,))
             for center in range(-N + 1, N):
-                state, err = _vector2mps(
+                state, _ = _vector2mps(
                     v, [2] * N, center=center, strategy=NO_TRUNCATION, normalize=False
                 )
                 self.assertSimilar(self.join_tensors(state), v)
@@ -75,7 +74,7 @@ class TestMPSFromVector(tools.TestCase):
         for N in range(2, 10):
             v = self.rng.normal(size=(2**N,))
             for center in range(0, N):
-                state, err = _vector2mps(
+                state, _ = _vector2mps(
                     v, [2] * N, center=center, strategy=NO_TRUNCATION
                 )
                 for i, A in enumerate(state):
@@ -88,7 +87,9 @@ class TestMPSFromVector(tools.TestCase):
         for N in range(1, 10):
             v = self.rng.normal(size=(2**N,))
             for center in range(0, N):
-                state, err = _vector2mps(
+                state, _ = _vector2mps(
                     v, [2] * N, center=center, normalize=True, strategy=NO_TRUNCATION
                 )
-                self.assertAlmostEqual(np.linalg.norm(state[center].reshape(-1)), 1)
+                self.assertAlmostEqual(
+                    np.linalg.norm(state[center].reshape(-1)), np.float64(1.0)
+                )

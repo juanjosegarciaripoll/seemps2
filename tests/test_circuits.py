@@ -28,7 +28,7 @@ class TestKnownOperators(TestCase):
         interpret_operator("Sz")
         interpret_operator(np.eye(2))
         with self.assertRaises(Exception):
-            interpret_operator(1)
+            interpret_operator(1)  # type: ignore
         with self.assertRaises(Exception):
             interpret_operator(np.zeros((3, 1)))
         with self.assertRaises(Exception):
@@ -44,10 +44,18 @@ class TestLocalGateCircuits(TestCase):
         """When not `same_parameter`, number of parameters must match number
         of register qubits. Otherwise they are just one default parameter."""
         with self.assertRaises(Exception):
-            LocalRotationsLayer(3, "Sz", same_parameter=False, default_parameters=[0.0])
+            LocalRotationsLayer(
+                3,
+                "Sz",
+                same_parameter=False,
+                default_parameters=[0.0],  # type: ignore
+            )
         with self.assertRaises(Exception):
             LocalRotationsLayer(
-                3, "Sz", same_parameter=True, default_parameters=[0.0] * 3
+                3,
+                "Sz",
+                same_parameter=True,
+                default_parameters=[0.0] * 3,  # type: ignore
             )
 
     def test_local_gates_requires_qubit_operators(self):
@@ -180,7 +188,7 @@ class TestEntanglingLayerCircuit(TestCase):
         a = self.random_uniform_mps(2, 2, truncate=True, normalize=True)
         U = TwoQubitGatesLayer(2, "CNOT")
         with self.assertRaises(Exception):
-            U.apply_inplace(a, np.zeros(2))
+            U.apply_inplace(a, [0, 0])
 
     def test_single_cnot_circuit(self):
         a = self.random_uniform_mps(2, 2, truncate=True, normalize=True)

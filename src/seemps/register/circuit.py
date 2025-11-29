@@ -1,7 +1,8 @@
 from __future__ import annotations
+from typing import Sequence
 import numpy as np
 from math import sqrt
-from ..typing import DenseOperator, Operator, Vector
+from ..typing import DenseOperator, Operator, Real
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..state._contractions import _contract_nrjl_ijk_klm
 from abc import abstractmethod, ABC
@@ -18,6 +19,8 @@ CNOT = np.array(
         [0.0, 0.0, 1.0, 0.0],
     ]
 )
+
+Parameters = Sequence[Real] | np.ndarray[tuple[int], np.dtype[np.floating]]
 
 known_operators: dict[str, DenseOperator] = {
     "SX": σx / 2.0,
@@ -57,27 +60,27 @@ class UnitaryCircuit(ABC):
 
     @abstractmethod
     def apply_inplace(
-        self, state: MPS, parameters: Vector | None = None
+        self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS: ...
 
     def __matmul__(self, state: MPS) -> CanonicalMPS:
         return self.apply(state)
 
-    def apply(self, state: MPS, parameters: Vector | None = None) -> CanonicalMPS:
+    def apply(self, state: MPS, parameters: Parameters | None = None) -> CanonicalMPS:
         return self.apply_inplace(
             state.copy() if isinstance(state, CanonicalMPS) else state, parameters
         )
 
 
 class ParameterizedCircuit(UnitaryCircuit, ABC):
-    parameters: Vector
+    parameters: np.ndarray[tuple[int], np.dtype[np.floating]]
     parameters_size: int
 
     def __init__(
         self,
         register_size: int,
         parameters_size: int | None = None,
-        default_parameters: Vector | None = None,
+        default_parameters: Parameters | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         super().__init__(register_size, strategy)
@@ -86,14 +89,15 @@ class ParameterizedCircuit(UnitaryCircuit, ABC):
                 raise Exception(
                     "In ParameterizedUnitaries, either parameter_size or default_parameters must be provided"
                 )
-            default_parameters = np.zeros(parameters_size)
-        elif parameters_size is None:
-            parameters_size = len(default_parameters)
-        elif parameters_size != len(default_parameters):
-            raise IndexError(
-                f"'default_parameters' length {len(default_parameters)} does not match size 'parameters_size' {parameters_size}"
-            )
-        self.parameters = np.asarray(default_parameters)
+            self.parameters = np.zeros(parameters_size)
+        else:
+            self.parameters = np.asarray(default_parameters)
+            if parameters_size is None:
+                parameters_size = len(default_parameters)
+            elif parameters_size != len(default_parameters):
+                raise IndexError(
+                    f"'default_parameters' length {len(default_parameters)} does not match size 'parameters_size' {parameters_size}"
+                )
         self.parameters_size = parameters_size
 
 
@@ -111,7 +115,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
         If `True`, the same angle is reused by all gates and
         `self.parameters_size=1`. Otherwise, the user must provide one value
         for each rotation.
-    default_parameters : Vector | None
+    default_parameters : Sequence[Real] | None
         A vector of angles to use if no other one is provided.
     strategy : Strategy
         Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
@@ -131,7 +135,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
         register_size: int,
         operator: str | DenseOperator,
         same_parameter: bool = False,
-        default_parameters: Vector | None = None,
+        default_parameters: Parameters | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         if same_parameter:
@@ -161,18 +165,18 @@ class LocalRotationsLayer(ParameterizedCircuit):
         self.operator = O / self.factor
 
     def apply_inplace(
-        self, state: MPS, parameters: Vector | None = None
+        self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS:
         assert self.register_size == state.size
         if parameters is None:
-            parameters = self.parameters
+            angle = self.parameters
+        elif len(parameters) == 1:
+            angle = np.full(self.register_size, parameters[0])
+        else:
+            angle = np.asarray(parameters)
         if not isinstance(state, CanonicalMPS):
             state = CanonicalMPS(state, center=0, strategy=self.strategy)
-        if len(parameters) == 1:
-            parameters = np.full(self.register_size, parameters[0])
-        else:
-            parameters = np.asarray(parameters)
-        angle = parameters.reshape(-1, 1, 1) * self.factor
+        angle = angle.reshape(-1, 1, 1) * self.factor
         ops = np.cos(angle) * id2 - 1j * np.sin(angle) * self.operator
         for i, (opi, A) in enumerate(zip(ops, state)):
             # np.einsum('ij,ajb->aib', opi, A)
@@ -216,7 +220,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         self.direction = direction
 
     def apply_inplace(
-        self, state: MPS, parameters: Vector | None = None
+        self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS:
         assert self.register_size == state.size
         if parameters is not None and len(parameters) > 0:
@@ -262,7 +266,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
         Number of qubits on which to operate
     layers : list[UnitaryCircuit]
         List of constant or parameterized unitary layers.
-    default_parameters : Vector
+    default_parameters : Sequence[Real]
         Default angles for the rotations (Defaults to zeros).
     strategy : Strategy
         Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
@@ -274,7 +278,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
         self,
         register_size: int,
         layers: list[UnitaryCircuit],
-        default_parameters: Vector | None = None,
+        default_parameters: Parameters | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         parameters_size = 0
@@ -290,7 +294,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
         self.layers = segments
 
     def apply_inplace(
-        self, state: MPS, parameters: Vector | None = None
+        self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS:
         if parameters is None:
             parameters = self.parameters
@@ -321,14 +325,14 @@ class VQECircuit(ParameterizedLayeredCircuit):
         self,
         register_size: int,
         layers: int,
-        default_parameters: Vector | None = None,
+        default_parameters: Parameters | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         parameters_seq: list[None] | np.ndarray
         if default_parameters is None:
             parameters_seq = [None] * layers
         else:
-            parameters_seq = np.reshape(default_parameters, (-1, register_size))
+            parameters_seq = np.asarray(default_parameters).reshape(-1, register_size)
 
         super().__init__(
             register_size,
