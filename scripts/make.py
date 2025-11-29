@@ -97,10 +97,7 @@ def run_tests(verbose=False) -> bool:
         env["LD_PRELOAD"] = asan_library() + " " + cpp_library()
         print(f"LD_PRELOAD={env['LD_PRELOAD']}")
     return run(
-        valgrind
-        + uv_run
-        + python
-        + ["-m", "unittest", "discover", "-fv" if verbose else "-f"]
+        valgrind + uv_run + python + ["-m", "unittest", "-fv" if verbose else "-f"]
     )
 
 
