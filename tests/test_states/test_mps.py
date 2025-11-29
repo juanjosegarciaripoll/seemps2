@@ -1,7 +1,12 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
 from ..fixture_mps_states import MPSStatesFixture
-from ..tools import *
+from ..tools import (
+    contain_same_objects,
+    contain_different_objects,
+    random_uniform_mps,
+    similar,
+)
 
 
 class TestMPS(MPSStatesFixture):
@@ -88,9 +93,9 @@ class TestMPSOperations(MPSStatesFixture):
     def test_adding_mps_with_non_mps_raises_error(self):
         A = MPS(self.inhomogeneous_state)
         with self.assertRaises(TypeError):
-            A = A + 2.0
+            A = A + 2.0  # type: ignore
         with self.assertRaises(TypeError):
-            A = 2.0 + A
+            A = 2.0 + A  # type: ignore
 
     def test_subtracting_mps_creates_mps_list(self):
         A = MPS(self.inhomogeneous_state)
@@ -101,9 +106,9 @@ class TestMPSOperations(MPSStatesFixture):
     def test_subtracting_mps_and_non_mps_raises_error(self):
         A = MPS(self.inhomogeneous_state)
         with self.assertRaises(TypeError):
-            A = A - 2.0
+            A = A - 2.0  # type: ignore
         with self.assertRaises(TypeError):
-            A = 2.0 - A
+            A = 2.0 - A  # type: ignore
 
     def test_scaling_mps_creates_new_object(self):
         A = MPS(self.inhomogeneous_state)
@@ -114,7 +119,7 @@ class TestMPSOperations(MPSStatesFixture):
     def test_multiplying_by_zero_returns_zero_state(self):
         A = MPS(self.inhomogeneous_state)
         for factor in [0, 0.0, 0.0j]:
-            B = 0.0 * A
+            B = factor * A
             self.assertIsInstance(B, MPS)
             self.assertTrue(B is not A)
             for Ai, Bi in zip(A, B):
@@ -152,7 +157,7 @@ class TestMPSOperations(MPSStatesFixture):
         A = MPS(self.inhomogeneous_state)
         self.assertSimilar(A.to_vector() * A.to_vector(), (A * A).to_vector())
         with self.assertRaises(Exception):
-            random_uniform_mps(2, 3) * random_uniform_mps(3, 3)
+            random_uniform_mps(2, 3) * random_uniform_mps(3, 3)  # type: ignore
 
     def test_mps_complex_conjugate(self):
         A = MPS(self.inhomogeneous_state)

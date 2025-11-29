@@ -1,8 +1,10 @@
+import numpy as np
 from seemps.expectation import mpo_expectation
+from seemps.state import CanonicalMPS
 from seemps.operators import MPO
 from seemps.tools import σx, σy
 from seemps.qft import qft_mpo
-from ..tools import *
+from ..tools import TestCase, random_uniform_mps
 
 
 class TestMPOExpectation(TestCase):
@@ -23,12 +25,15 @@ class TestMPOExpectation(TestCase):
     def test_mpo_expected_only_accepts_mps(self):
         """Ensure expectation of a single local operator works."""
         H = MPO([σx.reshape(1, 2, 2, 1)] * 3)
+        O = 0.0
         with self.assertRaises(Exception):
-            O = H.expectation([np.zeros((1, 2, 1))] * 3)
+            O += H.expectation([np.zeros((1, 2, 1))] * 3)  # type: ignore
         with self.assertRaises(Exception):
-            O = H.expectation(
-                random_uniform_mps(2, 3, rng=self.rng), [np.zeros((1, 2, 1))] * 3
+            O += H.expectation(
+                random_uniform_mps(2, 3, rng=self.rng),
+                [np.zeros((1, 2, 1))] * 3,  # type:ignore
             )
+        self.assertEqual(O, 0.0)
 
     def test_mpo_expected_operator_order(self):
         """Ensure expectation of a two different local operators are done in order."""
@@ -42,7 +47,7 @@ class TestMPOExpectation(TestCase):
         H = MPO([σx.reshape(1, 2, 2, 1)] * 2)
         psi = random_uniform_mps(2, 1, rng=self.rng)
         with self.assertRaises(Exception):
-            H.expectation(psi + psi)
+            H.expectation(psi + psi)  # type: ignore
 
     def test_mpo_expected_with_left_orthogonal_state(self):
         H = MPO([σx.reshape(1, 2, 2, 1)] * 10)

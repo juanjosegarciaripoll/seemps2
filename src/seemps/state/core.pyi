@@ -1,16 +1,16 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 import numpy as np
 from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
 
 MAX_BOND_DIMENSION: int
 
-class Truncation(Enum):
+class Truncation(IntEnum):
     DO_NOT_TRUNCATE = 0
     RELATIVE_SINGULAR_VALUE = 1
     RELATIVE_NORM_SQUARED_ERROR = 2
     ABSOLUTE_SINGULAR_VALUE = 3
 
-class Simplification(Enum):
+class Simplification(IntEnum):
     DO_NOT_SIMPLIFY = 0
     CANONICAL_FORM = 1
     VARIATIONAL = 2
@@ -43,6 +43,7 @@ class Strategy:
     def get_simplification_method(self) -> Simplification: ...
     def get_max_bond_dimension(self) -> int: ...
     def get_max_sweeps(self) -> int: ...
+    def get_method(self) -> int: ...
     def get_normalize_flag(self) -> bool: ...
     def get_simplify_flag(self) -> bool: ...
     def __str__(self) -> str: ...

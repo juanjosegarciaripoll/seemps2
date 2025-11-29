@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Sequence
 import numpy as np
 from math import sqrt
 from numpy import pi as π
@@ -70,9 +71,9 @@ def iqft_mpo(N: int, strategy: Strategy = DEFAULT_STRATEGY) -> MPOList:
 
 
 @overload
-def qft(state: MPS, strategy: Strategy) -> MPS: ...
+def qft(state: MPS, strategy: Strategy = DEFAULT_STRATEGY) -> MPS: ...
 @overload
-def qft(state: MPSSum, strategy: Strategy) -> MPS | MPSSum: ...
+def qft(state: MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPSSum: ...
 
 
 def qft(state: MPS | MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPSSum:
@@ -95,9 +96,9 @@ def qft(state: MPS | MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPS
 
 
 @overload
-def iqft(state: MPS, strategy: Strategy) -> MPS: ...
+def iqft(state: MPS, strategy: Strategy = DEFAULT_STRATEGY) -> MPS: ...
 @overload
-def iqft(state: MPSSum, strategy: Strategy) -> MPS | MPSSum: ...
+def iqft(state: MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPSSum: ...
 
 
 def iqft(state: MPS | MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MPSSum:
@@ -152,7 +153,7 @@ def qft_wavefunction(Ψ: Vector) -> Vector:
 
 
 def qft_nd_mpo(
-    sites: list[int],
+    sites: Sequence[int],
     N: int | None = None,
     sign: int = -1,
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -162,7 +163,7 @@ def qft_nd_mpo(
 
     Parameters
     ----------
-    sites : list[int]
+    sites : Sequence[int]
         List of qubits on which the transform acts
     N : int, default = len(sites)
         Number of qubits in the register.
@@ -178,7 +179,7 @@ def qft_nd_mpo(
         A sequence of :class:`MPO` that implements the transform.
     """
     if N is None:
-        N = max(sites) + 1
+        N = int(max(sites) + 1)
     #
     # Construct a bare transformation that does nothing
     small_noop = np.eye(2).reshape(1, 2, 2, 1)
@@ -202,7 +203,7 @@ def qft_nd_mpo(
     # Place the Hadamard and rotations according to the instructions
     # in 'sites'. The first index is the control qubit, the other ones
     # are the following qubits in order of decreasing significance.
-    def make_layer(sites: list[int]) -> MPO:
+    def make_layer(sites: Sequence[int]) -> MPO:
         l = [noop] * N
         for i, ndx in enumerate(sites):
             if i == 0:

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Sequence
 import warnings
 import numpy as np
 from math import sqrt
@@ -6,7 +7,7 @@ import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod, ABC
 from .mpo import MPO
 from .state import schmidt, core, DEFAULT_STRATEGY, Strategy
-from .typing import SparseOperator, Operator, Vector
+from .typing import SparseOperator, Operator, Real
 from .tools import σx, σy, σz
 
 
@@ -319,7 +320,7 @@ class HeisenbergHamiltonian(ConstantTIHamiltonian):
         Number of spins on which this Hamiltonian operates.
     """
 
-    def __init__(self, size: int, field: Vector | None = None):
+    def __init__(self, size: int, field: Sequence[Real] | None = None):
         Hint = 0.25 * (sp.kron(σx, σx) + sp.kron(σy, σy) + sp.kron(σz, σz)).real
         if field is None:
             Hlocal = None

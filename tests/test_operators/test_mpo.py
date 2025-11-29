@@ -8,8 +8,7 @@ from seemps.state import (
     Strategy,
 )
 from seemps.operators import MPO, MPOList
-
-from ..tools import *
+from ..tools import TestCase, contain_different_objects, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
@@ -39,9 +38,9 @@ class TestMPO(TestCase):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         state = random_uniform_mps(2, 3, rng=self.rng)
         with self.assertRaises(Exception):
-            mpo * state
+            mpo * state  # type: ignore
         with self.assertRaises(Exception):
-            [1.0] * mpo
+            [1.0] * mpo  # type: ignore
 
     def test_mpo_apply_is_matrix_multiplication(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
@@ -76,9 +75,9 @@ class TestMPO(TestCase):
     def test_mpo_apply_rejects_non_mps(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
         with self.assertRaises(TypeError):
-            mpo.apply([np.zeros((1, 2, 1))] * 3)
+            mpo.apply([np.zeros((1, 2, 1))] * 3)  # type: ignore
         with self.assertRaises(Exception):
-            mpo @ [np.zeros((1, 2, 1))]
+            mpo @ [np.zeros((1, 2, 1))]  # type: ignore
 
     def test_mpo_extend(self):
         mpo = random_uniform_mps(2, 5, D=5, truncate=False)

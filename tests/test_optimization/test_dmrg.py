@@ -3,14 +3,15 @@ import scipy.sparse.linalg  # type: ignore
 from seemps.optimization.dmrg import QuadraticForm, dmrg
 from seemps.hamiltonians import ConstantTIHamiltonian, HeisenbergHamiltonian
 from seemps.state._contractions import _contract_last_and_first
-from seemps.state import random_uniform_mps, product_state
+from seemps.state import random_uniform_mps, product_state, CanonicalMPS
 from seemps.operators import MPO
-from ..tools import *
+from seemps.typing import DenseOperator
+from ..tools import TestCase
 
 
 class TestQuadraticForm(TestCase):
-    Sz = np.diag([1, -1])
-    Sx = np.array([[0, 1], [1, 0]])
+    Sz: DenseOperator = np.diag([1, -1])
+    Sx: DenseOperator = np.array([[0, 1], [1, 0]])
 
     def setUp(self) -> None:
         return super().setUp()
@@ -19,13 +20,13 @@ class TestQuadraticForm(TestCase):
         mpo = MPO([np.ones((1, 2, 2, 1))] * 3)
         mps = random_uniform_mps(2, 4, rng=self.rng)
         with self.assertRaises(Exception):
-            QuadraticForm(mpo, mps)
+            QuadraticForm(mpo, mps)  # type: ignore
 
     def test_quadratic_form_checks_mpo_dimensions(self):
         mpo = MPO([np.ones((1, 2, 2, 1))] * 3)
         mps = random_uniform_mps(3, 3, rng=self.rng)
         with self.assertRaises(Exception):
-            QuadraticForm(mpo, mps)
+            QuadraticForm(mpo, mps)  # type: ignore
 
     def test_quadratic_form_two_sites(self):
         H = ConstantTIHamiltonian(size=2, interaction=np.kron(self.Sz, self.Sx))
@@ -41,7 +42,7 @@ class TestQuadraticForm(TestCase):
 
         expected = np.vdot(AB, HopAB)
         exact_expected = Hmpo.expectation(state)
-        self.assertAlmostEqual(expected, exact_expected)
+        self.assertAlmostEqual(expected, exact_expected)  # type: ignore
 
         HAB = H.to_matrix() @ AB.reshape(-1)
         self.assertSimilar(HAB, HopAB)
@@ -60,7 +61,7 @@ class TestQuadraticForm(TestCase):
 
         expected = np.vdot(AB, HopAB)
         exact_expected = Hmpo.expectation(state)
-        self.assertAlmostEqual(expected, exact_expected)
+        self.assertAlmostEqual(expected, exact_expected)  # type: ignore
 
     def test_quadratic_form_three_sites_start_one(self):
         H = ConstantTIHamiltonian(size=3, interaction=np.kron(self.Sz, self.Sx))
@@ -76,15 +77,17 @@ class TestQuadraticForm(TestCase):
 
         expected = np.vdot(AB, HopAB)
         exact_expected = Hmpo.expectation(state)
-        self.assertAlmostEqual(expected, exact_expected)
+        self.assertAlmostEqual(expected, exact_expected)  # type: ignore
 
 
 class TestDMRG(TestCase):
-    Sz = np.diag([1, -1])
-    Sx = np.array([[0, 1], [1, 0]])
+    Sz: DenseOperator = np.diag([1.0, -1.0])
+    Sx: DenseOperator = np.array([[0.0, 1.0], [1.0, 0.0]])
 
     def test_dmrg_on_Ising_two_sites(self):
         """Check we can compute ground state of Sz * Sz on two sites"""
+        aux = np.kron(self.Sz, self.Sz)
+        assert aux is not None
         H = ConstantTIHamiltonian(size=2, interaction=-np.kron(self.Sz, self.Sz))
         Hmpo = H.to_mpo()
         result = dmrg(Hmpo, guess=self.random_uniform_mps(2, 2))
@@ -109,7 +112,7 @@ class TestDMRG(TestCase):
         E, exact_v = scipy.sparse.linalg.eigsh(H.to_matrix(), k=1, which="SA")
         self.assertAlmostEqual(result.energy, E[0])
         v = result.state.to_vector()
-        self.assertAlmostEqual(abs(np.vdot(v, exact_v)), 1.0)
+        self.assertAlmostEqual(abs(np.vdot(v, exact_v)), np.float64(1.0))
 
     def test_dmrg_works_with_hamiltonian(self):
         """Check we can compute ground state of Sz * Sz on two sites"""

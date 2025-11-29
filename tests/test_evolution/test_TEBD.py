@@ -1,6 +1,12 @@
-from seemps.state import CanonicalMPS, DEFAULT_STRATEGY, product_state, NO_TRUNCATION
-from seemps.tools import *
-from seemps.evolution.trotter import *
+import numpy as np
+import scipy
+from seemps.state import MPS, CanonicalMPS, DEFAULT_STRATEGY, NO_TRUNCATION
+from seemps.evolution.trotter import (
+    PairwiseUnitaries,
+    Trotter,
+    Trotter2ndOrder,
+    Trotter3rdOrder,
+)
 from seemps.hamiltonians import HeisenbergHamiltonian
 from .problem import EvolutionTestCase
 
@@ -100,20 +106,20 @@ class TestPairwiseUnitaries(EvolutionTestCase):
 class TestTrotter(EvolutionTestCase):
     def test_trotter_abstract_methods_signal_error(self):
         with self.assertRaises(Exception):
-            U = Trotter()
+            U = Trotter()  # type: ignore
         from unittest.mock import patch
 
         p = patch.multiple(Trotter, __abstractmethods__=set())
         p.start()
         mps = self.random_initial_state(2)
-        U = Trotter()
+        U = Trotter()  # type: ignore
         p.stop()
         with self.assertRaises(Exception):
             U.apply(mps)
         with self.assertRaises(Exception):
             U.apply_inplace(mps)
         with self.assertRaises(Exception):
-            U @ mps
+            U @ mps  # type: ignore
 
 
 class TestTrotter2nd(EvolutionTestCase):

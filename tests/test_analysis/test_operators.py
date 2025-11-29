@@ -1,9 +1,13 @@
 import numpy as np
-
-from seemps.analysis.operators import *
-from seemps.state import MPS
-
-from ..tools import *
+from ..tools import TestCase, random_uniform_mps
+from seemps.analysis.operators import (
+    id_mpo,
+    x_mpo,
+    p_mpo,
+    exponential_mpo,
+    cos_mpo,
+    sin_mpo,
+)
 
 
 class Test_analysis_operators(TestCase):

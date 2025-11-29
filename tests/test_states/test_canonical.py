@@ -12,7 +12,12 @@ from seemps.state.canonical_mps import (
     _canonicalize,
 )
 from ..fixture_mps_states import MPSStatesFixture
-from ..tools import *
+from ..tools import (
+    approximateIsometry,
+    run_over_random_uniform_mps,
+    similar,
+    almostIdentity,
+)
 
 
 class TestCanonicalForm(MPSStatesFixture):
@@ -160,7 +165,6 @@ class TestCanonicalForm(MPSStatesFixture):
 
     def test_canonical_complains_if_center_out_of_bounds(self):
         mps = random_uniform_mps(2, 10, rng=self.rng)
-        state = CanonicalMPS(mps)
         with self.assertRaises(Exception):
             CanonicalMPS(mps, center=10)
         with self.assertRaises(Exception):
@@ -197,7 +201,7 @@ class TestCanonicalForm(MPSStatesFixture):
     def test_multiplying_by_zero_returns_zero_state(self):
         A = CanonicalMPS(self.inhomogeneous_state)
         for factor in [0, 0.0, 0.0j]:
-            B = 0.0 * A
+            B = factor * A
             self.assertIsInstance(B, CanonicalMPS)
             self.assertTrue(B is not A)
             for Ai, Bi in zip(A, B):

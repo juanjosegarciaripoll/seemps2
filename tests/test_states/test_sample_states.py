@@ -1,9 +1,7 @@
 import numpy as np
 from math import sqrt
-from seemps.tools import *
-from seemps.state import *
-from seemps.state.factories import graph_state
-from ..tools import *
+from seemps.state.factories import graph_state, GHZ, product_state, W, AKLT
+from ..tools import TestCase
 
 
 # TODO: Is this file redundant or better than test_sampling.py

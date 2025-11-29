@@ -19,11 +19,14 @@ Unitary: TypeAlias = NDArray
 SparseOperator: TypeAlias = sp.csr_matrix | sp.bsr_matrix | sp.coo_matrix
 """An operator in sparse matrix format."""
 
-Operator: TypeAlias = NDArray | SparseOperator
-"""An operator, either in :class:`np.ndarray` or sparse matrix format."""
-
-DenseOperator: TypeAlias = NDArray
+DenseOperator: TypeAlias = (
+    np.ndarray[tuple[int, int], np.dtype[np.floating]]
+    | np.ndarray[tuple[int, int], np.dtype[np.complexfloating]]
+)
 """An operator in :class:`numpy.ndarray` format."""
+
+Operator: TypeAlias = DenseOperator | SparseOperator
+"""An operator, either in :class:`np.ndarray` or sparse matrix format."""
 
 FloatVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.floating]]
 """A one-dimensional :class:`numpy.ndarray` of real numbers."""

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.tools import σx, σy, σz
 from seemps.hamiltonians import (
@@ -6,7 +7,7 @@ from seemps.hamiltonians import (
     ConstantNNHamiltonian,
     HeisenbergHamiltonian,
 )
-from ..tools import *
+from ..tools import TestCase
 from math import sqrt
 
 i2 = sp.eye(2)

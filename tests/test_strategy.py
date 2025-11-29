@@ -1,9 +1,8 @@
 import numpy as np
-from .tools import *
+from .tools import TestCase
 from seemps.state.core import (
     Strategy,
     Truncation,
-    DEFAULT_STRATEGY,
     NO_TRUNCATION,
     destructively_truncate_vector,
 )
