@@ -2,11 +2,7 @@
     "python.formatting.provider": "ruff",
     "python.testing.unittestEnabled": true,
     "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "./tests",
-        "-p",
-        "test_*.py"
+        "-v"
     ],
     "python.testing.pytestEnabled": false,
     "editor.formatOnSave": true,
@@ -42,5 +38,7 @@
     "python.analysis.completeFunctionParens": true,
     "python.analysis.supportDocstringTemplate": true,
     "python.analysis.typeEvaluation.deprecateTypingAliases": false,
-    "python.analysis.typeEvaluation.enableReachabilityAnalysis": true
+    "python.analysis.typeEvaluation.enableReachabilityAnalysis": true,
+    "python.experiments.enabled": false,
+    "python.testing.autoTestDiscoverOnSaveEnabled": false
 }
