@@ -1,6 +1,11 @@
 import numpy as np
 from math import sqrt
-from seemps.analysis.mesh import *
+from seemps.analysis.mesh import (
+    Mesh,
+    RegularInterval,
+    ChebyshevInterval,
+    mps_to_mesh_matrix,
+)
 from ..tools import TestCase
 
 
@@ -80,7 +85,9 @@ class TestIntervals(TestCase):
         self.assertEqual([I[0], I[1]], [x for x in I])
 
     def test_rescaled_chebyshev_zeros_interval(self):
-        f = lambda x: 2 * x + 2  # Affine transformation
+        def f(x):
+            return 2 * x + 2  # Affine transformation
+
         I = ChebyshevInterval(f(-1), f(1), 2)
         self.assertEqual(I.start, f(-1))
         self.assertEqual(I.stop, f(1))

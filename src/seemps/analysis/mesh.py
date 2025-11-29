@@ -4,6 +4,7 @@ from itertools import product
 from collections.abc import Sequence, Iterator
 from typing import overload
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
 
 
 class Interval(ABC):
@@ -49,13 +50,15 @@ class Interval(ABC):
             raise TypeError("Index must be an integer or a NumPy array")
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
+    def __getitem__(self, idx: NDArray[np.integer]) -> NDArray[np.floating]: ...
 
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
     @abstractmethod
-    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray: ...  # type: ignore
+    def __getitem__(
+        self, idx: int | NDArray[np.integer]
+    ) -> float | NDArray[np.floating]: ...
 
     def to_vector(self) -> np.ndarray:
         return np.array([self[idx] for idx in range(self.size)])
@@ -81,12 +84,14 @@ class IntegerInterval(Interval):
         super().__init__(start, stop, size)
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
+    def __getitem__(self, idx: NDArray[np.integer]) -> NDArray[np.floating]: ...
 
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
-    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray:
+    def __getitem__(
+        self, idx: int | NDArray[np.integer]
+    ) -> float | NDArray[np.floating]:
         super()._validate_index(idx)
         return self.start + idx * self.step
 
@@ -128,12 +133,14 @@ class RegularInterval(Interval):
         )
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
+    def __getitem__(self, idx: NDArray[np.integer]) -> NDArray[np.floating]: ...
 
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
-    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray:
+    def __getitem__(
+        self, idx: int | NDArray[np.integer]
+    ) -> float | NDArray[np.floating]:
         super()._validate_index(idx)
         return self.start_displaced + idx * self.step
 
@@ -154,12 +161,14 @@ class ChebyshevInterval(Interval):
         self.endpoints = endpoints
 
     @overload
-    def __getitem__(self, idx: np.ndarray) -> np.ndarray: ...
+    def __getitem__(self, idx: NDArray[np.integer]) -> NDArray[np.floating]: ...
 
     @overload
     def __getitem__(self, idx: int) -> float: ...
 
-    def __getitem__(self, idx: int | np.ndarray) -> float | np.ndarray:
+    def __getitem__(
+        self, idx: int | NDArray[np.integer]
+    ) -> float | NDArray[np.floating]:
         super()._validate_index(idx)
         if self.endpoints:  # Chebyshev extrema
             nodes = np.cos(np.pi * idx / (self.size - 1))
@@ -199,7 +208,9 @@ class Mesh:
         self.dimension = len(intervals)
         self.dimensions = tuple(interval.size for interval in self.intervals)
 
-    def __getitem__(self, indices: Sequence[int] | np.ndarray) -> np.ndarray:
+    def __getitem__(
+        self, indices: int | Sequence[int] | ArrayLike
+    ) -> NDArray[np.floating]:
         """Return the vector of coordinates of a point in the mesh.
 
         The input can take different shapes for a D-dimensional mesh:
@@ -225,13 +236,14 @@ class Mesh:
             if self.dimension > 1:
                 raise IndexError("Invalid index into a Mesh")
             indices = [indices]
-        indices = np.asarray(indices)
+        index_array = np.asarray(indices)
         # TODO: Type checker complains about the type of this
         return np.stack(
-            [self.intervals[n][indices[..., n]] for n in range(self.dimension)], axis=-1
+            [self.intervals[n][index_array[..., n]] for n in range(self.dimension)],
+            axis=-1,
         )
 
-    def to_tensor(self):
+    def to_tensor(self) -> NDArray[np.floating]:
         return np.array(list(product(*self.intervals))).reshape(
             *self.dimensions, self.dimension
         )
@@ -257,7 +269,7 @@ def array_affine(
 
 def mps_to_mesh_matrix(
     sites_per_dimension: list[int], mps_order: str = "A", base: int = 2
-) -> np.ndarray:
+) -> NDArray[np.floating]:
     """
     Returns a matrix that transforms an array of `MPS` indices
     to an array of `Mesh` indices based on the specified order and base.

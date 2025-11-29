@@ -49,7 +49,7 @@ Environment: TypeAlias = NDArray
 MPOEnvironment: TypeAlias = NDArray
 """Left or right environment of an MPS-MPO-MPS contraction."""
 
-FloatOrArray = TypeVar("FloatOrArray", float, NDArray[np.floating])
+FloatOrArray = TypeVar("FloatOrArray", float, np.floating, int, NDArray[np.floating])
 
 
 def to_dense_operator(O: Operator) -> DenseOperator:
