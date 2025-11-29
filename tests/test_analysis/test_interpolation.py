@@ -6,7 +6,7 @@ from seemps.analysis.interpolation import (
     finite_differences_interpolation_1D,
 )
 from seemps.analysis.space import Space
-from seemps.state import DEFAULT_STRATEGY, MPS
+from seemps.state import DEFAULT_STRATEGY, MPS, Simplification
 from ..tools import TestCase
 from .tools_interpolation import (
     gaussian,
@@ -19,7 +19,7 @@ from .tools_interpolation import (
 
 
 class TestInterpolation(TestCase):
-    strategy = DEFAULT_STRATEGY.replace(simplify=2)
+    strategy = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
     def test_fourier_interpolation_1D(self):
         for n in range(3, 8):
