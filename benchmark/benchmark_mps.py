@@ -1,7 +1,6 @@
-import seemps.state
 from seemps.state import CanonicalMPS, GHZ, scprod, DEFAULT_STRATEGY, random_uniform_mps
 import seemps.truncate
-from benchmark import BenchmarkSet, BenchmarkGroup
+from .benchmark import BenchmarkSet, BenchmarkGroup
 import numpy as np
 import sys
 
