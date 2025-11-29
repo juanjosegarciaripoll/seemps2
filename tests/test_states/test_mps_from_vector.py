@@ -58,7 +58,7 @@ class TestMPSFromVector(tools.TestCase):
                 w = self.join_tensors(state)
                 if normalize:
                     self.assertSimilar(w, v / np.linalg.norm(v))
-                    self.assertAlmostEqual(np.linalg.norm(w), 1)
+                    self.assertAlmostEqual(np.linalg.norm(w), np.float64(1.0))
                 else:
                     self.assertSimilar(w, v)
 

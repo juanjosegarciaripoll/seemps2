@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 import numpy as np
 from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
 
@@ -85,11 +85,11 @@ def _right_orth_2site(
 def _select_svd_driver(which: str): ...
 def _destructive_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
 
-class GemmOrder:
-    GEMM_NORMAL: int = 0
-    GEMM_TRANSPOSE: int = 1
-    GEMM_ADJOINT: int = 2
+class GemmOrder(IntEnum):
+    NORMAL = 0
+    TRANSPOSE = 1
+    ADJOINT = 2
 
-def _gemm(B: np.ndarray, BT: int, A: np.ndarray, AT: int) -> np.ndarray: ...
+def _gemm(B: np.ndarray, BT: GemmOrder, A: np.ndarray, AT: GemmOrder) -> np.ndarray: ...
 
 from .mps import MPS  # noqa: E402
