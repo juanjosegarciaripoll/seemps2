@@ -1,6 +1,8 @@
 from . import (
     version,
     tools,
+    state,
+    operators,
     hdf5,
     expectation,
     truncate,
@@ -15,6 +17,8 @@ from . import (
 __all__ = [
     "version",
     "tools",
+    "state",
+    "operators",
     "hdf5",
     "expectation",
     "truncate",

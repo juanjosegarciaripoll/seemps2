@@ -1,8 +1,8 @@
 import numpy as np
-from .tools import *
+from .tools import TestCase, almostIdentity, run_over_random_uniform_mps
 from seemps.state import CanonicalMPS, MPS
-from seemps.truncate import simplify, AntilinearForm
-from seemps.expectation import expectation1, expectation2
+from seemps.truncate import AntilinearForm
+from seemps.expectation import expectation1
 
 
 class TestLinearForm(TestCase):
@@ -34,7 +34,7 @@ class TestLinearForm(TestCase):
                 # Take an MPS Φ, construct a new state ψ = O1*ϕ with a local
                 # operator on the 'n-th' site
                 #
-                ψ = seemps.state.MPS(ϕ)
+                ψ = MPS(ϕ)
                 ψ[n] = np.einsum("ij,ajb->aib", O, ψ[n])
                 #
                 # and make sure that the AntilinearForm provides the right tensor to
@@ -65,7 +65,7 @@ class TestLinearForm(TestCase):
                 # Take an MPS Φ, construct a new state ψ = O1*ϕ with a local
                 # operator on the 'n-th' site
                 #
-                ψ = seemps.state.MPS(ϕ)
+                ψ = MPS(ϕ)
                 ψ[n] = np.einsum("ij,ajb->aib", O1, ψ[n])
                 ψ[n + 1] = np.einsum("ij,ajb->aib", O2, ψ[n + 1])
                 #

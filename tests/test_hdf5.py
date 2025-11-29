@@ -1,9 +1,10 @@
-from typing import Any
+from typing import cast
+import numpy as np
 import h5py  # type: ignore
 import seemps
 from seemps.operators import MPO
 from seemps.state import random_uniform_mps
-from .tools import *
+from .tools import MPSTestCase
 import os
 
 
@@ -30,7 +31,7 @@ class TestHDF5(MPSTestCase):
             file.create_dataset("A", data=1)
             file.create_dataset("B", data=2)
             file.create_group("C")
-            file["C"].create_dataset("D", data=3)
+            cast(h5py.Group, file["C"]).create_dataset("D", data=3)
         a = seemps.hdf5.read_full_hdf5_as_paths(self.filename)
         self.assertEqual(a, {"/A": 1, "/B": 2, "/C/D": 3})
         a = seemps.hdf5.read_full_hdf5(self.filename)
