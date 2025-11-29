@@ -8,6 +8,8 @@ Natural: TypeAlias = Annotated[int, ">=1"]
 
 Float: TypeAlias = float | np.floating
 
+Real: TypeAlias = float | int | np.floating | np.integer
+
 Weight: TypeAlias = float | complex
 """A real or complex number."""
 
@@ -22,6 +24,9 @@ Operator: TypeAlias = NDArray | SparseOperator
 
 DenseOperator: TypeAlias = NDArray
 """An operator in :class:`numpy.ndarray` format."""
+
+FloatVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.floating]]
+"""A one-dimensional :class:`numpy.ndarray` of real numbers."""
 
 Vector: TypeAlias = NDArray
 """A one-dimensional :class:`numpy.ndarray` representing a wavefunction."""
@@ -54,10 +59,12 @@ __all__ = [
     "NDArray",
     "Float",
     "Weight",
+    "Real",
     "Vector",
     "VectorLike",
     "Operator",
     "Unitary",
+    "FloatVector",
     "DenseOperator",
     "Tensor3",
     "Tensor4",

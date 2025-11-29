@@ -1,7 +1,8 @@
 from __future__ import annotations
+from collections.abc import Sequence
 import numpy as np
 from typing import TypeVar
-from ..typing import Vector
+from ..typing import FloatVector, Real
 from ..operators import MPO, MPOList, MPOSum
 
 
@@ -43,13 +44,13 @@ class Space:
     L: list[tuple[float, float]]
     a: list[float]
     b: list[float]
-    dx: Vector
-    x: list[Vector]
+    dx: FloatVector
+    x: list[FloatVector]
 
     def __init__(
         self,
         qubits_per_dimension: list[int],
-        L: list[tuple[float, float]],
+        L: Sequence[tuple[Real, Real]],
         closed: bool = True,
         order: str = "A",  # TODO: Replace with Literal
     ):
@@ -73,9 +74,9 @@ class Space:
         self.n_sites = sum(qubits_per_dimension)
         self.order = order
         self.sites = self.get_sites()
-        self.L = L
-        self.a = [L_i[0] for L_i in L]
-        self.b = [L_i[1] for L_i in L]
+        self.L = [(float(start), float(end)) for start, end in L]
+        self.a = [start for start, _ in self.L]
+        self.b = [end for _, end in self.L]
         self.dx = np.array(
             [
                 (end - start) / ((d - 1) if closed else d)

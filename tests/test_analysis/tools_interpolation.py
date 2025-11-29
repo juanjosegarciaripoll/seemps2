@@ -1,5 +1,6 @@
+from collections.abc import Sequence
+from seemps.typing import Real, FloatVector
 from math import sqrt
-
 import numpy as np
 
 
@@ -20,7 +21,9 @@ def gaussian(r):
     return f / np.linalg.norm(f)
 
 
-def get_position_regular_grid(dims: list, a: list, dx: list) -> np.ndarray:
+def get_position_regular_grid(
+    dims: Sequence[int], a: Sequence[Real], dx: FloatVector
+) -> np.ndarray:
     """Construct a regular grid r[d,i1,i2,...,id] to encode the coordinates of
     each index in position space, where d are the number of dimensions of the system
     and ik are the number of elements of each dimension.
@@ -28,12 +31,12 @@ def get_position_regular_grid(dims: list, a: list, dx: list) -> np.ndarray:
     Parameters
     ----------
     dims    -- list with the dimension of each variable.
-    a         -- list of initial values of the interval for each dimension
-    dx        -- list of the discretization step for each dimension.
+    a       -- list of initial values of the interval for each dimension
+    dx      -- list of the discretization step for each dimension.
     """
 
     d = len(dims)
-    r = np.zeros([d] + dims, dtype=np.float64)
+    r = np.zeros([d, *dims], dtype=np.float64)
     for n, (an, dn) in enumerate(zip(a, dims)):
         rn = an + dx[n] * np.arange(dn)
         # Broadcast to (1, ..., dk, ..., 1)
