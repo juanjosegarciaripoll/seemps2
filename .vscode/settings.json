@@ -32,5 +32,15 @@
     "python.analysis.importFormat": "relative",
     "python.analysis.inlayHints.functionReturnTypes": false,
     "python.analysis.languageServerMode": "full",
-    "mypy-type-checker.preferDaemon": true
+    "mypy-type-checker.preferDaemon": true,
+    "editor.defaultFormatter": "ms-python.python",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.typeEvaluation.strictListInference": true,
+    "python.analysis.typeEvaluation.strictDictionaryInference": true,
+    "python.analysis.typeEvaluation.strictSetInference": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.supportDocstringTemplate": true,
+    "python.analysis.typeEvaluation.deprecateTypingAliases": false,
+    "python.analysis.typeEvaluation.enableReachabilityAnalysis": true
 }
