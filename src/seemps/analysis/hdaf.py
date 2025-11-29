@@ -6,21 +6,21 @@ from collections.abc import Iterator
 from ..operators import MPO
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..register.transforms import mpo_weighted_shifts
-from ..typing import FloatOrArray
+from ..typing import FloatOrArray, Float
 
 
 def auto_sigma(
-    M: int, dx: float, time: float = 0.0, lower_bound: float | None = None
-) -> float:
+    M: int, dx: Float, time: Float = 0.0, lower_bound: Float | None = None
+) -> Float:
     if lower_bound is None:
         lower_bound = 3 * dx
 
-    s0: float = hdaf_kernel(0, dx=dx, s0=1.0, M=M)
+    s0: Float = hdaf_kernel(0, dx=dx, s0=1.0, M=M)
 
     return max(lower_bound, sqrt(time), s0)
 
 
-def _asymptotic_factor(M: int, l: int, c: float) -> float:
+def _asymptotic_factor(M: int, l: int, c: Float) -> Float:
     """
     Equivalent to sqrt(factorial(M + l)) * c ** (M // 2) / factorial(M // 2).
     This is a helper to allow computing 'width_bound' even for very large M.
@@ -29,7 +29,7 @@ def _asymptotic_factor(M: int, l: int, c: float) -> float:
     return np.exp(0.5 * loggamma(M + l + 1) + Mhalf * np.log(c) - loggamma(Mhalf + 1))
 
 
-def width_bound(s0: float, M: int, l: int, time: float, eps: float = 1e-16) -> float:
+def width_bound(s0: Float, M: int, l: int, time: Float, eps: Float = 1e-16) -> Float:
     """
     Analytic upper bound for the width of the HDAF with the same given
     parameters.
@@ -51,9 +51,9 @@ def width_bound(s0: float, M: int, l: int, time: float, eps: float = 1e-16) -> f
 
 def _hnl(
     x: np.ndarray,
-    c: float = 1.0,
+    c: Float = 1.0,
     l: int = 0,
-    d: float = 1.0,
+    d: Float = 1.0,
 ) -> Iterator[np.ndarray]:
     """
     Generator for H(2n + l, x) * c**n * d / factorial(n), without explicitly
@@ -84,10 +84,10 @@ def _hnl(
 
 def hdaf_kernel(
     x: FloatOrArray,
-    dx: float,
-    s0: float,
+    dx: Float,
+    s0: Float,
     M: int,
-    time: float = 0.0,
+    time: Float = 0.0,
     derivative: int = 0,
 ) -> FloatOrArray:
     if time == 0:  # Spread under the free propagator
@@ -106,10 +106,10 @@ def hdaf_kernel(
 
 def hdaf_mpo(
     num_qubits: int,
-    dx: float,
+    dx: Float,
     M: int,
-    s0: float | None = None,
-    time: float = 0.0,
+    s0: Float | None = None,
+    time: Float = 0.0,
     derivative: int = 0,
     periodic: bool = True,
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -124,14 +124,14 @@ def hdaf_mpo(
     ----------
     num_qubits : int
         The number of qubits to discretize the system.
-    dx : float
+    dx : Float
         The grid stepsize.
     M : int
         The order of the highest Hermite polynomial (must be an even integer).
-    s0 : float | None, default=None
+    s0 : Float | None, default=None
         The width of the HDAF Gaussian weight. If not provided, a suitable
         width will be computed based on `M` and `dx`.
-    time : float, default=0.0
+    time : Float, default=0.0
         The evolution time of the Free Propagator to approximate.
     derivative : int, default=0
         The order of the derivative to approximate.

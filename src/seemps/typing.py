@@ -6,6 +6,8 @@ from typing import TypeAlias, Annotated, TypeVar
 
 Natural: TypeAlias = Annotated[int, ">=1"]
 
+Float: TypeAlias = float | np.floating
+
 Weight: TypeAlias = float | complex
 """A real or complex number."""
 
@@ -50,6 +52,7 @@ def to_dense_operator(O: Operator) -> DenseOperator:
 
 __all__ = [
     "NDArray",
+    "Float",
     "Weight",
     "Vector",
     "VectorLike",
