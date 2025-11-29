@@ -91,6 +91,7 @@ def expt_1():
     best_route = None
     redundancy = 0
     i = 0
+    t = 0
     for orders in product(*tuple(permutations(ijk) for _, ijk in indices)):
         shapes = [np.random.rand(*(size[letter] for letter in ijk)) for ijk in orders]
         output = "".join(
