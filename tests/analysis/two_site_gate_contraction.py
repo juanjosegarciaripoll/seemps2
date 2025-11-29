@@ -1,5 +1,7 @@
 import numpy as np
 from .timing import bench_all
+from ncon import ncon  # type: ignore
+from opt_einsum import contract, contract_expression  # type: ignore
 
 
 def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x2377312)):
@@ -48,13 +50,13 @@ def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x23773
         ).reshape(a, d, e, c)
 
     def method5():
-        return contract("ijk,klm,nrjl -> inrm", A, B, U)
+        return contract("ijk,klm,nrjl -> inrm", A, B, U)  # type: ignore
 
     def method6():
-        return path_info(A, B, U)
+        return path_info(A, B, U)  # type: ignore
 
     def method7():
-        return ncon((A, B, U), ((-1, 2, 1), (1, 3, -4), (-2, -3, 2, 3)))
+        return ncon((A, B, U), ((-1, 2, 1), (1, 3, -4), (-2, -3, 2, 3)))  # type: ignore
 
     print("---------------\nUnitary evolution contraction")
     bench_all(

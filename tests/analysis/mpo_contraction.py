@@ -92,8 +92,8 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
         return contract("aijb,cjd->acibd", A, B).reshape(a * c, i, b * d)
 
     def method8():
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         return path_info(A, B).reshape(a * c, i, b * d)
 
     print("\n----------\nTensor contractions for MPO * MPS")
