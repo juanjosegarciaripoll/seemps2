@@ -1,6 +1,6 @@
 import numpy as np
 from seemps.analysis.space import Space
-from ..tools import *
+from ..tools import TestCase
 
 
 class TestSpace(TestCase):
@@ -11,7 +11,7 @@ class TestSpace(TestCase):
         for qubits_i in self.qubits:
             for closed in [False, True]:
                 dims = [2**q for q in qubits_i]
-                L = [[a, b]] * len(qubits_i)
+                L = [(a, b)] * len(qubits_i)
                 dx = np.array(
                     [
                         (end - start) / ((d - 1) if closed else d)
@@ -28,13 +28,7 @@ class TestSpace(TestCase):
         for qubits_i in self.qubits:
             for closed in [False, True]:
                 dims = [2**q for q in qubits_i]
-                L = [[a, b]] * len(qubits_i)
-                dx = np.array(
-                    [
-                        (end - start) / ((d - 1) if closed else d)
-                        for (start, end), d in zip(L, dims)
-                    ]
-                )
+                L = [(a, b)] * len(qubits_i)
                 space = Space(qubits_i, L, closed=closed)
                 new_qubits = [q + 1 for q in qubits_i]
                 new_space = space.increase_resolution(new_qubits)
