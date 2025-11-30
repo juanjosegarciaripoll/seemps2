@@ -7,8 +7,6 @@ exclude =
 	build,
 	docs,
     scripts,
-    benchmark,
-	# TODO: Eventually fix errors in tests
-    tests
+    benchmark
 max-complexity = 10
 max-line-length = 150
