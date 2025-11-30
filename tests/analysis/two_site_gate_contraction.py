@@ -1,7 +1,7 @@
 import numpy as np
 from .timing import bench_all
-from ncon import ncon  # type: ignore
-from opt_einsum import contract, contract_expression  # type: ignore
+from ncon import ncon  # type: ignore # noqa: F401
+from opt_einsum import contract, contract_expression  # type: ignore # noqa: F401
 
 
 def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x2377312)):
@@ -35,8 +35,8 @@ def investigate_two_site_gate_contraction(rng=np.random.default_rng(seed=0x23773
         return np.einsum("ijk,klm,nrjl -> inrm", A, B, U, optimize=path)
 
     def method3():
-        a, d, b = A.shape
-        b, e, c = B.shape
+        a, d, _ = A.shape
+        _, e, c = B.shape
         D = d * e
         aux = np.tensordot(A, B, (2, 0)).reshape(a, D, c)
         aux = np.tensordot(U.reshape(D, D), aux, (1, 1)).transpose(1, 0, 2)

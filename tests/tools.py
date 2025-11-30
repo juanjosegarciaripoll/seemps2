@@ -152,7 +152,7 @@ def contain_similar_tensors(A, B):
 
 
 def run_over_random_uniform_mps(function, d=2, N=10, D=10, repeats=10):
-    for nqubits in range(1, N + 1):
+    for _ in range(1, N + 1):
         for _ in range(repeats):
             function(seemps.state.random_uniform_mps(d, N, D))
 

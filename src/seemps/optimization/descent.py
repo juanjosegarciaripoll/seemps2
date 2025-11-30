@@ -149,7 +149,7 @@ def gradient_descent(
                 avg_H3 = H.expectation(H_state).real
                 A = [[E, avg_H2], [avg_H2, avg_H3]]
                 B = [[1, E], [E, avg_H2]]
-                w, v = scipy.linalg.eig(A, B)
+                w, v = scipy.linalg.eig(A, B)  # type: ignore # (Pylance eror)
                 v = v[:, np.argmin(w)]
                 v /= np.linalg.norm(v)
                 state = simplify(

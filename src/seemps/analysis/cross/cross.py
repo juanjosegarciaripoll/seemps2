@@ -160,9 +160,10 @@ class CrossInterpolation:
                 if k < self.sites - 1:
                     self.I_l[k + 1] = self.combine_indices(self.I_l[k], self.I_s[k])[I]
                 else:
-                    indices = self.I_l[1:] + [
-                        self.combine_indices(self.I_l[k], self.I_s[k])[I]
-                    ]
+                    indices = (  # type: ignore # noqa: F841
+                        self.I_l[1:]
+                        + [self.combine_indices(self.I_l[k], self.I_s[k])[I]]
+                    )
         else:
             for k in reversed(range(self.sites)):
                 fiber = self.sample_fiber(k)
@@ -173,10 +174,10 @@ class CrossInterpolation:
                 if k > 0:
                     self.I_g[k - 1] = self.combine_indices(self.I_s[k], self.I_g[k])[I]
                 else:
-                    # ruff: noqa: F841
-                    indices = [
-                        self.combine_indices(self.I_s[0], self.I_g[0])[I]
-                    ] + self.I_g[:-1]
+                    indices = (  # noqa: F841 # type: ignore
+                        [self.combine_indices(self.I_s[0], self.I_g[0])[I]]
+                        + self.I_g[:-1]
+                    )
         # TODO: Get points from indices
         return np.array([])
 

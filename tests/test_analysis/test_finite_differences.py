@@ -5,8 +5,6 @@ from seemps.analysis.finite_differences import (
     finite_differences_mpo,
     smooth_finite_differences_mpo,
 )
-from seemps.analysis.space import Space
-from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION
 
 from .. import tools
 

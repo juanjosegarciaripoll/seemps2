@@ -1,8 +1,7 @@
 import numpy as np
 from abc import abstractmethod
 import unittest
-
-import seemps
+from numpy.typing import NDArray
 from seemps.state import MPS, scprod
 from seemps.truncate.simplify_mpo import mps_as_mpo
 from seemps.analysis.mesh import Mesh, RegularInterval
@@ -20,7 +19,6 @@ from seemps.analysis.cross import (
 )
 from seemps.analysis.cross.cross import maxvol_square
 from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
-
 from .tools_analysis import reorder_tensor
 from ..tools import TestCase
 
@@ -42,7 +40,9 @@ def integration_callback(mps_quadrature: MPS):
 
 
 def gaussian_setup_mps(dims, n=5, a=-1, b=1):
-    func = lambda tensor: np.exp(-(np.sum(tensor, axis=0) ** 2))
+    def func(tensor):
+        return np.exp(-(np.sum(tensor, axis=0) ** 2))
+
     intervals = [RegularInterval(a, b, 2**n) for _ in range(dims)]
     mesh = Mesh(intervals)  # type: ignore
     mesh_tensor = mesh.to_tensor()
@@ -51,16 +51,23 @@ def gaussian_setup_mps(dims, n=5, a=-1, b=1):
     return func, mesh, mps, func_vector
 
 
+def _EPR_function(x: NDArray, y: NDArray) -> NDArray:
+    return np.exp(-(x * x)) * ((x - y) == 0).astype(np.float64)
+
+
+def _Gaussian_2d(x: NDArray, y: NDArray) -> NDArray:
+    return np.exp(-(x * x + y * y))
+
+
 def gaussian_setup_1d_mpo(is_diagonal, n=5, a=-1, b=1):
     interval = RegularInterval(a, b, 2**n)
     vec_x = interval.to_vector()
     mps_identity = MPS([np.ones((1, 2, 1))] * n)
     mesh = Mesh([interval, interval])
     if is_diagonal:
-        delta = lambda z: (z == 0).astype(int)
-        func = lambda x, y: np.exp(-(x**2)) * delta(x - y)
+        func = _EPR_function
     else:
-        func = lambda x, y: np.exp(-(x**2 + y**2))
+        func = _Gaussian_2d
     return func, vec_x, mesh, mps_identity
 
 
@@ -104,7 +111,10 @@ class CrossTests(TestCase):
 
     def test_2d_integration_callback(self, n=8):
         a, b = -1, 1
-        func = lambda tensor: np.exp(tensor[0] + tensor[1])  # f(x,y) = e^(x+y)
+
+        def func(tensor):
+            return np.exp(tensor[0] + tensor[1])  # f(x,y) = e^(x+y)
+
         interval = RegularInterval(a, b, 2**n, endpoint_right=True)
         mesh = Mesh([interval, interval])
         mps_quad_1d = mps_fifth_order(-1, 1, n)
@@ -133,14 +143,20 @@ class CrossTests(TestCase):
 
     def test_compose_1d_mps_list(self, n=5):
         _, _, mps_0, y_0 = gaussian_setup_mps(1, n=n)
-        func = lambda v: v[0] + np.sin(v[1]) + np.cos(v[2])
+
+        def func(v):
+            return v[0] + np.sin(v[1]) + np.cos(v[2])
+
         black_box = BlackBoxComposeMPS(func, [mps_0, mps_0, mps_0])
         cross_results = self.cross_method(black_box)
         self.assertSimilar(func([y_0, y_0, y_0]), cross_results.mps.to_vector())
 
     def test_compose_2d_mps_list(self, n=5):
         _, _, mps_0, y_0 = gaussian_setup_mps(2, n=n)
-        func = lambda v: v[0] + np.sin(v[1]) + np.cos(v[2])
+
+        def func(v):
+            return v[0] + np.sin(v[1]) + np.cos(v[2])
+
         black_box = BlackBoxComposeMPS(func, [mps_0, mps_0, mps_0])
         cross_results = self.cross_method(black_box)
         self.assertSimilar(func([y_0, y_0, y_0]), cross_results.mps.to_vector())

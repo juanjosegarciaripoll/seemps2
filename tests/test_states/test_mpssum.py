@@ -1,6 +1,6 @@
 import numpy as np
 
-from seemps.state import MPS, NO_TRUNCATION, MPSSum
+from seemps.state import MPS, MPSSum
 
 from ..fixture_mps_states import MPSStatesFixture
 
@@ -8,7 +8,7 @@ from ..fixture_mps_states import MPSStatesFixture
 class TestMPSSum(MPSStatesFixture):
     def test_mpssum_requires_non_empty_list(self):
         with self.assertRaises(Exception):
-            B = MPSSum([], [])
+            B = MPSSum([], [])  # type: ignore # noqa: F841
 
     def test_mpssum_size(self):
         A = MPS(self.product_state)

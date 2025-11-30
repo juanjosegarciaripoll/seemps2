@@ -96,11 +96,10 @@ class TestMPOSum(TestCase):
 
     def test_mposum_apply_can_simplify(self):
         state = random_uniform_mps(2, self.mpoA.size, D=10)
-
         mposum = self.mpoA + self.mpoB
         self.assertSimilar(
-            (self.mpoA + self.mpoB).apply(state, strategy=TEST_STRATEGY).to_vector(),
-            (self.mpoA + self.mpoB).to_matrix() @ state.to_vector(),
+            mposum.apply(state, strategy=TEST_STRATEGY).to_vector(),
+            mposum.to_matrix() @ state.to_vector(),
         )
 
     def test_mpo_set_strategy(self):

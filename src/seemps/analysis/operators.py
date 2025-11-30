@@ -22,7 +22,7 @@ def id_mpo(n_qubits: int, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
     B = np.zeros((1, 2, 2, 1))
     B[0, 0, 0, 0] = 1
     B[0, 1, 1, 0] = 1
-    return MPO([B for n_i in range(n_qubits)], strategy=strategy)
+    return MPO([B] * n_qubits, strategy=strategy)
 
 
 def x_mpo(
@@ -108,7 +108,8 @@ def x_to_n_mpo(
     MPO
         x^n operator MPO.
     """
-    return MPOList([x_mpo(n_qubits, a, dx) for n_i in range(n)]).join(strategy=strategy)
+    # TODO: We have more efficient methods with polynomials now
+    return MPOList([x_mpo(n_qubits, a, dx)] * n).join(strategy=strategy)
 
 
 def p_mpo(n_qubits: int, dx: float, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
@@ -185,9 +186,8 @@ def p_to_n_mpo(
     MPO
         p^n operator MPO.
     """
-    return MPOList([p_mpo(n_qubits, dx) for n_i in range(n)]).join(
-        strategy=strategy,
-    )
+    # TODO: We have more efficient ways to do this now with polynomials
+    return MPOList([p_mpo(n_qubits, dx)] * n).join(strategy=strategy)
 
 
 def exponential_mpo(

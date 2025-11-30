@@ -1,10 +1,8 @@
 import numpy as np
-import seemps
 from math import sqrt
 from seemps.evolution.euler import euler, euler2, implicit_euler
 from seemps.hamiltonians import HeisenbergHamiltonian
-from seemps.operators import MPO
-from seemps.state import DEFAULT_STRATEGY, CanonicalMPS, product_state
+from seemps.state import product_state
 
 from .problem import EvolutionTestCase
 

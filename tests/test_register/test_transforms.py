@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.state import MPS
-from seemps.register import *
+from seemps.register import qubo_mpo
 from ..tools import TestCase
 
 
@@ -10,19 +10,19 @@ class TestAlgebraic(TestCase):
     i2 = sp.eye(2, dtype=np.float64)
 
     @classmethod
-    def projector(self, i, L):
-        return sp.kron(sp.eye(2**i), sp.kron(self.P1, sp.eye(2 ** (L - i - 1))))
+    def projector(cls, i, L):
+        return sp.kron(sp.eye(2**i), sp.kron(cls.P1, sp.eye(2 ** (L - i - 1))))
 
     @classmethod
-    def linear_operator(self, h):
+    def linear_operator(cls, h):
         L = len(h)
-        return sum(hi * self.projector(i, L) for i, hi in enumerate(h) if hi)
+        return sum(hi * cls.projector(i, L) for i, hi in enumerate(h) if hi)
 
     @classmethod
-    def quadratic_operator(self, J):
+    def quadratic_operator(cls, J):
         L = len(J)
         return sum(
-            J[i, j] * (self.projector(i, L) @ self.projector(j, L))
+            J[i, j] * (cls.projector(i, L) @ cls.projector(j, L))
             for i in range(L)
             for j in range(L)
             if J[i, j]

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Literal, TypeAlias
+from typing import TypeAlias
 from collections.abc import Sequence
 from .mpo import MPO
 from ..state import Strategy, DEFAULT_STRATEGY, NO_TRUNCATION

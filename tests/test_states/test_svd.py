@@ -1,4 +1,3 @@
-import numpy as np
 import scipy.linalg
 from seemps.state.schmidt import _destructive_svd
 from .. import tools

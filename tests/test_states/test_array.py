@@ -1,5 +1,4 @@
 import numpy as np
-from seemps.state import MPS, MPSSum
 from seemps.state.array import TensorArray
 from .. import tools
 
@@ -37,9 +36,9 @@ class TestTensorArray(tools.TestCase):
     def test_tensor_array_get_item_checks_index_bounds(self):
         state = TensorArray([np.zeros((1, 2, 1))] * 3)
         with self.assertRaises(Exception):
-            a = state[3]  # type: ignore
+            a = state[3]  # type: ignore # noqa: F841
         with self.assertRaises(Exception):
-            a = state[-4]  # type: ignore
+            a = state[-4]  # type: ignore # noqa: F841
 
     def test_tensor_array_can_set_items(self):
         data = [self.rng.normal(size=(1, 2, 1)) for _ in range(3)]

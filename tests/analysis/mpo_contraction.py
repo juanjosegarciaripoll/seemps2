@@ -14,13 +14,13 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
     )
 
     def method1():
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         return np.einsum("aijb,cjd->acibd", A, B).reshape(a * c, i, b * d)
 
     def reorder_output(C):
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         return (
             C.reshape(c, a, i, d, b).transpose(1, 0, 2, 4, 3).reshape(a * c, i, b * d)
         )
@@ -28,15 +28,15 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
     path = np.einsum_path("aijb,cjd->acibd", A, B, optimize="optimal")[0]
 
     def method2():
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         return np.einsum("aijb,cjd->acibd", A, B, optimize=path).reshape(
             a * c, i, b * d
         )
 
     def method3():
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         # tensordot(A, B, (2, 1)) -> (a,i,b,c,d)
         return (
             np.tensordot(A, B, (2, 1)).transpose(0, 3, 1, 2, 4).reshape(a * c, i, b * d)
@@ -79,16 +79,16 @@ def investigate_mpo_contraction(rng=np.random.default_rng(seed=0x223775637)):
         ).reshape(c * a, i, d * b)
 
     def method6():
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         #
         # np.einsum("aijb,cjd->acibd")
         #
         return ncon((A, B), ((-1, -3, 1, -4), (-2, 1, -5))).reshape(c * a, i, d * b)
 
     def method7():
-        a, i, j, b = A.shape
-        c, j, d = B.shape
+        a, i, _, b = A.shape
+        c, _, d = B.shape
         return contract("aijb,cjd->acibd", A, B).reshape(a * c, i, b * d)
 
     def method8():

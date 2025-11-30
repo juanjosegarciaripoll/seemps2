@@ -63,7 +63,7 @@ def bicgs_solve(
                 f"BICCGS converged with residual {norm_r} below tolerance {tolerance}"
             )
             return x, norm_r
-        for i in range(1, maxiter + 1):
+        for _ in range(1, maxiter + 1):
             v = simplify(A @ p, strategy)
             alpha = rho / scprod(r0, v)
             h = simplify(x + alpha * p, strategy)

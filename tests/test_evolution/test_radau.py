@@ -1,7 +1,6 @@
 import numpy as np
 from math import sqrt
-from seemps.state import CanonicalMPS, DEFAULT_STRATEGY, product_state
-from seemps.operators import MPO
+from seemps.state import product_state
 from seemps.evolution import radau
 from seemps.hamiltonians import HeisenbergHamiltonian
 from .problem import EvolutionTestCase
@@ -17,9 +16,7 @@ class TestRadau(EvolutionTestCase):
         final = radau(H, 1.0, mps, steps=10, callback=lambda t, state: t)
         self.assertSimilar(final, np.linspace(0, 1.0, 11))
 
-        final = radau(
-            H, (1.0, 2.0), mps, steps=10, callback=lambda t, state: t
-        )
+        final = radau(H, (1.0, 2.0), mps, steps=10, callback=lambda t, state: t)
         self.assertSimilar(final, np.linspace(1.0, 2.0, 11))
 
         t_span = np.linspace(1.0, 3.0, 13)

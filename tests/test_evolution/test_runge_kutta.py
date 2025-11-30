@@ -1,7 +1,6 @@
 import numpy as np
 from math import sqrt
-from seemps.state import CanonicalMPS, DEFAULT_STRATEGY, product_state
-from seemps.operators import MPO
+from seemps.state import product_state
 from seemps.evolution.runge_kutta import runge_kutta
 from seemps.hamiltonians import HeisenbergHamiltonian
 from .problem import EvolutionTestCase

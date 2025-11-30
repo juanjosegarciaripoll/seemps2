@@ -23,7 +23,7 @@ class TestConstantNNHamiltonian(TestCase):
 
     def test_Hamiltonian_size_and_dimension_list_match(self):
         with self.assertRaises(Exception):
-            H2 = ConstantNNHamiltonian(3, [2] * 5)
+            H2 = ConstantNNHamiltonian(3, [2] * 5)  # noqa: F841 # type: ignore
 
     def test_adding_local_term_to_sides_adds_them_to_interaction(self):
         H2 = ConstantNNHamiltonian(2, 2)
