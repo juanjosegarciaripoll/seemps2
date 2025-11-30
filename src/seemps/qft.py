@@ -6,7 +6,7 @@ from numpy import pi as π
 from typing import TypeVar, overload
 from .typing import Vector, Tensor4
 from .state import MPS, MPSSum, Strategy, DEFAULT_STRATEGY
-from .mpo import MPO, MPOList
+from .operators import MPO, MPOList
 
 
 def qft_mpo(N: int, sign: int = -1, strategy: Strategy = DEFAULT_STRATEGY) -> MPOList:

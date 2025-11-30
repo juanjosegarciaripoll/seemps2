@@ -3,7 +3,7 @@ from typing import Any, cast
 from .typing import Tensor3, Tensor4
 import h5py
 from .state import MPS
-from .mpo import MPO
+from .operators import MPO
 
 
 def _read_hdf5_item_as_path(

@@ -16,7 +16,7 @@ from ..state import (
     scprod,
 )
 from ..truncate.simplify import simplify
-from ..mpo import MPO
+from ..operators import MPO
 from .descent import DESCENT_STRATEGY, OptimizeResults
 
 

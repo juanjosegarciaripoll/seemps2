@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from ..typing import Vector, Operator
 from ..state import Strategy, DEFAULT_STRATEGY
-from ..mpo import MPOList, MPO
+from ..operators import MPOList, MPO
 
 
 def qubo_mpo(

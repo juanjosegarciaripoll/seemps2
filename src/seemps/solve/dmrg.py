@@ -4,7 +4,7 @@ import scipy.sparse.linalg
 from ..tools import make_logger
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..truncate.simplify import AntilinearForm
-from ..mpo import MPO
+from ..operators import MPO
 from ..optimization.dmrg import QuadraticForm
 
 

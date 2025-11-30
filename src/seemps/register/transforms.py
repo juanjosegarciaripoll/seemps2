@@ -3,7 +3,7 @@ import numpy as np
 from collections.abc import Iterable
 from ..typing import VectorLike, Tensor4
 from ..state import Strategy, DEFAULT_STRATEGY
-from ..mpo import MPO
+from ..operators import MPO
 
 
 def mpo_weighted_shifts(

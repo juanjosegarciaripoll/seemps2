@@ -14,7 +14,7 @@ from ..state import (
     to_mps,
 )
 from ..truncate.simplify import simplify
-from ..mpo import MPO, MPOList, MPOSum
+from ..operators import MPO, MPOList, MPOSum
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 

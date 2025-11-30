@@ -1,3 +1,4 @@
+# pyright: standard
 from seemps.state import CanonicalMPS, GHZ, scprod, DEFAULT_STRATEGY, random_uniform_mps
 import seemps.truncate
 from .benchmark import BenchmarkSet, BenchmarkGroup

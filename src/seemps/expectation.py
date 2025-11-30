@@ -7,7 +7,7 @@ from .state.environments import (
     _update_left_environment,
 )
 from .state.mps import MPS
-from .mpo import MPO
+from .operators import MPO
 
 
 def expectation1(state: MPS, O: Operator, i: int) -> Weight:

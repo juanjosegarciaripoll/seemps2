@@ -12,7 +12,7 @@ from ..state.environments import (
     update_left_mpo_environment,
     update_right_mpo_environment,
 )
-from ..mpo import MPO
+from ..operators import MPO
 from ..hamiltonians import NNHamiltonian
 from .descent import OptimizeResults
 from numpy import tensordot

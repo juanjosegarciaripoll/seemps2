@@ -5,7 +5,7 @@ import numpy as np
 from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod, ABC
-from .mpo import MPO
+from .operators import MPO
 from .state import schmidt, core, DEFAULT_STRATEGY, Strategy
 from .typing import SparseOperator, Operator, Real
 from .tools import σx, σy, σz

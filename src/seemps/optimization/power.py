@@ -5,7 +5,7 @@ import numpy as np
 from ..tools import make_logger
 from ..state import MPS, CanonicalMPS, Strategy, random_mps
 from ..truncate import simplify
-from ..mpo import MPO, MPOList, MPOSum
+from ..operators import MPO, MPOList, MPOSum
 from .descent import DESCENT_STRATEGY, OptimizeResults
 from ..solve import cgs_solve
 
