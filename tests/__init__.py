@@ -1,5 +1,3 @@
-# TODO: Split tests in directories, as we do with library components
-
 from . import (
     test_tools,
     test_contractions,
