@@ -82,7 +82,6 @@ class MPO(TensorArray):
             return MPOSum([self] + A.mpos, [1.0] + [-w for w in A.weights], A.strategy)
         raise TypeError(f"Cannod subtract MPO and {type(A)}")
 
-    # TODO: The deep copy also copies the tensors. This should be improved.
     def __mul__(self, n: Weight) -> MPO:
         """Multiply an MPO by a scalar `self * n`"""
         if isinstance(n, (int, float, complex)):
