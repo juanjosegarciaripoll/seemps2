@@ -1,76 +1,42 @@
 from __future__ import annotations
-from typing import Callable
-import numpy as np
+from typing import Any
 from ..optimization.arnoldi import MPSArnoldiRepresentation
-from ..typing import Vector
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
+from .common import ode_solver, ODECallback, TimeSpan
 
 
 def arnoldi(
     H: MPO,
-    t_span: float | tuple[float, float] | Vector,
+    time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     order: int = 6,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Callable | None = None,
+    callback: ODECallback | None = None,
     itime: bool = False,
-):
+) -> MPS | list[Any]:
     r"""Solve a Schrodinger equation using a variable order Arnoldi
     approximation to the exponential.
 
     See :function:`seemps.evolution.euler` for a description of the
-    function arguments.
+    missing function arguments and the function's output.
 
     Parameters
     ----------
-    H : MPO
-        Hamiltonian in MPO form.
-    t_span : float | tuple[float, float] | Vector
-        Integration interval, or sequence of time steps.
-    state : MPS
-        Initial guess of the ground state.
-    steps : int, default = 1000
-        Integration steps, if not defined by `t_span`.
     order : int, default = 5
         Maximum order of the Arnoldi representation.
-    strategy : Strategy, default = DEFAULT_STRATEGY
-        Truncation strategy for MPO and MPS algebra.
-    callback : Callable[[float, MPS], Any]
-        A callable called after each iteration (defaults to None).
-    itime : bool, default = False
-        Whether to solve the imaginary time evolution problem.
-
-    Results
-    -------
-    result : MPS | list[Any]
-        Final state after evolution or values collected by callback
     """
-    if isinstance(t_span, (int, float)):
-        t_span = (0.0, t_span)
-    if len(t_span) == 2:
-        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
-    factor: float | complex
-    if itime:
-        factor = 1
-        normalize_strategy = strategy.replace(normalize=True)
-    else:
-        factor = 1j
-        normalize_strategy = strategy
+    arnoldiH = None
 
-    last_t = t_span[0]
-    output = []
-    arnoldiH = MPSArnoldiRepresentation(H, normalize_strategy)
-    for t in t_span:
-        if t != last_t:
-            idt = factor * (t - last_t)
-            arnoldiH.build_Krylov_basis(state, order)
-            state = arnoldiH.exponential(-idt)
-        if callback is not None:
-            output.append(callback(t, state))
-        last_t = t
-    if callback is None:
-        return state
-    else:
-        return output
+    def evolve_for_dt(
+        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+    ) -> MPS:
+        nonlocal arnoldiH
+        if arnoldiH is None:
+            arnoldiH = MPSArnoldiRepresentation(H, normalize_strategy)
+        arnoldiH.build_Krylov_basis(state, order)
+        idt = factor * dt
+        return arnoldiH.exponential(-idt)
+
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)

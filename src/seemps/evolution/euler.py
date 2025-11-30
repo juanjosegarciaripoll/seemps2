@@ -1,21 +1,20 @@
 from __future__ import annotations
-from typing import Callable
 import numpy as np
 from ..analysis.operators import id_mpo
 from ..solve import cgs_solve
 from ..operators import MPO, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..truncate import simplify
-from ..typing import Vector
+from .common import ode_solver, ODECallback, TimeSpan
 
 
 def euler(
     H: MPO,
-    t_span: float | tuple[float, float] | Vector,
+    time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Callable | None = None,
+    callback: ODECallback | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using the Euler method.
@@ -38,15 +37,15 @@ def euler(
     for imaginary time evolution. The integration step is deduced from
     the arguments as explained below.
 
-    The `t_span` denotes the integration interval.
+    The `time` denotes the integration interval.
     * If it is a single number `T`, the initial condition is ..math::`t=0`
       the evolution proceeds in steps of :math:`\delta{t}=T/N`
       where `N=steps`.
-    * If `t_span` is a tuple, it contains the initial and final time,
+    * If `time` is a tuple, it contains the initial and final time,
       and the number of integration steps is deduced from `N=steps`
       as :math:`\delta{t}=T/N`
-    * If `t_span` is a sequence of numbers, starting with the initial
-      condition, and progressing in time steps `t_span[n+1]-t_span[n]`.
+    * If `time` is a sequence of numbers, starting with the initial
+      condition, and progressing in time steps `time[n+1]-time[n]`.
 
     The Euler algorithm is a very bad integrator and is offered only for
     illustrative purposes.
@@ -55,7 +54,7 @@ def euler(
     ----------
     H : MPO
         Hamiltonian in MPO form.
-    t_span : float | tuple[float, float] | Vector
+    time : Real | tuple[Real, Real] | Sequence[Real]
         Integration interval, or sequence of time steps.
     state : MPS
         Initial guess of the ground state.
@@ -73,38 +72,23 @@ def euler(
     result : MPS | list[Any]
         Final state after evolution or values collected by callback
     """
-    if isinstance(t_span, (int, float)):
-        t_span = (0.0, t_span)
-    if len(t_span) == 2:
-        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
-    factor: float | complex
-    if itime:
-        factor = 1
-        strategy = strategy.replace(normalize=True)
-    else:
-        factor = 1j
-    last_t = t_span[0]
-    output = []
-    for t in t_span:
-        if t != last_t:
-            idt = factor * (t - last_t)
-            state = simplify(state - idt * (H @ state), strategy=strategy)
-        if callback is not None:
-            output.append(callback(t, state))
-        last_t = t
-    if callback is None:
-        return state
-    else:
-        return output
+
+    def evolve_for_dt(
+        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+    ) -> MPS:
+        idt = factor * dt
+        return simplify(state - idt * (H @ state), strategy=normalize_strategy)
+
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
 
 
 def euler2(
     H: MPO,
-    t_span: float | tuple[float, float] | Vector,
+    time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Callable | None = None,
+    callback: ODECallback | None = None,
     itime: bool = False,
 ):
     r"""Solve a Schrodinger equation using the 2nd order Euler method.
@@ -115,120 +99,65 @@ def euler2(
         \psi(t_{n+1}) = \psi(t_{n}) - (i \delta t/2) H \xi(t_{n})
 
     The Euler algorithm is a very bad integrator and is offered only for
-    illustrative purposes. See :function:`euler` to understand the parameters.
-
-    Parameters
-    ----------
-    H : MPO
-        Hamiltonian in MPO form.
-    t_span : float | tuple[float, float] | Vector
-        Integration interval, or sequence of time steps.
-    state : MPS
-        Initial guess of the ground state.
-    steps : int, default = 1000
-        Integration steps, if not defined by `t_span`.
-    strategy : Strategy, default = DEFAULT_STRATEGY
-        Truncation strategy for MPO and MPS algebra.
-    callback : Callable[[float, MPS], Any] | None
-        A callable called after each iteration (defaults to None).
-    itime : bool, default = False
-        Whether to solve the imaginary time evolution problem.
-
-    Results
-    -------
-    result : MPS | list[Any]
-        Final state after evolution or values collected by callback
+    illustrative purposes. See :function:`euler` to understand the parameters
+    and the function's output.
     """
-    if isinstance(t_span, (int, float)):
-        t_span = (0.0, t_span)
-    if len(t_span) == 2:
-        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
-    factor: float | complex
-    if itime:
-        factor = 1
-        strategy = strategy.replace(normalize=True)
-    else:
-        factor = 1j
-    last_t = t_span[0]
-    output = []
-    for t in t_span:
-        if t != last_t:
-            idt = factor * (t - last_t)
-            xi = simplify(2.0 * state - idt * (H @ state), strategy=strategy)
-            state = simplify(state - (0.5 * idt) * (H @ xi), strategy=strategy)
-        if callback is not None:
-            output.append(callback(t, state))
-        last_t = t
-    if callback is None:
-        return state
-    else:
-        return output
+
+    def evolve_for_dt(
+        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+    ) -> MPS:
+        idt = factor * dt
+        xi = simplify(2.0 * state - idt * (H @ state), strategy=strategy)
+        return simplify(state - (0.5 * idt) * (H @ xi), strategy=normalize_strategy)
+
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
 
 
 def implicit_euler(
     H: MPO,
-    t_span: float | tuple[float, float] | Vector,
+    time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Callable | None = None,
+    callback: ODECallback | None = None,
     itime: bool = False,
     tolerance: float = 1e-10,
+    maxiter_cgs: int = 50,
 ):
     r"""Solve a Schrodinger equation using a second order implicit Euler method.
 
-    See :function:`seemps.evolution.euler` for a description of the
-    function arguments.
+    See :function:`seemps.evolution.euler` for a description of the missing
+    function arguments and the function's output
 
     Parameters
     ----------
-    H : MPO
-        Hamiltonian in MPO form.
-    t_span : float | tuple[float, float] | Vector
-        Integration interval, or sequence of time steps.
-    state : MPS
-        Initial guess of the ground state.
-    steps : int, default = 1000
-        Integration steps, if not defined by `t_span`.
-    strategy : Strategy, default = DEFAULT_STRATEGY
-        Truncation strategy for MPO and MPS algebra.
-    callback : Callable[[float, MPS], Any] | None
-        A callable called after each iteration (defaults to None).
-    itime : bool, default = 1e-10
-        Whether to solve the imaginary time evolution problem.
-
-    Results
-    -------
-    result : MPS | list[Any]
-        Final state after evolution or values collected by callback
+    tol_cgs: float
+        Tolerance of the CGS algorithm.
+    maxiter_cgs: int
+        Maximum number of iterations of the CGS algorithm.
     """
-    if isinstance(t_span, (int, float)):
-        t_span = (0.0, t_span)
-    if len(t_span) == 2:
-        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
-    factor: float | complex
-    if itime:
-        factor = 1
-        normalize_strategy = strategy.replace(normalize=True)
-    else:
-        factor = 1j
-        normalize_strategy = strategy
-    last_t = t_span[0]
-    output = []
+    last_dt: float = np.inf
+    A: MPO | None = None
+    B: MPO | None = None
     id = id_mpo(state.size, strategy=strategy)
-    for t in t_span:
-        if t != last_t:
-            idt = factor * (t - last_t)
+
+    def evolve_for_dt(
+        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+    ) -> MPS:
+        nonlocal A, B, last_dt
+        if last_dt != dt or A is None or B is None:
+            last_dt = dt
+            idt = factor * dt
             A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt]).join(strategy=strategy)
             B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt]).join(strategy=strategy)
             # TODO: Fixed tolerance criteria
             state, _ = cgs_solve(
-                A, B @ state, strategy=normalize_strategy, tolerance=tolerance
+                A,
+                B @ state,
+                strategy=normalize_strategy,
+                tolerance=tolerance,
+                maxiter=maxiter_cgs,
             )
-        if callback is not None:
-            output.append(callback(t, state))
-        last_t = t
-    if callback is None:
         return state
-    else:
-        return output
+
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
