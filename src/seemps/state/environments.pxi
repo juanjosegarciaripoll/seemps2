@@ -112,6 +112,4 @@ def scprod(object bra, object ket) -> Weight:
     for i in range(Lbra):
         rho = __update_left_environment(<cnp.ndarray>cpython.PyList_GET_ITEM(A, i),
                                         <cnp.ndarray>cpython.PyList_GET_ITEM(B, i), rho)
-    # TODO: Verify if the order of Ai and Bi matches being bra and ket
-    # Add tests for that
     return __end_environment(rho)

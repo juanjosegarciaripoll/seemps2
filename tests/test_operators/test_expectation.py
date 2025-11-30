@@ -1,6 +1,6 @@
 import numpy as np
 import seemps
-from seemps.state import CanonicalMPS, scprod
+from seemps.state import CanonicalMPS, scprod, product_state
 from seemps.expectation import (
     all_expectation1,
     expectation1,
@@ -18,6 +18,20 @@ def bit2state(b):
 
 
 class TestExpectation(TestCase):
+    def test_scprod_is_antilinear_wrt_first_argument(self):
+        a = -0.2 - 0.2j
+        state1 = product_state([1, 0.3j], 3)
+        state1_conj = product_state([1, -0.3j], 3)
+        state2 = product_state([1.0, 1.0], 3)
+        self.assertAlmostEqual(
+            scprod(a * state1, state2), a.conjugate() * scprod(state1, state2)
+        )
+        self.assertAlmostEqual(scprod(state1, a * state2), a * scprod(state1, state2))
+        self.assertAlmostEqual(scprod(state1, state2), scprod(state2, state1_conj))
+        self.assertAlmostEqual(
+            scprod(state1_conj, state2), scprod(state1, state2).conjugate()
+        )
+
     def test_scprod_basis(self):
         #
         # Test that scprod() can be used to project onto basis states
