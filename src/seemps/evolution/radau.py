@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 import numpy as np
-from ..typing import Vector
 from ..operators import MPO
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..solve import gmres_solve
 from ..truncate import simplify
 from ..operators.projectors import identity_mpo
 from ..truncate.simplify_mpo import simplify_mpo
+from .common import ode_solver, ODECallback, TimeSpan
 
 
 # Map number of stages to Butcher matrix A
@@ -113,13 +113,13 @@ def radau_step(
 
 def radau(
     H: MPO,
-    t_span: float | tuple[float, float] | Vector,
+    t_span: TimeSpan,
     state: MPS,
     steps: int = 1000,
     stages: int = 3,
     inv_tol: float = 1e-7,
     strategy: Strategy = DEFAULT_STRATEGY,
-    callback: Callable | None = None,
+    callback: ODECallback | None = None,
     itime: bool = False,
 ) -> MPS | list[Any]:
     r"""Solve a Schrödinger equation using an implicit Radau IIA method with either 3 or 5 stages (order 5 or 9, respectively).
@@ -150,34 +150,17 @@ def radau(
     result : MPS | list[Any]
         Final state after evolution or values collected by callback
     """
-    if isinstance(t_span, (int, float)):
-        t_span = (0.0, t_span)
-    if len(t_span) == 2:
-        t_span = np.linspace(t_span[0], t_span[1], steps + 1)
-    factor: float | complex
-    if itime:
-        factor = 1
-        normalize_strategy = strategy.replace(normalize=True)
-    else:
-        factor = 1j
-        normalize_strategy = strategy
-    last_t = t_span[0]
-    output = []
-    idt = factor * (t_span[1] - last_t)
-    for t in t_span:
-        if t != last_t:
-            state = radau_step(
-                L=H,
-                v=state,
-                dt=-idt,
-                inv_tol=inv_tol,
-                strategy=normalize_strategy,
-                stages=stages,
-            )
-        if callback is not None:
-            output.append(callback(t, state))
-        last_t = t
-    if callback is None:
-        return state
-    else:
-        return output
+    def evolve_for_dt(
+        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+    ) -> MPS:
+        idt = factor * dt
+        return radau_step(
+            L=H,
+            v=state,
+            dt=-idt,
+            inv_tol=inv_tol,
+            strategy=normalize_strategy,
+            stages=stages,
+        )
+
+    return ode_solver(evolve_for_dt, t_span, state, steps, strategy, callback, itime)
