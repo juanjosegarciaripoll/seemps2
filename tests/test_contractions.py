@@ -41,6 +41,6 @@ class TestDMRGHamiltonianContraction(TestCase):
         exact_contraction = np.einsum(
             "acb,cikjld,edf,bklf->aije", L, H12, R, v
         ).reshape(-1)
-        dmrg_contractor = DMRGMatrixOperator(L, H12, R)
+        dmrg_contractor = DMRGMatrixOperator(L, H12, R) # type: ignore
         fast_contraction = dmrg_contractor(v.reshape(-1))
         self.assertSimilar(exact_contraction, fast_contraction)

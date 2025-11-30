@@ -32,9 +32,11 @@ class DMRGMatrixOperator(scipy.sparse.linalg.LinearOperator):
         self.R = R
         self.H12 = H12
         self.v_shape = (b, k, l, f)
+        # We have to ignore typing because scipy-stubs has errors in
+        # the declaration of LinearOperator
         super().__init__(
-            shape=(b * k * l * f, b * k * l * f),
-            dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),
+            shape=(b * k * l * f, b * k * l * f), # type: ignore # pyright: ignore[reportCallIssue]
+            dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),  # type: ignore # pyright: ignore[reportCallIssue]
         )
 
     # TODO: implement _rmatvec() so that we can use bicg() in solve()
@@ -105,10 +107,10 @@ class QuadraticForm:
 
     def two_site_Hamiltonian(self, i: int) -> DMRGMatrixOperator:
         assert i == self.site
-        return DMRGMatrixOperator(
-            self.left_env[i],
-            _contract_last_and_first(self.H[i], self.H[i + 1]),
-            self.right_env[i + 1],
+        return DMRGMatrixOperator( # pyright: ignore[reportCallIssue]
+            self.left_env[i], # type: ignore # pyright: ignore[reportArgumentType]
+            _contract_last_and_first(self.H[i], self.H[i + 1]), # type: ignore # pyright: ignore[reportArgumentType]
+            self.right_env[i + 1], # type: ignore # pyright: ignore[reportArgumentType]
         )
 
     def diagonalize(self, i: int, tol: float) -> tuple[float, Tensor4]:

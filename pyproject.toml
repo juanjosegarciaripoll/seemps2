@@ -116,6 +116,7 @@ dev = [
 
 [tool.basedpyright]
 # See https://github.com/DetachHead/basedpyright/blob/main/docs/configuration.md
+reportUnnecessaryTypeIgnoreComment = false
 # TODO: Remove this option and report underscore function being imported
 reportPrivateUsage = false
 # TODO: Remove these once we have well defined values for the NDArray dtypes

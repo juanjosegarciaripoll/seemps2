@@ -39,9 +39,9 @@ class TestFiniteDifferences(tools.TestCase):
         """Moves f[i] to f[i-1]"""
         L = 2**nqubits
         if periodic:
-            M = spdiags([np.ones(L), np.ones(L)], [1, -L + 1], format="csr")
+            M = spdiags([np.ones(L), np.ones(L)], [1, -L + 1], format="csr") # type: ignore # scipy-stubs broken
         else:
-            M = spdiags([np.ones(L)], [1], format="csr")
+            M = spdiags([np.ones(L)], [1], format="csr") # type: ignore # scipy-stubs broken
         return cast(csr_matrix, M)
 
     def Up(self, nqubits: int, periodic: bool = False) -> csr_matrix:
