@@ -1,9 +1,9 @@
 import unittest
-
 import numpy as np
-import scipy.sparse as sp  # type: ignore
+import scipy.sparse as sp
 import seemps
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
+from seemps.typing import SparseOperator
 
 
 def identical_lists(l1, l2):
@@ -36,13 +36,13 @@ class TestCase(unittest.TestCase):
 
     def assertSimilar(self, A, B, **kwdargs) -> None:
         if sp.issparse(A):
-            A = A.toarray()
+            A = A.toarray()  # type: ignore
         elif isinstance(A, MPS) or isinstance(A, MPSSum):
             A = A.to_vector()
         else:
             A = np.asarray(A)
         if sp.issparse(B):
-            B = B.toarray()
+            B = B.toarray()  # type: ignore
         elif isinstance(B, MPS):
             B = B.to_vector()
         else:
@@ -103,11 +103,11 @@ class TestCase(unittest.TestCase):
 
 
 def similar(A, B, **kwdargs):
-    if sp.issparse(A):
+    if isinstance(A, SparseOperator):
         A = A.toarray()
     elif isinstance(A, MPS):
         A = A.to_vector()
-    if sp.issparse(B):
+    if isinstance(B, SparseOperator):
         B = B.toarray()
     elif isinstance(B, MPS):
         B = B.to_vector()

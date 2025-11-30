@@ -7,7 +7,7 @@ from .. import tools
 class TestTensorArray(tools.TestCase):
     def test_tensor_array_requires_list(self):
         with self.assertRaises(Exception):
-            TensorArray()
+            TensorArray()  # type: ignore
 
     def test_tensor_array_list_is_copied(self):
         data = [np.zeros((1, 2, 1))] * 3
@@ -37,9 +37,9 @@ class TestTensorArray(tools.TestCase):
     def test_tensor_array_get_item_checks_index_bounds(self):
         state = TensorArray([np.zeros((1, 2, 1))] * 3)
         with self.assertRaises(Exception):
-            a = state[3]
+            a = state[3]  # type: ignore
         with self.assertRaises(Exception):
-            a = state[-4]
+            a = state[-4]  # type: ignore
 
     def test_tensor_array_can_set_items(self):
         data = [self.rng.normal(size=(1, 2, 1)) for _ in range(3)]
@@ -94,9 +94,9 @@ class TestTensorArray(tools.TestCase):
         if "c++" in self.seemps_version:
             state = TensorArray([np.zeros((1, 2, 1))] * 3)
             with self.assertRaises(Exception):
-                state[0] = 1
+                state[0] = 1  # type: ignore
             with self.assertRaises(Exception):
-                state[0] = [1, 2, 3]
+                state[0] = [1, 2, 3]  # type: ignore
 
     def test_tensor_array_length(self):
         state = TensorArray([np.zeros((1, 2, 1))] * 10)

@@ -1,3 +1,4 @@
+from typing import cast
 import numpy as np
 from scipy.sparse import spdiags, csr_matrix, eye
 from seemps.analysis.finite_differences import (
@@ -43,11 +44,11 @@ class TestFiniteDifferences(tools.TestCase):
             M = spdiags([np.ones(L), np.ones(L)], [1, -L + 1], format="csr")
         else:
             M = spdiags([np.ones(L)], [1], format="csr")
-        return M
+        return cast(csr_matrix, M)
 
     def Up(self, nqubits: int, periodic: bool = False) -> csr_matrix:
         """Moves f[i] to f[i+1]"""
-        return self.Down(nqubits, periodic).T
+        return self.Down(nqubits, periodic).T.tocsr()
 
     def test_first_derivative_two_qubits_perodic(self):
         dx = 0.1

@@ -31,7 +31,7 @@ class MPOSum(object):
     def __init__(
         self,
         mpos: Sequence[MPO | MPOList],
-        weights: list[Weight] | None = None,
+        weights: Sequence[Weight] | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         self.mpos = mpos = list(mpos)

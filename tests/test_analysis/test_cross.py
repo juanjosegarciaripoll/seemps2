@@ -73,7 +73,7 @@ class CrossTests(TestCase):
 
     @abstractmethod
     def cross_method(self, function, *args, **kwdargs):
-        raise Exception("cross_method not implemented in " + str(self.cls))
+        raise Exception("cross_method not implemented in " + str(type(self)))
 
     def test_load_1d_mps(self, n=5):
         func, mesh, _, y = gaussian_setup_mps(1, n=n)
@@ -185,6 +185,7 @@ class TestSkeleton(TestCase):
     def test_maxvol_square(self):
         A = self.random_matrix()
         J = np.random.choice(A.shape[1], 5, replace=False)
+        I = 0  # unused, to keep typechecker happy
         for _ in range(1):
             C = A[:, J]
             I, _ = maxvol_square(C)
@@ -196,6 +197,7 @@ class TestSkeleton(TestCase):
     def test_maxvol_rectangular(self):
         A = self.random_matrix()
         J = np.random.choice(A.shape[1], 1, replace=False)
+        I = 0  # unused, to keep typechecker happy
         for _ in range(2):
             C = A[:, J]
             I, _ = maxvol_rectangular(C, max_rank_kick=1)

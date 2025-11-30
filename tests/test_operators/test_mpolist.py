@@ -1,7 +1,6 @@
 import numpy as np
 from seemps.tools import σx, σy, σz
 from seemps.state import (
-    MPSSum,
     random_uniform_mps,
     DEFAULT_STRATEGY,
     NO_TRUNCATION,
@@ -78,9 +77,9 @@ class TestMPOList(TestCase):
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         mpo = MPOList([U, V], NO_TRUNCATION)
         with self.assertRaises(TypeError):
-            mpo.apply([np.zeros((1, 2, 1))] * 3)
+            mpo.apply([np.zeros((1, 2, 1))] * 3)  # type: ignore
         with self.assertRaises(Exception):
-            mpo @ [np.zeros((1, 2, 1))]
+            mpo @ [np.zeros((1, 2, 1))]  # type: ignore
 
     def test_mpolist_matrix_is_product_of_mpo_matrices(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
@@ -104,9 +103,9 @@ class TestMPOList(TestCase):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, U], NO_TRUNCATION)
         with self.assertRaises(Exception):
-            UV * U
+            UV * U  # type: ignore
         with self.assertRaises(Exception):
-            U * UV
+            U * UV  # type: ignore
 
     def test_mpolist_extends_does_so_on_each_operator(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)

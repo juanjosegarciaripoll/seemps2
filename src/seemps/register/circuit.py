@@ -116,7 +116,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
         `self.parameters_size=1`. Otherwise, the user must provide one value
         for each rotation.
     default_parameters : Sequence[Real] | None
-        A vector of angles to use if no other one is provided.
+        A list or a vector of angles to use if no other one is provided.
     strategy : Strategy
         Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
 
@@ -169,8 +169,8 @@ class LocalRotationsLayer(ParameterizedCircuit):
     ) -> CanonicalMPS:
         assert self.register_size == state.size
         if parameters is None:
-            angle = self.parameters
-        elif len(parameters) == 1:
+            parameters = self.parameters
+        if len(parameters) == 1:
             angle = np.full(self.register_size, parameters[0])
         else:
             angle = np.asarray(parameters)

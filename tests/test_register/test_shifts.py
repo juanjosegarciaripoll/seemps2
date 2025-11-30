@@ -161,7 +161,7 @@ class TestShifts(TestCase):
             for d in range(1, 2**N + 1):
                 shifts = np.arange(-d, d + 1)
                 weights = self.rng.normal(size=shifts.shape)
-                S = mpo_weighted_shifts(N, weights, shifts, periodic=False)
+                S = mpo_weighted_shifts(N, weights, shifts.tolist(), periodic=False)
                 target = self.weighted_shift_matrix(
                     2**N, weights, shifts, periodic=False
                 )
