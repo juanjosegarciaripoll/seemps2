@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections.abc import Sequence
 import numpy as np
-from typing import TypeVar
+from typing import Literal, TypeAlias, TypeVar
 from ..typing import FloatVector, Real
 from ..operators import MPO, MPOList, MPOSum
 
@@ -15,6 +15,9 @@ def mpo_flip(operator: _Operator) -> _Operator:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform."""
     return operator.reverse()
+
+
+MPSOrder: TypeAlias = Literal["A", "B"]
 
 
 class Space:
@@ -39,7 +42,7 @@ class Space:
     grid_dimensions: list[int]
     closed: bool
     n_sites: int
-    order: str  # TODO: Replace with Literal
+    order: MPSOrder
     sites: list[list[int]]
     L: list[tuple[float, float]]
     a: list[float]
@@ -52,7 +55,7 @@ class Space:
         qubits_per_dimension: list[int],
         L: Sequence[tuple[Real, Real]],
         closed: bool = True,
-        order: str = "A",  # TODO: Replace with Literal
+        order: MPSOrder = "A",
     ):
         """
         Initializes the Space object.
