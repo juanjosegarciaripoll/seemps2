@@ -1,9 +1,10 @@
 from __future__ import annotations
 from collections.abc import Sequence
 import numpy as np
-from typing import Literal, TypeAlias, TypeVar
-from ..typing import FloatVector, Real
+from typing import Literal, TypeAlias, TypeVar, cast
+from ..typing import Real
 from ..operators import MPO, MPOList, MPOSum
+from .mesh import Mesh, RegularInterval
 
 
 # TODO: This might not be the place to have this function
@@ -45,10 +46,7 @@ class Space:
     order: MPSOrder
     sites: list[list[int]]
     L: list[tuple[float, float]]
-    a: list[float]
-    b: list[float]
-    dx: FloatVector
-    x: list[FloatVector]
+    mesh: Mesh
 
     def __init__(
         self,
@@ -78,18 +76,27 @@ class Space:
         self.order = order
         self.sites = self.get_sites()
         self.L = [(float(start), float(end)) for start, end in L]
-        self.a = [start for start, _ in self.L]
-        self.b = [end for _, end in self.L]
-        self.dx = np.array(
+        self.mesh = Mesh(
             [
-                (end - start) / ((d - 1) if closed else d)
-                for (start, end), d in zip(L, self.grid_dimensions)
+                RegularInterval(start, end, 2**n, endpoint_right=closed)
+                for (start, end), n in zip(self.L, self.qubits_per_dimension)
             ]
         )
-        self.x = [
-            self.a[i] + self.dx[i] * np.arange(dim)
-            for i, dim in enumerate(self.grid_dimensions)
-        ]
+
+    @property
+    def dimensions(self) -> int:
+        return len(self.qubits_per_dimension)
+
+    @property
+    def dx(self) -> np.ndarray:
+        return np.asarray([cast(RegularInterval, I).step for I in self.mesh.intervals])
+
+    @property
+    def x(self) -> list[np.ndarray]:
+        return [I.to_vector() for I in self.mesh.intervals]
+
+    def to_tensor(self) -> np.ndarray:
+        return self.mesh.to_tensor().transpose([-1] + list(range(self.dimensions)))
 
     def change_qubits(self, new_qubits_per_dimension: list[int]) -> Space:
         """
@@ -118,7 +125,7 @@ class Space:
         str
             String representation of the Space object.
         """
-        return f"Space(a={self.a}, b={self.b}, dx={self.dx}, closed={self.closed}, qubits={self.qubits_per_dimension})"
+        return f"Space(qubits={self.qubits_per_dimension}, L={self.L}, closed={self.closed}, order={self.order})"
 
     def get_sites(self):
         """

@@ -10,7 +10,6 @@ from seemps.state import DEFAULT_STRATEGY, MPS, Simplification
 from ..tools import TestCase
 from .tools_interpolation import (
     gaussian,
-    get_position_regular_grid,
     fourier_interpolation_vector,
     fourier_interpolation_vector_1D,
     finite_differences_interpolation_vector_2D,
@@ -24,10 +23,9 @@ class TestInterpolation(TestCase):
     def test_fourier_interpolation_1D(self):
         for n in range(3, 8):
             qubits_per_dimension = [n]
-            dims = [2**n for n in qubits_per_dimension]
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2)])
-            r_N = get_position_regular_grid(dims, space.a, space.dx)
+            r_N = space.to_tensor()
             sol_N = gaussian(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
@@ -46,10 +44,9 @@ class TestInterpolation(TestCase):
     def test_fourier_interpolation(self):
         for n in range(3, 8):
             qubits_per_dimension = [n, n]
-            dims = [2**n for n in qubits_per_dimension]
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2), (-L / 2, L / 2)])
-            r_N = get_position_regular_grid(dims, space.a, space.dx)
+            r_N = space.to_tensor()
             sol_N = gaussian(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
@@ -73,10 +70,9 @@ class TestInterpolation(TestCase):
     def test_finite_differences_interpolation_1D(self):
         for n in range(3, 8):
             qubits_per_dimension = [n]
-            dims = [2**n for n in qubits_per_dimension]
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2)])
-            r_N = get_position_regular_grid(dims, space.a, space.dx)
+            r_N = space.to_tensor()
             sol_N = gaussian(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
@@ -93,10 +89,9 @@ class TestInterpolation(TestCase):
     def test_finite_differences_interpolation(self):
         for n in range(3, 8):
             qubits_per_dimension = [n, n]
-            dims = [2**n for n in qubits_per_dimension]
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2), (-L / 2, L / 2)])
-            r_N = get_position_regular_grid(dims, space.a, space.dx)
+            r_N = space.to_tensor()
             sol_N = gaussian(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False

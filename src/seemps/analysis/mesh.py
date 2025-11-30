@@ -237,7 +237,6 @@ class Mesh:
                 raise IndexError("Invalid index into a Mesh")
             indices = [indices]
         index_array = np.asarray(indices)
-        # TODO: Type checker complains about the type of this
         return np.stack(
             [self.intervals[n][index_array[..., n]] for n in range(self.dimension)],
             axis=-1,
