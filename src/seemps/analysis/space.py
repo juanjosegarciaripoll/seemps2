@@ -29,13 +29,13 @@ class Space:
     ----------
     qubits_per_dimension : list[int]
         Number of qubits for each dimension.
-    L : list[list[float]]
-        Position space intervals [a_i,b_i] for each dimension i.
+    L : Sequence[tuple[Real, Real]]
+        Position space intervals (a_i,b_i) for each dimension i.
     closed : bool
         If closed is True, the position space intervals are closed (symmetrically defined).
         If False, the interval is open. (defaults to True).
     order : str, optional
-            The order in which sites are organized. Default is "A" (sequential).
+        The order in which sites are organized. Default is "A" (sequential).
     """
 
     qubits_per_dimension: list[int]
@@ -91,7 +91,7 @@ class Space:
             for i, dim in enumerate(self.grid_dimensions)
         ]
 
-    def increase_resolution(self, new_qubits_per_dimension: list[int]) -> Space:
+    def change_qubits(self, new_qubits_per_dimension: list[int]) -> Space:
         """
         Creates a new Space object with increased resolution based on the new qubits per dimension.
 
@@ -105,34 +105,9 @@ class Space:
         Space
             A new Space object with the increased resolution.
         """
-        if self.closed:
-            new_space = Space(
-                new_qubits_per_dimension,
-                self.L,
-                closed=self.closed,
-            )
-            new_space.dx = np.array(
-                [
-                    dx * self.grid_dimensions[i] / new_space.grid_dimensions[i]
-                    for i, dx in enumerate(self.dx)
-                ]
-            )
-            new_space.x = [
-                new_space.a[i] + new_space.dx[i] * np.arange(dim)
-                for i, dim in enumerate(new_space.grid_dimensions)
-            ]
-        else:
-            new_space = Space(
-                new_qubits_per_dimension,
-                [
-                    (an, an + dxn * (2**old_qubits))
-                    for an, dxn, old_qubits in zip(
-                        self.a, self.dx, self.qubits_per_dimension
-                    )
-                ],
-                closed=self.closed,
-            )
-        return new_space
+        return Space(
+            new_qubits_per_dimension, self.L, closed=self.closed, order=self.order
+        )
 
     def __str__(self):
         """
@@ -144,24 +119,6 @@ class Space:
             String representation of the Space object.
         """
         return f"Space(a={self.a}, b={self.b}, dx={self.dx}, closed={self.closed}, qubits={self.qubits_per_dimension})"
-
-    def get_coordinates_tuples(self):
-        """
-        Creates a list of coordinate tuples for the qubits.
-
-        Returns
-        -------
-        list[tuple]
-            List of tuples (n, k), where `n` is the dimension and `k` is the significant digit
-            of the qubits used for storing that dimension.
-        """
-        coordinates_tuples = []
-        coordinates_tuples = [
-            (n, k)
-            for n, n_q in enumerate(self.qubits_per_dimension)
-            for k in range(n_q)
-        ]
-        return coordinates_tuples
 
     def get_sites(self):
         """
@@ -207,7 +164,7 @@ class Space:
 
     def enlarge_dimension(self, dim: int, amount: int) -> Space:
         """
-        Enlarges the specified dimension by adding more qubits.
+        Enlarges the specified dimension by adding more qubits to one dimension.
 
         Parameters
         ----------
@@ -227,7 +184,8 @@ class Space:
 
     def new_positions_from_old_space(self, space: Space) -> list[int]:
         """
-        Maps new positions from an old Space object to the current Space object.
+        Maps the qubits from a smaller space, to their respective positions
+        in the quantum register for a larger space.
 
         Parameters
         ----------
@@ -241,5 +199,9 @@ class Space:
         """
         new_positions = self.sites.copy()
         for d, n in enumerate(space.qubits_per_dimension):
+            if n > self.qubits_per_dimension[d]:
+                raise Exception(
+                    f"I cannot map a larger map into a smaller one.\nOld: {space}\nNew: {self}"
+                )
             new_positions[d] = new_positions[d][:n]
         return sorted(sum(new_positions, []))
