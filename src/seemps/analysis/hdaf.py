@@ -15,7 +15,7 @@ def auto_sigma(
     if lower_bound is None:
         lower_bound = 3 * dx
     s0: Float = hdaf_kernel(0, dx=dx, s0=1.0, M=M)
-    return max(lower_bound, sqrt(time), s0)  # type: ignore
+    return max(float(lower_bound), sqrt(time), s0)  # type: ignore
 
 
 def _asymptotic_factor(M: int, l: int, c: Float) -> Float:

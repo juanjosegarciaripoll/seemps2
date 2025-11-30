@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-
+from ..typing import Float
 from ..state import (
     MPS,
     MPSSum,
@@ -14,6 +14,7 @@ from ..operators import MPO
 from ..truncate import simplify
 from ..tools import make_logger
 
+
 def gmres_solve(
     A: MPO,
     b: MPS,
@@ -21,11 +22,11 @@ def gmres_solve(
     nvectors: int = 5,
     max_restarts: int = 5,
     tolerance: float = DEFAULT_TOLERANCE,
-    tol_ill_conditioning: float = np.finfo(float).eps * 10,  # type: ignore
+    tol_ill_conditioning: Float = np.finfo(float).eps * 10,  # type: ignore
     strategy: Strategy = DEFAULT_STRATEGY,
 ) -> tuple[CanonicalMPS, float]:
     """Approximate solution of :math:`A \\psi = b`.
-    
+
     Given the :class:`MPO` `A` and the :class:`MPS` `b`, use the generalized minimal resudial (GMRES) method to estimate another MPS that solves the linear system of equations :math:`A \\psi = b`.
     Convergence is determined by the residual :math:`\\Vert{A \\psi - b}\\Vert` being smaller than `tolerance`.
 
@@ -73,7 +74,6 @@ def gmres_solve(
         logger(f"GMRES algorithm with {max_restarts=}, {nvectors=}", flush=True)
 
         for restart in range(max_restarts):
-
             # Check convergence
             if residual < tolerance * normb:
                 logger(f"GMRES converged at restart {restart} with residual {residual}")
@@ -105,7 +105,7 @@ def gmres_solve(
 
             # Solve least squares problem in Krylov subspace
             m = max(len(V) - 1, 1)
-            Hm = H[:m+1, :m]
+            Hm = H[: m + 1, :m]
             rhs = np.zeros(m + 1)
             rhs[0] = residual
             y, *_ = np.linalg.lstsq(Hm, rhs, rcond=None)

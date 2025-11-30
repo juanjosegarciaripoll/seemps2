@@ -5,6 +5,7 @@ import warnings
 import scipy.linalg  # type: ignore
 from numpy.typing import NDArray
 from ..tools import make_logger
+from ..typing import Float
 from ..state import (
     MPS,
     CanonicalMPS,
@@ -37,8 +38,8 @@ class MPSArnoldiRepresentation:
         self,
         operator: MPO,
         strategy: Strategy = DESCENT_STRATEGY,
-        tol_ill_conditioning: float = np.finfo(float).eps * 10,  # type: ignore
-        gamma: float = 0.0,
+        tol_ill_conditioning: Float = np.finfo(float).eps * 10,
+        gamma: Float = 0.0,
         orthogonalize: bool = True,
     ):
         self.operator = operator
@@ -46,11 +47,11 @@ class MPSArnoldiRepresentation:
         self.N = self.empty
         self.V = []
         self.strategy = strategy.replace(normalize=True)
-        self.tol_ill_conditioning = tol_ill_conditioning
+        self.tol_ill_conditioning = float(tol_ill_conditioning)
         self._eigenvector = None
         self._variance = None
         self._energy = None
-        self.gamma = gamma
+        self.gamma = float(gamma)
         self.orthogonalize = orthogonalize
         pass
 
@@ -160,11 +161,11 @@ def arnoldi_eigh(
     guess: MPS | None = None,
     maxiter: int = 100,
     nvectors: int = 10,
-    tol: float = 1e-13,
-    tol_ill: float = np.finfo(float).eps * 10,  # type: ignore
-    tol_up: float | None = None,
+    tol: Float = 1e-13,
+    tol_ill: Float = np.finfo(float).eps * 10,  # type: ignore
+    tol_up: Float | None = None,
     upward_moves: int = 5,
-    gamma: float = -0.75,
+    gamma: Float = -0.75,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Callable[[MPS, OptimizeResults], Any] | None = None,
 ) -> OptimizeResults:

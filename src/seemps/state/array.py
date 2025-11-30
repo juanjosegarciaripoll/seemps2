@@ -57,9 +57,9 @@ class TensorArray(Sequence[NDArray]):
         # is an MP, we can now do A[k] = value
         #
         if isinstance(k, slice):
-            self._data[k] = list(value)
+            self._data[k] = list(value)  # type: ignore
         else:
-            self._data[k] = value  # type: ignore
+            self._data[k] = value  # type: ignore # pyright: ignore[reportCallIssue, reportArgumentType]
         return value
 
     def __iter__(self) -> Iterator[NDArray]:

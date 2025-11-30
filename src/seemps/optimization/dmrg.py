@@ -126,7 +126,7 @@ class QuadraticForm:
         b: Tensor4,
         atol: float = 0,
         rtol: float = 1e-5,
-        solver=scipy.sparse.linalg.bicgstab,
+        solver: Callable = scipy.sparse.linalg.bicgstab,
     ) -> tuple[Tensor4, int, float]:
         Op = self.two_site_Hamiltonian(i)
         v = _contract_last_and_first(self.state[i], self.state[i + 1])

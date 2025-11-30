@@ -1,11 +1,9 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Any, Callable, TypeVar
 import numpy as np
-
 from ..typing import Vector
 from ..operators import MPO
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
-
 from ..solve import gmres_solve
 from ..truncate import simplify
 from ..analysis.operators import id_mpo
@@ -70,8 +68,10 @@ b = {
     ),
 }
 
+StateOrOperator = TypeVar("StateOrOperator", MPO, MPS)
 
-def _prepend_core(core: np.ndarray, L):
+
+def _prepend_core(core: np.ndarray, L: StateOrOperator) -> StateOrOperator:
     data = [core] + L._data
     return type(L)(data)
 
@@ -120,7 +120,7 @@ def radau(
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: Callable | None = None,
     itime: bool = False,
-):
+) -> MPS | list[Any]:
     r"""Solve a Schrödinger equation using an implicit Radau IIA method with either 3 or 5 stages (order 5 or 9, respectively).
 
     Parameters
