@@ -29,9 +29,9 @@ class TestKnownOperators(TestCase):
         with self.assertRaises(Exception):
             interpret_operator(1)  # type: ignore
         with self.assertRaises(Exception):
-            interpret_operator(np.zeros((3, 1)))
+            interpret_operator(np.zeros((3, 1)))  # type: ignore
         with self.assertRaises(Exception):
-            interpret_operator(np.zeros((3,)))
+            interpret_operator(np.zeros((3,)))  # type: ignore
 
 
 class TestLocalGateCircuits(TestCase):
