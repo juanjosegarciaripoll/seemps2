@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray, ArrayLike
 import scipy.sparse as sp  # type: ignore
-from typing import TypeAlias, Annotated, TypeVar
+from typing import Literal, TypeAlias, Annotated, TypeVar
 
 Natural: TypeAlias = Annotated[int, ">=1"]
 
@@ -50,6 +50,8 @@ MPOEnvironment: TypeAlias = NDArray
 """Left or right environment of an MPS-MPO-MPS contraction."""
 
 FloatOrArray = TypeVar("FloatOrArray", float, np.floating, int, NDArray[np.floating])
+
+MPSOrder: TypeAlias = Literal["A", "B"]
 
 
 def to_dense_operator(O: Operator) -> DenseOperator:

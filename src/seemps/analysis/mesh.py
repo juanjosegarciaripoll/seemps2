@@ -5,6 +5,7 @@ from collections.abc import Sequence, Iterator
 from typing import overload
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+from ..typing import MPSOrder
 
 
 class Interval(ABC):
@@ -267,7 +268,7 @@ def array_affine(
 
 
 def mps_to_mesh_matrix(
-    sites_per_dimension: list[int], mps_order: str = "A", base: int = 2
+    sites_per_dimension: list[int], mps_order: MPSOrder = "A", base: int = 2
 ) -> NDArray[np.floating]:
     """
     Returns a matrix that transforms an array of `MPS` indices

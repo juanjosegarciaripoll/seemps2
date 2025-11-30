@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 import numpy as np
 from typing import Literal, TypeAlias, TypeVar, cast
-from ..typing import Real
+from ..typing import Real, MPSOrder
 from ..operators import MPO, MPOList, MPOSum
 from .mesh import Mesh, RegularInterval
 
@@ -16,9 +16,6 @@ def mpo_flip(operator: _Operator) -> _Operator:
     """Swap the qubits in the quantum register, to fix the reversal
     suffered during the quantum Fourier transform."""
     return operator.reverse()
-
-
-MPSOrder: TypeAlias = Literal["A", "B"]
 
 
 class Space:
