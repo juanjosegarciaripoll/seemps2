@@ -161,11 +161,11 @@ def arnoldi_eigh(
     guess: MPS | None = None,
     maxiter: int = 100,
     nvectors: int = 10,
-    tol: Float = 1e-13,
-    tol_ill: Float = np.finfo(float).eps * 10,  # type: ignore
-    tol_up: Float | None = None,
+    tol: float = 1e-13,
+    tol_ill: float = np.finfo(float).eps * 10,  # type: ignore
+    tol_up: float | None = None,
     upward_moves: int = 5,
-    gamma: Float = -0.75,
+    gamma: float = -0.75,
     strategy: Strategy = DESCENT_STRATEGY,
     callback: Callable[[MPS, OptimizeResults], Any] | None = None,
 ) -> OptimizeResults:
