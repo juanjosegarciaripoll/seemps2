@@ -6,7 +6,7 @@ from ..operators import MPO
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
 from ..solve import gmres_solve
 from ..truncate import simplify
-from ..analysis.operators import id_mpo
+from ..operators.projectors import identity_mpo
 from ..truncate.simplify_mpo import simplify_mpo
 
 
@@ -88,7 +88,8 @@ def radau_step(
     m = len(b[stages])
 
     # Extended identity, operator L and rhs vector
-    Im = _prepend_core(np.eye(m).reshape(1, m, m, 1), id_mpo(len(L._data)))
+    dimensions = [site.shape[1] for site in L]
+    Im = _prepend_core(np.eye(m).reshape(1, m, m, 1), identity_mpo(dimensions))
     Lm = _prepend_core(A[stages].reshape(1, m, m, 1), L)
     rhs = _prepend_core(np.ones((1, m, 1)), simplify(L @ v, strategy))
     Dm = simplify_mpo((Im - dt * Lm).join(), strategy)
