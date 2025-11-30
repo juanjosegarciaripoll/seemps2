@@ -1,8 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable
-
-from ..mesh import Interval, Mesh, mps_to_mesh_matrix
+from ..mesh import Interval, Mesh, mps_to_mesh_matrix, MPSOrder
 from ..sampling import evaluate_mps
 from ...state import MPS
 
@@ -99,7 +98,7 @@ class BlackBoxLoadMPS(BlackBox):
         func: Callable,
         domain: Interval | Mesh,
         base: int = 2,
-        mps_order: str = "A",
+        mps_order: MPSOrder = "A",
     ):
         mesh = Mesh([domain]) if not isinstance(domain, Mesh) else domain
         sites_per_dimension = [

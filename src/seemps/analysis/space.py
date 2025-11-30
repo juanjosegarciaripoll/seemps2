@@ -1,7 +1,7 @@
 from __future__ import annotations
 from collections.abc import Sequence
 import numpy as np
-from typing import Literal, TypeAlias, TypeVar, cast
+from typing import TypeVar, cast
 from ..typing import Real, MPSOrder
 from ..operators import MPO, MPOList, MPOSum
 from .mesh import Mesh, RegularInterval
