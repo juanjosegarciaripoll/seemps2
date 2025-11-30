@@ -83,7 +83,7 @@ def mpo_shifts(
         r = np.asarray(shifts, dtype=int)
     tensors: list[Tensor4] = []
     bits = np.arange(base).reshape(base, 1)
-    for i in reversed(range(L)):
+    for _ in reversed(range(L)):
         #
         # The shift r[j] adds to the current bit s[i], producing
         # an integer r[j] + s[i] = 2 * r' + s[i]', with a new
