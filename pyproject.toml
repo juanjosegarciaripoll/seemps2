@@ -105,9 +105,9 @@ test = [
 # Local development dependencies (not published to PyPI)
 dev = [
     "numpy",
-    "mypy>1.16",
+    "mypy>=1.19",
     "ruff>=0.9.3",
-    "basedpyright>1.29",
+    "basedpyright>=1.34",
     "darglint",      # Docstring-signature consistency
     "opt_einsum",    # To test contractions
     "optype[numpy]", # For typing tensors
