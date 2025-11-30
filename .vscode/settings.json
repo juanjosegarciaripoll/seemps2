@@ -22,7 +22,7 @@
     ],
     "mypy-type-checker.importStrategy": "fromEnvironment",
     "mypy-type-checker.reportingScope": "workspace",
-    "mypy-type-checker.cwd": "${workspaceFolder}/src",
+    "mypy-type-checker.cwd": "${workspaceFolder}",
     "python.analysis.typeCheckingMode": "standard",
     "python.analysis.autoFormatStrings": true,
     "python.analysis.importFormat": "relative",
