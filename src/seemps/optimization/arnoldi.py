@@ -162,7 +162,7 @@ def arnoldi_eigh(
     maxiter: int = 100,
     nvectors: int = 10,
     tol: float = 1e-13,
-    tol_ill: float = np.finfo(float).eps * 10,  # type: ignore
+    tol_ill: float = float(np.finfo(float).eps * 10),
     tol_up: float | None = None,
     upward_moves: int = 5,
     gamma: float = -0.75,
