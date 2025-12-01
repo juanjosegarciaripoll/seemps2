@@ -57,7 +57,7 @@ class OneSiteTDVPOperator(scipy.sparse.linalg.LinearOperator):
         return np.dot(l_c, np.dot(w_ce, r_e))
 
 
-class TDVPTwoSiteOperator(DMRGMatrixOperator):
+class TwoSiteTDVPOperator(DMRGMatrixOperator):
     def __new__(cls, *args: Any, **kwargs: Any):
         return object.__new__(cls)
 
@@ -89,9 +89,9 @@ class TDVPForm(QuadraticForm):
     def one_site_Hamiltonian(self, i: int) -> OneSiteTDVPOperator:
         return OneSiteTDVPOperator(self.left_env[i], self.H[i], self.right_env[i])
 
-    def two_site_Hamiltonian(self, i: int) -> TDVPTwoSiteOperator:
+    def two_site_Hamiltonian(self, i: int) -> TwoSiteTDVPOperator:
         assert i == self.site
-        return TDVPTwoSiteOperator(
+        return TwoSiteTDVPOperator(
             self.left_env[i],
             _contract_last_and_first(self.H[i], self.H[i + 1]),
             self.right_env[i + 1],
@@ -99,7 +99,7 @@ class TDVPForm(QuadraticForm):
 
 
 def _evolve(
-    operator: OneSiteTDVPOperator | TDVPTwoSiteOperator,
+    operator: OneSiteTDVPOperator | TwoSiteTDVPOperator,
     tensor: np.ndarray,
     factor: float | complex,
 ) -> np.ndarray:
