@@ -114,10 +114,10 @@ def runge_kutta_fehlberg(
                     - (11 / 40) * idt * k5,
                     strategy=strategy,
                 )
-                k6 = -1 * H.apply(state6)
+                k6 = H.apply(state6)
                 state_ord5 = simplify(
                     state
-                    + idt
+                    - idt
                     * (
                         (16 / 135) * k1
                         + (6656 / 12825) * k3
@@ -130,7 +130,7 @@ def runge_kutta_fehlberg(
                 norm_ord5 = state_ord5.norm_squared()
                 state_ord4 = simplify(
                     state
-                    + idt
+                    - idt
                     * (
                         (25 / 216) * k1
                         + (1408 / 2565) * k3
@@ -157,3 +157,4 @@ def runge_kutta_fehlberg(
         return state
 
     return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+
