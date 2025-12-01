@@ -3,7 +3,7 @@ from typing import Any, TypeVar
 import numpy as np
 from ..operators import MPO
 from ..state import DEFAULT_STRATEGY, MPS, Strategy
-from ..solve import gmres_solve
+from ..solve import dmrg_solve
 from ..truncate import simplify
 from ..operators.projectors import identity_mpo
 from ..truncate.simplify_mpo import simplify_mpo
@@ -97,7 +97,7 @@ def radau_step(
     # Solve linear system
     if inv_tol is None:
         inv_tol = strategy.get_simplification_tolerance()
-    Km, _ = gmres_solve(Dm, rhs, strategy=strategy, tolerance=inv_tol)
+    Km, _ = dmrg_solve(Dm, rhs, strategy=strategy, rtol=inv_tol)
 
     # Sum over step weights b
     # np.einsum('b,abc,cde->ade', b, KM[0], KM[1])
