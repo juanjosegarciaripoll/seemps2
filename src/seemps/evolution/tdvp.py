@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any
 import scipy.sparse.linalg
 from scipy.sparse.linalg import expm_multiply
 from seemps.state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
@@ -9,6 +10,14 @@ from seemps.evolution.common import ode_solver, ODECallback, TimeSpan
 
 
 class OneSiteTDVPOperator(scipy.sparse.linalg.LinearOperator):
+    L: np.ndarray
+    H_mpo: np.ndarray
+    R: np.ndarray
+    v_shape: tuple[int, int, int]
+
+    def __new__(cls, *args: Any, **kwargs: Any):
+        return object.__new__(cls)
+
     def __init__(self, L: np.ndarray, H: np.ndarray, R: np.ndarray):
         self.L = L
         self.H_mpo = H
@@ -17,7 +26,8 @@ class OneSiteTDVPOperator(scipy.sparse.linalg.LinearOperator):
         d, e, f = R.shape
         c, g, k, e_h = H.shape
         self.v_shape = (b, k, f)
-        super().__init__(dtype=L.dtype, shape=(b * k * f, b * k * f))  # type: ignore
+
+        super().__init__(dtype=L.dtype, shape=(b * k * f, b * k * f))  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
 
     def _matvec(self, v: np.ndarray) -> np.ndarray:
         v = v.reshape(self.v_shape)
@@ -48,6 +58,12 @@ class OneSiteTDVPOperator(scipy.sparse.linalg.LinearOperator):
 
 
 class TDVPTwoSiteOperator(DMRGMatrixOperator):
+    def __new__(cls, *args: Any, **kwargs: Any):
+        return object.__new__(cls)
+
+    def __init__(self, L: np.ndarray, H12: np.ndarray, R: np.ndarray):
+        super().__init__(L, H12, R)
+
     def _rmatvec(self, v: np.ndarray) -> np.ndarray:
         a = self.L.shape[0]
         i = self.H12.shape[1]
