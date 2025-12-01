@@ -98,6 +98,19 @@ class TDVPForm(QuadraticForm):
         )
 
 
+def _evolve(
+    operator: OneSiteTDVPOperator | TDVPTwoSiteOperator,
+    tensor: np.ndarray,
+    factor: float | complex,
+) -> np.ndarray:
+    """Apply time evolution operator to tensor."""
+    shape = tensor.shape
+    v = expm_multiply(
+        factor * operator, tensor.ravel(), traceA=factor * operator.trace()
+    )
+    return v.reshape(shape)
+
+
 def tdvp_step(
     H: MPO, state: MPS, dt: float | complex, strategy: Strategy = DEFAULT_STRATEGY
 ) -> CanonicalMPS:
@@ -107,50 +120,30 @@ def tdvp_step(
     QF = TDVPForm(H, state, start=0)
 
     # Sweep Right
-    for i in range(0, H.size - 1):
+    for i in range(H.size - 1):
         # Evolve 2-site
         Op2 = QF.two_site_Hamiltonian(i)
         A2 = _contract_last_and_first(QF.state[i], QF.state[i + 1])
-        shape2 = A2.shape
-
-        v2 = A2.reshape(-1)
-        v2 = expm_multiply(-0.5 * dt * Op2, v2, traceA=-0.5 * dt * Op2.trace())
-        v2 /= np.linalg.norm(v2)
-        A2 = v2.reshape(shape2)
-
-        # SVD and update
+        A2 = _evolve(Op2, A2, -0.5 * dt)
         QF.update_2site_right(A2, i, strategy)
 
         # Evolve 1-site backward
         if i < H.size - 2:
             Op1 = QF.one_site_Hamiltonian(i + 1)
-            v1 = QF.state[i + 1].reshape(-1)
-            v1 = expm_multiply(0.5 * dt * Op1, v1, traceA=0.5 * dt * Op1.trace())
-            v1 /= np.linalg.norm(v1)
-            QF.state[i + 1] = v1.reshape(QF.state[i + 1].shape)
+            QF.state[i + 1] = _evolve(Op1, QF.state[i + 1], 0.5 * dt)
 
     # Sweep Left
     for i in range(H.size - 2, -1, -1):
         # Evolve 2-site
         Op2 = QF.two_site_Hamiltonian(i)
         A2 = _contract_last_and_first(QF.state[i], QF.state[i + 1])
-        shape2 = A2.shape
-
-        v2 = A2.reshape(-1)
-        v2 = expm_multiply(-0.5 * dt * Op2, v2, traceA=-0.5 * dt * Op2.trace())
-        v2 /= np.linalg.norm(v2)
-        A2 = v2.reshape(shape2)
-
-        # SVD and update
+        A2 = _evolve(Op2, A2, -0.5 * dt)
         QF.update_2site_left(A2, i, strategy)
 
         # Evolve 1-site backward
         if i > 0:
             Op1 = QF.one_site_Hamiltonian(i)
-            v1 = QF.state[i].reshape(-1)
-            v1 = expm_multiply(0.5 * dt * Op1, v1, traceA=0.5 * dt * Op1.trace())
-            v1 /= np.linalg.norm(v1)
-            QF.state[i] = v1.reshape(QF.state[i].shape)
+            QF.state[i] = _evolve(Op1, QF.state[i], 0.5 * dt)
 
     return QF.state
 
