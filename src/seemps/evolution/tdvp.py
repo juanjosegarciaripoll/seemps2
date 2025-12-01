@@ -17,7 +17,7 @@ class OneSiteTDVPOperator(scipy.sparse.linalg.LinearOperator):
         d, e, f = R.shape
         c, g, k, e_h = H.shape
         self.v_shape = (b, k, f)
-        super().__init__(dtype=L.dtype, shape=(b * k * f, b * k * f))
+        super().__init__(dtype=L.dtype, shape=(b * k * f, b * k * f))  # type: ignore
 
     def _matvec(self, v: np.ndarray) -> np.ndarray:
         v = v.reshape(self.v_shape)
