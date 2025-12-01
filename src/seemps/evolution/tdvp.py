@@ -102,12 +102,16 @@ def _evolve(
     operator: OneSiteTDVPOperator | TwoSiteTDVPOperator,
     tensor: np.ndarray,
     factor: float | complex,
+    normalize: bool = False,
 ) -> np.ndarray:
     """Apply time evolution operator to tensor."""
     shape = tensor.shape
     v = expm_multiply(
         factor * operator, tensor.ravel(), traceA=factor * operator.trace()
     )
+    if normalize:
+        v = v / np.linalg.norm(v)
+
     return v.reshape(shape)
 
 
@@ -118,32 +122,33 @@ def tdvp_step(
         state = CanonicalMPS(state, center=0, strategy=strategy)
 
     QF = TDVPForm(H, state, start=0)
+    normalize = strategy.get_normalize_flag()
 
     # Sweep Right
     for i in range(H.size - 1):
         # Evolve 2-site
         Op2 = QF.two_site_Hamiltonian(i)
         A2 = _contract_last_and_first(QF.state[i], QF.state[i + 1])
-        A2 = _evolve(Op2, A2, -0.5 * dt)
+        A2 = _evolve(Op2, A2, -0.5 * dt, normalize)
         QF.update_2site_right(A2, i, strategy)
 
         # Evolve 1-site backward
         if i < H.size - 2:
             Op1 = QF.one_site_Hamiltonian(i + 1)
-            QF.state[i + 1] = _evolve(Op1, QF.state[i + 1], 0.5 * dt)
+            QF.state[i + 1] = _evolve(Op1, QF.state[i + 1], 0.5 * dt, normalize)
 
     # Sweep Left
     for i in range(H.size - 2, -1, -1):
         # Evolve 2-site
         Op2 = QF.two_site_Hamiltonian(i)
         A2 = _contract_last_and_first(QF.state[i], QF.state[i + 1])
-        A2 = _evolve(Op2, A2, -0.5 * dt)
+        A2 = _evolve(Op2, A2, -0.5 * dt, normalize)
         QF.update_2site_left(A2, i, strategy)
 
         # Evolve 1-site backward
         if i > 0:
             Op1 = QF.one_site_Hamiltonian(i)
-            QF.state[i] = _evolve(Op1, QF.state[i], 0.5 * dt)
+            QF.state[i] = _evolve(Op1, QF.state[i], 0.5 * dt, normalize)
 
     return QF.state
 
