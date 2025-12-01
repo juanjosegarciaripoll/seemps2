@@ -40,9 +40,17 @@ of Numpy, Scipy and h5py. Installation instructions are provided in
 Authors:
 
 * Juan José García Ripoll (Institute of Fundamental Physics)
-* Paula García Molina (Institute of Fundmental Physics)
+* Paula García Molina (Institute of Fundamental Physics)
 * Juan José Rodríguez Aldavero (Institute of Fundamental Physics)
 
 Contributors:
 
 * Jorge Gidi
+
+## TODOs
+- Update documentation.
+- Pull request with local developments (computational tree, Hadamard sketching (HaTT), etc.) and breaking changes (TT-cross, orthogonal polynomials, integration, etc.).
+- Add problem-specific tools: quantile estimation with binary search (for Value at Risk), MPO cumulative sum.
+- Revise test suite.
+- Revise RK45.
+- Revise Radau.
