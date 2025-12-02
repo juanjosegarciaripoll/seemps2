@@ -7,7 +7,7 @@ from ..solve import dmrg_solve
 from ..truncate import simplify
 from ..operators.projectors import identity_mpo
 from ..truncate.simplify_mpo import simplify_mpo
-from .common import ode_solver, ODECallback, ODEFunction, TimeSpan
+from .common import ode_solver, ODECallback, TimeSpan
 
 
 # Map number of stages to Butcher matrix A

@@ -22,9 +22,9 @@ class OneSiteTDVPOperator(scipy.sparse.linalg.LinearOperator):
         self.L = L
         self.H_mpo = H
         self.R = R
-        a, c, b = L.shape
-        d, e, f = R.shape
-        c, g, k, e_h = H.shape
+        _, _, b = L.shape
+        _, _, f = R.shape
+        _, _, k, _ = H.shape
         self.v_shape = (b, k, f)
 
         super().__init__(dtype=L.dtype, shape=(b * k * f, b * k * f))  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
