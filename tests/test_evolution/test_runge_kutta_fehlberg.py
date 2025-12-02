@@ -5,7 +5,7 @@ from .problem import RKTypeEvolutionTestcase
 from seemps.evolution import ODECallback, TimeSpan, runge_kutta_fehlberg
 
 
-class TestRungeKutta(RKTypeEvolutionTestcase):
+class TestRungeKuttaFehlberg(RKTypeEvolutionTestcase):
     def solve_Schroedinger(
         self,
         H: MPO,

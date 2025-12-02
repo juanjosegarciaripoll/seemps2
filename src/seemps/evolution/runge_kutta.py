@@ -26,16 +26,16 @@ def runge_kutta(
     def evolve_for_dt(
         state: MPS, factor: complex | float, dt: float, strategy: Strategy
     ) -> MPS:
-        idt = factor * dt
+        idt = -factor * dt
         H_state = H.apply(state)
-        state2 = simplify(state - (0.5 * idt) * H_state, strategy=strategy)
+        state2 = simplify(state + (0.5 * idt) * H_state, strategy=strategy)
         H_state2 = H.apply(state2)
-        state3 = simplify(state - (0.5 * idt) * H_state2, strategy=strategy)
+        state3 = simplify(state + (0.5 * idt) * H_state2, strategy=strategy)
         H_state3 = H.apply(state3)
-        state4 = simplify(state - idt * H_state3, strategy=strategy)
+        state4 = simplify(state + idt * H_state3, strategy=strategy)
         H_state4 = H.apply(state4)
         return simplify(
-            state - (idt / 6) * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
+            state + (idt / 6) * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
             strategy=strategy,
         )
 
@@ -63,7 +63,7 @@ def runge_kutta_fehlberg(
     tolerance : float, default = 1e-8
         Tolerance for determination of evolution step.
     """
-    desired_dt: float = 0.0
+    desired_dt: float = np.inf
     epsilon = np.finfo(np.float64).eps
 
     def evolve_for_dt(
@@ -76,67 +76,58 @@ def runge_kutta_fehlberg(
         left_dt = max_dt
         while left_dt > epsilon:
             while True:
-                if desired_dt:
-                    dt = min(desired_dt, max_dt)
-                else:
-                    dt = max_dt
-                idt = factor * dt
+                dt = min(desired_dt, max_dt)
+                idt = -factor * dt
                 k1 = H.apply(state)
-                state2 = simplify(state + 0.25 * idt * k1, strategy=strategy)
+                state2 = simplify(state + (0.25 * idt) * k1, strategy=strategy)
                 k2 = H.apply(state2)
                 state3 = simplify(
-                    state + (3 / 32) * idt * k1 + (9 / 32) * idt * k2, strategy=strategy
+                    state + (3 * idt / 32) * k1 + (9 * idt / 32) * k2, strategy=strategy
                 )
                 k3 = H.apply(state3)
                 state4 = simplify(
                     state
-                    + (1932 / 2197) * idt * k1
-                    - (7200 / 2197) * idt * k2
-                    + (7296 / 2197) * idt * k3,
+                    + (1932 * idt / 2197) * k1
+                    - (7200 * idt / 2197) * k2
+                    + (7296 * idt / 2197) * k3,
                     strategy=strategy,
                 )
                 k4 = H.apply(state4)
                 state5 = simplify(
                     state
-                    + (439 / 216) * idt * k1
-                    - 8 * idt * k2
-                    + (3680 / 513) * idt * k3
-                    - (845 / 4104) * idt * k4,
+                    + (439 / 216 * idt) * k1
+                    - (8 * idt) * k2
+                    + (3680 * idt / 513) * k3
+                    - (845 * idt / 4104) * k4,
                     strategy=strategy,
                 )
                 k5 = H.apply(state5)
                 state6 = simplify(
                     state
-                    - (8 / 27) * idt * k1
-                    + 2 * idt * k2
-                    - (3544 / 2565) * idt * k3
-                    + (1859 / 4104) * idt * k4
-                    - (11 / 40) * idt * k5,
+                    - (8 * idt / 27) * k1
+                    + (2 * idt) * k2
+                    - (3544 * idt / 2565) * k3
+                    + (1859 * idt / 4104) * k4
+                    - (11 * idt / 40) * k5,
                     strategy=strategy,
                 )
                 k6 = H.apply(state6)
                 state_ord5 = simplify(
                     state
-                    - idt
-                    * (
-                        (16 / 135) * k1
-                        + (6656 / 12825) * k3
-                        + (28561 / 56430) * k4
-                        - (9 / 50) * k5
-                        + (2 / 55) * k6
-                    ),
+                    + (16 * idt / 135) * k1
+                    + (6656 * idt / 12825) * k3
+                    + (28561 * idt / 56430) * k4
+                    - (9 * idt / 50) * k5
+                    + (2 * idt / 55) * k6,
                     strategy=normalize_strategy,
                 )
                 norm_ord5 = state_ord5.norm_squared()
                 state_ord4 = simplify(
                     state
-                    - idt
-                    * (
-                        (25 / 216) * k1
-                        + (1408 / 2565) * k3
-                        + (2197 / 4104) * k4
-                        - (1 / 5) * k5
-                    ),
+                    + (25 * idt / 216) * k1
+                    + (1408 * idt / 2565) * k3
+                    + (2197 * idt / 4104) * k4
+                    - (idt / 5) * k5,
                     strategy=normalize_strategy,
                 )
                 norm_ord4 = state_ord5.norm_squared()
@@ -157,4 +148,3 @@ def runge_kutta_fehlberg(
         return state
 
     return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
-
