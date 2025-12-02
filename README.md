@@ -47,9 +47,57 @@ Contributors:
 
 * Jorge Gidi
 
+## Development
+
+### Environment
+For optimal development the following is expected:
+- uv from Astral is installed
+- In Linux, if you wish to use a local version of Python, you might need
+  to install the `python-devel` package or equivalent one. This also
+  installs a C and C++ compilers.
+- In Windows, you need to install a Visual Studio C++ (Community Edition)
+  compiler to build SeeMPS.
+- A copy of Visual Code with the Python extensions installed plus some
+  additional recommended extensions:
+  + [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters)
+  + [Mypy Type Checker](https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker)
+  + [Ruff support](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
+
+The environment is bootstrapped using
+```
+uv sync --dev
+```
+This installs both the SeeMPS library and libraries that it depends on,
+plus additional tools that are used for development:
+- ruff, for code linting
+- mypy and basedpyright, for type checking
+- coverage, for code coverage
+
+### Testing
+The library contains a rather complete set of unittests under the `tests/`
+folder. The tests can be run using the standard `unittest` module, as in
+```
+uv run python -m unittest -v
+```
+
+The code coverage of the test suite exceeds 88%. To analyze test coverage
+you can open a terminal and run
+```
+uv run coverage run -m unittest -v && uv run coverage report
+```
+Alternatively, you can use
+```
+uv run coverage lcov
+```
+to create a coverage file that is interpreted by the "Coverage Gutters"
+Visual Code extension. There is a task (right-button option in the explorer)
+with the name "Run Tests with Coverage" that both runs the tests and
+automatically creates the reports using
+```
+uv run coverage run -m unittest -v && uv run coverage lcov
+```
+
 ## TODOs
 - Update documentation.
 - Pull request with local developments (computational tree, Hadamard sketching (HaTT), etc.) and breaking changes (TT-cross, orthogonal polynomials, integration, etc.).
 - Add problem-specific tools: quantile estimation with binary search (for Value at Risk), MPO cumulative sum.
-- Revise test suite.
-- Revise RK45.

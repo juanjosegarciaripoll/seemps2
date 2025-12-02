@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run coverage",
+            "type": "shell",
+            "command": "uv run coverage run -m unittest && uv run coverage lcov",
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}
