@@ -53,4 +53,3 @@ Contributors:
 - Add problem-specific tools: quantile estimation with binary search (for Value at Risk), MPO cumulative sum.
 - Revise test suite.
 - Revise RK45.
-- Revise Radau.
