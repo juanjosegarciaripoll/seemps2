@@ -1,114 +1,75 @@
-import numpy as np
-from math import sqrt
 from seemps.evolution.euler import euler, euler2, implicit_euler
-from seemps.hamiltonians import HeisenbergHamiltonian
-from seemps.state import product_state
-
-from .problem import EvolutionTestCase
-
-
-class TestEuler(EvolutionTestCase):
-    def test_euler_time_steps_and_callback(self):
-        """Check the integration times used by the algorithm"""
-        nqubits = 4
-        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
-        H = HeisenbergHamiltonian(nqubits).to_mpo()
-
-        final = euler(H, 1.0, mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, np.linspace(0, 1.0, 11))
-
-        final = euler(H, (1.0, 2.0), mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, np.linspace(1.0, 2.0, 11))
-
-        t_span = np.linspace(1.0, 3.0, 13)
-        final = euler(H, t_span, mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, t_span)
-
-    def test_euler_accumulated_phase(self):
-        """Evolve with a state that is invariant under the Hamiltonian
-        and check the accumulated phase."""
-        T = 0.01
-        steps = 1
-        dt = T / steps
-        nqubits = 4
-        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
-
-        H = HeisenbergHamiltonian(nqubits).to_mpo()
-        final = euler(H, T, mps, steps=steps)
-        self.assertSimilarStates(final, mps)
-
-        E = H.expectation(mps)
-        phase = (1 - 1j * E * dt) ** steps
-        self.assertSimilar(final, phase * mps)
+from typing import Any
+from seemps.state import MPS, DEFAULT_STRATEGY, Strategy
+from seemps.operators import MPO
+from .problem import RKTypeEvolutionTestcase
+from seemps.evolution import ODECallback, TimeSpan
 
 
-class TestEuler2(EvolutionTestCase):
-    def test_euler2_time_steps_and_callback(self):
-        """Check the integration times used by the algorithm"""
-        nqubits = 4
-        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
-        H = HeisenbergHamiltonian(nqubits).to_mpo()
-
-        final = euler2(H, 1.0, mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, np.linspace(0, 1.0, 11))
-
-        final = euler2(H, (1.0, 2.0), mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, np.linspace(1.0, 2.0, 11))
-
-        t_span = np.linspace(1.0, 3.0, 13)
-        final = euler2(H, t_span, mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, t_span)
-
-    def test_euler2_accumulated_phase(self):
-        """Evolve with a state that is invariant under the Hamiltonian
-        and check the accumulated phase."""
-        T = 0.01
-        steps = 1
-        dt = T / steps
-        nqubits = 4
-        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
-
-        H = HeisenbergHamiltonian(nqubits).to_mpo()
-        final = euler2(H, T, mps, steps=steps)
-        self.assertSimilarStates(final, mps)
-
-        E = H.expectation(mps)
-        phase = 1 - 0.5j * dt * E * (2.0 - 1j * E * dt)
-        self.assertSimilar(final, phase * mps)
-
-
-class TestImplicitEuler(EvolutionTestCase):
-    def _test_implicit_euler_time_steps_and_callback(self):
-        """Check the integration times used by the algorithm"""
-        nqubits = 4
-        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
-        H = HeisenbergHamiltonian(nqubits).to_mpo()
-
-        final = implicit_euler(H, 1.0, mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, np.linspace(0, 1.0, 11))
-
-        final = implicit_euler(
-            H, (1.0, 2.0), mps, steps=10, callback=lambda t, state: t
+class TestEuler(RKTypeEvolutionTestcase):
+    def solve_Schroedinger(
+        self,
+        H: MPO,
+        time: TimeSpan,
+        state: MPS,
+        steps: int = 1000,
+        strategy: Strategy = DEFAULT_STRATEGY,
+        callback: ODECallback | None = None,
+        itime: bool = False,
+    ) -> MPS | list[Any]:
+        return euler(
+            H,
+            time,
+            state,
+            steps=steps,
+            strategy=strategy,
+            callback=callback,
+            itime=itime,
         )
-        self.assertSimilar(final, np.linspace(1.0, 2.0, 11))
 
-        t_span = np.linspace(1.0, 3.0, 13)
-        final = implicit_euler(H, t_span, mps, steps=10, callback=lambda t, state: t)
-        self.assertSimilar(final, t_span)
+    def accummulated_phase(self, E, dt, steps):
+        return (1 - 1j * E * dt) ** steps
 
-    def test_implicit_euler_accumulated_phase(self):
-        """Evolve with a state that is invariant under the Hamiltonian
-        and check the accumulated phase."""
-        T = 0.01
-        steps = 1
-        dt = T / steps
-        nqubits = 4
-        mps = product_state([np.ones(2) / sqrt(2)] * nqubits)
 
-        H = HeisenbergHamiltonian(nqubits).to_mpo()
-        final = implicit_euler(H, T, mps, steps=steps, tolerance=1e-10)
-        self.assertSimilarStates(final, mps)
+class TestEuler2(RKTypeEvolutionTestcase):
+    def solve_Schroedinger(
+        self,
+        H: MPO,
+        time: TimeSpan,
+        state: MPS,
+        steps: int = 1000,
+        strategy: Strategy = DEFAULT_STRATEGY,
+        callback: ODECallback | None = None,
+        itime: bool = False,
+    ) -> MPS | list[Any]:
+        return euler2(
+            H,
+            time,
+            state,
+            steps=steps,
+            strategy=strategy,
+            callback=callback,
+            itime=itime,
+        )
 
-        E = H.expectation(mps)
-        phase = 1 - 0.5j * dt * E * (2.0 - 1j * E * dt)
-        self.assertSimilar(final, phase * mps)
+
+class TestImplicitEuler(RKTypeEvolutionTestcase):
+    def solve_Schroedinger(
+        self,
+        H: MPO,
+        time: TimeSpan,
+        state: MPS,
+        steps: int = 1000,
+        strategy: Strategy = DEFAULT_STRATEGY,
+        callback: ODECallback | None = None,
+        itime: bool = False,
+    ) -> MPS | list[Any]:
+        return implicit_euler(
+            H,
+            time,
+            state,
+            steps=steps,
+            strategy=strategy,
+            callback=callback,
+            itime=itime,
+        )
