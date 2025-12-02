@@ -189,7 +189,7 @@ def tdvp(
     """
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, strategy: Strategy
+        t: float, state: MPS, factor: complex | float, dt: float, strategy: Strategy
     ) -> MPS:
         return tdvp_step(H, state, factor * dt, strategy=strategy)
 

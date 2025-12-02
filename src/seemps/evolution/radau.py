@@ -7,7 +7,7 @@ from ..solve import dmrg_solve
 from ..truncate import simplify
 from ..operators.projectors import identity_mpo
 from ..truncate.simplify_mpo import simplify_mpo
-from .common import ode_solver, ODECallback, TimeSpan
+from .common import ode_solver, ODECallback, ODEFunction, TimeSpan
 
 
 # Map number of stages to Butcher matrix A
@@ -113,7 +113,7 @@ def radau_step(
 
 def radau(
     H: MPO,
-    t_span: TimeSpan,
+    time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     stages: int = 3,
@@ -122,36 +122,26 @@ def radau(
     callback: ODECallback | None = None,
     itime: bool = False,
 ) -> MPS | list[Any]:
-    r"""Solve a Schrödinger equation using an implicit Radau IIA method with either 3 or 5 stages (order 5 or 9, respectively).
+    r"""Solve a Schrödinger equation using an implicit Radau IIA method with either
+    3 or 5 stages (order 5 or 9, respectively).
+
+    See :function:`seemps.evolution.euler` for a description of the
+    missing function arguments and the function's output.
 
     Parameters
     ----------
-    H : MPO
-        Hamiltonian in MPO form.
-    t_span : float | tuple[float, float] | Vector
-        Integration interval, or sequence of time steps.
-    state : MPS
-        Initial state.
-    steps : int, default = 1000
-        Number of integration steps, used if `t_span` is a tuple.
     stages : int, default = 3
         Number of Radau IIA stages (3 or 5).
     inv_tol : float, default = 1e-7
         Tolerance for the GMRES solver.
-    strategy : Strategy, default = DEFAULT_STRATEGY
-        Truncation strategy for MPO and MPS algebra.
-    callback : Callable[[float, MPS], Any] | None, default = None
-        A callable invoked after each iteration, receiving the current time and state.
-    itime : bool, default = False
-        Whether to solve the imaginary time evolution problem.
-
-    Returns
-    -------
-    result : MPS | list[Any]
-        Final state after evolution or values collected by callback
     """
+
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         idt = factor * dt
         return radau_step(
@@ -163,4 +153,4 @@ def radau(
             stages=stages,
         )
 
-    return ode_solver(evolve_for_dt, t_span, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)

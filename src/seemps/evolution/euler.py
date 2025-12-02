@@ -74,7 +74,11 @@ def euler(
     """
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         idt = factor * dt
         return simplify(state - idt * (H @ state), strategy=normalize_strategy)
@@ -104,7 +108,11 @@ def euler2(
     """
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         idt = factor * dt
         xi = simplify(2.0 * state - idt * (H @ state), strategy=strategy)
@@ -142,7 +150,11 @@ def implicit_euler(
     id = id_mpo(state.size, strategy=strategy)
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         nonlocal A, B, last_dt
         if last_dt != dt or A is None or B is None:

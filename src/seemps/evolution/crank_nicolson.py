@@ -36,7 +36,11 @@ def crank_nicolson(
     id = id_mpo(state.size, strategy=H.strategy)
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         nonlocal A, B, last_dt
         if last_dt != dt or A is None or B is None:

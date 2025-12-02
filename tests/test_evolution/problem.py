@@ -23,6 +23,7 @@ class EvolutionTestCase(TestCase):
 
 class RKTypeEvolutionTestcase(EvolutionTestCase):
     tolerance: float = 1e-10
+    name: str = "Unknown"
 
     @classmethod
     def setUpClass(cls):
@@ -80,6 +81,9 @@ class RKTypeEvolutionTestcase(EvolutionTestCase):
 
         E = H.expectation(mps)
         phase = self.accummulated_phase(E, dt, steps)
+        assert isinstance(final, MPS)
+        print(final.to_vector())
+        print(phase * mps.to_vector(), flush=True)
         self.assertSimilar(final, phase * mps)
 
     def accummulated_phase(self, E, dt, steps):

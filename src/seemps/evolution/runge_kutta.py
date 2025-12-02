@@ -5,11 +5,17 @@ from typing import Any
 from ..state import MPS, Strategy, DEFAULT_STRATEGY, scprod
 from ..operators import MPO
 from ..truncate import simplify
-from .common import ODECallback, TimeSpan, ode_solver
+from .common import (
+    ODECallback,
+    GeneralizedMPO,
+    TimeSpan,
+    ode_solver,
+    make_generalized_MPO,
+)
 
 
 def runge_kutta(
-    H: MPO,
+    H: GeneralizedMPO,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
@@ -21,21 +27,28 @@ def runge_kutta(
 
     See :function:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
+
+    Parameters
+    ----------
+    H : MPO | Callback[[float, MPS], MPS]
+        Hamiltonian in MPO form, or a function that takes the time :math:`t` and
+        a MPS and transforms it as in :math:`H(t)\psi`
     """
+    GH: GeneralizedMPO = make_generalized_MPO(H, strategy)
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, strategy: Strategy
+        t: float, state: MPS, factor: complex | float, dt: float, strategy: Strategy
     ) -> MPS:
-        idt = -factor * dt
-        H_state = H.apply(state)
-        state2 = simplify(state + (0.5 * idt) * H_state, strategy=strategy)
-        H_state2 = H.apply(state2)
-        state3 = simplify(state + (0.5 * idt) * H_state2, strategy=strategy)
-        H_state3 = H.apply(state3)
-        state4 = simplify(state + idt * H_state3, strategy=strategy)
-        H_state4 = H.apply(state4)
+        h = -factor * dt
+        H_state = GH(t, state)
+        state2 = simplify(state + (0.5 * h) * H_state, strategy=strategy)
+        H_state2 = GH(t + dt / 2, state2)
+        state3 = simplify(state + (0.5 * h) * H_state2, strategy=strategy)
+        H_state3 = GH(t + dt / 2, state3)
+        state4 = simplify(state + h * H_state3, strategy=strategy)
+        H_state4 = GH(t + dt, state4)
         return simplify(
-            state + (idt / 6) * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
+            state + (h / 6) * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
             strategy=strategy,
         )
 
@@ -60,14 +73,22 @@ def runge_kutta_fehlberg(
 
     Parameters
     ----------
+    H : MPO | Callback[[float, MPS], MPS]
+        Hamiltonian in MPO form, or a function that takes the time :math:`t` and
+        a MPS and transforms it as in :math:`H(t)\psi`
     tolerance : float, default = 1e-8
         Tolerance for determination of evolution step.
     """
     desired_dt: float = np.inf
     epsilon = np.finfo(np.float64).eps
+    GH: GeneralizedMPO = make_generalized_MPO(H, strategy)
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, max_dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        max_dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         """Solve one evolution step with 4th-5th order Runge-Kutta-Fehlberg.
         We solve the equation dv/dt = factor * H.
@@ -77,57 +98,57 @@ def runge_kutta_fehlberg(
         while left_dt > epsilon:
             while True:
                 dt = min(desired_dt, max_dt)
-                idt = -factor * dt
-                k1 = H.apply(state)
-                state2 = simplify(state + (0.25 * idt) * k1, strategy=strategy)
-                k2 = H.apply(state2)
+                h = -factor * dt
+                k1 = GH(t, state)
+                state2 = simplify(state + (0.25 * h) * k1, strategy=strategy)
+                k2 = GH(t + dt / 4, state2)
                 state3 = simplify(
-                    state + (3 * idt / 32) * k1 + (9 * idt / 32) * k2, strategy=strategy
+                    state + (3 * h / 32) * k1 + (9 * h / 32) * k2, strategy=strategy
                 )
-                k3 = H.apply(state3)
+                k3 = GH(t + 3 * dt / 8, state3)
                 state4 = simplify(
                     state
-                    + (1932 * idt / 2197) * k1
-                    - (7200 * idt / 2197) * k2
-                    + (7296 * idt / 2197) * k3,
+                    + (1932 * h / 2197) * k1
+                    - (7200 * h / 2197) * k2
+                    + (7296 * h / 2197) * k3,
                     strategy=strategy,
                 )
-                k4 = H.apply(state4)
+                k4 = GH(t + 12 * dt / 13, state4)
                 state5 = simplify(
                     state
-                    + (439 / 216 * idt) * k1
-                    - (8 * idt) * k2
-                    + (3680 * idt / 513) * k3
-                    - (845 * idt / 4104) * k4,
+                    + (439 / 216 * h) * k1
+                    - (8 * h) * k2
+                    + (3680 * h / 513) * k3
+                    - (845 * h / 4104) * k4,
                     strategy=strategy,
                 )
-                k5 = H.apply(state5)
+                k5 = GH(t + dt, state5)
                 state6 = simplify(
                     state
-                    - (8 * idt / 27) * k1
-                    + (2 * idt) * k2
-                    - (3544 * idt / 2565) * k3
-                    + (1859 * idt / 4104) * k4
-                    - (11 * idt / 40) * k5,
+                    - (8 * h / 27) * k1
+                    + (2 * h) * k2
+                    - (3544 * h / 2565) * k3
+                    + (1859 * h / 4104) * k4
+                    - (11 * h / 40) * k5,
                     strategy=strategy,
                 )
-                k6 = H.apply(state6)
+                k6 = GH(t + dt / 2, state6)
                 state_ord5 = simplify(
                     state
-                    + (16 * idt / 135) * k1
-                    + (6656 * idt / 12825) * k3
-                    + (28561 * idt / 56430) * k4
-                    - (9 * idt / 50) * k5
-                    + (2 * idt / 55) * k6,
+                    + (16 * h / 135) * k1
+                    + (6656 * h / 12825) * k3
+                    + (28561 * h / 56430) * k4
+                    - (9 * h / 50) * k5
+                    + (2 * h / 55) * k6,
                     strategy=normalize_strategy,
                 )
                 norm_ord5 = state_ord5.norm_squared()
                 state_ord4 = simplify(
                     state
-                    + (25 * idt / 216) * k1
-                    + (1408 * idt / 2565) * k3
-                    + (2197 * idt / 4104) * k4
-                    - (idt / 5) * k5,
+                    + (25 * h / 216) * k1
+                    + (1408 * h / 2565) * k3
+                    + (2197 * h / 4104) * k4
+                    - (h / 5) * k5,
                     strategy=normalize_strategy,
                 )
                 norm_ord4 = state_ord5.norm_squared()

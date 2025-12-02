@@ -4,14 +4,32 @@ from typing import Callable, Any, TypeAlias
 import numpy as np
 from ..typing import Real, Vector
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
+from ..operators import MPO
+
+ODEFunction: TypeAlias = Callable[[float, MPS], MPS]
+
+GeneralizedMPO: TypeAlias = ODEFunction | MPO
 
 ODECallback: TypeAlias = Callable[[float, MPS], Any]
 
 TimeSpan: TypeAlias = float | tuple[Real, Real] | Sequence[Real] | Vector
 
 
+def make_generalized_MPO(H: GeneralizedMPO, strategy: Strategy) -> ODEFunction:
+    the_MPO: MPO
+
+    def mpo_derivative(t: float, state: MPS) -> MPS:
+        return the_MPO.apply(state)
+
+    if isinstance(H, MPO):
+        the_MPO = H
+        return mpo_derivative
+    else:
+        return H
+
+
 def ode_solver(
-    evolve_for_dt: Callable[[MPS, complex | float, float, Strategy], MPS],
+    evolve_for_dt: Callable[[float, MPS, complex | float, float, Strategy], MPS],
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
@@ -59,7 +77,9 @@ def ode_solver(
     last_t = t_span[0]
     for t in t_span:
         if t != last_t:
-            state = evolve_for_dt(state, factor, float(t - last_t), normalize_strategy)
+            state = evolve_for_dt(
+                t, state, factor, float(t - last_t), normalize_strategy
+            )
         if callback:
             output.append(callback(t, state))
         last_t = t

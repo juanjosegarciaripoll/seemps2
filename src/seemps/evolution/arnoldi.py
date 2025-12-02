@@ -30,7 +30,11 @@ def arnoldi(
     arnoldiH = None
 
     def evolve_for_dt(
-        state: MPS, factor: complex | float, dt: float, normalize_strategy: Strategy
+        t: float,
+        state: MPS,
+        factor: complex | float,
+        dt: float,
+        normalize_strategy: Strategy,
     ) -> MPS:
         nonlocal arnoldiH
         if arnoldiH is None:
