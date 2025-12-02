@@ -34,7 +34,7 @@ def runge_kutta(
         Hamiltonian in MPO form, or a function that takes the time :math:`t` and
         a MPS and transforms it as in :math:`H(t)\psi`
     """
-    GH: ODEFunction = make_generalized_MPO(H, strategy)
+    GH: ODEFunction = make_generalized_MPO(H)
 
     def evolve_for_dt(
         t: float, state: MPS, factor: complex | float, dt: float, strategy: Strategy
@@ -81,7 +81,7 @@ def runge_kutta_fehlberg(
     """
     desired_dt: float = np.inf
     epsilon = np.finfo(np.float64).eps
-    GH: ODEFunction = make_generalized_MPO(H, strategy)
+    GH: ODEFunction = make_generalized_MPO(H)
 
     def evolve_for_dt(
         t: float,

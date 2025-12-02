@@ -15,7 +15,7 @@ ODECallback: TypeAlias = Callable[[float, MPS], Any]
 TimeSpan: TypeAlias = float | tuple[Real, Real] | Sequence[Real] | Vector
 
 
-def make_generalized_MPO(H: GeneralizedMPO, strategy: Strategy) -> ODEFunction:
+def make_generalized_MPO(H: GeneralizedMPO) -> ODEFunction:
     the_MPO: MPO
 
     def mpo_derivative(t: float, state: MPS) -> MPS:
