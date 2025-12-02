@@ -7,7 +7,7 @@ from ..operators import MPO
 from ..truncate import simplify
 from .common import (
     ODECallback,
-    GeneralizedMPO,
+    ODEFunction,
     TimeSpan,
     ode_solver,
     make_generalized_MPO,
@@ -15,7 +15,7 @@ from .common import (
 
 
 def runge_kutta(
-    H: GeneralizedMPO,
+    H: MPO | ODEFunction,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
@@ -34,7 +34,7 @@ def runge_kutta(
         Hamiltonian in MPO form, or a function that takes the time :math:`t` and
         a MPS and transforms it as in :math:`H(t)\psi`
     """
-    GH: GeneralizedMPO = make_generalized_MPO(H, strategy)
+    GH: ODEFunction = make_generalized_MPO(H, strategy)
 
     def evolve_for_dt(
         t: float, state: MPS, factor: complex | float, dt: float, strategy: Strategy
@@ -57,7 +57,7 @@ def runge_kutta(
 
 # TODO: URGENT - Fix this integrator
 def runge_kutta_fehlberg(
-    H: MPO,
+    H: MPO | ODEFunction,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
@@ -81,7 +81,7 @@ def runge_kutta_fehlberg(
     """
     desired_dt: float = np.inf
     epsilon = np.finfo(np.float64).eps
-    GH: GeneralizedMPO = make_generalized_MPO(H, strategy)
+    GH: ODEFunction = make_generalized_MPO(H, strategy)
 
     def evolve_for_dt(
         t: float,
