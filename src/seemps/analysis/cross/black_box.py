@@ -10,14 +10,18 @@ from ...typing import Matrix, Vector
 class BlackBox(ABC):
     """
     Abstract base class representing generic black-box functions.
-    A black-box function represents an implicit representation of a function that can be indexed
-    with indices similarly as a multidimensional array. These objects are fundamental for the
-    efficient implementation of TCI algorithms.
+    A black-box function represents an implicit representation of a function that can be
+    indexedwith indices similarly as a multidimensional array. These objects are
+    fundamental for the efficient implementation of TCI algorithms.
 
-    By convention, the input function is tensor-valued and assumes that the index representing the
-    degrees of freedom of the input tensor is placed in the leading position (i.e., "channels-first"
-    convention).
+    By convention, the input function is tensor-valued and assumes that the index ç
+    representing the degrees of freedom of the input tensor is placed in the leading
+    position (i.e., "channels-first" convention).
     """
+
+    func: Callable
+    physical_dimensions: list[int]
+    evals: int
 
     def __init__(self, func: Callable, physical_dimensions: list):
         self.func = func
@@ -34,8 +38,9 @@ class BlackBox(ABC):
 class BlackBoxLoadMPS(BlackBox):
     """
     Black-box representing a multivariate scalar function discretized on a `Mesh` object.
-    Each function degree of freedom is quantized and arranged according to an arbitrary `map_matrix`
-    operator and assigned a collection of MPS tensors with the given `physical_dimensions`.
+    Each function degree of freedom is quantized and arranged according to an arbitrary
+    `map_matrix` operator and assigned a collection of MPS tensors with the given
+    `physical_dimensions`.
 
     Parameters
     ----------
@@ -45,11 +50,11 @@ class BlackBoxLoadMPS(BlackBox):
         The domain where the function is discretized.
     map_matrix : Matrix, optional
         An operator that encodes the quantization and arrangement of the MPS tensors.
-        If None, no quantization is assumed and each Mesh dimension is assigned a unique MPS tensor
-        (i.e., "tensor-train structure").
+        If None, no quantization is assumed and each Mesh dimension is assigned a unique
+        MPS tensor (i.e., "tensor-train structure").
     physical_dimensions: Vector, optional
-        An array representing the physical sizes of the resulting MPS tensors, required when
-        `map_matrix` is not None to correctly represent the quantization.
+        An array representing the physical sizes of the resulting MPS tensors, required
+        when `map_matrix` is not None to correctly represent the quantization.
 
     Example
     -------
@@ -84,7 +89,6 @@ class BlackBoxLoadMPS(BlackBox):
 
     mesh: Mesh
     map_matrix: Matrix | None
-    physical_dimensions: list | None
 
     def __init__(
         self,
