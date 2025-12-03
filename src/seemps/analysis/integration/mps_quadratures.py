@@ -205,7 +205,7 @@ def mps_fifth_order(start: float, stop: float, sites: int) -> MPS:
 
 
 def mps_best_newton_cotes(start: float, stop: float, sites: int) -> MPS:
-    """Fetches the MPS for the best Newton-Côtes quadrature rule for the given number of sites."""
+    """Fetches the MPS for the best Newton-Côtes quadrature rule for the given sites."""
     if sites % 4 == 0:
         return mps_fifth_order(start, stop, sites)
     elif sites % 2 == 0:
@@ -221,7 +221,7 @@ def mps_fejer(
     qft_strategy: Strategy = DEFAULT_STRATEGY,
     cross_strategy: CrossStrategy = CrossStrategyMaxvol(),
 ) -> MPS:
-    """ "
+    """
     Returns the binary MPS representation of the Fejér first quadrature rule on an interval.
     The integration nodes are given by the `d` zeros of the `d`-th Chebyshev polynomial.
     This is achieved using the formulation of Waldvogel (see waldvogel2006 formula 4.4)

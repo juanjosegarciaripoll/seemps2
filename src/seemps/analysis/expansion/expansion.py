@@ -144,9 +144,9 @@ def mps_polynomial_expansion(
     orthogonal polynomial expansion.
 
     Given a orthogonal polynomial expansion of a function `f(x)` (e.g. in a basis of
-    Chebyshev, Legendre, Hermite, or other orthogonal polynomials), and an
-    initial representation of `g(x)` as an `Interval` or `MPS`, this routine
-    builds an MPS approximation of the composition `f(g(x))`.
+    Chebyshev, Legendre, or other orthogonal polynomials), and an initial representation
+    of `g(x)` as an `Interval` or `MPS`, this routine builds an MPS approximation of the
+    composition `f(g(x))`.
 
     The construction can be performed either via the Clenshaw recurrence or
     by direct evaluation of the polynomial series. If `rescale=True`, the

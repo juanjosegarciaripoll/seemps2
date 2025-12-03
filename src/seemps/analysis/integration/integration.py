@@ -26,12 +26,13 @@ def integrate_mps(
     """
     Compute the integral of a multivariate function represented as a MPS.
 
-    The function is integrated over the discretization domain specified by an `Interval` or a `Mesh`.
-    The appropriate univariate quadrature rule is selected automatically from the interval type:
+    The function is integrated over the discretization domain specified by an `Interval`
+    or a `Mesh`. The appropriate univariate quadrature rule is selected automatically
+    from the interval type:
         - `RegularInterval` → high-order Newton–Cotes rules.
         -  `ChebyshevInterval` → Clenshaw–Curtis or Fejér rules.
-    The integral is then evaluated by contracting the MPS with the tensor-product quadrature weights,
-    respecting the qubit ordering specified by `mps_order`.
+    The integral is then evaluated by contracting the MPS with the tensor-product
+    quadrature weights, respecting the qubit ordering specified by `mps_order`.
 
     Parameters
     ----------
@@ -50,12 +51,13 @@ def integrate_mps(
 
     Notes
     -----
-    - All variables are assumed to use base-2 quantization on either a `RegularInterval` or a
-      `ChebyshevInterval`, in serial or interleaved form.
-    - More general quadrature operators can be built manually by forming the tensor product of
-      univariate rules and contracting with `mps_tensor_product` followed by `scprod`.
-    - Quadrature meshes can also be constructed automatically using cross-interpolation using the
-      function :func:`quadrature_mesh_to_mps` in arbitrary tensor arrangements.
+    - All variables are assumed to use base-2 quantization on either a `RegularInterval`
+      or a `ChebyshevInterval`, in serial or interleaved form.
+    - More general quadrature operators can be built manually by forming the tensor
+      product of univariate rules and contracting with `mps_tensor_product` followed by
+      `scprod`.
+    - Quadrature meshes can also be constructed automatically using cross-interpolation
+      using :func:`quadrature_mesh_to_mps` in arbitrary tensor arrangements.
 
     Examples
     --------
@@ -92,11 +94,11 @@ def integrate_mps(
 
 def mesh_to_quadrature_mesh(mesh: Mesh) -> Mesh:
     """
-    Constructs a mesh whose entries are quadrature vectors derived from the best available
-    quadrature rule for each `Interval` in the input mesh.
+    Constructs a mesh whose entries are quadrature vectors derived from the best
+    available quadrature rule for each `Interval` in the input mesh.
 
-    Can be used to automatically construct a quadrature MPS using cross-interpolation with the
-    :func:`quadrature_mesh_to_mps` routine in arbitrary tensor arrangements.
+    Can be used to automatically construct a quadrature MPS using cross-interpolation
+    with the :func:`quadrature_mesh_to_mps` routine in arbitrary tensor arrangements.
     """
     quads = []
     for interval in mesh.intervals:
@@ -125,10 +127,10 @@ def quadrature_mesh_to_mps(
     """
     Constructs the MPS representation of a multidimensional quadrature mesh using TCI.
 
-    The input mesh consists of univariate quadrature vectors (or arbitrary 1D arrays) defining
-    the weights along each dimension. These vectors are combined into a full multidimensional
-    quadrature operator and approximated in MPS form using tensor cross-interpolation with the
-    specified strategy.
+    The input mesh consists of univariate quadrature vectors (or arbitrary 1D arrays)
+    defining the weights along each dimension. These vectors are combined into a full
+    multidimensional quadrature operator and approximated in MPS form using tensor
+    cross-interpolation with the specified strategy.
     """
     black_box = BlackBoxLoadMPS(
         lambda q: np.prod(q, axis=0),
