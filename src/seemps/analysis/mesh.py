@@ -278,7 +278,7 @@ def mps_to_mesh_matrix(
     ----------
     sites_per_dimension : list[int]
         The number of MPS sites allocated to each spatial dimension.
-    mps_order : str, default='A'
+    mps_order : MPSOrder, default='A'
         The order of the MPS sites, either serial ('A') or interleaved ('B').
     base : int, default=2
         The base or physical dimension of the MPS.

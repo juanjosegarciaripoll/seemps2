@@ -13,6 +13,7 @@ from ..operators import MPO, MPOList, MPOSum
 from .mesh import (
     Interval,
     ChebyshevInterval,
+    RegularInterval,
     array_affine,
 )
 from .operators import mpo_affine
@@ -148,7 +149,7 @@ def estimate_order(
 def cheb2mps(
     coefficients: np.polynomial.Chebyshev,
     initial_mps: MPS | None = None,
-    domain: Interval | None = None,
+    domain: RegularInterval | ChebyshevInterval | None = None,
     strategy: Strategy = DEFAULT_STRATEGY,
     clenshaw: bool = True,
     rescale: bool = True,
@@ -170,7 +171,7 @@ def cheb2mps(
         By default (if ``rescale`` is ``True``), it must have a support inside the domain of
         definition of the function `[a, b]`.
         If ``rescale`` is ``False``, it must have a support inside `[-1, 1]`.
-    domain : Interval, optional
+    domain : RegularInterval | ChebyshevInterval, optional
         An alternative way to specify the initial MPS by constructing it from the given Interval.
     strategy : Strategy, default=DEFAULT_STRATEGY
         The simplification strategy for operations between MPS.

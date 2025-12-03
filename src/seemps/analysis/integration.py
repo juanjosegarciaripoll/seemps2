@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from math import sqrt
+from ..typing import MPSOrder
 from ..state import MPS, Strategy, scprod, DEFAULT_STRATEGY
 from ..truncate import simplify
 from ..qft import iqft, qft_flip
@@ -12,7 +13,9 @@ from .cross import cross_dmrg, BlackBoxLoadMPS, CrossStrategyDMRG
 # implement 'mps_trapezoidal' for any base.
 
 
-def integrate_mps(mps: MPS, domain: Interval | Mesh, mps_order: str = "A") -> complex:
+def integrate_mps(
+    mps: MPS, domain: Interval | Mesh, mps_order: MPSOrder = "A"
+) -> complex:
     """
     Returns the integral of a multivariate function represented as a MPS.
     Uses the 'best possible' quadrature rule according to the intervals that compose the mesh.
@@ -27,7 +30,7 @@ def integrate_mps(mps: MPS, domain: Interval | Mesh, mps_order: str = "A") -> co
         An object defining the discretization domain of the function.
         Can be either an `Interval` or a `Mesh` given by a collection of intervals.
         The quadrature rules are selected based on the properties of these intervals.
-    mps_order : str, default='A'
+    mps_order : MPSOrder, default='A'
         Specifies the ordering of the qubits in the quadrature. Possible values:.
         - 'A': Qubits are serially ordered (by variable).
         - 'B': Qubits are interleaved (by significance).

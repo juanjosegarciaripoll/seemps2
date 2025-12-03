@@ -1,7 +1,8 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable
-from ..mesh import Interval, Mesh, mps_to_mesh_matrix, MPSOrder
+from ...typing import MPSOrder
+from ..mesh import Interval, Mesh, mps_to_mesh_matrix
 from ..sampling import evaluate_mps
 from ...state import MPS
 
@@ -63,7 +64,7 @@ class BlackBoxLoadMPS(BlackBox):
         The domain where the function is discretized.
     base : int, default=2
         The required base or physical dimension of the MPS.
-    mps_order : str, default='A'
+    mps_order : MPSOrder, default='A'
         The order of the qubits of the MPS, either 'serial' ('A') or 'interleaved ('B').
 
     Example
@@ -90,7 +91,7 @@ class BlackBoxLoadMPS(BlackBox):
     """
 
     mesh: Mesh
-    mps_order: str  # TODO: Make this a Literal[] type with fixed alternatives
+    mps_order: MPSOrder
     map_matrix: np.ndarray
 
     def __init__(

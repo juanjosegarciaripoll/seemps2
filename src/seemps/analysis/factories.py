@@ -1,10 +1,10 @@
 from __future__ import annotations
 import numpy as np
 from typing import TypeVar, cast
-from ..typing import Tensor3
+from ..typing import Tensor3, MPSOrder
 from ..state import Strategy, MPS, MPSSum, DEFAULT_STRATEGY
 from ..truncate import simplify
-from .mesh import Interval, RegularInterval, ChebyshevInterval
+from .mesh import RegularInterval, ChebyshevInterval
 
 
 def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
@@ -179,7 +179,9 @@ def mps_affine(
     return cast(_State, new_mps)
 
 
-def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
+def mps_interval(
+    interval: RegularInterval | ChebyshevInterval, strategy: Strategy = DEFAULT_STRATEGY
+):
     """
     Returns an MPS corresponding to a specific type of interval.
 
@@ -220,7 +222,7 @@ def mps_interval(interval: Interval, strategy: Strategy = DEFAULT_STRATEGY):
 
 
 def _map_mps_locations(
-    mps_list: list[MPS], mps_order: str
+    mps_list: list[MPS], mps_order: MPSOrder
 ) -> list[tuple[int, Tensor3]]:
     """Create a vector that lists which MPS and which tensor is
     associated to which position in the joint Hilbert space.
@@ -246,7 +248,7 @@ def _map_mps_locations(
     return tensors  # type: ignore
 
 
-def _mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
+def _mps_tensor_terms(mps_list: list[MPS], mps_order: MPSOrder) -> list[MPS]:
     """
     Extends each MPS of a given input list by appending identity tensors to it according
     to the specified MPS order ('A' or 'B'). The resulting list of MPS can be given as terms
@@ -256,7 +258,7 @@ def _mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
     ----------
     mps_list : list[MPS]
         The MPS input list.
-    mps_order : str
+    mps_order : MPSOrder
         The order in which to arrange the qubits for each resulting MPS term ('A' or 'B').
 
     Returns
@@ -283,7 +285,7 @@ def _mps_tensor_terms(mps_list: list[MPS], mps_order: str) -> list[MPS]:
 
 def mps_tensor_product(
     mps_list: list[MPS],
-    mps_order: str = "A",
+    mps_order: MPSOrder = "A",
     strategy: Strategy | None = None,
     simplify_steps: bool = False,
 ) -> MPS:
@@ -295,7 +297,7 @@ def mps_tensor_product(
     ----------
     mps_list : list[MPS]
         The list of MPS objects to multiply.
-    mps_order : str
+    mps_order : MPSOrder, default="A"
         The order in which to arrange the resulting MPS ('A' or 'B').
     strategy : Strategy, optional
         The strategy to use when multiplying the MPS. If None, the tensor product is not simplified.
@@ -330,7 +332,7 @@ def mps_tensor_product(
 
 def mps_tensor_sum(
     mps_list: list[MPS],
-    mps_order: str = "A",
+    mps_order: MPSOrder = "A",
     strategy: Strategy | None = None,
     simplify_steps: bool = False,
 ) -> MPS:
@@ -342,7 +344,7 @@ def mps_tensor_sum(
     ----------
     mps_list : list[MPS]
         The list of MPS objects to sum.
-    mps_order : str, default='A'
+    mps_order : MPSOrder, default='A'
         The order in which to arrange the resulting MPS ('A' or 'B').
     strategy : Strategy, optional
         The strategy to use when summing the MPS. If None, the tensor sum is not simplified.

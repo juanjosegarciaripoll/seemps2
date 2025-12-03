@@ -32,7 +32,7 @@ class Space:
     closed : bool
         If closed is True, the position space intervals are closed (symmetrically defined).
         If False, the interval is open. (defaults to True).
-    order : str, optional
+    order : MPSOrder, default = "A"
         The order in which sites are organized. Default is "A" (sequential).
     """
 
@@ -63,7 +63,7 @@ class Space:
             Position space intervals [a_i, b_i] for each dimension i.
         closed : bool, optional
             If True, the intervals are closed; if False, they are open. Default is True.
-        order : str, optional
+        order : MPSOrder, optional
             The order in which sites are organized. Default is "A" (sequential).
         """
         self.qubits_per_dimension = qubits_per_dimension
