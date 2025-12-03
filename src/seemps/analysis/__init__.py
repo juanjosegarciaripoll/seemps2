@@ -1,5 +1,5 @@
 from . import (
-    chebyshev,
+    expansion,
     cross,
     evolution,
     factories,
@@ -15,7 +15,7 @@ from . import (
 )
 
 __all__ = [
-    "chebyshev",
+    "expansion",
     "cross",
     "evolution",
     "factories",
