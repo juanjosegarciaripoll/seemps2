@@ -1,28 +1,26 @@
 import numpy as np
 from scipy.fft import ifft
-from seemps.state import MPS
+
+from seemps.state import MPS, scprod
 from seemps.analysis.factories import mps_exponential, mps_tensor_product
-from seemps.analysis.mesh import Mesh, RegularInterval, ChebyshevInterval
-from seemps.analysis.integration import (
-    mps_midpoint,
+from seemps.analysis.mesh import (
+    Mesh,
+    ChebyshevInterval,
+    mps_to_mesh_matrix,
+    interleaving_permutation,
+)
+from seemps.analysis.integration import mesh_to_quadrature_mesh, quadrature_mesh_to_mps
+from seemps.analysis.integration.mps_quadratures import (
     mps_trapezoidal,
-    mps_simpson,
+    mps_simpson38,
     mps_fifth_order,
     mps_fejer,
-    mps_clenshaw_curtis,
-    integrate_mps,
 )
+
 from ..tools import TestCase
 
 
 class TestMPSQuadratures(TestCase):
-    def test_mps_midpoint(self):
-        a, b, n = -1, 1, 3
-        h = (b - a) / (2**n - 1)
-        vector_quad = h * np.array([1, 1, 1, 1, 1, 1, 1, 1])
-        mps_quad = mps_midpoint(a, b, n)
-        self.assertSimilar(vector_quad, mps_quad.to_vector())
-
     def test_mps_trapezoidal(self):
         a, b, n = -1, 1, 3
         h = (b - a) / (2**n - 1)
@@ -30,13 +28,13 @@ class TestMPSQuadratures(TestCase):
         mps_quad = mps_trapezoidal(-1, 1, n)
         self.assertSimilar(vector_quad, mps_quad.to_vector())
 
-    def test_mps_simpson(self):
+    def test_mps_simpson38(self):
         a, b, n = -1, 1, 4  # Multiple of 2
         h = (b - a) / (2**n - 1)
         vector_quad = (3 * h / 8) * np.array(
             [1, 3, 3, 2, 3, 3, 2, 3, 3, 2, 3, 3, 2, 3, 3, 1]
         )
-        mps_quad = mps_simpson(a, b, n)
+        mps_quad = mps_simpson38(a, b, n)
         self.assertSimilar(vector_quad, mps_quad.to_vector())
 
     def test_mps_fifth_order(self):
@@ -64,29 +62,8 @@ class TestMPSQuadratures(TestCase):
         mps_quad = mps_fejer(a, b, n)
         self.assertSimilar(vector_quad, mps_quad.to_vector())
 
-    def test_mps_clenshaw_curtis(self):
-        a, b, n = -2, 2, 5
-        h = (b - a) / 2
-        # Implement Clenshaw-Curtis vector with iFFT
-        N = int(2**n) - 1
-        v = np.zeros(N)
-        g = np.zeros(N)
-        w0 = 1 / (N**2 - 1 + (N % 2))
-        for k in range(N // 2):
-            v[k] = 2 / (1 - 4 * k**2)
-            g[k] = -w0
-        v[N // 2] = (N - 3) / (2 * (N // 2) - 1) - 1
-        g[N // 2] = w0 * ((2 - (N % 2)) * N - 1)
-        for k in range(1, N // 2 + 1):
-            v[-k] = v[k]
-            g[-k] = g[k]
-        w = np.fft.ifft(v + g).real
-        vector_quad = h * np.hstack((w, w[0]))
-        mps_quad = mps_clenshaw_curtis(a, b, n)
-        self.assertSimilar(vector_quad, mps_quad.to_vector())
 
-
-class TestMPSIntegrals(TestCase):
+class TestMPSIntegration(TestCase):
     def setUp(self):
         self.a, self.b = -2, 2
         self.func = lambda x: np.exp(x)
@@ -95,71 +72,75 @@ class TestMPSIntegrals(TestCase):
 
     def test_trapezoidal_integral(self):
         n = 11
-        mps = mps_exponential(self.a, self.b + self.step(n), n)
-        interval = RegularInterval(self.a, self.b, 2**n, endpoint_right=True)
-        integral = integrate_mps(mps, interval)
+        f_mps = mps_exponential(self.a, self.b + self.step(n), n)
+        q_mps = mps_trapezoidal(self.a, self.b, n)
+        integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral, places=5)
 
-    def test_simpson_integral(self):
+    def test_simpson38_integral(self):
         n = 10
-        mps = mps_exponential(self.a, self.b + self.step(n), n)
-        interval = RegularInterval(self.a, self.b, 2**n)
-        integral = integrate_mps(mps, interval)
+        f_mps = mps_exponential(self.a, self.b + self.step(n), n)
+        q_mps = mps_simpson38(self.a, self.b, n)
+        integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral)
 
     def test_fifth_order_integral(self):
         n = 8
-        mps = mps_exponential(self.a, self.b + self.step(n), n)
-        interval = RegularInterval(self.a, self.b, 2**n)
-        integral = integrate_mps(mps, interval)
+        f_mps = mps_exponential(self.a, self.b + self.step(n), n)
+        q_mps = mps_fifth_order(self.a, self.b, n)
+        integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral)
 
     def test_fejer_integral(self):
         n = 4
         interval = ChebyshevInterval(self.a, self.b, 2**n)
-        mps = MPS.from_vector(self.func(interval.to_vector()), [2] * n, normalize=False)
-        integral = integrate_mps(mps, interval)
-        self.assertAlmostEqual(self.integral, integral)
-
-    def test_clenshaw_curtis_integral(self):
-        n = 4
-        interval = ChebyshevInterval(self.a, self.b, 2**n, endpoints=True)
-        mps = MPS.from_vector(self.func(interval.to_vector()), [2] * n, normalize=False)
-        integral = integrate_mps(mps, interval)
+        f = self.func(interval.to_vector())
+        f_mps = MPS.from_vector(f, [2] * n, normalize=False)
+        q_mps = mps_fejer(self.a, self.b, n)
+        integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral)
 
     def test_multivariate_integral_order_A(self):
         n = 4
         integral_2d = self.integral**2
-        # Fejér quadrature in first variable
-        interval_fj = ChebyshevInterval(self.a, self.b, 2**n)
-        mps_fj = MPS.from_vector(
-            self.func(interval_fj.to_vector()), [2] * n, normalize=False
+
+        # Use Fejér integration
+        interval = ChebyshevInterval(self.a, self.b, 2**n)
+        f_mps_1d = MPS.from_vector(
+            self.func(interval.to_vector()), [2] * n, normalize=False
         )
-        # CC quadrature in second variable
-        interval_cc = ChebyshevInterval(self.a, self.b, 2**n, endpoints=True)
-        mps_cc = MPS.from_vector(
-            self.func(interval_cc.to_vector()), [2] * n, normalize=False
-        )
-        mps = mps_tensor_product([mps_fj, mps_cc], mps_order="A")
-        mesh = Mesh([interval_fj, interval_cc])
-        integral = integrate_mps(mps, mesh, mps_order="A")
+        f_mps_2d = mps_tensor_product([f_mps_1d, f_mps_1d], mps_order="A")
+
+        mesh = Mesh([interval, interval])
+        q_mesh = mesh_to_quadrature_mesh(mesh)
+
+        # Construct the quadrature MPS with TCI
+        map_matrix = mps_to_mesh_matrix([n, n])
+        physical_dimensions = [2] * (2 * n)
+        q_mps_2d = quadrature_mesh_to_mps(q_mesh, map_matrix, physical_dimensions)
+
+        integral = scprod(f_mps_2d, q_mps_2d)
         self.assertAlmostEqual(integral_2d, integral)
 
     def test_multivariate_integral_order_B(self):
         n = 4
         integral_2d = self.integral**2
-        # Fejér quadrature in first variable
-        interval_fj = ChebyshevInterval(self.a, self.b, 2**n)
-        mps_fj = MPS.from_vector(
-            self.func(interval_fj.to_vector()), [2] * n, normalize=False
+
+        # Use Fejér integration
+        interval = ChebyshevInterval(self.a, self.b, 2**n)
+        f_mps_1d = MPS.from_vector(
+            self.func(interval.to_vector()), [2] * n, normalize=False
         )
-        # CC quadrature in second variable
-        interval_cc = ChebyshevInterval(self.a, self.b, 2**n, endpoints=True)
-        mps_cc = MPS.from_vector(
-            self.func(interval_cc.to_vector()), [2] * n, normalize=False
-        )
-        mps = mps_tensor_product([mps_fj, mps_cc], mps_order="B")
-        mesh = Mesh([interval_fj, interval_cc])
-        integral = integrate_mps(mps, mesh, mps_order="B")
+        f_mps_2d = mps_tensor_product([f_mps_1d, f_mps_1d], mps_order="B")
+
+        mesh = Mesh([interval, interval])
+        q_mesh = mesh_to_quadrature_mesh(mesh)
+
+        # Construct the quadrature MPS with TCI
+        permutation = interleaving_permutation([n, n])
+        map_matrix = mps_to_mesh_matrix([n, n], permutation)
+        physical_dimensions = [2] * (2 * n)
+        q_mps_2d = quadrature_mesh_to_mps(q_mesh, map_matrix, physical_dimensions)
+
+        integral = scprod(f_mps_2d, q_mps_2d)
         self.assertAlmostEqual(integral_2d, integral)
