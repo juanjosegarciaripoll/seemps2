@@ -70,7 +70,9 @@ class PowerExpansion(PolynomialExpansion):
 
         P_{k+1}(x) = x · P_k(x).
 
-    This is equivalent to a standard Taylor/power series expansion.
+    This is equivalent to a standard Taylor/power series expansion. When combined with
+    Clenshaw evaluations, this enables the evaluation following Horner's method, which
+    is more efficient and stable than evaluating naive monomials x^i directly.
     """
 
     canonical_domain = (-1, 1)
