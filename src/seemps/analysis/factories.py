@@ -1,8 +1,7 @@
 from __future__ import annotations
 import numpy as np
-from typing import TypeVar, cast
 from ..typing import Tensor3, MPSOrder
-from ..state import Strategy, MPS, MPSSum, DEFAULT_STRATEGY
+from ..state import Strategy, MPS, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .mesh import RegularInterval, ChebyshevInterval
 
@@ -139,12 +138,7 @@ def mps_cos(
     return simplify(0.5 * (mps_1 + mps_2), strategy=strategy)
 
 
-_State = TypeVar("_State", MPS, MPSSum)
-
-
-def mps_affine(
-    mps: _State, orig: tuple[float, float], dest: tuple[float, float]
-) -> _State:
+def mps_affine(mps: MPS, orig: tuple[float, float], dest: tuple[float, float]) -> MPS:
     """
     Applies an affine transformation to an MPS, mapping it from one interval [x0, x1] to another [u0, u1].
     This is a transformation u = a * x + b, with u0 = a * x0 + b and and  u1 = a * x1 + b.
@@ -172,11 +166,8 @@ def mps_affine(
     if abs(b) > np.finfo(np.float64).eps:
         I = MPS([np.ones((1, 2, 1))] * new_mps.size)
         displaced_mps = new_mps + b * I
-        # Preserve the input type
-        if isinstance(mps, MPS):
-            return displaced_mps.join()
-        return displaced_mps
-    return cast(_State, new_mps)
+        return displaced_mps.join()
+    return new_mps
 
 
 def mps_interval(
