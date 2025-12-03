@@ -48,7 +48,8 @@ class CrossStrategyDMRG(CrossStrategy):
         Maximum number of iterations for the square maxvol decomposition.
     """
 
-    def _algorithm(self) -> Callable:
+    @property
+    def algorithm(self) -> Callable:
         return cross_dmrg
 
 

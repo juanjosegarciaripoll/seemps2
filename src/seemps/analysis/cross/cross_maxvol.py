@@ -40,7 +40,8 @@ class CrossStrategyMaxvol(CrossStrategy):
         Sensibility for the rectangular maxvol decomposition.
     """
 
-    def _algorithm(self) -> Callable:
+    @property
+    def algorithm(self) -> Callable:
         return cross_maxvol
 
 

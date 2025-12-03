@@ -42,8 +42,9 @@ class CrossStrategyGreedy(CrossStrategy):
         Number of initial random points used to initialize each partial search.
     """
 
-    def _algorithm(self) -> Callable:
-        return cross_greedy()
+    @property
+    def algorithm(self) -> Callable:
+        return cross_greedy
 
 
 class CrossInterpolationGreedy(CrossInterpolation):

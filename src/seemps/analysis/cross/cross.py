@@ -37,7 +37,7 @@ def cross_interpolation(
         Dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    return cross_strategy._algorithm()(black_box, cross_strategy, initial_points)
+    return cross_strategy.algorithm(black_box, cross_strategy, initial_points)
 
 
 @dataclasses.dataclass
@@ -82,10 +82,8 @@ class CrossStrategy:
         assert self.max_iters > 0
         assert self.num_samples > 0
 
-    def _algorithm(self) -> Callable:
-        raise NotImplementedError(
-            f"{self.__class__.__name__} must implement algorithm()."
-        )
+    @property
+    def algorithm(self) -> Callable: ...
 
 
 IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
@@ -94,7 +92,10 @@ IndexSlice: TypeAlias = np.intp | IndexVector | slice
 
 
 class CrossInterpolation:
-    """Auxiliar base class for TCI used to keep track of the required interpolation information."""
+    """
+    Auxiliar base class for TCI used to keep track of the required interpolation
+    information.
+    """
 
     black_box: BlackBox
     sites: int
