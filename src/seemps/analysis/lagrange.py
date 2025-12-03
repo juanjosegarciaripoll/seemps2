@@ -337,7 +337,7 @@ class LagrangeBuilder:
 
     @staticmethod
     def build_dense_cores(
-        A_C: Tensor3, A_R: Tensor3, mesh: Mesh, mps_order: Literal["A", "B"]
+        A_C: Tensor3, A_R: Tensor3, mesh: Mesh, mps_order: MPSOrder
     ) -> list[Tensor3]:
         """
         Builds the multidimensional cores on the given mesh and mps_order.
@@ -359,7 +359,7 @@ class LagrangeBuilder:
 
     @staticmethod
     def build_sparse_cores(
-        A_C: csr_array, A_R: csr_array, mesh: Mesh, mps_order: Literal["A", "B"]
+        A_C: csr_array, A_R: csr_array, mesh: Mesh, mps_order: MPSOrder
     ) -> list[csr_array]:
         """
         Builds the multidimensional sparse cores on the given mesh and mps_order.
