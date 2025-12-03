@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.polynomial.polynomial import Polynomial
-from seemps.state import MPS
+from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION, CanonicalMPS
 from seemps.analysis.polynomials import _mps_x_tensor, mps_from_polynomial
-from seemps.analysis.mesh import RegularInterval, Interval
+from seemps.analysis.mesh import RegularInterval, Interval, ChebyshevInterval
 from ..tools import TestCase
 
 
@@ -41,6 +41,14 @@ class TestPolynomialFunction(TestCase):
     def assertSimilarPolynomial(self, p: Polynomial, p_mps: MPS):
         x = self.domain.to_vector()
         self.assertSimilar(p(x), p_mps.to_vector())
+
+    def test_polynomial_output_type(self):
+        p = Polynomial([1])
+        mps1 = mps_from_polynomial(p, self.domain, strategy=DEFAULT_STRATEGY)
+        self.assertIsInstance(mps1, CanonicalMPS)
+        mps2 = mps_from_polynomial(p, self.domain, strategy=NO_TRUNCATION)
+        self.assertNotIsInstance(mps2, CanonicalMPS)
+        self.assertIsInstance(mps2, MPS)
 
     def test_constant_polynomial_mps(self):
         p = Polynomial([1])
