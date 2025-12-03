@@ -10,7 +10,7 @@ from . import (
     operators,
     optimization,
     polynomials,
-    sampling,
+    evaluation,
     space,
 )
 
@@ -26,6 +26,6 @@ __all__ = [
     "operators",
     "optimization",
     "polynomials",
-    "sampling",
+    "evaluation",
     "space",
 ]

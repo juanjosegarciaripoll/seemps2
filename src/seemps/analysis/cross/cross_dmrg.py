@@ -1,37 +1,38 @@
 import numpy as np
-import scipy.linalg  # type: ignore
+import scipy.linalg
 from dataclasses import dataclass
+from collections import defaultdict
+from time import perf_counter
 from typing import Callable
 
-from .cross import (
-    BlackBox,
-    CrossResults,
-    CrossInterpolation,
-    CrossStrategy,
-    maxvol_square,
-    _check_convergence,
-)
-from ..sampling import random_mps_indices
 from ...state import Strategy, DEFAULT_TOLERANCE
-from scipy.linalg import svd
 from ...state.core import destructively_truncate_vector
 from ...truncate import SIMPLIFICATION_STRATEGY
+from ...typing import Matrix
 from ...tools import make_logger
+from .black_box import BlackBox
+from .cross import (
+    CrossStrategy,
+    CrossInterpolation,
+    CrossError,
+    CrossResults,
+    check_convergence,
+    maxvol_square,
+)
 
-DEFAULT_CROSS_STRATEGY = SIMPLIFICATION_STRATEGY.replace(
+
+DEFAULT_CROSS_DMRG_STRATEGY = SIMPLIFICATION_STRATEGY.replace(
     normalize=False,
     tolerance=DEFAULT_TOLERANCE**2,
     simplification_tolerance=DEFAULT_TOLERANCE**2,
 )
 
-# TODO: Implement local error evaluation
-
 
 @dataclass
 class CrossStrategyDMRG(CrossStrategy):
-    strategy: Strategy = DEFAULT_CROSS_STRATEGY
+    strategy: Strategy = DEFAULT_CROSS_DMRG_STRATEGY
     tol_maxvol_square: float = 1.05
-    maxiter_maxvol_square: int = 10
+    maxiter_maxvol: int = 10
     """
     Dataclass containing the parameters for the DMRG-based TCI.
     The common parameters are documented in the base `CrossStrategy` class.
@@ -47,12 +48,14 @@ class CrossStrategyDMRG(CrossStrategy):
         Maximum number of iterations for the square maxvol decomposition.
     """
 
+    def _algorithm(self) -> Callable:
+        return cross_dmrg
+
 
 def cross_dmrg(
     black_box: BlackBox,
     cross_strategy: CrossStrategyDMRG = CrossStrategyDMRG(),
-    initial_points: np.ndarray | None = None,
-    callback: Callable | None = None,
+    initial_points: Matrix | None = None,
 ) -> CrossResults:
     """
     Computes the MPS representation of a black-box function using the tensor cross-approximation (TCI)
@@ -63,14 +66,11 @@ def cross_dmrg(
     ----------
     black_box : BlackBox
         The black box to approximate as a MPS.
-    cross_strategy : CrossStrategy, default=CrossStrategy()
+    cross_strategy : CrossStrategy, default=CrossStrategyDMRG()
         A dataclass containing the parameters of the algorithm.
     initial_points : np.ndarray, optional
         A collection of initial points used to initialize the algorithm.
-        If None, an initial random point is used.
-    callback : Callable, optional
-        A callable called on the MPS after each iteration.
-        The output of the callback is included in a list 'callback_output' in CrossResults.
+        If None, an initial point at the origin is used.
 
     Returns
     -------
@@ -78,76 +78,70 @@ def cross_dmrg(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    if initial_points is None:
-        initial_points = random_mps_indices(
-            black_box.physical_dimensions,
-            num_indices=1,
-            allowed_indices=getattr(black_box, "allowed_indices", None),
-            rng=cross_strategy.rng,
-        )
+    cross = CrossInterpolation(black_box, initial_points)
+    error_calculator = CrossError(cross_strategy)
 
-    cross = CrossInterpolationDMRG(black_box, initial_points)
     converged = False
-    callback_output = []
-    forward = True
-    with make_logger(2) as logger:
-        for i in range(cross_strategy.maxiter):
-            # Forward sweep
-            forward = True
-            for k in range(cross.sites - 1):
-                _update_dmrg(cross, k, forward, cross_strategy)
-            if callback:
-                callback_output.append(callback(cross.mps, logger=logger))
-            if converged := _check_convergence(cross, i, cross_strategy, logger):
-                break
-            # Backward sweep
-            forward = False
-            for k in reversed(range(cross.sites - 1)):
-                _update_dmrg(cross, k, forward, cross_strategy)
-            if callback:
-                callback_output.append(callback(cross.mps, logger=logger))
-            if converged := _check_convergence(cross, i, cross_strategy, logger):
-                break
-        if not converged:
-            logger("Maximum number of TT-Cross iterations reached")
-    points = cross.indices_to_points(forward)
+    trajectories = defaultdict(list)
+    for i in range(cross_strategy.max_iters // 2):
+        # Left-to-right half sweep
+        tick = perf_counter()
+        for k in range(cross.sites - 1):
+            _update_cross(cross, k, True, cross_strategy)
+        time_ltr = perf_counter() - tick
+
+        trajectories["errors"].append(error_calculator.sample_error(cross))
+        trajectories["bonds"].append(cross.mps.bond_dimensions())
+        trajectories["times"].append(time_ltr)
+        trajectories["evals"].append(cross.black_box.evals)
+        if converged := check_convergence(2 * i + 1, trajectories, cross_strategy):
+            break
+
+        # Right-to-left half sweep
+        tick = perf_counter()
+        for k in reversed(range(cross.sites - 1)):
+            _update_cross(cross, k, False, cross_strategy)
+        time_rtl = perf_counter() - tick
+
+        trajectories["errors"].append(error_calculator.sample_error(cross))
+        trajectories["bonds"].append(cross.mps.bond_dimensions())
+        trajectories["times"].append(time_rtl)
+        trajectories["evals"].append(cross.black_box.evals)
+        if converged := check_convergence(2 * i + 2, trajectories, cross_strategy):
+            break
+
+    if not converged:
+        with make_logger(2) as logger:
+            logger("Maximum number of iterations reached")
+
     return CrossResults(
         mps=cross.mps,
-        points=points,
-        evals=black_box.evals,
-        callback_output=callback_output,
+        errors=np.array(trajectories["errors"]),
+        bonds=np.array(trajectories["bonds"]),
+        times=np.array(trajectories["times"]),
+        evals=np.array(trajectories["evals"]),
     )
 
 
-class CrossInterpolationDMRG(CrossInterpolation):
-    def __init__(self, black_box: BlackBox, initial_point: np.ndarray):
-        super().__init__(black_box, initial_point)
-
-    def sample_superblock(self, k: int) -> np.ndarray:
-        i_l, i_g = self.I_l[k], self.I_g[k + 1]
-        i_s1, i_s2 = self.I_s[k], self.I_s[k + 1]
-        mps_indices = self.combine_indices(i_l, i_s1, i_s2, i_g)
-        return self.black_box[mps_indices].reshape(
-            (len(i_l), len(i_s1), len(i_s2), len(i_g))
-        )
-
-
-def _update_dmrg(
-    cross: CrossInterpolationDMRG,
+def _update_cross(
+    cross: CrossInterpolation,
     k: int,
-    forward: bool,
+    left_to_right: bool,
     cross_strategy: CrossStrategyDMRG,
 ) -> None:
     superblock = cross.sample_superblock(k)
     r_l, s1, s2, r_g = superblock.shape
     A = superblock.reshape(r_l * s1, s2 * r_g)
+
     ## Non-destructive SVD
-    U, S, V = svd(A, check_finite=False)
+    U, S, V = scipy.linalg.svd(A, check_finite=False)
     destructively_truncate_vector(S, cross_strategy.strategy)
     r = S.size
     U, S, V = U[:, :r], np.diag(S), V[:r, :]
     ##
-    if forward:
+    r = S.shape[0]
+
+    if left_to_right:
         if k < cross.sites - 2:
             C = U.reshape(r_l * s1, r)
             Q, _ = scipy.linalg.qr(
@@ -155,7 +149,7 @@ def _update_dmrg(
             )  # type: ignore
             I, G = maxvol_square(
                 Q,
-                cross_strategy.maxiter_maxvol_square,
+                cross_strategy.maxiter_maxvol,
                 cross_strategy.tol_maxvol_square,  # type: ignore
             )
             cross.I_l[k + 1] = cross.combine_indices(cross.I_l[k], cross.I_s[k])[I]
@@ -163,15 +157,16 @@ def _update_dmrg(
         else:
             cross.mps[k] = U.reshape(r_l, s1, r)
             cross.mps[k + 1] = (S @ V).reshape(r, s2, r_g)
+
     else:
         if k > 0:
             R = V.reshape(r, s2 * r_g)
-            Q, _ = scipy.linalg.qr(  # type: ignore
+            Q, _ = scipy.linalg.qr(
                 R.T, mode="economic", overwrite_a=True, check_finite=False
-            )
+            )  # type: ignore
             I, G = maxvol_square(
                 Q,
-                cross_strategy.maxiter_maxvol_square,
+                cross_strategy.maxiter_maxvol,
                 cross_strategy.tol_maxvol_square,  # type: ignore
             )
             cross.I_g[k] = cross.combine_indices(cross.I_s[k + 1], cross.I_g[k + 1])[I]

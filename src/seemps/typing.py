@@ -37,6 +37,9 @@ Vector: TypeAlias = NDArray
 VectorLike: TypeAlias = ArrayLike
 """Any Python type that can be coerced to `Vector` type."""
 
+Matrix: TypeAlias = NDArray
+""":class:`numpy.ndarray` tensor with two indices."""
+
 Tensor3: TypeAlias = NDArray
 """:class:`numpy.ndarray` tensor with three indices."""
 

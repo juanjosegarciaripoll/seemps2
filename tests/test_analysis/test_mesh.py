@@ -5,6 +5,7 @@ from seemps.analysis.mesh import (
     RegularInterval,
     ChebyshevInterval,
     mps_to_mesh_matrix,
+    interleaving_permutation,
 )
 from ..tools import TestCase
 
@@ -85,9 +86,7 @@ class TestIntervals(TestCase):
         self.assertEqual([I[0], I[1]], [x for x in I])
 
     def test_rescaled_chebyshev_zeros_interval(self):
-        def f(x):
-            return 2 * x + 2  # Affine transformation
-
+        f = lambda x: 2 * x + 2  # noqa: E731
         I = ChebyshevInterval(f(-1), f(1), 2)
         self.assertEqual(I.start, f(-1))
         self.assertEqual(I.stop, f(1))
@@ -208,17 +207,17 @@ class TestMesh(TestCase):
         self.assertSimilar(T, [[2.0, 0.0], [1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
 
     def test_mesh_transformation_matrix_B_order(self):
-        T = mps_to_mesh_matrix([1], "B")
+        T = mps_to_mesh_matrix([1], interleaving_permutation([1]))
         self.assertSimilar(T, np.eye(1))
 
-        T = mps_to_mesh_matrix([2], "B")
+        T = mps_to_mesh_matrix([2], interleaving_permutation([2]))
         self.assertSimilar(T, [[2], [1]])
 
-        T = mps_to_mesh_matrix([1, 1], "B")
+        T = mps_to_mesh_matrix([1, 1], interleaving_permutation([1, 1]))
         self.assertSimilar(T, np.eye(2))
 
-        T = mps_to_mesh_matrix([1, 2], "B")
+        T = mps_to_mesh_matrix([1, 2], interleaving_permutation([1, 2]))
         self.assertSimilar(T, [[1.0, 0.0], [0.0, 2.0], [0.0, 1.0]])
 
-        T = mps_to_mesh_matrix([2, 2], "B")
+        T = mps_to_mesh_matrix([2, 2], interleaving_permutation([2, 2]))
         self.assertSimilar(T, [[2.0, 0.0], [0.0, 2.0], [1.0, 0.0], [0.0, 1.0]])

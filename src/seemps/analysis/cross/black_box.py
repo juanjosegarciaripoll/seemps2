@@ -1,48 +1,31 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable
-from ..mesh import Interval, Mesh, mps_to_mesh_matrix, MPSOrder
-from ..sampling import evaluate_mps
+from ..mesh import Mesh, mps_to_mesh_matrix
+from ..evaluation import evaluate_mps
 from ...state import MPS
+from ...typing import Matrix, Vector
 
 
 class BlackBox(ABC):
     """
     Abstract base class representing generic black-box functions.
-    A black-box function represents an implicit representation of a function
-    that can be indexed with indices similarly as a multidimensional array.
-    These objects are fundamental for the efficient implementation of TCI algorithms.
+    A black-box function represents an implicit representation of a function that can be indexed
+    with indices similarly as a multidimensional array. These objects are fundamental for the
+    efficient implementation of TCI algorithms.
+
+    By convention, the input function is tensor-valued and assumes that the index representing the
+    degrees of freedom of the input tensor is placed in the leading position (i.e., "channels-first"
+    convention).
     """
 
-    func: Callable
-    base: int
-    sites: int
-    dimension: int
-    sites_per_dimension: list
-    physical_dimensions: list
-    evals: int
-    allowed_indices: None | list[int]
-
-    def __init__(
-        self,
-        func: Callable,
-        base: int = 1,
-        sites_per_dimension: list[int] = [],
-        physical_dimensions: list[int] = [],
-        allowed_indices: None | list[int] = None,
-    ):
+    def __init__(self, func: Callable, physical_dimensions: list):
         self.func = func
-        self.base = base
-        self.sites = sum(sites_per_dimension)
-        self.dimension = len(sites_per_dimension)
-        self.sites_per_dimension = sites_per_dimension
         self.physical_dimensions = physical_dimensions
-        assert self.sites == len(physical_dimensions)
         self.evals = 0
-        self.allowed_indices = allowed_indices
 
     @abstractmethod
-    def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray: ...
+    def __getitem__(self, mps_indices: Matrix) -> Vector: ...
 
     def record_evaluations(self, n: int = 1) -> None:
         self.evals += n
@@ -50,89 +33,9 @@ class BlackBox(ABC):
 
 class BlackBoxLoadMPS(BlackBox):
     """
-    Black-box representing a multivariate scalar function discretized on an `Interval` or
-    `Mesh` object. Each function degree of freedom is quantized in a given `base` and assigned
-    a collection of MPS tensors. If the function is multivariate, the tensors are arranged
-    according to the `mps_order`.
-
-    Parameters
-    ----------
-    func : Callable
-        The multivariate scalar function to be represented as MPS.
-    domain : Interval | Mesh
-        The domain where the function is discretized.
-    base : int, default=2
-        The required base or physical dimension of the MPS.
-    mps_order : str, default='A'
-        The order of the qubits of the MPS, either 'serial' ('A') or 'interleaved ('B').
-
-    Example
-    -------
-        .. code-block:: python
-
-        # Load a bivariate Gaussian function using some TCI variant.
-
-        # Define the tensorized function following the convention of having the dimension index first.
-        func = lambda tensor: np.exp(-(tensor[0]**2 + tensor[1]**2))
-
-        # Define the bivariate domain implictly using `Interval` and `Mesh`
-        start, stop = -1, 1
-        n_qubits = 10
-        interval = RegularInterval(start, stop, 2**n_qubits)
-        mesh = Mesh([interval, interval])
-
-        # Define the black box.
-        black_box = BlackBoxLoadMPS(func, mesh)
-
-        # Load the function in the given domain using some TCI variant (e.g. DMRG, Maxvol or Greedy).
-        cross_results = cross_X(black_box)
-        mps = cross_results.mps
-    """
-
-    mesh: Mesh
-    mps_order: str  # TODO: Make this a Literal[] type with fixed alternatives
-    map_matrix: np.ndarray
-
-    def __init__(
-        self,
-        func: Callable,
-        domain: Interval | Mesh,
-        base: int = 2,
-        mps_order: MPSOrder = "A",
-    ):
-        mesh = Mesh([domain]) if not isinstance(domain, Mesh) else domain
-        sites_per_dimension = [
-            int(np.lib.scimath.logn(base, s)) for s in mesh.dimensions
-        ]
-        super().__init__(
-            func,
-            base=base,
-            sites_per_dimension=sites_per_dimension,
-            physical_dimensions=[base] * sum(sites_per_dimension),
-        )
-        self.mesh = mesh
-        self.mps_order = mps_order
-
-        if not all(
-            base**n == N for n, N in zip(self.sites_per_dimension, self.mesh.dimensions)
-        ):
-            raise ValueError(f"The mesh cannot be quantized with base {base}")
-        self.map_matrix = mps_to_mesh_matrix(
-            self.sites_per_dimension, self.mps_order, self.base
-        )
-
-    def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.record_evaluations(len(mps_indices))
-        # Transpose because of opposite conventions for mesh (dimension index last)
-        # and cross (dimension index first).
-        return self.func(self.mesh[mps_indices @ self.map_matrix].T)  # type: ignore
-
-
-class BlackBoxLoadTT(BlackBox):
-    """
-    Black-box representing a multivariate scalar function discretized on a `Mesh` object
-    following the tensor-train structure. Each function degree of freedom is assigned to
-    one of each TT tensors.
+    Black-box representing a multivariate scalar function discretized on a `Mesh` object.
+    Each function degree of freedom is quantized and arranged according to an arbitrary `map_matrix`
+    operator and assigned a collection of MPS tensors with the given `physical_dimensions`.
 
     Parameters
     ----------
@@ -140,6 +43,13 @@ class BlackBoxLoadTT(BlackBox):
         The multivariate scalar function to be represented as MPS.
     mesh : Mesh
         The domain where the function is discretized.
+    map_matrix : Matrix, optional
+        An operator that encodes the quantization and arrangement of the MPS tensors.
+        If None, no quantization is assumed and each Mesh dimension is assigned a unique MPS tensor
+        (i.e., "tensor-train structure").
+    physical_dimensions: Vector, optional
+        An array representing the physical sizes of the resulting MPS tensors, required when
+        `map_matrix` is not None to correctly represent the quantization.
 
     Example
     -------
@@ -150,38 +60,55 @@ class BlackBoxLoadTT(BlackBox):
         # Define the tensorized function following the convention of having the dimension index first.
         func = lambda tensor: np.exp(-(tensor[0]**2 + tensor[1]**2))
 
-        # Define the bivariate domain implictly using `Interval` and `Mesh`
+        # Define the bivariate domain implictly using `Mesh`
         start, stop = -1, 1
-        nodes = 1000
-        interval = RegularInterval(start, stop, nodes)
+        n_qubits = 10
+        interval = RegularInterval(start, stop, 2**n_qubits)
         mesh = Mesh([interval, interval])
 
-        # Define the black box.
-        black_box = BlackBoxLoadTT(func, mesh)
+        # Define the quantization operator. Without loss of generality, we consider an "interleaved"
+        # (B) permutation of tensors, each of physical dimension 2. Any other arrangement is possible.
+        permutation = interleaving_permutation([n_qubits, n_qubits])
+        map_matrix = mps_to_mesh_matrix([n_qubits, n_qubits], permutation=permutation)
+        physical_dimensions = [2] * (2 * n_qubits)
 
-        # Load the function in the given domain using some TCI variant (e.g. DMRG, Maxvol or Greedy).
-        cross_results = cross_X(black_box)
-        tensor_train = cross_results.mps
+        # Define the black box.
+        black_box = BlackBoxLoadMPS(func, mesh, map_matrix, physical_dimensions)
+
+        # Load the function in the given domain using some TCI variant (e.g. DMRG, Maxvol or Greedy),
+        # which is dynamically dispatched based on the given CrossStrategy type.
+        cross_strategy = CrossStrategyX()
+        cross_results = cross_interpolation(black_box, cross_strategy)
+        mps = cross_results.mps
     """
 
     mesh: Mesh
+    map_matrix: Matrix | None
+    physical_dimensions: list | None
 
     def __init__(
         self,
         func: Callable,
         mesh: Mesh,
+        map_matrix: Matrix | None = None,
+        physical_dimensions: list | None = None,
     ):
-        super().__init__(
-            func,
-            base=np.inf,  # type: ignore # pyright: ignore[reportArgumentType] # TODO: Fix this hack
-            sites_per_dimension=[1] * len(mesh.dimensions),
-            physical_dimensions=[interval.size for interval in mesh.intervals],
-        )
-        self.mesh = mesh
+        if physical_dimensions is None:
+            physical_dimensions = list(mesh.dimensions)
 
-    def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
+        super().__init__(func, physical_dimensions)
+        self.mesh = mesh
+        self.map_matrix = map_matrix
+
+    def __getitem__(self, mps_indices: Matrix) -> Vector:
         self.record_evaluations(len(mps_indices))
-        return self.func(self.mesh[mps_indices].T)  # type: ignore
+        mesh_indices = (
+            mps_indices if self.map_matrix is None else mps_indices @ self.map_matrix
+        )
+        coordinates = self.mesh[mesh_indices]
+        # Transpose because of opposite conventions for mesh (dimension index last)
+        # and cross (dimension index first).
+        return self.func(coordinates.T)  # type: ignore
 
 
 class BlackBoxLoadMPO(BlackBox):
@@ -224,7 +151,8 @@ class BlackBoxLoadMPO(BlackBox):
         black_box = BlackBoxLoadMPO(func, mesh)
 
         # Load the function in the given domain using some tci variant (e.g. DMRG, Maxvol or Greedy).
-        cross_results = cross_X(black_box)
+        cross_strategy = CrossStrategyX()
+        cross_results = cross_interpolation(black_box, cross_strategy)
         mpo = mps_as_mpo(cross_results.mps) # Unfold into a MPO.
     """
 
@@ -234,6 +162,7 @@ class BlackBoxLoadMPO(BlackBox):
     map_matrix: np.ndarray
 
     # TODO: Generalize for multivariate MPOs.
+    # TODO: Generalize for rectangular MPOs (distinct input and output physical dimensions).
     def __init__(
         self,
         func: Callable,
@@ -241,29 +170,25 @@ class BlackBoxLoadMPO(BlackBox):
         base_mpo: int = 2,
         is_diagonal: bool = False,
     ):
-        base = base_mpo * base_mpo
-        sites = int(np.lib.scimath.logn(base_mpo, mesh.dimensions[0]))
-        if not (mesh.dimension == 2 and mesh.dimensions[0] == mesh.dimensions[1]):
-            raise ValueError("The mesh must be bivariate for a 1d MPO")
-        if not base_mpo**sites == mesh.dimensions[0]:
-            raise ValueError(f"The mesh cannot be quantized with base {base_mpo}")
-
-        super().__init__(
-            func,
-            base=base,
-            sites_per_dimension=[sites],
-            physical_dimensions=[base] * sites,
-            # If the MPO is diagonal, restrict the allowed indices for
-            # random sampling to the main diagonal.
-            allowed_indices=(
-                [s * base_mpo + s for s in range(base_mpo)] if is_diagonal else None
-            ),
-        )
         self.mesh = mesh
         self.base_mpo = base_mpo
         self.is_diagonal = is_diagonal
-        self.map_matrix = mps_to_mesh_matrix(
-            self.sites_per_dimension, base=self.base_mpo
+        self.sites = int(np.lib.scimath.logn(base_mpo, mesh.dimensions[0]))
+
+        if not (mesh.dimension == 2 and mesh.dimensions[0] == mesh.dimensions[1]):
+            raise ValueError("The mesh must be bivariate for a 1d MPO.")
+        if not self.base_mpo**self.sites == mesh.dimensions[0]:
+            raise ValueError(f"The mesh cannot be quantized with base {self.base_mpo}")
+
+        physical_dimensions = [base_mpo**2] * self.sites
+        super().__init__(func, physical_dimensions)
+
+        sites_per_dimension = [self.sites]
+        self.map_matrix = mps_to_mesh_matrix(sites_per_dimension, base=self.base_mpo)
+
+        # If the MPO is diagonal, restrict the allowed indices for random sampling to the main diagonal.
+        self.allowed_indices = (
+            [s * base_mpo + s for s in range(base_mpo)] if self.is_diagonal else None
         )
 
     def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
@@ -307,7 +232,8 @@ class BlackBoxComposeMPS(BlackBox):
         black_box = BlackBoxComposeMPS(func, [mps_0, mps_1, mps_2])
 
         # Compose the three MPS with the function `func`.
-        cross_results = cross_X(black_box)
+        cross_strategy = CrossStrategyX()
+        cross_results = cross_interpolation(black_box, cross_strategy)
         mps = cross_results.mps
     """
 
@@ -319,15 +245,10 @@ class BlackBoxComposeMPS(BlackBox):
             if mps.physical_dimensions() != physical_dimensions:
                 raise ValueError("All MPS must have the same physical dimensions.")
 
-        super().__init__(
-            func,
-            base=physical_dimensions[0],  # Assumes constant
-            sites_per_dimension=[len(physical_dimensions)],
-            physical_dimensions=physical_dimensions,
-        )
+        super().__init__(func, physical_dimensions)
         self.mps_list = mps_list
 
-    def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
+    def __getitem__(self, mps_indices: Matrix) -> Vector:
         self.record_evaluations(len(mps_indices))
         mps_values = []
         for mps in self.mps_list:
