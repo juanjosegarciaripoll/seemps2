@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..state import MPS, CanonicalMPS, MPSSum
-from .sampling import evaluate_mps
+from .evaluation import evaluate_mps
 
 # TODO: Profile and optimize
 # TODO: Implement TT-Opt
