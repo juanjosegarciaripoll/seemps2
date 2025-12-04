@@ -9,7 +9,7 @@ from seemps.analysis.space import Space
 from seemps.state import DEFAULT_STRATEGY, MPS, Simplification
 from ..tools import TestCase
 from .tools_interpolation import (
-    gaussian,
+    gaussian_tensor,
     fourier_interpolation_vector,
     fourier_interpolation_vector_1D,
     finite_differences_interpolation_vector_2D,
@@ -26,7 +26,7 @@ class TestInterpolation(TestCase):
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2)])
             r_N = space.to_tensor()
-            sol_N = gaussian(r_N)
+            sol_N = gaussian_tensor(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
             )
@@ -47,7 +47,7 @@ class TestInterpolation(TestCase):
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2), (-L / 2, L / 2)])
             r_N = space.to_tensor()
-            sol_N = gaussian(r_N)
+            sol_N = gaussian_tensor(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
             )
@@ -73,7 +73,7 @@ class TestInterpolation(TestCase):
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2)])
             r_N = space.to_tensor()
-            sol_N = gaussian(r_N)
+            sol_N = gaussian_tensor(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
             )
@@ -92,7 +92,7 @@ class TestInterpolation(TestCase):
             L = 10
             space = Space(qubits_per_dimension, L=[(-L / 2, L / 2), (-L / 2, L / 2)])
             r_N = space.to_tensor()
-            sol_N = gaussian(r_N)
+            sol_N = gaussian_tensor(r_N)
             sol_N_mps = MPS.from_vector(
                 sol_N, [2] * sum(qubits_per_dimension), normalize=False
             )

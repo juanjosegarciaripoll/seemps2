@@ -15,12 +15,16 @@ from seemps.analysis.chebyshev import (
 from seemps.analysis.operators import x_mpo
 
 from ..tools import TestCase
+from .tools_interpolation import gaussian
 
 
 class TestChebyshevCoefficients(TestCase):
+    def test_interpolation_coefficients_rejects_wrong_literal(self):
+        with self.assertRaises(TypeError):
+            interpolation_coefficients(np.exp, interpolated_nodes="else")  # type: ignore
+
     def test_interpolation_coefficients_exponential(self):
-        f = lambda x: np.exp(x)
-        cheb_coeffs = interpolation_coefficients(f, 15, -1, 1)
+        cheb_coeffs = interpolation_coefficients(np.exp, 15, -1, 1)
         correct_coeffs = [
             1.266065877752008,
             1.130318207984970,
@@ -43,17 +47,36 @@ class TestChebyshevCoefficients(TestCase):
     def test_estimate_order(self):
         """Assert that the estimated coefficients and accuracy in norm-inf are below a tolerance."""
         tolerance = 1e-12
-        f = lambda x: np.exp(-(x**2))
-        proj_coeffs = projection_coefficients(
-            f, order=estimate_order(f, tolerance=tolerance)
-        )
         n = 6
-        domain = RegularInterval(-1, 1, 2**n)
+        domain = RegularInterval(-2, 2, 2**n)
+        order_from_numbers = estimate_order(
+            gaussian, start=-2, stop=2, tolerance=tolerance
+        )
+        order_from_domain = estimate_order(gaussian, domain=domain, tolerance=tolerance)
+        self.assertEqual(order_from_domain, order_from_numbers)
+
+        order_for_different_domain = estimate_order(
+            gaussian, -1, 1, tolerance=tolerance
+        )
+        self.assertNotEqual(order_from_domain, order_for_different_domain)
+
+        proj_coeffs = projection_coefficients(
+            gaussian, domain=domain, order=order_from_domain
+        )
+        default_proj_coeffs = projection_coefficients(
+            gaussian, domain=domain, tolerance=tolerance
+        )
+        self.assertEqual(default_proj_coeffs, proj_coeffs)
+
         mps = cheb2mps(proj_coeffs, domain=domain, strategy=NO_TRUNCATION)
-        y_vec = f(domain.to_vector())
+        y_vec = gaussian(domain.to_vector())
         y_mps = mps.to_vector()
         self.assertTrue(proj_coeffs.coef[-1] <= tolerance)
         self.assertSimilar(y_mps, y_vec, atol=tolerance)
+
+    def test_estimate_order_fails_when_max_order_is_exceeded(self):
+        with self.assertRaises(ValueError):
+            estimate_order(gaussian, max_order=10)
 
     def assertSimilarSeries(self, s1, s2, tol=1e-15):
         """Ensure two Chebyshev series are close up to tolerance."""
@@ -126,8 +149,12 @@ class TestChebyshevCoefficients(TestCase):
         self.assertSimilarSeries(projection_coefficients(T4, 5, -2, 4), T4)
 
     def test_chebyshev_coefficients_gaussian_derivative(self):
-        f = lambda x: np.exp(-x * x)
-        df = lambda x: -2 * x * np.exp(-x * x)
+        def f(x):
+            return np.exp(-x * x)
+
+        def df(x):
+            return -2 * x * np.exp(-x * x)
+
         self.assertSimilarSeries(
             interpolation_coefficients(f, 22, -1, 2).deriv(),
             interpolation_coefficients(df, 22, -1, 2),
@@ -146,8 +173,13 @@ class TestChebyshevCoefficients(TestCase):
     def test_chebyshev_coefficients_gaussian_integral(self):
         start = -1
         stop = 2
-        f = lambda x: np.exp(-x * x)
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(start))
+
+        def f(x):
+            return np.exp(-x * x)
+
+        def f_intg(x):
+            return (np.sqrt(np.pi) / 2) * (erf(x) - erf(start))
+
         self.assertSimilarSeries(
             interpolation_coefficients(f, 22, start, stop).integ(1, lbnd=start),
             interpolation_coefficients(f_intg, 22, start, stop),
@@ -167,25 +199,32 @@ class TestChebyshevCoefficients(TestCase):
 
 
 class TestChebyshevMPS(TestCase):
+    def test_cheb2mps_requires_a_domain(self):
+        with self.assertRaises(ValueError):
+            cheb2mps(interpolation_coefficients(gaussian, 30))
+
     def test_gaussian_1d(self):
-        f = lambda x: np.exp(-(x**2))
         interval = RegularInterval(-1, 2, 2**5)
         mps_cheb_clen = cheb2mps(
-            interpolation_coefficients(f, 30, domain=interval),
+            interpolation_coefficients(gaussian, 30, domain=interval),
             domain=interval,
             clenshaw=True,
         )
         mps_cheb_poly = cheb2mps(
-            interpolation_coefficients(f, 30, domain=interval),
+            interpolation_coefficients(gaussian, 30, domain=interval),
             domain=interval,
             clenshaw=False,
         )
-        self.assertSimilar(f(interval.to_vector()), mps_cheb_clen.to_vector())
-        self.assertSimilar(f(interval.to_vector()), mps_cheb_poly.to_vector())
+        self.assertSimilar(gaussian(interval.to_vector()), mps_cheb_clen.to_vector())
+        self.assertSimilar(gaussian(interval.to_vector()), mps_cheb_poly.to_vector())
 
     def test_gaussian_derivative_1d(self):
-        f = lambda x: np.exp(-(x**2))
-        f_diff = lambda x: -2 * x * np.exp(-(x**2))
+        def f(x):
+            return np.exp(-(x**2))
+
+        def f_diff(x):
+            return -2 * x * np.exp(-(x**2))
+
         interval = RegularInterval(-1, 2, 2**5)
         c = interpolation_coefficients(f, 30, domain=interval)
         mps_cheb_clen = cheb2mps(c.deriv(1), domain=interval, clenshaw=True)
@@ -194,7 +233,9 @@ class TestChebyshevMPS(TestCase):
         self.assertSimilar(f_diff(interval.to_vector()), mps_cheb_poly.to_vector())
 
     def test_gaussian_integral_1d(self):
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+        def f_intg(x):
+            return (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+
         interval = RegularInterval(-1, 2, 2**5)
         c = interpolation_coefficients(f_intg, 30, domain=interval)
         mps_cheb_clen = cheb2mps(c, domain=interval, clenshaw=True)
@@ -203,8 +244,12 @@ class TestChebyshevMPS(TestCase):
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb_poly.to_vector())
 
     def test_gaussian_integral_1d_b(self):
-        f = lambda x: np.exp(-(x**2))
-        f_intg = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+        def f(x):
+            return np.exp(-(x**2))
+
+        def f_intg(x):
+            return (np.sqrt(np.pi) / 2) * (erf(x) - erf(-1))
+
         interval = RegularInterval(-1, 2, 2**5)
         c = interpolation_coefficients(f, 30, domain=interval)
         mps_cheb_clen = cheb2mps(
@@ -217,7 +262,9 @@ class TestChebyshevMPS(TestCase):
         self.assertSimilar(f_intg(interval.to_vector()), mps_cheb_poly.to_vector())
 
     def test_gaussian_2d(self):
-        f = lambda z: np.exp(-(z**2))
+        def f(z):
+            return np.exp(-(z**2))
+
         c = interpolation_coefficients(f, 30, -1, 5)
         sites = 6
         interval_x = RegularInterval(-0.5, 2, 2**sites)
@@ -252,7 +299,9 @@ class TestChebyshevMPO(TestCase):
         dx = (b - a) / 2**n
         x = np.linspace(a, b, 2**n, endpoint=False)
 
-        f = lambda x: np.sin(-(x**2))
+        def f(x):
+            return np.sin(-(x**2))
+
         coefficients = interpolation_coefficients(f)
 
         I = MPS([np.ones((1, 2, 1))] * n)

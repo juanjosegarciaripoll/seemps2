@@ -77,6 +77,7 @@ def projection_coefficients(
     start: float = -1.0,
     stop: float = +1.0,
     domain: Interval | None = None,
+    tolerance: float = float(np.finfo(np.float64).eps),
 ) -> np.polynomial.Chebyshev:
     """
     Returns the coefficients for the Chebyshev projection of a function using
@@ -100,10 +101,10 @@ def projection_coefficients(
     coefficients : `numpy.polynomial.Chebyshev`
     An array of Chebyshev coefficients scaled to the specified interval.
     """
-    if order is None:
-        order = estimate_order(func, start, stop, domain)
     if domain is not None:
         start, stop = domain.start, domain.stop
+    if order is None:
+        order = estimate_order(func, start, stop, domain, tolerance=tolerance)
     quad_order = order  # TODO: Check if this order integrates to machine precision
     nodes = np.cos(np.pi * np.arange(1, 2 * quad_order, 2) / (2.0 * quad_order))
     nodes_affine = array_affine(nodes, orig=(-1, 1), dest=(start, stop))
@@ -114,6 +115,9 @@ def projection_coefficients(
     return np.polynomial.Chebyshev(coefficients, domain=(start, stop))
 
 
+# TODO: Instead of using start, stop and domain, we should have a compulsory
+# argument, domain, that can be a tuple or an interval. This should be like
+# that everywhere. The fact that the domain is (-1,1) implicitly is confusing.
 def estimate_order(
     func: Callable,
     start: float = -1,
@@ -210,7 +214,7 @@ def cheb2mps(
     """
     if isinstance(initial_mps, MPS):
         pass
-    elif isinstance(domain, Interval):
+    elif isinstance(domain, (RegularInterval, ChebyshevInterval)):
         initial_mps = mps_interval(domain)
     else:
         raise ValueError("Either a domain or an initial MPS must be provided.")
