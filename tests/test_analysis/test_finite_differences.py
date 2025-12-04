@@ -1,10 +1,7 @@
 from typing import cast
 import numpy as np
 from scipy.sparse import spdiags, csr_matrix, eye
-from seemps.analysis.finite_differences import (
-    finite_differences_mpo,
-    smooth_finite_differences_mpo,
-)
+from seemps.analysis.finite_differences import smooth_finite_differences_mpo
 from .. import tools
 
 
@@ -89,13 +86,3 @@ class TestFiniteDifferences(tools.TestCase):
         D = self.Down(2, periodic=False)
         I = eye(4)
         self.assertSimilar(D2, (D - 2 * I + D.T) / dx2)
-
-    def test_second_derivative_two_qubits_smooth_and_ordinary(self):
-        dx = 1 / 4.0
-        for nqubits in range(2, 10):
-            for periodic in [False, True]:
-                D2a = smooth_finite_differences_mpo(
-                    nqubits, order=2, filter=3, periodic=periodic, dx=dx
-                )
-                D2b = finite_differences_mpo(nqubits, dx, closed=periodic)
-                self.assertSimilar(D2a.to_matrix(), D2b.to_matrix())

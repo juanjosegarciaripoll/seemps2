@@ -73,6 +73,13 @@ plus additional tools that are used for development:
 - mypy and basedpyright, for type checking
 - coverage, for code coverage
 
+On top of this, please use
+```
+uv run scripts/make.py --install-hooks
+```
+to ensure type checkers and other tests are run before committing changes
+with git.
+
 ### Testing
 The library contains a rather complete set of unittests under the `tests/`
 folder. The tests can be run using the standard `unittest` module, as in
