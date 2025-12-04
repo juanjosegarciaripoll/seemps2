@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from scipy.sparse import lil_array
-from typing import Callable
+from typing import Callable, overload
 from ...tools import Logger, make_logger
 from ...typing import Vector
 from .sparse_mps import SparseCore
@@ -53,7 +53,13 @@ class BranchNode:
         self.max_rank = max_rank
         self.N = len(grid)
 
-    def evaluate(self, x_in: float | None, s: int) -> float | None:
+    @overload
+    def evaluate(self, x_in: float | None, s: int) -> float | None: ...
+
+    @overload
+    def evaluate(self, x_in: np.ndarray | None, s: np.ndarray) -> np.ndarray | None: ...
+
+    def evaluate(self, x_in, s):
         if x_in is None:
             return None
         x_s = self.grid[s]
@@ -164,7 +170,7 @@ def get_transitions(
                     k_out = R_out_lookup.get(x_out, None)
                     # If not found, find closest index in R_out with np.searchsorted
                     if k_out is None:
-                        k_out = np.searchsorted(R_out, x_out, side="left")
+                        k_out = int(np.searchsorted(R_out, x_out, side="left"))
                         k_out = min(k_out, len(R_out) - 1)
                     transition[(k_in, s)] = k_out
         logger(f"Node {(i + 1)}/{l} | Transition of size {len(transition)}.")

@@ -5,7 +5,7 @@ from ...state import MPS, scprod
 from ...typing import Matrix, MPSOrder
 from ..cross import cross_interpolation, CrossStrategyMaxvol, BlackBoxLoadMPS
 from ..factories import mps_tensor_product
-from ..mesh import Interval, RegularInterval, ChebyshevInterval, Mesh
+from ..mesh import Interval, RegularInterval, ChebyshevInterval, ArrayInterval, Mesh
 from .mps_quadratures import (
     mps_trapezoidal,
     mps_simpson38,
@@ -100,19 +100,20 @@ def mesh_to_quadrature_mesh(mesh: Mesh) -> Mesh:
     Can be used to automatically construct a quadrature MPS using cross-interpolation
     with the :func:`quadrature_mesh_to_mps` routine in arbitrary tensor arrangements.
     """
-    quads = []
+    quads: list[Interval] = []
     for interval in mesh.intervals:
         start, stop, size = interval.start, interval.stop, interval.size
 
         if isinstance(interval, RegularInterval):
-            quads.append(vector_best_newton_cotes(start, stop, size))
+            quad = vector_best_newton_cotes(start, stop, size)
         elif isinstance(interval, ChebyshevInterval):
             if interval.endpoints:
-                quads.append(vector_clenshaw_curtis(start, stop, size))
+                quad = vector_clenshaw_curtis(start, stop, size)
             else:
-                quads.append(vector_fejer(start, stop, size))
+                quad = vector_fejer(start, stop, size)
         else:
             raise ValueError("Invalid Interval")
+        quads.append(ArrayInterval(quad))
 
     return Mesh(quads)
 

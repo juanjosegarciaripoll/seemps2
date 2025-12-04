@@ -1,8 +1,7 @@
 from __future__ import annotations
-
 import numpy as np
-from typing import Callable
-from dataclasses import dataclass
+from typing import Callable, overload
+import dataclasses
 
 from ...tools import make_logger, Logger
 from ...typing import Vector, Matrix
@@ -24,20 +23,25 @@ class UnaryRootNode:
     of the MPS core.
     """
 
-    # TODO: Type for vectorized arguments (looks cumbersome)
     def __init__(self, func: Callable, grid: Vector):
         self.func = func
         self.grid = grid
         self.N = len(grid)
 
-    def evaluate(self, x_L: float | None, s: int) -> float:
+    @overload
+    def evaluate(self, x_L: float | None, s: int) -> float: ...
+
+    @overload
+    def evaluate(self, x_L: np.ndarray | None, s: np.ndarray) -> np.ndarray: ...
+
+    def evaluate(self, x_L, s):
         if x_L is None:
             return 0
         x_s = self.grid[s]
         return self.func(x_L, x_s)
 
 
-@dataclass
+@dataclasses.dataclass
 class UnaryTree:
     """
     Unary-tree representation of a multivariate function.
@@ -69,6 +73,11 @@ class UnaryTree:
 
     left_nodes: list[BranchNode]
     root_node: UnaryRootNode
+
+    # Keep type checker happy
+    center: int = dataclasses.field(init=False)
+    physical_dimensions: list[int] = dataclasses.field(init=False)
+    length: int = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.center = len(self.left_nodes)
@@ -146,28 +155,23 @@ def _recompress_transitions(
 ) -> tuple[dict, list[dict]]:
     l = unary_tree.length - 1
 
-    # Compute root node transition
-    node = unary_tree.root_node
+    # Root node transition
+    root_node = unary_tree.root_node
     x_in = left_images[-1]
-
-    # Here we push vectorized arguments.
-    # The type checker complains because the evaluate method is typed for scalar arguments.
-    a = node.evaluate(x_in[:, np.newaxis], np.arange(node.N))  # type: ignore
-    a = _round_matrix_to_vector(a, tensor_values)  # type: ignore
-    root_transition = _build_transition(a)
-
-    x_grouped = _group_x(x_in, a)
+    root_image = root_node.evaluate(x_in[:, np.newaxis], np.arange(root_node.N))
+    root_image = _round_matrix_to_vector(root_image, tensor_values)
+    root_transition = _build_transition(root_image)
+    x_grouped = _group_x(x_in, root_image)
     logger(f"Node {l}/{l} | Image compressed ({len(x_in)} -> {len(x_grouped)}).")
 
-    # Compute left node transitions
+    # Left node transitions
     left_transitions = []
     for i in reversed(range(l)):
-        node = unary_tree.left_nodes[i]
+        left_node = unary_tree.left_nodes[i]
         x_in = left_images[i]
-
-        # Here we again push vectorized arguments
-        a = node.evaluate(x_in[:, np.newaxis], np.arange(node.N))  # type: ignore
-        A = _map_to_group(a, x_grouped)  # type: ignore
+        left_image = left_node.evaluate(x_in[:, np.newaxis], np.arange(left_node.N))
+        assert left_image is not None  # To keep the type checker happy
+        A = _map_to_group(left_image, x_grouped)
         transition = _build_transition(A)
         left_transitions.append(transition)
 
@@ -184,11 +188,11 @@ def _round_matrix_to_vector(matrix: Matrix, vector: Vector) -> Matrix:
     return vector[indices]
 
 
-def _group_x(x_in: Vector, a: Matrix) -> tuple[Vector]:
+def _group_x(x_in: Vector, image: Matrix) -> tuple[Vector, ...]:
     """Groups elements of `x_in` based on unique rows in `a`."""
     # TODO: Optimize
     index_map = {}
-    for index, row in enumerate(a):
+    for index, row in enumerate(image):
         row_tuple = tuple(row)
         if row_tuple not in index_map:
             index_map[row_tuple] = np.array([x_in[index]])
@@ -197,9 +201,9 @@ def _group_x(x_in: Vector, a: Matrix) -> tuple[Vector]:
     return tuple(index_map.values())
 
 
-def _build_transition(a: Matrix) -> dict:
-    """Efficiently constructs a dictionary mapping (k, s) to unique values in matrix `a`."""
-    unique_rows = _get_unique_rows(a)
+def _build_transition(image: Matrix) -> dict:
+    """Efficiently constructs a dictionary mapping (k, s) to unique values in matrix `image`."""
+    unique_rows = _get_unique_rows(image)
     k_indices = np.arange(unique_rows.shape[0])
     s_indices = np.arange(unique_rows.shape[1])
     k_grid, s_grid = np.meshgrid(k_indices, s_indices, indexing="ij")
@@ -209,14 +213,14 @@ def _build_transition(a: Matrix) -> dict:
     return {key: val for key, val in zip(keys, values)}
 
 
-def _map_to_group(a: Matrix, x_grouped: tuple[Vector]) -> Matrix:
+def _map_to_group(image: Matrix, x_grouped: tuple[Vector, ...]) -> Matrix:
     """Maps values in `a` to group indices efficiently."""
     bounds = np.array([group[-1] for group in x_grouped])
-    A = np.searchsorted(bounds, a, side="left")
+    A = np.searchsorted(bounds, image, side="left")
     return np.minimum(A, len(x_grouped) - 1)
 
 
-def _get_unique_rows(a: Matrix) -> Matrix:
-    """Gets the unique rows of the matrix `a` without reordering."""
-    _, idx = np.unique(a, axis=0, return_index=True)
-    return a[np.sort(idx)]
+def _get_unique_rows(image: Matrix) -> Matrix:
+    """Gets the unique rows of the matrix `image` without reordering."""
+    _, idx = np.unique(image, axis=0, return_index=True)
+    return image[np.sort(idx)]

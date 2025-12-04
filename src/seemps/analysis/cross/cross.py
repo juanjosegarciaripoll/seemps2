@@ -83,7 +83,8 @@ class CrossStrategy:
         assert self.num_samples > 0
 
     @property
-    def algorithm(self) -> Callable: ...
+    def algorithm(self) -> Callable:
+        raise NotImplementedError("Subclasses must override 'algorithm'")
 
 
 IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
@@ -103,7 +104,6 @@ class CrossInterpolation:
     I_g: list[np.ndarray]
     I_s: list[np.ndarray]
     mps: MPS
-    initial_points: np.ndarray | None
 
     def __init__(self, black_box: BlackBox, initial_points: Matrix | None = None):
         self.black_box = black_box
@@ -204,6 +204,14 @@ class CrossError:
     Auxiliar base class for TCI used to compute the sampled error between the function and the
     MPS at every iteration using the sampled Lp norm and caching intermediate results for efficiency.
     """
+
+    error_norm: float
+    num_samples: int
+    error_relative: bool
+    rng: np.random.Generator
+    mps_indices: Vector | None
+    black_box_evals: np.ndarray | None
+    norm: float
 
     def __init__(self, cross_strategy: CrossStrategy):
         self.error_norm = cross_strategy.error_norm

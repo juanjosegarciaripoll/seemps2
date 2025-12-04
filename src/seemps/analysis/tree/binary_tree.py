@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Callable
-from dataclasses import dataclass
+import dataclasses
 from ...tools import make_logger
 from ...typing import Vector
 from .branch import (
@@ -34,7 +34,7 @@ class BinaryRootNode:
         return self.func(x_L, x_s, x_R)
 
 
-@dataclass
+@dataclasses.dataclass
 class BinaryTree:
     """
     Binary-tree representation of a multivariate function.
@@ -55,6 +55,11 @@ class BinaryTree:
     left_nodes: list[BranchNode]
     root_node: BinaryRootNode
     right_nodes: list[BranchNode]
+
+    # Keep type checker happy
+    center: int = dataclasses.field(init=False)
+    physical_dimensions: list[int] = dataclasses.field(init=False)
+    length: int = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.center = len(self.left_nodes)

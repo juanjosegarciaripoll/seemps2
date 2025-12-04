@@ -3,7 +3,7 @@ import scipy.linalg
 from dataclasses import dataclass
 from collections import defaultdict
 from time import perf_counter
-from typing import Callable
+from typing import Callable, Any
 
 from ...state import MPS
 from ...state._contractions import _contract_last_and_first
@@ -197,7 +197,7 @@ def cross_greedy(
     error_calculator = CrossError(cross_strategy)
 
     converged = False
-    trajectories = defaultdict(list)
+    trajectories: defaultdict[str, list[Any]] = defaultdict(list)
     for i in range(cross_strategy.max_iters // 2):
         # Left-to-right half sweep
         tick = perf_counter()
@@ -270,6 +270,8 @@ def _update_cross(
     diff = np.abs(A_random - B_random)
     i, j = np.unravel_index(np.argmax(diff), A_random.shape)
     j_l, j_g = j_l_random[i], j_g_random[j]
+
+    c_A = c_B = r_A = r_B = np.empty(0)
     for iter in range(cross_strategy.max_iters):
         # Traverse column residual
         c_A = cross.sample_superblock(k, j_g=j_g).reshape(-1)

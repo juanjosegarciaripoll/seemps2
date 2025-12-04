@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 import scipy.sparse
 import functools
 from scipy.sparse import dok_array, csr_array
-from typing import Callable, Literal
+from typing import Callable
 
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..state.schmidt import _destructive_svd
@@ -12,7 +12,7 @@ from ..state._contractions import _contract_last_and_first
 from ..state.core import destructively_truncate_vector
 from ..truncate import simplify
 from ..typing import Tensor3, MPSOrder
-from .mesh import Interval, Mesh, array_affine
+from .mesh import Interval, ArrayInterval, Mesh, array_affine
 
 
 def mps_lagrange_chebyshev_basic(
@@ -279,12 +279,12 @@ class LagrangeBuilder:
         m = mesh.dimension
         A = np.zeros((1, 2, self.D**m))
         for σ in [0, 1]:
-            intervals = []
+            intervals: list[Interval] = []
             for i in range(m):
                 a, b = mesh.intervals[i].start, mesh.intervals[i].stop
                 c = (σ + self.c) / 2 if i == 0 else self.c
-                interval = array_affine(c, (0, 1), (a, b))
-                intervals.append(interval)
+                arr = array_affine(c, (0, 1), (a, b))
+                intervals.append(ArrayInterval(arr))
             c_mesh = Mesh(intervals)
             tensor = c_mesh.to_tensor(channels_first)
             A[0, σ, :] = func(tensor).reshape(-1)

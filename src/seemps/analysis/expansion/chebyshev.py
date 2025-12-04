@@ -81,12 +81,12 @@ class ChebyshevExpansion(OrthogonalExpansion):
 
     def deriv(self, m: int = 1) -> ChebyshevExpansion:
         """Return the m-th derivative as a new ChebyshevExpansion."""
-        poly = np.polynomial.Chebyshev(self.coeffs, domain=self.domain)
-        poly_deriv: np.polynomial.Chebyshev = poly.deriv(m)
-        return ChebyshevExpansion(poly_deriv.coef, domain=tuple(poly_deriv.domain))
+        T = np.polynomial.Chebyshev(self.coeffs, domain=self.domain).deriv(m)
+        a, b = map(float, T.domain)  # Keep type checker happy
+        return ChebyshevExpansion(T.coef, domain=(a, b))
 
     def integ(self, m: int = 1, lbnd: float = 0.0) -> ChebyshevExpansion:
         """Return the m-th integral as a new ChebyshevExpansion."""
-        poly = np.polynomial.Chebyshev(self.coeffs, domain=self.domain)
-        poly_integ: np.polynomial.Chebyshev = poly.integ(m=m, lbnd=lbnd)
-        return ChebyshevExpansion(poly_integ.coef, domain=tuple(poly_integ.domain))
+        T = np.polynomial.Chebyshev(self.coeffs, domain=self.domain).integ(m, lbnd=lbnd)
+        a, b = map(float, T.domain)
+        return ChebyshevExpansion(T.coef, domain=(a, b))

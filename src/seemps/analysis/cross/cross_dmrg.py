@@ -3,7 +3,7 @@ import scipy.linalg
 from dataclasses import dataclass
 from collections import defaultdict
 from time import perf_counter
-from typing import Callable
+from typing import Callable, Any
 
 from ...state import Strategy, DEFAULT_TOLERANCE
 from ...state.core import destructively_truncate_vector
@@ -83,7 +83,7 @@ def cross_dmrg(
     error_calculator = CrossError(cross_strategy)
 
     converged = False
-    trajectories = defaultdict(list)
+    trajectories: defaultdict[str, list[Any]] = defaultdict(list)
     for i in range(cross_strategy.max_iters // 2):
         # Left-to-right half sweep
         tick = perf_counter()

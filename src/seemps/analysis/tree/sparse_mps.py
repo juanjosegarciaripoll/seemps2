@@ -1,3 +1,8 @@
+# mypy: ignore-errors
+
+# TODO: This module is full of type errors because it is a patch that reuses TensorArray
+# for code reuse, which assumes dense cores. It should be redone.
+
 from __future__ import annotations
 import numpy as np
 from scipy.sparse import csr_array
@@ -47,13 +52,10 @@ class SparseMPS(TensorArray):
     structured models, such as computational tree MPS approximations.
     """
 
-    # TODO: This is a patch to be able to reuse the TensorArray methods, but needs to be redone.
-    # There are many typing errors because TensorArray has dense cores, not sparse cores.
-
-    _data: list[SparseCore | Tensor3]  # type: ignore
+    __data: list[SparseCore | Tensor3]  # pyright: ignore
 
     def __init__(self, data: Iterable[SparseCore | Tensor3]):
-        super().__init__(data)  # type: ignore
+        super().__init__(data)  # pyright: ignore
 
     def physical_dimensions(self) -> list[int]:
         return list(a.shape[1] for a in self._data)
@@ -65,7 +67,7 @@ class SparseMPS(TensorArray):
         return max(self.bond_dimensions())
 
     def to_dense(self) -> MPS:
-        return MPS([core.to_dense() for core in self._data])  # type: ignore
+        return MPS([core.to_dense() for core in self._data])  # pyright: ignore
 
     def to_vector(self) -> Vector:
         Ψ = np.ones((1, 1))
@@ -121,11 +123,10 @@ def _contract_left_environment(
 
         ρ = np.zeros((r_R_core, r_R_env), dtype=np.float64)
         for s_idx, matrix in enumerate(core.data):
-            # TODO: Figure out why I have to invert the indices
             env_slice = environment[:, s_idx, :]
             ρ += matrix.T @ env_slice
     else:
-        ρ = np.einsum("ijn,ijk->kn", environment, core)  # Also here. Why?
+        ρ = np.einsum("ijn,ijk->kn", environment, core)
     return ρ
 
 
@@ -160,13 +161,13 @@ def get_environment(
     ρ = np.eye(1)
     if left_to_right:
         for B, A in zip(bra, ket):
-            ρ = _update_left_environment(B, A, ρ)  # type: ignore
+            ρ = _update_left_environment(B, A, ρ)  # pyright: ignore
     else:
         for B, A in zip(bra[::-1], ket[::-1]):
-            ρ = _update_right_environment(B, A, ρ)  # type: ignore
+            ρ = _update_right_environment(B, A, ρ)  # pyright: ignore
     return ρ
 
 
 def scprod_filter(filter: SparseMPS, distribution: MPS) -> Vector:
-    ρ = get_environment(filter[:-1], distribution, left_to_right=True)  # type: ignore
+    ρ = get_environment(filter[:-1], distribution, left_to_right=True)  # pyright: ignore
     return _contract_last_and_first(ρ.T, filter[-1]).reshape(-1)

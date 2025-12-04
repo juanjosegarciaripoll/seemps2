@@ -178,6 +178,37 @@ class ChebyshevInterval(Interval):
         return array_affine(nodes, orig=(-1, 1), dest=(self.stop, self.start))
 
 
+class ArrayInterval(Interval):
+    """Wrapper class that allows passing an explicit 1D array of values as an Interval."""
+
+    def __init__(self, array: np.ndarray):
+        if array.ndim != 1:
+            raise ValueError("ArrayInterval requires a 1D array of floats")
+        self.values = np.asarray(array, float)
+        super().__init__(self.values[0], self.values[-1], len(self.values))
+
+    @overload
+    def __getitem__(self, idx: NDArray[np.integer]) -> NDArray[np.floating]: ...
+    @overload
+    def __getitem__(self, idx: int) -> float: ...
+
+    def __getitem__(
+        self, idx: int | NDArray[np.integer]
+    ) -> float | NDArray[np.floating]:
+        self._validate_index(idx)
+        return self.values[idx]
+
+    def to_vector(self) -> np.ndarray:
+        return self.values
+
+    def update_size(self, size: int) -> ArrayInterval:
+        raise NotImplementedError("ArrayInterval does not support update_size.")
+
+    def map_to(self, start: float, stop: float) -> ArrayInterval:
+        array = array_affine(self.values, (self.start, self.stop), (start, stop))
+        return ArrayInterval(array)
+
+
 class Mesh:
     """Multidimensional mesh object.
 

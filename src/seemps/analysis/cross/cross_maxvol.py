@@ -3,7 +3,7 @@ import scipy.linalg
 from dataclasses import dataclass
 from collections import defaultdict
 from time import perf_counter
-from typing import Callable
+from typing import Callable, Any
 
 from ...typing import Matrix
 from ...tools import make_logger
@@ -75,7 +75,7 @@ def cross_maxvol(
     error_calculator = CrossError(cross_strategy)
 
     converged = False
-    trajectories = defaultdict(list)
+    trajectories: defaultdict[str, list[Any]] = defaultdict(list)
     for i in range(cross_strategy.max_iters // 2):
         tick = perf_counter()
 

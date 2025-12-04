@@ -85,7 +85,7 @@ class PowerExpansion(PolynomialExpansion):
         return 1.0
 
 
-class OrthogonalExpansion(PolynomialExpansion):
+class OrthogonalExpansion(PolynomialExpansion, ABC):
     """
     Polynomial expansion in an orthogonal polynomial basis.
 
@@ -367,11 +367,15 @@ def mpo_polynomial_expansion(
             _, _, γ_k_plus_1 = recurrences[l + 1]
 
             weights = [c_k, α_k, -γ_k_plus_1]
-            mpos = [I, MPOList([initial_mpo, y_k_plus_1]), y_k_plus_2]
+            mpos: list[MPO | MPOList] = [
+                I,
+                MPOList([initial_mpo, y_k_plus_1]),
+                y_k_plus_2,
+            ]
             if β_k != 0:
                 weights.append(β_k)
                 mpos.append(MPOList([I, y_k_plus_1]))
-            y_k: MPO = simplify_mpo(MPOSum(mpos, weights), strategy=strategy)
+            y_k = simplify_mpo(MPOSum(mpos, weights), strategy=strategy)
             logger(
                 f"MPO Clenshaw step {k + 1}/{steps}, maxbond={y_k.max_bond_dimension()}"
             )
@@ -400,7 +404,7 @@ def mpo_polynomial_expansion(
                 mpos.append(MPOList([I, T_k]))
 
             T_k_plus_1 = simplify_mpo(MPOSum(mpos, weights), strategy=strategy)
-            f_mpo: MPO = simplify_mpo(
+            f_mpo = simplify_mpo(
                 MPOSum(mpos=[f_mpo, T_k_plus_1], weights=[1.0, c_k]), strategy=strategy
             )
             logger(
