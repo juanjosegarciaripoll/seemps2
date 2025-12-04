@@ -4,11 +4,11 @@ import h5py  # type: ignore
 import seemps
 from seemps.operators import MPO
 from seemps.state import random_uniform_mps
-from .tools import MPSTestCase
+from .tools import TestCase
 import os
 
 
-class TestHDF5(MPSTestCase):
+class TestHDF5(TestCase):
     filename = "test_hdf5.hdf5"
 
     def tearDown(self) -> None:

@@ -1,37 +1,8 @@
 from typing import cast
 import numpy as np
 from scipy.sparse import spdiags, csr_matrix, eye
-from seemps.analysis.finite_differences import (
-    finite_differences_mpo,
-    smooth_finite_differences_mpo,
-)
-
+from seemps.analysis.finite_differences import smooth_finite_differences_mpo
 from .. import tools
-
-
-def gaussian(x):
-    f = np.exp(-(x**2))
-    return f / np.linalg.norm(f)
-
-
-def S_plus_v(n, closed=True):
-    S = np.diag(np.ones(2**n - 1), +1)
-    if closed:
-        S[-1, 0] = 1
-    return S
-
-
-def S_minus_v(n, closed=True):
-    S = np.diag(np.ones(2**n - 1), -1)
-    if closed:
-        S[0, -1] = 1
-    return S
-
-
-def finite_differences_v(n, Δx, closed=True):
-    return (1 / Δx**2) * (
-        S_plus_v(n, closed=closed) + S_minus_v(n, closed=closed) - 2 * np.eye(2**n)
-    )
 
 
 class TestFiniteDifferences(tools.TestCase):
@@ -39,14 +10,10 @@ class TestFiniteDifferences(tools.TestCase):
         """Moves f[i] to f[i-1]"""
         L = 2**nqubits
         if periodic:
-            M = spdiags([np.ones(L), np.ones(L)], [1, -L + 1], format="csr") # type: ignore # scipy-stubs broken
+            M = spdiags([np.ones(L), np.ones(L)], [1, -L + 1], format="csr")  # type: ignore # scipy-stubs broken
         else:
-            M = spdiags([np.ones(L)], [1], format="csr") # type: ignore # scipy-stubs broken
+            M = spdiags([np.ones(L)], [1], format="csr")  # type: ignore # scipy-stubs broken
         return cast(csr_matrix, M)
-
-    def Up(self, nqubits: int, periodic: bool = False) -> csr_matrix:
-        """Moves f[i] to f[i+1]"""
-        return self.Down(nqubits, periodic).T.tocsr()
 
     def test_first_derivative_two_qubits_perodic(self):
         dx = 0.1
@@ -119,13 +86,3 @@ class TestFiniteDifferences(tools.TestCase):
         D = self.Down(2, periodic=False)
         I = eye(4)
         self.assertSimilar(D2, (D - 2 * I + D.T) / dx2)
-
-    def test_second_derivative_two_qubits_smooth_and_ordinary(self):
-        dx = 1 / 4.0
-        for nqubits in range(2, 10):
-            for periodic in [False, True]:
-                D2a = smooth_finite_differences_mpo(
-                    nqubits, order=2, filter=3, periodic=periodic, dx=dx
-                )
-                D2b = finite_differences_mpo(nqubits, dx, closed=periodic)
-                self.assertSimilar(D2a.to_matrix(), D2b.to_matrix())

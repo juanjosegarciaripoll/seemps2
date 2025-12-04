@@ -101,6 +101,10 @@ def run_tests(verbose=False) -> bool:
     )
 
 
+def install_hooks() -> bool:
+    return run(["uv", "run", "pre-commit", "install", "--install-hooks", "--overwrite"])
+
+
 def mypy() -> bool:
     return run(uv_run + ["mypy", "src/seemps"])
 
@@ -161,6 +165,9 @@ parser.add_argument(
 )
 parser.add_argument("--build", action="store_true", help="Build library")
 parser.add_argument("--install", action="store_true", help="Install library")
+parser.add_argument(
+    "--install-hooks", action="store_true", help="Install git pre-commit hooks"
+)
 parser.add_argument("--check", action="store_true", help="Run tests")
 parser.add_argument("--verbose", action="store_true", help="Verbose mode")
 parser.add_argument("--tests", action="store_true", help="Run unit tests")
@@ -197,6 +204,8 @@ if args.memcheck:
     ]
 if args.asan:
     use_sanitizer = "address"
+if args.install_hooks:
+    install_hooks()
 
 if args.clean:
     clean()

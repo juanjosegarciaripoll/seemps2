@@ -2,7 +2,7 @@ import numpy as np
 from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
-from seemps.state import MPS, DEFAULT_STRATEGY
+from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION
 from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.factories import mps_tensor_sum, mps_interval
 from seemps.analysis.expansion import (
@@ -16,9 +16,56 @@ from seemps.analysis.operators import x_mpo
 from seemps.typing import Vector
 
 from ..tools import TestCase
+from .tools_interpolation import gaussian
 
 
 class TestChebyshevCoefficients(TestCase):
+
+    def test_expansion_rejects_wrong_literal(self):
+        with self.assertRaises(TypeError):
+            ChebyshevExpansion.interpolate(np.exp, interpolated_nodes="else")  # type: ignore
+
+    def test_interpolation_coefficients_exponential(self):
+        cheb_coeffs = ChebyshevExpansion.interpolate(np.exp, -1, 1, 15).coeffs
+        correct_coeffs = [
+            1.266065877752008,
+            1.130318207984970,
+            0.271495339534077,
+            0.044336849848664,
+            0.005474240442094,
+            0.000542926311914,
+            0.000044977322954,
+            0.000003198436462,
+            0.000000199212481,
+            0.000000011036772,
+            0.000000000550590,
+            0.000000000024980,
+            0.000000000001039,
+            0.000000000000040,
+            0.000000000000001,
+        ]
+        self.assertSimilar(list(cheb_coeffs), correct_coeffs)
+
+    def test_estimate_order(self):
+        """Assert that the estimated coefficients and accuracy in norm-inf are below a tolerance."""
+        tolerance = 1e-12
+        a, b, n = -2, 2, 6
+        domain = RegularInterval(-2, 2, 2**n)
+        x = domain.to_vector()
+
+        order = ChebyshevExpansion.estimate_order(gaussian, a, b, tol=tolerance)
+        coeffs = ChebyshevExpansion.project(gaussian, a, b, order).coeffs
+        self.assertTrue(coeffs[-1] <= tolerance)
+
+        expansion = ChebyshevExpansion(coeffs, (-2, 2))
+        mps = mps_polynomial_expansion(expansion, initial=domain, strategy=NO_TRUNCATION)
+        y_vec = gaussian(x)
+        self.assertSimilar(mps, y_vec, atol=tolerance)
+
+    def test_estimate_order_fails_when_max_order_is_exceeded(self):
+        with self.assertRaises(ValueError):
+            ChebyshevExpansion.estimate_order(gaussian, -2,2, max_order=10)
+
     def assert_similar_coefficients(
         self,
         coeffs: Vector,

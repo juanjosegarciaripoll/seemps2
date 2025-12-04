@@ -38,14 +38,6 @@ def tridiagonal_mpo(
     return MPO([L] + [A] * (n - 2) + [R], strategy)
 
 
-def finite_differences_mpo(
-    n: int, Δx: float, closed: bool = True, strategy: Strategy = DEFAULT_STRATEGY
-):
-    if n == 1:
-        raise Exception("finite_differences_mpo() does not work with length 1")
-    return (1 / Δx**2) * tridiagonal_mpo(n, -2, 1, 1, closed, strategy)
-
-
 _filtered_differences = {
     # First order derivatives
     (1, 3): ([-1 / 2, 1 / 2], [1, -1]),

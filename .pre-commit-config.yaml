@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: mypy-check
+        name: MyPy type checking
+        entry: uv run python scripts/make.py --mypy
+        pass_filenames: false
+        language: system
+        files: "\\.py$"
+      - id: pyright-check
+        name: Pyright type checking
+        entry: uv run python scripts/make.py --pyright
+        pass_filenames: false
+        language: system
+        files: "\\.py$"

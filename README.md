@@ -73,6 +73,13 @@ plus additional tools that are used for development:
 - mypy and basedpyright, for type checking
 - coverage, for code coverage
 
+On top of this, please use
+```
+uv run scripts/make.py --install-hooks
+```
+to ensure type checkers and other tests are run before committing changes
+with git.
+
 ### Testing
 The library contains a rather complete set of unittests under the `tests/`
 folder. The tests can be run using the standard `unittest` module, as in
@@ -99,5 +106,10 @@ uv run coverage run -m unittest -v && uv run coverage lcov
 
 ## TODOs
 - Update documentation.
-- Pull request with local developments (computational tree, Hadamard sketching (HaTT), etc.) and breaking changes (TT-cross, orthogonal polynomials, integration, etc.).
-- Add problem-specific tools: quantile estimation with binary search (for Value at Risk), MPO cumulative sum.
+- Pull request with local developments (computational tree, Hadamard sketching
+  (HaTT), etc.) and breaking changes (TT-cross, orthogonal polynomials,
+  integration, etc.).
+- Add problem-specific tools: quantile estimation with binary search (for Value
+  at Risk), MPO cumulative sum.
+- Many functions are declared to accept Interval, when they actually can only
+  use RegularInterval or ChebyshevInterval

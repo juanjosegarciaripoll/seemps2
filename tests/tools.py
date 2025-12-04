@@ -101,6 +101,10 @@ class TestCase(unittest.TestCase):
         if not approximateIsometry(A, direction, places):
             raise self.failureException(f"Tensor is not isometry:\nA={A}")
 
+    def assertSimilarMPS(self, a, b):
+        if (a.size != b.size) or not similar(a.to_vector(), b.to_vector()):
+            raise AssertionError("Different objects:\na = {a}\nb = {b}")
+
 
 def similar(A, B, **kwdargs):
     if isinstance(A, SparseOperator):
@@ -147,17 +151,7 @@ def contain_same_objects(A, B):
     return all(a is b for a, b in zip(A, B))
 
 
-def contain_similar_tensors(A, B):
-    return all(similar(a, b) for a, b in zip(A, B))
-
-
 def run_over_random_uniform_mps(function, d=2, N=10, D=10, repeats=10):
     for _ in range(1, N + 1):
         for _ in range(repeats):
             function(seemps.state.random_uniform_mps(d, N, D))
-
-
-class MPSTestCase(TestCase):
-    def assertSimilarMPS(self, a, b):
-        if (a.size != b.size) or not similar(a.to_vector(), b.to_vector()):
-            raise AssertionError("Different objects:\na = {a}\nb = {b}")

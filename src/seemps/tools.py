@@ -14,13 +14,6 @@ class InvalidOperation(TypeError):
         )
 
 
-def take_from_list(O: list[Any] | Any, i: int):
-    if isinstance(O, list):
-        return O[i]
-    else:
-        return O
-
-
 class Logger:
     active: bool = False
 

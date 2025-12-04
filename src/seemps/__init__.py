@@ -10,7 +10,6 @@ from . import (
     evolution,
     register,
     qft,
-    cgs,
 )
 
 __all__ = [
@@ -25,5 +24,4 @@ __all__ = [
     "evolution",
     "register",
     "qft",
-    "cgs",
 ]

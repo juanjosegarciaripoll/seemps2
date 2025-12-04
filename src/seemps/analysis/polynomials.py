@@ -5,12 +5,12 @@ import scipy.special  # type: ignore
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..truncate import simplify
 from .factories import mps_interval
-from .mesh import Interval, RegularInterval
+from .mesh import RegularInterval
 
 
 def _mps_x_tensor(
     degree: int,
-    domain: Interval,
+    domain: RegularInterval,
     first: bool = False,
 ) -> MPS:
     r"""
@@ -35,8 +35,6 @@ def _mps_x_tensor(
     xL : MPS
         MPS representation of the monomials collection.
     """
-    if not isinstance(domain, RegularInterval):
-        raise ValueError("Unable to construct polyomial for non-regular intervals")
     L = degree + 1
     x_mps: MPS = mps_interval(domain)  # type:ignore
     N = len(x_mps)
@@ -74,10 +72,10 @@ def _mps_x_tensor(
 
 def mps_from_polynomial(
     p: Polynomial | np.ndarray,
-    domain: Interval,
+    domain: RegularInterval,
     first: bool = False,
     strategy: Strategy = DEFAULT_STRATEGY,
-):
+) -> MPS:
     r"""
     Construct a tensor representation of a polynomial.
 
@@ -111,3 +109,6 @@ def mps_from_polynomial(
     if strategy.get_simplify_flag():
         return simplify(xm_mps, strategy=strategy)
     return xm_mps
+
+
+__all__ = ["mps_from_polynomial"]

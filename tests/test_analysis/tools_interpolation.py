@@ -2,12 +2,18 @@ from math import sqrt
 import numpy as np
 
 
-def gaussian(r):
+def gaussian(x):
+    return np.exp(-(x * x))
+
+
+def gaussian_tensor(r):
     """Constructs a Gaussian function defined on the given grid.
 
     Parameters
     ----------
     r: grid on which the Gaussian is defined
+        In this function r[i,...] are the i-th coordinates of the
+        N-dimensional grid.
 
     Returns
     -------
