@@ -157,6 +157,7 @@ reportPrivateLocalImportUsage = false
 reportUnknownArgumentType = false
 # TODO: Remove this to detect _check_convergence and other unused functions
 reportUnusedFunction=false
+failOnWarnings = false
 
 [tool.mypy]
 warn_incomplete_stub = false

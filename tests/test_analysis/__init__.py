@@ -1,6 +1,6 @@
 from . import (
-    test_chebyshev,
     test_cross,
+    test_expansion,
     test_factories,
     test_finite_differences,
     test_hdaf,
@@ -15,7 +15,7 @@ from . import (
 )
 
 __all__ = [
-    "test_chebyshev",
+    "test_expansion",
     "test_cross",
     "test_factories",
     "test_finite_differences",

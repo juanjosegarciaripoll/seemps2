@@ -309,3 +309,25 @@ def mpo_affine(
         I = MPO([np.ones((1, 2, 2, 1))] * len(mpo_affine))
         mpo_affine = MPOSum(mpos=[mpo_affine, I], weights=[1, b]).join()
     return mpo_affine
+
+
+def mpo_cumsum(n: int) -> MPO:
+    """Returns an MPO that computes the cumulative sum of an input MPS."""
+    core_L = np.zeros((1, 2, 2, 2), dtype=np.float64)
+    core_L[0, 0, 0, 0] = 1
+    core_L[0, 1, 1, 0] = 1
+    core_L[0, 1, 0, 1] = 1
+    cores_bulk = []
+    for _ in range(1, n - 1):
+        core = np.zeros((2, 2, 2, 2), dtype=np.float64)
+        core[0, 0, 0, 0] = 1
+        core[0, 1, 1, 0] = 1
+        core[0, 1, 0, 1] = 1
+        core[1, :, :, 1] = 1
+        cores_bulk.append(core)
+    core_R = np.zeros((2, 2, 2, 1), dtype=np.float64)
+    core_R[0, 0, 0, 0] = 1
+    core_R[0, 1, 1, 0] = 1
+    core_R[0, 1, 0, 0] = 1
+    core_R[1, :, :, 0] = 1
+    return MPO([core_L] + cores_bulk + [core_R])

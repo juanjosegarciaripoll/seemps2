@@ -1,5 +1,5 @@
 from . import (
-    chebyshev,
+    expansion,
     cross,
     evolution,
     factories,
@@ -10,12 +10,12 @@ from . import (
     operators,
     optimization,
     polynomials,
-    sampling,
+    evaluation,
     space,
 )
 
 __all__ = [
-    "chebyshev",
+    "expansion",
     "cross",
     "evolution",
     "factories",
@@ -26,6 +26,6 @@ __all__ = [
     "operators",
     "optimization",
     "polynomials",
-    "sampling",
+    "evaluation",
     "space",
 ]

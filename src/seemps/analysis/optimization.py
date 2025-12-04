@@ -1,10 +1,49 @@
 import numpy as np
 
 from ..state import MPS, CanonicalMPS, MPSSum
-from .sampling import evaluate_mps
+from ..state._contractions import _contract_last_and_first
+from ..typing import Vector
+from .evaluation import evaluate_mps
 
-# TODO: Profile and optimize
-# TODO: Implement TT-Opt
+
+def get_search_environments(mps: MPS) -> list[Vector]:
+    """
+    Computes the right environments of the MPS used to accelerate :func:`binary_search_mps`.
+    Can be cached and reutilized for subsequent thresholds.
+    """
+    n = len(mps)
+    R = [np.ones((mps[-1].shape[2], 1))]
+    for i in reversed(range(n)):
+        R.append(_contract_last_and_first(mps[i][:, 1, :], R[-1]))
+    return R[::-1]
+
+
+def binary_search_mps(
+    mps: MPS,
+    threshold: float,
+    increasing: bool = True,
+    search_environments: list[Vector] | None = None,
+) -> Vector:
+    """
+    Performs a binary search for the smallest MPS index whose value crosses the given `threshold`.
+
+    Assumes a monotone input, either increasing or decreasing. For efficiency, the required
+    search environments can be precomputed and cached using the :func:`get_search_environments` routine.
+    """
+    dims = mps.physical_dimensions()
+    if not all(d == 2 for d in dims):
+        raise ValueError(f"This requires binary physical dimensions (got {dims}).")
+
+    R = search_environments or get_search_environments(mps)
+    L = np.ones((1, mps[0].shape[0]))
+    bits = []
+    for i, core in enumerate(mps):
+        y = (L @ core[:, 0, :]) @ R[i + 1]
+        cond = (threshold <= y) if increasing else (threshold >= y)
+        bit = 0 if cond else 1
+        bits.append(bit)
+        L = L @ core[:, bit, :]
+    return np.array(bits, dtype=int)
 
 
 def optimize_mps(mps: MPS, num_indices: int = 100, make_canonical: bool = True):

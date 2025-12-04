@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
 from ..typing import Tensor3, MPSOrder
-from ..state import Strategy, MPS, DEFAULT_STRATEGY
+from ..state import Strategy, MPS
 from ..truncate import simplify
-from .mesh import RegularInterval, ChebyshevInterval
+from .mesh import Interval, RegularInterval, ChebyshevInterval
 
 
 def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
@@ -74,12 +74,7 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
     return MPS(tensors)
 
 
-def mps_sin(
-    start: float,
-    stop: float,
-    sites: int,
-    strategy: Strategy = DEFAULT_STRATEGY,
-) -> MPS:
+def mps_sin(start: float, stop: float, sites: int) -> MPS:
     """
     Returns an MPS representing a sine function discretized over a
     half-open interval [start, stop).
@@ -102,16 +97,10 @@ def mps_sin(
     """
     mps_1 = mps_exponential(start, stop, sites, c=1j)
     mps_2 = mps_exponential(start, stop, sites, c=-1j)
+    return -0.5j * (mps_1 - mps_2).join()
 
-    return simplify(-0.5j * (mps_1 - mps_2), strategy=strategy)
 
-
-def mps_cos(
-    start: float,
-    stop: float,
-    sites: int,
-    strategy: Strategy = DEFAULT_STRATEGY,
-) -> MPS:
+def mps_cos(start: float, stop: float, sites: int) -> MPS:
     """
     Returns an MPS representing a cosine function discretized over a
     half-open interval [start, stop).
@@ -134,8 +123,7 @@ def mps_cos(
     """
     mps_1 = mps_exponential(start, stop, sites, c=1j)
     mps_2 = mps_exponential(start, stop, sites, c=-1j)
-
-    return simplify(0.5 * (mps_1 + mps_2), strategy=strategy)
+    return 0.5 * (mps_1 + mps_2).join()
 
 
 def mps_affine(mps: MPS, orig: tuple[float, float], dest: tuple[float, float]) -> MPS:
@@ -170,9 +158,7 @@ def mps_affine(mps: MPS, orig: tuple[float, float], dest: tuple[float, float]) -
     return new_mps
 
 
-def mps_interval(
-    interval: RegularInterval | ChebyshevInterval, strategy: Strategy = DEFAULT_STRATEGY
-):
+def mps_interval(interval: Interval):
     """
     Returns an MPS corresponding to a specific type of interval.
 
@@ -204,7 +190,7 @@ def mps_interval(
             start_cheb = np.pi / (2 ** (sites + 1))
             stop_cheb = np.pi + start_cheb
         return mps_affine(
-            mps_cos(start_cheb, stop_cheb, sites, strategy=strategy),
+            mps_cos(start_cheb, stop_cheb, sites),
             (1, -1),  # Reverse order
             (start, stop),
         )
