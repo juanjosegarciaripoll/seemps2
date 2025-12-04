@@ -22,7 +22,7 @@ more advanced (C++, Julia) versions of the algorithms.
 
 This said, the library as it stands has been used in some heavy-duty simulations
 involving tens and hundreds of qubits, and, in particular, its current iteration
-arises from two works on quantum-inspired algorithms for numerical analysis:
+arises from the following works on quantum-inspired algorithms for numerical analysis:
 
 - *Quantum-inspired algorithms for multivariate analysis: from interpolation to partial differential equations*,
   Juan José García-Ripoll, Quantum 5, 431 (2021), https://doi.org/10.22331/q-2021-04-15-431
@@ -30,6 +30,10 @@ arises from two works on quantum-inspired algorithms for numerical analysis:
 - *Global optimization of MPS in quantum-inspired numerical analysis*,
   Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll,
   https://arxiv.org/abs/2303.09430
+
+- *Chebyshev approximation and composition of functions in matrix product states for quantum-inspired numerical analysis*,
+  Juan José Rodríguez-Aldavero, Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll
+  https://arxiv.org/abs/2407.09609
 
 ## Usage
 
@@ -106,10 +110,5 @@ uv run coverage run -m unittest -v && uv run coverage lcov
 
 ## TODOs
 - Update documentation.
-- Pull request with local developments (computational tree, Hadamard sketching
-  (HaTT), etc.) and breaking changes (TT-cross, orthogonal polynomials,
-  integration, etc.).
-- Add problem-specific tools: quantile estimation with binary search (for Value
-  at Risk), MPO cumulative sum.
 - Many functions are declared to accept Interval, when they actually can only
   use RegularInterval or ChebyshevInterval
