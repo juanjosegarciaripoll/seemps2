@@ -37,7 +37,8 @@ jobs:
           data = tomllib.loads(Path("pyproject.toml").read_text())
           version = data["project"]["version"]
 
-          with open("$GITHUB_OUTPUT", "a") as f:
+          output_path = os.environ["GITHUB_OUTPUT"]
+          with open(output_path, "a") as f:
               f.write(f"version={version}\n")
           EOF
 
