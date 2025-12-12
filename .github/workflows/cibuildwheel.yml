@@ -3,6 +3,9 @@ name: Release (GitHub + PyPI)
 on:
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 env:
   CIBW_BUILD: "cp312-* cp313-* cp314-*"
   CIBW_OUTPUT_DIR: wheelhouse
@@ -177,7 +180,7 @@ jobs:
   publish:
     name: Upload to GitHub Release and PyPI
     runs-on: ubuntu-latest
-    needs: [prepare, sdist, wheels-linux, wheels-macos, wheels-windows]
+    needs: [prepare, sdist, wheels-linux]
     steps:
       - uses: actions/download-artifact@v4
 
