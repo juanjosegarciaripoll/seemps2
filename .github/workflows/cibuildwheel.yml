@@ -38,6 +38,16 @@ jobs:
           print(f"version={version}")
           EOF
 
+      - name: Create and push git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "v${{ steps.version.outputs.version }}" \
+            -m "Release v${{ steps.version.outputs.version }}"
+
+          git push origin "v${{ steps.version.outputs.version }}"
+
       - name: Create GitHub Release (draft)
         uses: softprops/action-gh-release@v2
         with:
@@ -46,7 +56,7 @@ jobs:
           draft: true
           prerelease: false
           body: |
-            ## Release v${{ steps.version.outputs.version }}
+            ## SeeMPS v${{ steps.version.outputs.version }}
 
             ### Summary
             <!-- Brief, high-level description of this release -->
@@ -55,17 +65,16 @@ jobs:
             <!-- Bullet points with the most important changes -->
             - 
             - 
-            - 
+            -
 
-            ### Changes
-            <!-- More detailed list of changes -->
-            - 
+            ## Installation
 
-            ### Notes for users
-            <!-- Breaking changes, migration notes, performance notes, etc. -->
+            ```bash
+            pip install seemps==${{ inputs.version }}
+            ```
 
-            ### Acknowledgements
-            <!-- Optional: contributors, funding, references -->
+            ## What's Changed
+            * See commit history for detailed changes
 
             ---
             _Edit these release notes before publishing._
