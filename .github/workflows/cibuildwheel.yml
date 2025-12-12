@@ -32,10 +32,13 @@ jobs:
         run: |
           uv run python - <<'EOF'
           import tomllib
-          with open('pyproject.toml', 'rb') as f:
-              data = tomllib.load(f)
-          version = data['project']['version']
-          print(f"version={version}")
+          from pathlib import Path
+
+          data = tomllib.loads(Path("pyproject.toml").read_text())
+          version = data["project"]["version"]
+
+          with open("$GITHUB_OUTPUT", "a") as f:
+              f.write(f"version={version}\n")
           EOF
 
       - name: Create and push git tag
