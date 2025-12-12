@@ -189,6 +189,9 @@ jobs:
         with:
           version: latest
 
+      - name: Install build dependencies
+        run: uv sync --dev
+
       - name: Upload to PyPI
         env:
           TWINE_USERNAME: __token__
