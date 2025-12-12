@@ -1,0 +1,211 @@
+name: Release (GitHub + PyPI)
+
+on:
+  workflow_dispatch: {}
+
+env:
+  CIBW_BUILD: "cp312-* cp313-* cp314-*"
+  CIBW_OUTPUT_DIR: wheelhouse
+
+jobs:
+  prepare:
+    name: Read version and create GitHub release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Read version from pyproject.toml
+        id: version
+        run: |
+          uv run python - <<'EOF'
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              data = tomllib.load(f)
+          version = data['project']['version']
+          print(f"version={version}")
+          EOF
+
+      - name: Create GitHub Release (draft)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          draft: true
+          prerelease: false
+          body: |
+            ## Release v${{ steps.version.outputs.version }}
+
+            ### Summary
+            <!-- Brief, high-level description of this release -->
+
+            ### Highlights
+            <!-- Bullet points with the most important changes -->
+            - 
+            - 
+            - 
+
+            ### Changes
+            <!-- More detailed list of changes -->
+            - 
+
+            ### Notes for users
+            <!-- Breaking changes, migration notes, performance notes, etc. -->
+
+            ### Acknowledgements
+            <!-- Optional: contributors, funding, references -->
+
+            ---
+            _Edit these release notes before publishing._
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Build sdist
+        run: |
+          uv pip install build
+          uv run python -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  wheels-linux:
+    name: Build wheels (Linux)
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install cibuildwheel
+        run: uv pip install cibuildwheel
+
+      - name: Build wheels
+        run: uv run python -m cibuildwheel --output-dir "$CIBW_OUTPUT_DIR"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux
+          path: wheelhouse/*.whl
+
+  wheels-macos:
+    if: false
+    name: Build wheels (macOS)
+    runs-on: macos-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install cibuildwheel
+        run: uv pip install cibuildwheel
+
+      - name: Build wheels
+        run: uv run python -m cibuildwheel --output-dir "$CIBW_OUTPUT_DIR"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos
+          path: wheelhouse/*.whl
+
+  wheels-windows:
+    if: false
+    name: Build wheels (Windows)
+    runs-on: windows-latest
+    needs: prepare
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Install cibuildwheel
+        run: uv pip install cibuildwheel
+
+      - name: Build wheels
+        run: uv run python -m cibuildwheel --output-dir "%CIBW_OUTPUT_DIR%"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows
+          path: wheelhouse/*.whl
+
+  publish:
+    name: Upload to GitHub Release and PyPI
+    runs-on: ubuntu-latest
+    needs: [prepare, sdist, wheels-linux, wheels-macos, wheels-windows]
+    steps:
+      - uses: actions/download-artifact@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Upload to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          uv pip install twine
+          uv run python -m twine upload \
+            sdist/*.tar.gz \
+            wheels-linux/*.whl \
+            wheels-macos/*.whl \
+            wheels-windows/*.whl
+
+      - name: Attach artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.prepare.outputs.version }}
+          files: |
+            sdist/*.tar.gz
+            wheels-linux/*.whl
+            wheels-macos/*.whl
+            wheels-windows/*.whl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
