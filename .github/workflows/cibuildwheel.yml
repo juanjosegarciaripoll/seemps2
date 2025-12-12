@@ -202,9 +202,9 @@ jobs:
           uv pip install twine
           uv run python -m twine upload \
             sdist/*.tar.gz \
-            wheels-linux/*.whl \
-            wheels-macos/*.whl \
-            wheels-windows/*.whl
+            wheels-linux/*.whl
+#            wheels-macos/*.whl \
+#            wheels-windows/*.whl
 
       - name: Attach artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -217,4 +217,5 @@ jobs:
 #            wheels-windows/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
