@@ -165,7 +165,6 @@ jobs:
           path: wheelhouse/*.whl
 
   wheels-windows:
-    if: false
     name: Build wheels (Windows)
     runs-on: windows-latest
     needs: prepare
@@ -194,7 +193,7 @@ jobs:
   publish:
     name: Upload to GitHub Release and PyPI
     runs-on: ubuntu-latest
-    needs: [prepare, sdist, wheels-linux]
+    needs: [prepare, sdist, wheels-linux, wheels-windows]
     steps:
       - uses: actions/checkout@v4
 
@@ -216,9 +215,9 @@ jobs:
           uv pip install twine
           uv run python -m twine upload \
             sdist/*.tar.gz \
-            wheels-linux/*.whl
+            wheels-linux/*.whl \
+            wheels-windows/*.whl
 #            wheels-macos/*.whl \
-#            wheels-windows/*.whl
 
       - name: Attach artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -227,8 +226,8 @@ jobs:
           files: |
             sdist/*.tar.gz
             wheels-linux/*.whl
+            wheels-windows/*.whl
 #            wheels-macos/*.whl
-#            wheels-windows/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
