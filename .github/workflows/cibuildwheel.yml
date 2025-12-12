@@ -213,7 +213,8 @@ jobs:
           files: |
             sdist/*.tar.gz
             wheels-linux/*.whl
-            wheels-macos/*.whl
-            wheels-windows/*.whl
+#            wheels-macos/*.whl
+#            wheels-windows/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
