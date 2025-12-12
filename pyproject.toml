@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seemps"
-version = "2.3.2"
+version = "2.9.1"
 description = "Matrix Product State library for quantum simulation and numerical analysis"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     {name = "Juan José García Ripoll", email = "juanjose.garciaripoll@gmail.com"},
     {name = "Paula García Molina"},
@@ -27,11 +28,12 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
@@ -45,7 +47,7 @@ requires-python = ">= 3.11"
 [project.urls]
 "Homepage" = "https://github.com/juanjosegarciaripoll/seemps2"
 "Repository" = "https://github.com/juanjosegarciaripoll/seemps2"
-"Documentation" = "https://seemps2.hbar.es/"
+"Documentation" = "https://seemps.readthedocs.io/"
 "Bug Tracker" = "https://github.com/juanjosegarciaripoll/seemps2/issues"
 "Changelog" = "https://github.com/juanjosegarciaripoll/seemps2/releases"
 
