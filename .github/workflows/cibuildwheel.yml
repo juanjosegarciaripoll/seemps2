@@ -31,6 +31,7 @@ jobs:
         id: version
         run: |
           uv run python - <<'EOF'
+          import os
           import tomllib
           from pathlib import Path
 
