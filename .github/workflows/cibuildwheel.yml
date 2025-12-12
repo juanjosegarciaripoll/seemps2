@@ -169,6 +169,9 @@ jobs:
     runs-on: windows-latest
     needs: prepare
     steps:
+      - name: Set up MSVC build environment
+        uses: ilammy/msvc-dev-cmd@v1
+
       - uses: actions/checkout@v4
 
       - name: Install uv
