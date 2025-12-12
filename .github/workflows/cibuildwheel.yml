@@ -24,8 +24,8 @@ jobs:
         with:
           version: latest
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Install build dependencies
+        run: uv sync --dev
 
       - name: Read version from pyproject.toml
         id: version
@@ -84,8 +84,8 @@ jobs:
         with:
           version: latest
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Install build dependencies
+        run: uv sync --dev
 
       - name: Build sdist
         run: |
@@ -109,8 +109,8 @@ jobs:
         with:
           version: latest
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Install build dependencies
+        run: uv sync --dev
 
       - name: Install cibuildwheel
         run: uv pip install cibuildwheel
@@ -136,8 +136,8 @@ jobs:
         with:
           version: latest
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Install build dependencies
+        run: uv sync --dev
 
       - name: Install cibuildwheel
         run: uv pip install cibuildwheel
@@ -163,9 +163,9 @@ jobs:
         with:
           version: latest
 
-      - name: Set up Python
-        run: uv python install 3.11
-
+      - name: Install build dependencies
+        run: uv sync --dev
+  
       - name: Install cibuildwheel
         run: uv pip install cibuildwheel
 
