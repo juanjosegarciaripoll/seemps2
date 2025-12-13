@@ -150,15 +150,19 @@ jobs:
         with:
           version: latest
 
-      - name: Build wheel using uv
+      - name: Build wheels with uv
+        run: uv build --python=${{ matrix.python-version }}
+
+      - name: Collect wheel
         run: |
-          uv build --python=${{ matrix.python-version }}
-          ls dist/*
+          mkdir -p wheelhouse
+          mv dist/*.whl wheelhouse/
+          ls wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-macos
-          path: dist/*.whl
+          path: wheelhouse/*.whl
 
   wheels-windows:
     name: Build wheels (Windows)
@@ -178,15 +182,19 @@ jobs:
         with:
           version: latest
 
-      - name: Build wheel using uv
+      - name: Build wheels with uv
+        run: uv build --python=${{ matrix.python-version }}
+
+      - name: Collect wheel
         run: |
-          uv build --python=${{ matrix.python-version }}
-          ls dist/*
+          mkdir -p wheelhouse
+          mv dist/*.whl wheelhouse/
+          ls wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-windows
-          path: dist/*.whl
+          path: wheelhouse/*.whl
 
   publish:
     name: Upload to GitHub Release and PyPI
