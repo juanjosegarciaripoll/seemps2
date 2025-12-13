@@ -205,9 +205,6 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-           pattern: |
-             wheels-*
-             sdist
            merge-multiple: true
            path: dist
 
@@ -238,5 +235,6 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
 
