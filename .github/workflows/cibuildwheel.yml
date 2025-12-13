@@ -150,19 +150,15 @@ jobs:
         with:
           version: latest
 
-      - name: Install build dependencies
-        run: uv sync --dev
-
-      - name: Install cibuildwheel
-        run: uv pip install cibuildwheel
-
-      - name: Build wheels
-        run: uv run python -m cibuildwheel --output-dir "$CIBW_OUTPUT_DIR"
+      - name: Build wheel using uv
+        run: |
+          uv build --python=${{ matrix.python-version }}
+          ls dist/*
 
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-macos
-          path: wheelhouse/*.whl
+          path: dist/*.whl
 
   wheels-windows:
     name: Build wheels (Windows)
@@ -182,18 +178,15 @@ jobs:
         with:
           version: latest
 
-      - name: Install build dependencies
-        run: uv build --python=${{ matrix.python-version }}
-
-      - name: Collect wheel
+      - name: Build wheel using uv
         run: |
-          mkdir -p wheelhouse
-          mv dist/*.whl wheelhouse/
+          uv build --python=${{ matrix.python-version }}
+          ls dist/*
 
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-windows
-          path: wheelhouse/*.whl
+          path: dist/*.whl
 
   publish:
     name: Upload to GitHub Release and PyPI
