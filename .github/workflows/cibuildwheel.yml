@@ -68,8 +68,8 @@ jobs:
 
             ### Highlights
             <!-- Bullet points with the most important changes -->
-            - 
-            - 
+            -
+            -
             -
 
             ## Installation
@@ -168,6 +168,9 @@ jobs:
     name: Build wheels (Windows)
     runs-on: windows-latest
     needs: prepare
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
     steps:
       - name: Set up MSVC build environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -180,13 +183,15 @@ jobs:
           version: latest
 
       - name: Install build dependencies
-        run: uv sync --dev
-  
-      - name: Install cibuildwheel
-        run: uv pip install cibuildwheel
+        run: uv build --python=${{ matrix.python-version }}
 
       - name: Build wheels
         run: uv run python -m cibuildwheel --output-dir "%CIBW_OUTPUT_DIR%"
+
+      - name: Collect wheel
+        run: |
+          mkdir -p wheelhouse
+          mv dist/*.whl wheelhouse/
 
       - uses: actions/upload-artifact@v4
         with:
