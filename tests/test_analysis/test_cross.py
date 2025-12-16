@@ -2,8 +2,6 @@ import numpy as np
 from abc import abstractmethod
 import unittest
 from numpy.typing import NDArray
-
-import seemps
 from seemps.state import MPS
 from seemps.analysis.mesh import (
     Mesh,
@@ -23,11 +21,8 @@ from seemps.analysis.cross import (
 from seemps.analysis.cross.cross import maxvol_square, CrossResults
 from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
 from seemps.truncate.simplify_mpo import mps_as_mpo
-
 from .tools_analysis import reorder_tensor
 from ..tools import TestCase
-
-seemps.tools.DEBUG = 10
 
 
 def gaussian_setup_mps(dims, n=5, a=-1, b=1):
