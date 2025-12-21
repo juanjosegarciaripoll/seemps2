@@ -307,7 +307,7 @@ class LagrangeBuilder:
         A = np.zeros((self.D, 2, 1))
         for σ in range(2):
             for i in range(self.D):
-                A[i, σ, 0] = self.chebyshev_cardinal(np.array([0.5 * σ]), i, use_logs)
+                A[i, σ, :] = self.chebyshev_cardinal(np.array([0.5 * σ]), i, use_logs)
         return A
 
     def build_center_sparse_core(self) -> csr_array:
