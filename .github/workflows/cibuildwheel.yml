@@ -141,7 +141,6 @@ jobs:
           path: wheelhouse/*.whl
 
   wheels-macos:
-    if: false
     name: Build wheels (macOS)
     runs-on: macos-latest
     needs: prepare
