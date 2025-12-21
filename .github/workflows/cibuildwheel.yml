@@ -145,6 +145,9 @@ jobs:
     name: Build wheels (macOS)
     runs-on: macos-latest
     needs: prepare
+    strategy:
+      matrix:
+        python-version: ["3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
 
@@ -152,10 +155,10 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: latest
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
 
       - name: Build wheels with uv
-        run: uv build --python=${{ matrix.python-version }}
+        run: uv build
 
       - name: Collect wheel
         run: |
@@ -185,10 +188,10 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: latest
-          python-version: "3.13"
+          python-version: ${{ matrix.python-version }}
 
       - name: Build wheels with uv
-        run: uv build --python=${{ matrix.python-version }}
+        run: uv build
 
       - name: Collect wheel
         run: |
@@ -204,7 +207,7 @@ jobs:
   publish:
     name: Upload to GitHub Release and PyPI
     runs-on: ubuntu-latest
-    needs: [prepare, sdist, wheels-linux, wheels-windows]
+    needs: [prepare, sdist, wheels-linux, wheels-macos, wheels-windows]
     steps:
       - uses: actions/checkout@v4
 
