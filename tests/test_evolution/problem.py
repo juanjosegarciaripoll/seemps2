@@ -81,9 +81,7 @@ class RKTypeEvolutionTestcase(EvolutionTestCase):
 
         E = H.expectation(mps)
         phase = self.accummulated_phase(E, dt, steps)
-        assert isinstance(final, MPS)
-        print(final.to_vector())
-        print(phase * mps.to_vector(), flush=True)
+        self.assertIsInstance(final, MPS)
         self.assertSimilar(final, phase * mps)
 
     def accummulated_phase(self, E, dt, steps):
