@@ -74,21 +74,27 @@ def delete_directories(patterns: list[str], root: str = "."):
 
 def delete_files(patterns: list[str], root: str = "."):
     regexp = [re.compile(p) for p in patterns]
-    for root, _, files in os.walk("."):
+    for actual_root, _, files in os.walk(root):
         for f in files:
             if any(p.match(f) for p in regexp):
-                path = root + "/" + f
+                path = actual_root + "/" + f
                 print(f"Removing {path}")
                 os.remove(path)
 
 
 def clean() -> None:
-    for path in ["build", "dist"]:
+    for path in [
+        "build",
+        "dist",
+        "_site",
+        "docs/generated",
+        "docs/algorithms/generated",
+    ]:
         if os.path.exists(path):
             print(f"Removing {path}")
             shutil.rmtree(path)
     delete_directories(["seemps.egg-info", "__pycache__"])
-    delete_files([r".*\.so", r".*\.pyd", r".*\.pyc"])
+    delete_files([r".*\.so", r".*\.pyd", r".*\.pyc"], root="src")
 
 
 def run_tests(verbose=False) -> bool:
@@ -99,6 +105,13 @@ def run_tests(verbose=False) -> bool:
     return run(
         valgrind + uv_run + python + ["-m", "unittest", "-fv" if verbose else "-f"]
     )
+
+
+def build_documentation(verbose=False) -> bool:
+    for path in ["_site", "docs/generated", "docs/algorithms/generated"]:
+        if os.path.exists(path):
+            shutil.rmtree(path)
+    return run(uv_run + ["sphinx-build", "-q", "docs", "_site"])
 
 
 def install_hooks() -> bool:
@@ -174,6 +187,7 @@ parser.add_argument("--tests", action="store_true", help="Run unit tests")
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
 parser.add_argument("--ruff", action="store_true", help="Run ruff")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
+parser.add_argument("--docs", action="store_true", help="Run Sphynx")
 parser.add_argument("--pydocstyle", action="store_true", help="Run pydocstyle")
 parser.add_argument("--darglint", action="store_true", help="Run darglint")
 
@@ -214,6 +228,8 @@ if args.build:
 if args.install:
     if not install():
         raise Exception("Install failed")
+if args.docs:
+    build_documentation()
 if args.check:
     if not check(args.verbose):
         raise Exception("Tests failed")
