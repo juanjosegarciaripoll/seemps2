@@ -126,8 +126,16 @@ class MPO(TensorArray):
             return MPOList([self.copy() for _ in range(n)])
         raise InvalidOperation("**", n, self)
 
-    # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
+        """Return the physical dimensions (Deprecated, see :meth:`dimensions`)."""
+        warnings.warn(
+            "MPO*.dimensions is deprecated. Use MPO*.physical_dimensions.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.physical_dimensions()
+
+    def physical_dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPO."""
         return [A.shape[2] for A in self]
 
@@ -436,9 +444,17 @@ class MPOList(object):
         """Return the transpose of this operator."""
         return MPOList([A.T for A in reversed(self.mpos)], self.strategy)
 
-    # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
-        """Return the physical dimensions of the MPOList."""
+        """Return the physical dimensions (Deprecated, see :meth:`dimensions`)."""
+        warnings.warn(
+            "MPO*.dimensions is deprecated. Use MPO*.physical_dimensions.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.physical_dimensions()
+
+    def physical_dimensions(self) -> list[int]:
+        """Return the physical dimensions of the MPOList (Deprecated, see :meth:`dimensions`)."""
         return self.mpos[0].dimensions()
 
     def tomatrix(self) -> DenseOperator:
