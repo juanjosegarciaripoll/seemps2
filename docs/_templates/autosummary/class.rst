@@ -2,12 +2,31 @@
 
 {% block methods %}
 {% if methods %}
-{{ super() }}
+Methods
+=======
+
+.. autosummary::
+
+{% for item in methods %}
+{% if item not in inherited_members %}
+   ~{{ name }}.{{ item }}
+{% endif %}
+{% endfor %}
 {% endif %}
 {% endblock %}
 
 {% block attributes %}
 {% if attributes %}
-{{ super() }}
+Attributes
+==========
+
+.. autosummary::
+   :nosignatures:
+
+{% for item in attributes %}
+{% if item not in inherited_members %}
+   ~{{ name }}.{{ item }}
+{% endif %}
+{% endfor %}
 {% endif %}
 {% endblock %}
