@@ -101,6 +101,7 @@ values in a convenient way.
     :toctree: generated/
 
     ~seemps.state.scprod
+    ~seemps.state.vdot
     ~seemps.state.MPS.norm
     ~seemps.state.MPS.norm_squared
     ~seemps.expectation.expectation1

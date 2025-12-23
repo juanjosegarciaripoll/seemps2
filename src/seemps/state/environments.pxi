@@ -84,6 +84,21 @@ def _join_environments(rhoL: Environment, rhoR: Environment) -> Weight:
                                     cnp.PyArray_Ravel(cnp.PyArray_SwapAxes(rhoR, 0, 1),
                                                       cnp.NPY_CORDER))
 
+cdef object _scprod(object bra, object ket):
+    cdef:
+        list A = bra._data
+        list B = ket._data
+        Py_ssize_t i
+        Py_ssize_t Lbra = cpython.PyList_GET_SIZE(A)
+        Py_ssize_t Lket = cpython.PyList_GET_SIZE(B)
+    if Lbra != Lket:
+        raise ValueError("Invalid arguments to scprod")
+    rho = _empty_environment
+    for i in range(Lbra):
+        rho = __update_left_environment(<cnp.ndarray>cpython.PyList_GET_ITEM(A, i),
+                                        <cnp.ndarray>cpython.PyList_GET_ITEM(B, i), rho)
+    return __end_environment(rho)
+
 def scprod(object bra, object ket) -> Weight:
     """Compute the scalar product between matrix product states
     :math:`\\langle\\xi|\\psi\\rangle`.
@@ -100,16 +115,9 @@ def scprod(object bra, object ket) -> Weight:
     float | complex
         Scalar product.
     """
-    cdef:
-        list A = bra._data
-        list B = ket._data
-        Py_ssize_t i
-        Py_ssize_t Lbra = cpython.PyList_GET_SIZE(A)
-        Py_ssize_t Lket = cpython.PyList_GET_SIZE(B)
-    if Lbra != Lket:
-        raise ValueError("Invalid arguments to scprod")
-    rho = _empty_environment
-    for i in range(Lbra):
-        rho = __update_left_environment(<cnp.ndarray>cpython.PyList_GET_ITEM(A, i),
-                                        <cnp.ndarray>cpython.PyList_GET_ITEM(B, i), rho)
-    return __end_environment(rho)
+    return _scprod(bra, ket)
+
+def vdot(object bra, object ket) -> Weight:
+    """Alias for :function:`seemps.state.scprod`"""
+    return _scprod(bra, ket)
+

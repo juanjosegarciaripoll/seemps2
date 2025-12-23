@@ -22,7 +22,7 @@ from .factories import (
     W,
 )
 from . import entropies, sampling
-from .environments import scprod
+from .environments import scprod, vdot
 
 __all__ = [
     "Strategy",
@@ -48,4 +48,5 @@ __all__ = [
     "to_mps",
     "W",
     "scprod",
+    "vdot",
 ]

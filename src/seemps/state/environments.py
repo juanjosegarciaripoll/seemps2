@@ -8,6 +8,7 @@ from .core import (
     _end_environment,
     _join_environments,
     scprod,
+    vdot,
 )
 
 
