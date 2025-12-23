@@ -9,7 +9,7 @@ The conjugate gradient method solves systems of linear equations whose matrix is
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.cgs.cgs
+    ~seemps.solve.cgs
 
 
 

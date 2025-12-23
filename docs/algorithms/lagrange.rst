@@ -18,6 +18,6 @@ Finally, the interpolative constructions can be developed on top of a local Lagr
 .. autosummary::
     :toctree: generated/
 
-    ~lagrange_basic
-    ~lagrange_rank_revealing
-    ~lagrange_local_rank_revealing
+    ~mps_lagrange_chebyshev_basic
+    ~mps_lagrange_chebyshev_rr
+    ~mps_lagrange_chebyshev_lrr

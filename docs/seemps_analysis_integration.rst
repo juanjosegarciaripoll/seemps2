@@ -25,9 +25,8 @@ These are useful to integrate equispaced discretizations, each of increasing ord
 .. autosummary::
     :toctree: generated/
 
-    ~mps_midpoint
     ~mps_trapezoidal
-    ~mps_simpson
+    ~mps_simpson38
     ~mps_fifth_order
 
 Clenshaw-Curtis quadratures

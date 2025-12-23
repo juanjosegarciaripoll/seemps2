@@ -28,13 +28,17 @@ These methods are useful to compose MPS or MPO representations of black-box func
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.analysis.cross.black_box.BlackBoxLoadMPS
-    ~seemps.analysis.cross.black_box.BlackBoxLoadTT
-    ~seemps.analysis.cross.black_box.BlackBoxLoadMPO
-    ~seemps.analysis.cross.black_box.BlackBoxComposeMPS
+    ~seemps.analysis.cross.BlackBoxLoadMPS
+    ~seemps.analysis.cross.BlackBoxLoadMPO
+    ~seemps.analysis.cross.BlackBoxComposeMPS
+    ~seemps.analysis.cross.cross_interpolation
     ~seemps.analysis.cross.cross_maxvol
     ~seemps.analysis.cross.cross_dmrg
     ~seemps.analysis.cross.cross_greedy
+    ~seemps.analysis.cross.CrossStrategy
+    ~seemps.analysis.cross.CrossStrategyMaxvol
+    ~seemps.analysis.cross.CrossStrategyDMRG
+    ~seemps.analysis.cross.CrossStrategyGreedy
 
 Polynomial expansions
 ---------------------
@@ -57,9 +61,9 @@ See :doc:`algorithms/lagrange`.
 .. autosummary::
     :toctree: generated/
 
-    ~seemps.analysis.lagrange.lagrange_basic
-    ~seemps.analysis.lagrange.lagrange_rank_revealing
-    ~seemps.analysis.lagrange.lagrange_local_rank_revealing
+    ~seemps.analysis.lagrange.mps_lagrange_chebyshev_basic
+    ~seemps.analysis.lagrange.mps_lagrange_chebyshev_rr
+    ~seemps.analysis.lagrange.mps_lagrange_chebyshev_lrr
 
 Generic polynomial constructions
 --------------------------------
