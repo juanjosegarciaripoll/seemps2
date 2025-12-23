@@ -63,13 +63,21 @@ numpydoc_xref_param_type = True
 numpydoc_show_class_members = False  # https://stackoverflow.com/a/34604043/5201771
 numpydoc_attributes_as_param_list = False
 
+autoclass_content = "both"
+# TODO: Fix type hints. They should show somewhere.
 autodoc_typehints = "none"
+autodoc_preserve_defaults = True
 autodoc_type_aliases = {
     "Operator": "Operator",
     "Vector": "Vector",
     "VectorLike": "VectorLike",
     "python:list": "list",
     "Weight": "Weight",
+}
+autodoc_default_options = {
+    "no-value": True,
+    "inherited-members": False,
+    "show-inheritance": True,
 }
 
 intersphinx_mapping = {
