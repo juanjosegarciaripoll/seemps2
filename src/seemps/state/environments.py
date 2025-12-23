@@ -58,6 +58,7 @@ __all__ = [
     "_end_environment",
     "_join_environments",
     "scprod",
+    "vdot",
     "begin_mpo_environment",
     "update_left_mpo_environment",
     "update_right_mpo_environment",
