@@ -9,8 +9,6 @@ from seemps.analysis.expansion import (
     ChebyshevExpansion,
     LegendreExpansion,
     PowerExpansion,
-    mps_polynomial_expansion,
-    mpo_polynomial_expansion,
 )
 from seemps.analysis.operators import x_mpo
 from seemps.typing import Vector
@@ -20,7 +18,6 @@ from .tools_interpolation import gaussian
 
 
 class TestChebyshevCoefficients(TestCase):
-
     def test_expansion_rejects_wrong_literal(self):
         with self.assertRaises(TypeError):
             ChebyshevExpansion.interpolate(np.exp, interpolated_nodes="else")  # type: ignore
@@ -58,13 +55,13 @@ class TestChebyshevCoefficients(TestCase):
         self.assertTrue(coeffs[-1] <= tolerance)
 
         expansion = ChebyshevExpansion(coeffs, (-2, 2))
-        mps = mps_polynomial_expansion(expansion, initial=domain, strategy=NO_TRUNCATION)
+        mps = expansion.to_mps(initial=domain, strategy=NO_TRUNCATION)
         y_vec = gaussian(x)
         self.assertSimilar(mps, y_vec, atol=tolerance)
 
     def test_estimate_order_fails_when_max_order_is_exceeded(self):
         with self.assertRaises(ValueError):
-            ChebyshevExpansion.estimate_order(gaussian, -2,2, max_order=10)
+            ChebyshevExpansion.estimate_order(gaussian, -2, 2, max_order=10)
 
     def assert_similar_coefficients(
         self,
@@ -157,12 +154,8 @@ class TestChebyshevMPS(TestCase):
         x = interval.to_vector()
 
         expansion = ChebyshevExpansion.interpolate(f, a, b, order)
-        mps_cheb_clen = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=True
-        )
-        mps_cheb_poly = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=False
-        )
+        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
         self.assertSimilar(f(x), mps_cheb_clen)
         self.assertSimilar(f(x), mps_cheb_poly)
 
@@ -174,12 +167,8 @@ class TestChebyshevMPS(TestCase):
         x = interval.to_vector()
 
         expansion = ChebyshevExpansion.interpolate(f, a, b, order).deriv(1)
-        mps_cheb_clen = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=True
-        )
-        mps_cheb_poly = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=False
-        )
+        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
         self.assertSimilar(df(x), mps_cheb_clen)
         self.assertSimilar(df(x), mps_cheb_poly)
 
@@ -190,12 +179,8 @@ class TestChebyshevMPS(TestCase):
         x = interval.to_vector()
 
         expansion = ChebyshevExpansion.interpolate(F, a, b, order)
-        mps_cheb_clen = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=True
-        )
-        mps_cheb_poly = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=False
-        )
+        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
         self.assertSimilar(F(x), mps_cheb_clen)
         self.assertSimilar(F(x), mps_cheb_poly)
 
@@ -207,12 +192,8 @@ class TestChebyshevMPS(TestCase):
         x = interval.to_vector()
 
         expansion = ChebyshevExpansion.interpolate(f, a, b, order).integ(1, lbnd=a)
-        mps_cheb_clen = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=True
-        )
-        mps_cheb_poly = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=False
-        )
+        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
         self.assertSimilar(F(x), mps_cheb_clen)
         self.assertSimilar(F(x), mps_cheb_poly)
 
@@ -226,11 +207,11 @@ class TestChebyshevMPS(TestCase):
 
         strategy = DEFAULT_STRATEGY.replace(tolerance=1e-20)
         expansion = ChebyshevExpansion.interpolate(f, -1, 5, 30)
-        mps_cheb_clen = mps_polynomial_expansion(
-            expansion, initial=mps_x_plus_y, strategy=strategy, clenshaw=True
+        mps_cheb_clen = expansion.to_mps(
+            initial=mps_x_plus_y, strategy=strategy, clenshaw=True
         )
-        mps_cheb_poly = mps_polynomial_expansion(
-            expansion, initial=mps_x_plus_y, strategy=strategy, clenshaw=False
+        mps_cheb_poly = expansion.to_mps(
+            initial=mps_x_plus_y, strategy=strategy, clenshaw=False
         )
 
         X, Y = np.meshgrid(ix.to_vector(), iy.to_vector())
@@ -250,8 +231,8 @@ class TestChebyshevMPO(TestCase):
 
         f = lambda x: np.sin(-(x**2))  # noqa: E731
         expansion = ChebyshevExpansion.interpolate(f, a, b, order=30)
-        mpo_leg_clen = mpo_polynomial_expansion(expansion, mpo_x, clenshaw=True)
-        mpo_leg_poly = mpo_polynomial_expansion(expansion, mpo_x, clenshaw=False)
+        mpo_leg_clen = expansion.to_mpo(mpo_x, clenshaw=True)
+        mpo_leg_poly = expansion.to_mpo(mpo_x, clenshaw=False)
 
         I = MPS([np.ones((1, 2, 1))] * n)
         y_clen = mpo_leg_clen.apply(I)
@@ -271,12 +252,8 @@ class TestLegendreMPS(TestCase):
         x = interval.to_vector()
 
         expansion = LegendreExpansion.project(f, a, b, order)
-        mps_leg_clen = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=True
-        )
-        mps_leg_poly = mps_polynomial_expansion(
-            expansion, initial=interval, clenshaw=False
-        )
+        mps_leg_clen = expansion.to_mps(initial=interval, clenshaw=True)
+        mps_leg_poly = expansion.to_mps(initial=interval, clenshaw=False)
 
         self.assertSimilar(f(x), mps_leg_clen)
         self.assertSimilar(f(x), mps_leg_poly)
@@ -291,14 +268,12 @@ class TestLegendreMPS(TestCase):
 
         strategy = DEFAULT_STRATEGY.replace(tolerance=1e-20)
         expansion = LegendreExpansion.project(f, -1, 5, 30)
-        mps_leg_clen = mps_polynomial_expansion(
-            expansion,
+        mps_leg_clen = expansion.to_mps(
             initial=mps_x_plus_y,
             strategy=strategy,
             clenshaw=True,
         )
-        mps_leg_poly = mps_polynomial_expansion(
-            expansion,
+        mps_leg_poly = expansion.to_mps(
             initial=mps_x_plus_y,
             strategy=strategy,
             clenshaw=False,
@@ -321,8 +296,8 @@ class TestLegendreMPO(TestCase):
 
         f = lambda x: np.sin(-(x**2))  # noqa: E731
         expansion = LegendreExpansion.project(f, a, b, order=30)
-        mpo_leg_clen = mpo_polynomial_expansion(expansion, mpo_x, clenshaw=True)
-        mpo_leg_poly = mpo_polynomial_expansion(expansion, mpo_x, clenshaw=False)
+        mpo_leg_clen = expansion.to_mpo(mpo_x, clenshaw=True)
+        mpo_leg_poly = expansion.to_mpo(mpo_x, clenshaw=False)
 
         I = MPS([np.ones((1, 2, 1))] * n)
         y_clen = mpo_leg_clen.apply(I)
@@ -343,7 +318,7 @@ class TestPowerExpansion(TestCase):
         y = fn(x)
 
         expansion = PowerExpansion(coeffs, (a, b))
-        mps = mps_polynomial_expansion(expansion, initial=interval)
+        mps = expansion.to_mps(initial=interval)
         self.assertSimilar(y, mps)
 
     def test_mpo_expansion(self):
@@ -359,8 +334,8 @@ class TestPowerExpansion(TestCase):
 
         expansion = PowerExpansion(coeffs, (a, b))
         mpo_x = x_mpo(n, a, dx)
-        mpo_clen = mpo_polynomial_expansion(expansion, mpo_x, clenshaw=True)
-        mpo_poly = mpo_polynomial_expansion(expansion, mpo_x, clenshaw=False)
+        mpo_clen = expansion.to_mpo(mpo_x, clenshaw=True)
+        mpo_poly = expansion.to_mpo(mpo_x, clenshaw=False)
 
         I = MPS([np.ones((1, 2, 1))] * n)
         mps_clen = mpo_clen.apply(I)

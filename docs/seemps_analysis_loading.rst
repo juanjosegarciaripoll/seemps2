@@ -14,7 +14,7 @@ These methods are useful to construct MPS corresponding to domain discretization
 
 .. autosummary::
     :toctree: generated/
-    
+
     ~seemps.analysis.mesh.RegularInterval
     ~seemps.analysis.mesh.ChebyshevInterval
     ~seemps.analysis.factories.mps_interval
@@ -27,7 +27,7 @@ These methods are useful to compose MPS or MPO representations of black-box func
 
 .. autosummary::
     :toctree: generated/
-    
+
     ~seemps.analysis.cross.black_box.BlackBoxLoadMPS
     ~seemps.analysis.cross.black_box.BlackBoxLoadTT
     ~seemps.analysis.cross.black_box.BlackBoxLoadMPO
@@ -35,20 +35,18 @@ These methods are useful to compose MPS or MPO representations of black-box func
     ~seemps.analysis.cross.cross_maxvol
     ~seemps.analysis.cross.cross_dmrg
     ~seemps.analysis.cross.cross_greedy
-    
-Chebyshev expansions
---------------------
+
+Polynomial expansions
+---------------------
 These methods are useful to compose univariate function on generic initial MPS or MPO and compute MPS approximations of functions.
-See :doc:`algorithms/chebyshev`.
 
 .. autosummary::
     :toctree: generated/
-    
-    ~seemps.analysis.chebyshev.cheb2mps
-    ~seemps.analysis.chebyshev.cheb2mpo
-    ~seemps.analysis.chebyshev.interpolation_coefficients
-    ~seemps.analysis.chebyshev.projection_coefficients
-    ~seemps.analysis.chebyshev.estimate_order
+
+    ~seemps.analysis.expansion.PolynomialExpansion
+    ~seemps.analysis.expansion.ChebyshevExpansion
+    ~seemps.analysis.expansion.PowerExpansion
+    ~seemps.analysis.expansion.LegendreExpansion
 
 
 Multiscale interpolative constructions
@@ -58,7 +56,7 @@ See :doc:`algorithms/lagrange`.
 
 .. autosummary::
     :toctree: generated/
-    
+
     ~seemps.analysis.lagrange.lagrange_basic
     ~seemps.analysis.lagrange.lagrange_rank_revealing
     ~seemps.analysis.lagrange.lagrange_local_rank_revealing
@@ -69,5 +67,5 @@ These methods are useful to construct generic polynomials in the monomial basis 
 
 .. autosummary::
     :toctree: generated/
-    
+
     ~seemps.analysis.polynomials.mps_from_polynomial
