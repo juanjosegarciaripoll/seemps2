@@ -141,11 +141,16 @@ class MPO(TensorArray):
 
     @property
     def T(self) -> MPO:
+        """Return the transpose of this operator."""
         return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
 
     def tomatrix(self) -> DenseOperator:
-        """Convert this MPO to a dense or sparse matrix."""
-        warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
+        """Convert this MPO to a dense or sparse matrix (Deprecated, see :meth:`to_matrix`)."""
+        warnings.warn(
+            "MPO.tomatrix() has been renamed to_matrix()",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.to_matrix()
 
     def to_matrix(self) -> DenseOperator:
@@ -335,6 +340,17 @@ class MPO(TensorArray):
         return join_mpo_environments(left, right)
 
     def reverse(self) -> MPO:
+        """Reverse the sites and tensors.
+
+        Creates a new matrix product operator where tensors `0, 1, ..., N-1`
+        are mapped to `N-1, N-2, ..., 0`. For the MPO to be consistent, this
+        also implies reversing the order of the intermediate indices. Thus,
+        if we label as `A` and `B` the tensors of the original and of the
+        reversed MPOs, we have
+
+        .. math::
+            B_{a_{n-1},i_n,j_n,a_n} = A_{a_{N-n-1},i_{N-n-1},j_{N-n-1},a_{N-n-2}}
+        """
         return MPO(
             [
                 np.moveaxis(op, [0, 1, 2, 3], [3, 1, 2, 0])
@@ -417,6 +433,7 @@ class MPOList(object):
 
     @property
     def T(self) -> MPOList:
+        """Return the transpose of this operator."""
         return MPOList([A.T for A in reversed(self.mpos)], self.strategy)
 
     # TODO: Rename to physical_dimensions()
@@ -425,8 +442,12 @@ class MPOList(object):
         return self.mpos[0].dimensions()
 
     def tomatrix(self) -> DenseOperator:
-        """Convert this MPO to a dense or sparse matrix."""
-        warnings.warn("MPO.tomatrix() has been renamed to_matrix()")
+        """Convert this MPO to a dense or sparse matrix (Deprecated, see :meth:`to_matrix`)."""
+        warnings.warn(
+            "MPO.tomatrix() has been renamed to_matrix()",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.to_matrix()
 
     def to_matrix(self) -> DenseOperator:
@@ -589,6 +610,7 @@ class MPOList(object):
         return scprod(bra, self.apply(ket))  # type: ignore
 
     def reverse(self) -> MPOList:
+        """Reverse the sites (see :meth:`~seemps.operators.MPO.reverse`)."""
         return MPOList([o.reverse() for o in self.mpos], self.strategy)
 
 

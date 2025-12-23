@@ -64,7 +64,12 @@ class NNHamiltonian(ABC):
         return sp.csr_matrix(tuple(), shape=(d1 * d2, d1 * d2))
 
     def tomatrix(self, t: float = 0.0) -> Operator:
-        warnings.warn("Method Hamiltonian.tomatrix() has been renamed to_matrix()")
+        """Convert a Hamiltonian to matrix form (Deprecated, see :meth:`to_matrix`)"""
+        warnings.warn(
+            "Method Hamiltonian.tomatrix() has been renamed to_matrix()",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.to_matrix(t)
 
     def to_matrix(self, t: float = 0.0) -> SparseOperator:
