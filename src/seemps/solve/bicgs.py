@@ -44,7 +44,7 @@ def bicgs_solve(
         Truncation strategy to keep bond dimensions in check. Defaults to
         `DEFAULT_STRATEGY`, which is very strict.
 
-    Results
+    Returns
     -------
     MPS
         Approximate solution to :math:`A ψ = b`

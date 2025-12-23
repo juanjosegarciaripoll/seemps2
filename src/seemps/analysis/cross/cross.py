@@ -140,8 +140,8 @@ class CrossInterpolation:
         row_major : bool, default=False
             Whether to compute the Cartesian product in row-major order.
 
-        Example
-        -------
+        Examples
+        --------
         >>> combine_indices(np.array([[1, 2, 3], [4, 5, 6]]), np.array([[0], [1]]))
         array([[1, 2, 3, 0],
             [1, 2, 3, 1],

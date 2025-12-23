@@ -182,7 +182,7 @@ def tdvp(
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.
 
-    Results
+    Returns
     -------
     result : MPS | list[Any]
         Final state after evolution or values collected by callback

@@ -125,7 +125,7 @@ def radau(
     r"""Solve a Schrödinger equation using an implicit Radau IIA method with either
     3 or 5 stages (order 5 or 9, respectively).
 
-    See :function:`seemps.evolution.euler` for a description of the
+    See :func:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
 
     Parameters

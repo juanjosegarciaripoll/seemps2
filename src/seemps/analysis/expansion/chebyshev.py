@@ -9,17 +9,15 @@ from .expansion import OrthogonalExpansion, ScalarFunction
 
 
 class ChebyshevExpansion(OrthogonalExpansion):
-    """
+    r"""
     Expansion in the Chebyshev basis.
 
-    The Chebyshev polynomials Tₖ(x) are orthogonal on [−1, 1] with weight
-    (1−x²)^(-1/2). They are widely used in approximation theory since
-    truncated Chebyshev series minimize the maximum error (near-best
-    polynomial approximation).
+    The Chebyshev polynomials :math:`T_k(x)` are orthogonal on the interval
+    :math:`[−1, 1]` with weight :math:`1/\sqrt{1−x^2}`. They are widely used
+    in approximation theory since truncated Chebyshev series minimize the
+    maximum error (near-best polynomial approximation).
 
-    Recurrence:
-        T₀(x) = 1, T₁(x) = x,
-        Tₖ₊₁(x) = 2x Tₖ(x) − Tₖ₋₁(x).
+    See https://en.wikipedia.org/wiki/Chebyshev_polynomials for more information.
     """
 
     canonical_domain = (-1, 1)
@@ -28,7 +26,15 @@ class ChebyshevExpansion(OrthogonalExpansion):
         super().__init__(coeffs, domain)
 
     def get_recurrence(self, k: int) -> tuple[float, float, float]:
-        """Chebyshev recurrence: T_{k+1}(x) = 2x T_k(x) - T_{k-1}(x)"""
+        """Chebyshev recurrence.
+
+        Returns the three elements of the Chebyshev iteration
+
+        .. math::
+           T_{k+1}(x) = 2x T_k(x) - T_{k-1}(x)
+
+        used by Clenshaw's evaluation formula.
+        """
         _ = k  # Ignore k
         α_k = 2.0
         β_k = 0.0

@@ -1,5 +1,3 @@
-.. currentmodule:: seemps
-
 .. _hamiltonian_classes:
 
 ************
@@ -25,7 +23,7 @@ the construction of such models, or provide specific, well-known ones:
     ~seemps.hamiltonians.ConstantTIHamiltonian
     ~seemps.hamiltonians.HeisenbergHamiltonian
 
-As example of use, we can inspect the :class:`HeisenbergHamiltonian` class,
+As example of use, we can inspect the :class:`~seemps.hamiltonians.HeisenbergHamiltonian` class,
 which creates the model :math:`\sum_i \vec{S}_i\cdot\vec{S}_{i+1}` more or less
 like this::
 

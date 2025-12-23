@@ -1,5 +1,3 @@
-.. currentmodule:: seemps
-
 .. _seemps_examples:
 
 *************************

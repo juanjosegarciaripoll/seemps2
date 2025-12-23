@@ -197,7 +197,7 @@ def arnoldi_eigh(
     callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
-    Results
+    Returns
     -------
     OptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.

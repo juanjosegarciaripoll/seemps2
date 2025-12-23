@@ -1,10 +1,8 @@
-.. currentmodule:: seemps
-
 .. _analysis_states:
 
-***************************************
+*********************************************
 Predefined States (MPS) and Tensor Operations
-***************************************
+*********************************************
 
 The SeeMPS library provides an exact MPS representation of several basic states, as well as tensorized operations between them.
 

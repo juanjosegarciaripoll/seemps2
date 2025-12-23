@@ -20,7 +20,7 @@ def crank_nicolson(
 ):
     r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
 
-    See :function:`seemps.evolution.euler` for a description of the
+    See :func:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
 
     Parameters

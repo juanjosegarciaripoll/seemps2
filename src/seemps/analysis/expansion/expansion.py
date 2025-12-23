@@ -18,15 +18,17 @@ ScalarFunction = Callable[[Vector], float]
 
 
 class PolynomialExpansion(ABC):
-    """
-    Abstract base class for polynomial expansions of a function f(x).
+    """Abstract base class for polynomial expansions of a function f(x).
 
     A polynomial expansion is defined by coefficients in a chosen basis
     {P_k(x)} and by the recurrence relation that generates the basis.
     Subclasses must provide:
-      - the canonical domain of the basis (e.g. [-1, 1] for Chebyshev/Legendre),
-      - the three-term recurrence coefficients (α_k, β_k, γ_k),
-      - the scaling factor κ for P₁(x) = κ·x.
+
+    - the canonical domain of the basis (e.g. `(-1, 1)` for Chebyshev/Legendre),
+
+    - the three-term recurrence coefficients (α_k, β_k, γ_k),
+
+    - the scaling factor κ for P₁(x) = κ·x.
 
     Attributes
     ----------
@@ -108,9 +110,10 @@ class PolynomialExpansion(ABC):
         Notes
         -----
         - Efficiency depends on the bond dimensions of the intermediate MPS
-        states and the chosen simplification strategy.
+          states and the chosen simplification strategy.
+
         - Clenshaw recurrence is generally more efficient and numerically stable,
-        though overestimating the expansion order can degrade performance.
+          though overestimating the expansion order can degrade performance.
 
         Examples
         --------
@@ -223,9 +226,11 @@ class OrthogonalExpansion(PolynomialExpansion, ABC):
         max_order: int = 2**12,  # 4096
         **kwargs,
     ) -> int:
-        """
-        Generic order estimator: doubling until |c_N| < tolerance.
-        Relies on cls.project(...) to build the coefficients.
+        """Estimate order of orthogonal polynomial expansion.
+
+        Relies on `cls.project` to build the coefficients, iterating
+        until the absolute value of the next coefficient lays below
+        the given tolerance.
         """
         order = initial_order
         while order <= max_order:

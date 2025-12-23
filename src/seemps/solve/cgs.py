@@ -42,7 +42,7 @@ def cgs_solve(
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPS and MPO operations
 
-    Results
+    Returns
     -------
     MPS
         Approximate solution to :math:`A ψ = b`

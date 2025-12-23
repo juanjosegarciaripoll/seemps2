@@ -1,5 +1,3 @@
-.. currentmodule:: seemps
-
 .. _analysis_operators:
 
 **************************

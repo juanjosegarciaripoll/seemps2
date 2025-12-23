@@ -21,30 +21,41 @@ def euler(
 
     Integrates the Schrodinger equation in real or imaginary time using
     a first order Euler method. The equation is defined as
+
     .. math::
         i\frac{d}{dt}\psi = H(t) \psi
+
     in real time and as
+
     .. math::
         \frac{d}{dt}\psi = -H(t) \psi
+
     in imaginary time evolution.
 
     The integration algorithm is very simple. It is
+
     .. math::
         \psi(t_{n+1}) = \psi(t_{n}) - i \delta t H \psi(t_{n})
+
     for real time and
+
     .. math::
         \psi(t_{n+1}) = \psi(t_{n}) - \delta t H \psi(t_{n})
+
     for imaginary time evolution. The integration step is deduced from
     the arguments as explained below.
 
     The `time` denotes the integration interval.
-    * If it is a single number `T`, the initial condition is ..math::`t=0`
-      the evolution proceeds in steps of :math:`\delta{t}=T/N`
+
+    - If it is a single number `T`, the initial condition is :math:`t=0`
+      and the evolution proceeds in steps of :math:`\delta{t}=T/N`
       where `N=steps`.
-    * If `time` is a tuple, it contains the initial and final time,
+
+    - If `time` is a tuple, it contains the initial and final time,
       and the number of integration steps is deduced from `N=steps`
       as :math:`\delta{t}=T/N`
-    * If `time` is a sequence of numbers, starting with the initial
+
+    - If `time` is a sequence of numbers, starting with the initial
       condition, and progressing in time steps `time[n+1]-time[n]`.
 
     The Euler algorithm is a very bad integrator and is offered only for
@@ -67,7 +78,7 @@ def euler(
     itime : bool, default = False
         Whether to solve the imaginary time evolution problem.
 
-    Results
+    Returns
     -------
     result : MPS | list[Any]
         Final state after evolution or values collected by callback
@@ -98,12 +109,13 @@ def euler2(
     r"""Solve a Schrodinger equation using the 2nd order Euler method.
 
     Implements a two-step integration method. In imaginary time this is
+
     .. math::
         \xi(t_{n}) = 2 \psi(t_{n}) - i \delta t H \psi(t_{n})
         \psi(t_{n+1}) = \psi(t_{n}) - (i \delta t/2) H \xi(t_{n})
 
     The Euler algorithm is a very bad integrator and is offered only for
-    illustrative purposes. See :function:`euler` to understand the parameters
+    illustrative purposes. See :func:`euler` to understand the parameters
     and the function's output.
     """
 
@@ -134,7 +146,7 @@ def implicit_euler(
 ):
     r"""Solve a Schrodinger equation using a second order implicit Euler method.
 
-    See :function:`seemps.evolution.euler` for a description of the missing
+    See :func:`seemps.evolution.euler` for a description of the missing
     function arguments and the function's output
 
     Parameters

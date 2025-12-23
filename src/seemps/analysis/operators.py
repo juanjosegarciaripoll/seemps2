@@ -7,9 +7,7 @@ from ..state import Strategy, DEFAULT_STRATEGY
 def id_mpo(n_qubits: int, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
     """Identity MPO.
 
-    Arguments:
-    ----------
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -30,7 +28,7 @@ def x_mpo(
 ) -> MPO:
     """x MPO.
 
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -90,7 +88,7 @@ def x_to_n_mpo(
 ) -> MPO:
     """x^n MPO.
 
-     Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -115,7 +113,7 @@ def x_to_n_mpo(
 def p_mpo(n_qubits: int, dx: float, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
     """p MPO.
 
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -170,7 +168,7 @@ def p_to_n_mpo(
 ) -> MPO:
     """p^n MPO.
 
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -199,7 +197,7 @@ def exponential_mpo(
 ) -> MPO:
     """exp(cx) MPO.
 
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -248,7 +246,7 @@ def exponential_mpo(
 def cos_mpo(n: int, a: float, dx: float, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
     """cos(x) MPO.S
 
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.
@@ -273,7 +271,7 @@ def cos_mpo(n: int, a: float, dx: float, strategy: Strategy = DEFAULT_STRATEGY) 
 def sin_mpo(n: int, a: float, dx: float, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
     """sin(x) MPO.
 
-    Parameters:
+    Parameters
     ----------
     n_qubits: int
         Number of qubits.

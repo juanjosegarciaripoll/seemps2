@@ -58,8 +58,8 @@ class UnaryTree:
 
     This representation can be efficiently loaded into a MPS using :func:`mps_unary_tree`.
 
-    Example
-    -------
+    Examples
+    --------
     A unary tree for the Heaviside function applied to the running sum
 
         f(x₁,x₂,... ) = Θ(x₁ + x₂ + ...)

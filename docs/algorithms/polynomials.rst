@@ -1,4 +1,4 @@
-.. _analysis_chebyshev:
+.. _analysis_polynomials:
 
 ************************
 Polynomial Approximation
@@ -14,17 +14,18 @@ SeeMPS provides routines to
 * Reconstruct :math:`f(x)` as an MPS, over some interval.
 * Evaluate :math:`f(A)` where :math:`A` is either an MPS or an MPO.
 
-Both applications are implemented using the :method:`seemps.analysis.expansion.PolynomialExpansion.to_mps`
-and :method:`seemps.analysis.expansion.PolynomialExpansion.to_mpo`, and a clever applications
+Both applications are implemented using the :meth:`seemps.analysis.expansion.PolynomialExpansion.to_mps`
+and :meth:`seemps.analysis.expansion.PolynomialExpansion.to_mpo`, and a clever applications
 of Clenshaw's evaluation method for polynomials (a numerically stable technique to compute
 polynomials in situations of finite precision).
 
-SeeMPS provides three polynomial expansions:
+SeeMPS provides four polynomial expansions:
 
-* :class:`seemps.analysis.expansion.PowerExpansion` is a simple expansion in monomials :math:`p_k(x)=x^k`
+* :func:`seemps.analysis.mps_from_polynomial` constructs an unoptimize MPS from is expansion in monomials :math:`p_k(x)=x^k`.
 
-* :class:`seemps.analysis.expansion.ChebyshevExpansion` is an expansion in the orthogonal basis of
-  Chebyshev_ polynomials.
+* :class:`seemps.analysis.expansion.PowerExpansion` is another expansion in monomials :math:`p_k(x)=x^k` using now Clenshaw's formula.
+
+* :class:`seemps.analysis.expansion.ChebyshevExpansion` is an expansion in the orthogonal basis of Chebyshev_ polynomials.
 
 * :class:`seemps.analysis.expansion.LegendreExpansion` is an expansion in orthogonal Legendre_ polynomials.
 
@@ -40,10 +41,10 @@ An example on how to use these functions is shown in
 `Chebyshev.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Chebyshev.ipynb>`_.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.expansion.PolynomialExpansion
     ~seemps.analysis.expansion.ChebyshevExpansion
     ~seemps.analysis.expansion.LegendreExpansion
     ~seemps.analysis.expansion.ChebyshevExpansion.project
     ~seemps.analysis.expansion.LegendreExpansion.project
+    ~seemps.analysis.polynomials.mps_from_polynomial

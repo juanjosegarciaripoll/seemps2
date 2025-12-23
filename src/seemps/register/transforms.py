@@ -22,8 +22,8 @@ def mpo_weighted_shifts(
 
     The operator is very useful to implement finite difference approximations.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     L : int
         Number of qubits in the quantum register
     weights : VectorLike
@@ -60,8 +60,8 @@ def mpo_shifts(
     The MPO is a bit special, in that the last tensor of the operator, say
     `A[L]` will have a final index with size `M` equal to the number of shifts.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     L : int
         Number of qubits in the quantum register
     shifts : list[int] | tuple[int,int]
@@ -125,35 +125,16 @@ def twoscomplement(
     """Return an MPO that performs a two's complement of the selected qubits
     depending on a 'control' qubit in a register with L qubits.
 
-    Arguments
-    ---------
-    L       -- Real size of register
-    control -- Which qubit (relative to sites) controls the sign.
-               Defaults to the first qubit in 'sites'.
-    sites   -- The qubits involved in the MPO. Defaults to range(L).
-    kwdargs -- Arguments for MPO.
-
     Parameters
     ----------
     L : int :
-
+        Real size of register
     control : int :
-        (Default value = 0)
+        Which qubit (relative to sites) controls the sign. (Default value = 0)
     sites : Iterable[int] | None :
-        (Default value = None)
+        The qubits involved in the MPO. (Default value = L)
     **kwdargs :
-
-    L: int :
-
-    control: int :
-         (Default value = 0)
-    sites: Iterable[int] | None :
-         (Default value = None)
-
-    Returns
-    -------
-
-
+        Arguments for :meth:`MPO.__init__`
     """
 
     if sites is not None:

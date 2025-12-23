@@ -69,9 +69,10 @@ def optimize_mps(mps: MPS, num_indices: int = 100, make_canonical: bool = True):
     (i_2, y_2) : tuple
         A tuple with the index and maximum value in the MPS.
 
-    Example
-    -------
+    Examples
+    --------
     .. code-block:: python
+
         # Compute the two extrema of a given univariate function.
         # Assume that the function is already loaded.
         mps_function_1d = ...

@@ -19,7 +19,7 @@ def arnoldi(
     r"""Solve a Schrodinger equation using a variable order Arnoldi
     approximation to the exponential.
 
-    See :function:`seemps.evolution.euler` for a description of the
+    See :func:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
 
     Parameters

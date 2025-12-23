@@ -11,7 +11,7 @@ class BlackBox(ABC):
     """
     Abstract base class representing generic black-box functions.
     A black-box function represents an implicit representation of a function that can be
-    indexedwith indices similarly as a multidimensional array. These objects are
+    indexed with indices similarly as a multidimensional array. These objects are
     fundamental for the efficient implementation of TCI algorithms.
 
     By convention, the input function is tensor-valued and assumes that the index ç
@@ -56,8 +56,8 @@ class BlackBoxLoadMPS(BlackBox):
         An array representing the physical sizes of the resulting MPS tensors, required
         when `map_matrix` is not None to correctly represent the quantization.
 
-    Example
-    -------
+    Examples
+    --------
         .. code-block:: python
 
         # Load a bivariate Gaussian function using some TCI variant.
@@ -136,8 +136,8 @@ class BlackBoxLoadMPO(BlackBox):
         Flag that helps in the convergence of TCI for diagonal operators by restricting
         the convergence evaluation to the main diagonal.
 
-    Example
-    -------
+    Examples
+    --------
         .. code-block:: python
 
         # Load a 2D Gaussian function in a non-diagonal MPO using some TCI variant.
@@ -220,8 +220,8 @@ class BlackBoxComposeMPS(BlackBox):
         Their physical dimensions are assumed similar and constant. The number of MPS
         must match the dimension of `func`.
 
-    Example
-    -------
+    Examples
+    --------
     .. code-block:: python
 
         # Use TCI to compose a three-dimensional function with three MPS.

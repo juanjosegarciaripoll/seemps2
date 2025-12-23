@@ -118,6 +118,6 @@ def scprod(object bra, object ket) -> Weight:
     return _scprod(bra, ket)
 
 def vdot(object bra, object ket) -> Weight:
-    """Alias for :function:`seemps.state.scprod`"""
+    """Alias for :func:`seemps.state.scprod`"""
     return _scprod(bra, ket)
 

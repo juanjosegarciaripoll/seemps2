@@ -345,8 +345,8 @@ def mps_to_mesh_matrix(
     Matrix
         Linear mapping of shape (N, m) with integer `base^k` weights.
 
-    Example
-    -------
+    Examples
+    --------
     sites_per_dimension = [2, 3] with base 2 yields:
 
         T = [[2, 0],   # site 0 → x contributes base^1

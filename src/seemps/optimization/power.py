@@ -55,7 +55,7 @@ def power_method(
     callback : Callable[[MPS, OptimizeResults], Any] | None
         A callable called after each iteration (defaults to None).
 
-    Results
+    Returns
     -------
     PowerMethodOptimizeResults
         Results from the optimization. See :class:`OptimizeResults`.

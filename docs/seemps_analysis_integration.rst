@@ -2,9 +2,9 @@
 
 .. _analysis_integration:
 
-************************************
+********************
 Function Integration
-************************************
+********************
 
 Functions encoded in MPS can be efficiently integrated, by contracting those quantum representations with representations of weights that implement some quadrature formula. For instance, a simple Riemann approximation results from the addition of all values of the functions, weighted by the interval size, which are equivalent to the contraction between the representation of :math:`f(x)` and the identity function :math:`g(x)=1`
 
@@ -25,9 +25,9 @@ These are useful to integrate equispaced discretizations, each of increasing ord
 .. autosummary::
     :toctree: generated/
 
-    ~mps_trapezoidal
-    ~mps_simpson38
-    ~mps_fifth_order
+    mps_trapezoidal
+    mps_simpson38
+    mps_fifth_order
 
 Clenshaw-Curtis quadratures
 ---------------------------
@@ -36,17 +36,17 @@ These are useful to integrate irregular discretizations on either the Chebyshev 
 .. autosummary::
     :toctree: generated/
 
-    ~mps_fejer
-    ~mps_clenshaw_curtis
+    mps_fejer
+    mps_clenshaw_curtis
 
 Integration
 -----------
-The standard method for integration consists in first constructing the multivariate quadrature rule using the previous routines, together with :class:`~seemps.analysis.factories.mps_tensor_product` and :class:`~seemps.analysis.factories.mps_tensor_sum` tensorized operations. Then, this quadrature is to be contracted with the desired MPS target using the scalar product routine :class:`~seemps.state.scprod`. However, for ease of use, a helper routine :class:`~seemps.analysis.integration.integrate_mps` is given that automatically computes the best possible quadrature rule associated to a :class:`~seemps.analysis.mesh.Mesh` object, and contracts with the target MPS to compute the integral:
+The standard method for integration consists in first constructing the multivariate quadrature rule using the previous routines, together with :class:`~seemps.analysis.factories.mps_tensor_product` and :class:`~seemps.analysis.factories.mps_tensor_sum` tensorized operations. Then, this quadrature is to be contracted with the desired MPS target using the scalar product routine :class:`~seemps.state.scprod`. However, for ease of use, a helper routine :class:`integrate_mps` is given that automatically computes the best possible quadrature rule associated to a :class:`~seemps.analysis.mesh.Mesh` object, and contracts with the target MPS to compute the integral:
 
 .. autosummary::
     :toctree: generated/
 
-    ~integrate_mps
+    integrate_mps
 
 Note that this helper routine is only valid for standard function representations in MPS with binary quantization, while the former method is applicable in all cases.
 
