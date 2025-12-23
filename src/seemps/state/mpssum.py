@@ -230,6 +230,13 @@ class MPSSum:
             check_args=False,
         )
 
+    def reverse(self) -> MPSSum:
+        """Reverse the sites (see :meth:`~seemps.state.MPS.reverse`)."""
+        return MPSSum(
+            self.weights[-1::],
+            [state.reverse() for state in reversed(self.states)],
+        )
+
 
 from .canonical_mps import CanonicalMPS  # noqa: E402
 from .mps import MPS  # noqa: E402
