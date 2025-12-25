@@ -39,7 +39,7 @@ arises from the following works on quantum-inspired algorithms for numerical ana
 
 The library is developed in a mixture of Python 3 and Cython, with the support
 of Numpy, Scipy and h5py. Installation instructions are provided in
-[the documentation](https://juanjosegarciaripoll.github.io/seemps2).
+[the documentation](https://seemps.readthedocs.io).
 
 Authors:
 
