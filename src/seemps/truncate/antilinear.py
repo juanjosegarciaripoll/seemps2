@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 from ..typing import Tensor3, Tensor4, DenseOperator
 from ..state import MPS
-from ..state._contractions import _contract_last_and_first
+from ..cython import _contract_last_and_first
 from ..state.environments import (
     _begin_environment,
     _update_right_environment,

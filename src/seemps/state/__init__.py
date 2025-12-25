@@ -1,3 +1,4 @@
+# Cython symbols reexported from seemps.state
 from ..cython.core import (
     Strategy,
     Truncation,

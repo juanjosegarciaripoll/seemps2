@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..state import MPS, CanonicalMPS, MPSSum
-from ..state._contractions import _contract_last_and_first
+from ..cython import _contract_last_and_first
 from ..typing import Vector
 from .evaluation import evaluate_mps
 

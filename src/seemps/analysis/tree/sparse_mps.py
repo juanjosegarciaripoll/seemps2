@@ -8,7 +8,7 @@ import numpy as np
 from scipy.sparse import csr_array
 from typing import Iterable
 from ...state import MPS, TensorArray
-from ...state._contractions import _contract_last_and_first
+from ...cython import _contract_last_and_first
 from ...typing import Vector, Matrix, Tensor3, NDArray
 
 

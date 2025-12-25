@@ -6,7 +6,7 @@ from time import perf_counter
 from typing import Callable, Any
 
 from ...state import MPS
-from ...state._contractions import _contract_last_and_first
+from ...cython import _contract_last_and_first
 from ...typing import Vector, Matrix, Tensor3
 from ...tools import make_logger
 from .black_box import BlackBox

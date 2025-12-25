@@ -4,7 +4,7 @@ from ..typing import Unitary, to_dense_operator
 import scipy.linalg
 from ..hamiltonians import NNHamiltonian  # type: ignore
 from ..state import Strategy, DEFAULT_STRATEGY, MPS, CanonicalMPS
-from ..state._contractions import _contract_nrjl_ijk_klm
+from ..cython import _contract_nrjl_ijk_klm
 
 
 class PairwiseUnitaries:

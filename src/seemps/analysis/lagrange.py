@@ -8,7 +8,7 @@ from typing import Callable
 
 from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..state.schmidt import _destructive_svd
-from ..state._contractions import _contract_last_and_first
+from ..cython import _contract_last_and_first
 from ..cython.core import destructively_truncate_vector
 from ..truncate import simplify
 from ..typing import Tensor3, MPSOrder

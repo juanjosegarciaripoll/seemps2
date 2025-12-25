@@ -4,7 +4,7 @@ import numpy as np
 from math import sqrt
 from ..typing import DenseOperator, Operator, Real
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
-from ..state._contractions import _contract_nrjl_ijk_klm
+from ..cython import _contract_nrjl_ijk_klm
 from abc import abstractmethod, ABC
 
 σx = np.array([[0.0, 1.0], [1.0, 0.0]])
