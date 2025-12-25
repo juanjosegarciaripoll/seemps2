@@ -20,20 +20,69 @@ MAX_BOND_DIMENSION = 0x7fffffff
 """Maximum bond dimension for any MPS."""
 
 class Truncation:
+    """SVD truncation algorithm when splitting tensors.
+
+    Attributes
+    ----------
+    DO_NOT_TRUNCATE
+        As said, do not truncate. Only eliminate zero singular values.
+    RELATIVE_SINGULAR_VALUE
+        `tolerance` limits the relative absolute value of dropped singular
+        values, as compared to the largest one.
+    RELATIVE_NORM_SQUARED_ERROR
+        `tolerance` limits the norm-2 of the dropped singular values.
+    ABSOLUTE_SINGULAR_VALUE
+        `tolerance` limits the absolute value of dropped singular values.
+    """
+
     DO_NOT_TRUNCATE = TRUNCATION_DO_NOT_TRUNCATE
     RELATIVE_SINGULAR_VALUE = TRUNCATION_RELATIVE_SINGULAR_VALUE
     RELATIVE_NORM_SQUARED_ERROR = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR
     ABSOLUTE_SINGULAR_VALUE = TRUNCATION_ABSOLUTE_SINGULAR_VALUE
 
 class Simplification:
+    """Tensor network simplification algorithms.
+
+    Attributes
+    ----------
+    DO_NOT_SIMPLIFY
+        Do nothing to the MPS.
+    CANONICAL_FORM
+        Bring into canonical form with two sweeps.
+    VARIATIONAL
+        Variational algorithm.
+    VARIATIONAL_EXACT_GUESS
+        Variational algorithm with more costly guess of initial state.
+    """
     DO_NOT_SIMPLIFY = SIMPLIFICATION_DO_NOT_SIMPLIFY
     CANONICAL_FORM = SIMPLIFICATION_CANONICAL_FORM
     VARIATIONAL = SIMPLIFICATION_VARIATIONAL
     VARIATIONAL_EXACT_GUESS = SIMPLIFICATION_VARIATIONAL_EXACT_GUESS
 
 DEFAULT_TOLERANCE = float(np.finfo(np.float64).eps)
+"""Relative or absolute tolerance in various algorithms"""
 
 cdef class Strategy:
+    """MPS and MPO simplification strategies.
+
+    Parameters
+    ----------
+    simplify : int
+        Method to simplify a tensor network. Defaults to `Simplification.DO_NOT_SIMPLIFY`.
+    method : int
+        Method to split tensors. Defaults to `Truncation.RELATIVE_NORM_SQUARED_ERROR`.
+    tolerance : float
+        Tolerance when splitting tensors. Defaults to `DEFAULT_TOLERANCE`
+    simplification_tolerance : float
+        Tolerance when simplifying a tensor network. Defaults ot `DEFAULT_TOLERANCE`.
+    max_bond_dimension : int
+        Maximum bond dimension when simplifying a tensor network. Defaults to `MAX_BOND_DIMENSION`.
+    normalize : bool
+        Whether to normalize the tensor network after simplification.
+    max_sweeps : int
+        Maximum number of sweeps for the variational simplification methods. Default is 16.
+    """
+
     def __init__(self,
                  method: int = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
                  tolerance: float = DEFAULT_TOLERANCE,
@@ -143,9 +192,23 @@ DEFAULT_STRATEGY = Strategy(method = TRUNCATION_RELATIVE_NORM_SQUARED_ERROR,
                             simplification_tolerance = DEFAULT_TOLERANCE,
                             max_bond_dimension = MAX_BOND_DIMENSION,
                             normalize = False)
+"""Default simplification and truncation :class:`Strategy`.
+
+- Truncation method is :attr:`Truncation.RELATIVE_NORM_SQUARED_ERROR`
+
+- Simplification is :attr:`Simplification.VARIATIONAL`
+
+- Tolerance is :data:`DEFAULT_TOLERANCE` for all fields.
+
+- Bond dimension is not limited.
+
+- Vectors are not normalized.
+"""
+
 
 NO_TRUNCATION = DEFAULT_STRATEGY.replace(method = TRUNCATION_DO_NOT_TRUNCATE,
                                          simplify = SIMPLIFICATION_DO_NOT_SIMPLIFY)
+""":class:`Strategy` object that does not truncate nor simplify the tensor network."""
 
 cdef double _truncate_do_not_truncate(cnp.ndarray s, Strategy strategy):
     return 0.0
