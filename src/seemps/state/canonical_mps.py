@@ -14,7 +14,7 @@ from .environments import (
     _update_left_environment,
     _update_right_environment,
 )
-from .core import (
+from ..cython.core import (
     DEFAULT_STRATEGY,
     Strategy,
     _update_in_canonical_form_right,

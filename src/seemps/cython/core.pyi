@@ -94,4 +94,4 @@ class GemmOrder(IntEnum):
 
 def _gemm(B: np.ndarray, BT: GemmOrder, A: np.ndarray, AT: GemmOrder) -> np.ndarray: ...
 
-from .mps import MPS  # noqa: E402
+from ..state.mps import MPS  # noqa: E402

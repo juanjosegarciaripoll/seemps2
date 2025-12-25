@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.state.core import Truncation, Strategy, destructively_truncate_vector
+from seemps.cython.core import Truncation, Strategy, destructively_truncate_vector
 from .. import tools
 
 

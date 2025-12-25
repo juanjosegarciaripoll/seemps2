@@ -15,7 +15,7 @@ from ..typing import (
     Tensor3,
 )
 from . import array
-from .core import DEFAULT_STRATEGY, Strategy
+from ..cython.core import DEFAULT_STRATEGY, Strategy
 from .schmidt import _vector2mps
 
 

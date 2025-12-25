@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup, Extension  # type: ignore
+from setuptools import setup, Extension  # type: ignore
 import glob
 import numpy as np
 import sys
@@ -49,8 +49,8 @@ include_files = [
     s.replace("\\", "/") for s in glob.glob("src/**/*.pxi", recursive=True)
 ]
 extension_names = [".".join(f[4:-4].split("/")) for f in cython_files]
-print(extension_names)
-print(cython_files)
+print("Extension names: ", extension_names)
+print("Cython files:    ", cython_files)
 extensions = [
     Extension(
         name,

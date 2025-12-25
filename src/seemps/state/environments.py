@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from ..typing import Weight, Tensor3, Tensor4, MPOEnvironment
-from .core import (
+from ..cython.core import (
     _begin_environment,
     _update_left_environment,
     _update_right_environment,

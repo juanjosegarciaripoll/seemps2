@@ -1,4 +1,4 @@
-from .core import (
+from ..cython.core import (
     Strategy,
     Truncation,
     Simplification,

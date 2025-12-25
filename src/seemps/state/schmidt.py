@@ -5,9 +5,9 @@ from collections.abc import Sequence
 from numpy.typing import NDArray
 from typing import Literal
 from ..typing import VectorLike, Tensor3, Vector
-from .core import Strategy, DEFAULT_STRATEGY
+from ..cython.core import Strategy, DEFAULT_STRATEGY
 from scipy.linalg import svd as _scipy_svd
-from .core import _destructive_svd, _left_orth_2site, _right_orth_2site
+from ..cython.core import _destructive_svd, _left_orth_2site, _right_orth_2site
 
 #
 # Type of LAPACK driver used for solving singular value decompositions.

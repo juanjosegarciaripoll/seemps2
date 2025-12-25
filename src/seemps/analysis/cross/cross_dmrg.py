@@ -6,7 +6,7 @@ from time import perf_counter
 from typing import Callable, Any
 
 from ...state import Strategy, DEFAULT_TOLERANCE
-from ...state.core import destructively_truncate_vector
+from ...cython.core import destructively_truncate_vector
 from ...truncate import SIMPLIFICATION_STRATEGY
 from ...typing import Matrix
 from ...tools import make_logger
