@@ -4,21 +4,40 @@
 Getting started
 ***************
 
-The SeeMPS project is available from at `GitHub <https://github.com/juanjosegarciaripoll/seemps2>`_.
-You can clone it using git from the command line::
+Installation
+------------
+The SeeMPS library can be installed directly using pip::
 
-  git clone https://github.com/juanjosegarciaripoll/seemps2.git
+  pip install seemps
 
-This will create a copy of the repository with all the notebook files and the
-processed Python library.
+Note that, since we do not provide binaries for all Python versions and all platforms, you might at some point need to have a C++ compiler available, if `pip` or `uv` finds that it has to compile SeeMPS from sources (see :ref:`the development environment instructions <environment>` for more details).
 
-The project can be installed directly from a cloned folder::
+More generally, we recommend that you use `Astral's uv <https://docs.astral.sh/uv>` to manage any Python project you create. In that case, you simply need to list SeeMPS as a requirement for your project::
 
-  pip install seemps2
+  uv add seemps
 
-Or it can also be installed directly from the internet::
+and whenever you recreate the environment using `uv sync`, the library will be pulled and installed.
 
-  pip install git+https://github.com/juanjosegarciaripoll/seemps2.git
+First usage
+-----------
+If you have never used SeeMPS, we recommend you simply clone the repository and try the examples there. For this, you have to first install Astral uv (see :ref:`the steps to do it <environment>`) and directly run the examples from the `notebook directories <seemps_examples>`_.
 
-This will install the required dependencies, compile the library and install it
-in your current python environment.
+If you are using Visual Studio Code, as recommended, you would simply do the following from the command line::
+
+  git clone https://github.com/juanjosegarciaripoll/seemps2
+  cd seemps2
+  uv sync
+  uv pip install ipykernel
+  code examples/DMRG.ipynb
+
+These steps:
+
+1. Clone the repository from GitHub.
+
+2. Enter the right folder
+
+3. Install the library and its dependencies in a local environment (a hidden folder with name `.venv`).
+
+4. Install Jupyter's kernel to be able to run notebooks.
+
+5. Open some notebook in Visual Studio Code.

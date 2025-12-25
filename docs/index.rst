@@ -17,6 +17,7 @@ Welcome to SeeMPS's documentation!
    seemps_analysis
    seemps_hdf5
    seemps_tools
+   contributing
    seemps_examples
 
 Indices and tables
