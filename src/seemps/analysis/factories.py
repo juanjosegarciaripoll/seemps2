@@ -1,8 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from ..typing import Tensor3, MPSOrder
-from ..state import Strategy, MPS
-from ..truncate import simplify
+from ..state import Strategy, MPS, simplify
 from .mesh import Interval, RegularInterval, ChebyshevInterval
 
 

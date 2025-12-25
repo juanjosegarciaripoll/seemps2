@@ -9,9 +9,9 @@ from ..state import (
     DEFAULT_STRATEGY,
     DEFAULT_TOLERANCE,
     Strategy,
+    simplify,
 )
 from ..operators import MPO
-from ..truncate import simplify
 from ..tools import make_logger
 
 

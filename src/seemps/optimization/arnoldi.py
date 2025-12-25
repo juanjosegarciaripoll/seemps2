@@ -14,8 +14,8 @@ from ..state import (
     Strategy,
     NO_TRUNCATION,
     scprod,
+    simplify_mps,
 )
-from ..truncate.simplify import simplify
 from ..operators import MPO
 from .descent import DESCENT_STRATEGY, OptimizeResults
 
@@ -66,10 +66,12 @@ class MPSArnoldiRepresentation:
         if isinstance(v, CanonicalMPS):
             v.normalize_inplace()
         else:
-            v = simplify(v, strategy=self.strategy)
+            v = simplify_mps(v, strategy=self.strategy)
         if self.orthogonalize and len(self.V):
             w = np.linalg.solve(self.N, [-scprod(vi, v) for vi in self.V])
-            v = simplify(MPSSum([1] + w.tolist(), [v] + self.V), strategy=self.strategy)  # type: ignore
+            v = simplify_mps(
+                MPSSum([1] + w.tolist(), [v] + self.V), strategy=self.strategy
+            )  # type: ignore
         n = np.asarray([scprod(vi, v) for vi in self.V]).reshape(-1, 1)
         new_N = np.block([[self.N, n], [n.T.conj(), 1.0]])
         if (
@@ -96,11 +98,11 @@ class MPSArnoldiRepresentation:
         eigenvalues, eigenstates = scipy.linalg.eig(self.H, self.N)
         eigenvalues = eigenvalues.real
         ndx = np.argmin(eigenvalues)
-        v = simplify(MPSSum(eigenstates[:, ndx], self.V), strategy=self.strategy)
+        v = simplify_mps(MPSSum(eigenstates[:, ndx], self.V), strategy=self.strategy)
         if self.gamma == 0 or self._eigenvector is None:
             new_v = v
         else:
-            new_v = simplify(
+            new_v = simplify_mps(
                 MPSSum([1 - self.gamma, self.gamma], [v, self._eigenvector]),
                 strategy=self.strategy,
             )
@@ -140,7 +142,7 @@ class MPSArnoldiRepresentation:
         # TODO: Remove this type annotation once scipy-stubs fixes
         # issue https://github.com/scipy/scipy-stubs/issues/705
         u = scipy.sparse.linalg.expm_multiply(factor * NinvH, w)  # type: ignore # pyright: ignore[reportCallIssue, reportArgumentType]
-        return simplify(MPSSum(u, self.V), strategy=self.strategy)
+        return simplify_mps(MPSSum(u, self.V), strategy=self.strategy)
 
     def build_Krylov_basis(self, v: MPS, order: int) -> bool:
         """Build a Krylov basis up to given order. Returns False

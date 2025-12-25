@@ -6,7 +6,7 @@ from seemps.state import (
     random_uniform_mps,
     scprod,
 )
-from seemps.truncate.simplify_mpo import mpo_as_mps, simplify_mpo
+from seemps.operators import mpo_as_mps, simplify_mpo
 
 from .. import tools
 

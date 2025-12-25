@@ -6,9 +6,9 @@ from seemps.state import (
     NO_TRUNCATION,
     Simplification,
     Strategy,
+    simplify,
 )
 from seemps.tools import σx, σy, σz
-from seemps.truncate import simplify
 
 from ..tools import TestCase, contain_same_objects
 

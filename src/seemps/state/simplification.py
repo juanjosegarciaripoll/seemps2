@@ -2,7 +2,7 @@ from __future__ import annotations
 from math import sqrt
 import numpy as np
 from ..tools import make_logger
-from ..state import (
+from . import (
     DEFAULT_TOLERANCE,
     MAX_BOND_DIMENSION,
     MPS,
@@ -291,4 +291,6 @@ def combine(
     return simplify_mps_sum(MPSSum(weights, states))
 
 
-__all__ = ["simplify"]
+simplify_mps = simplify
+
+__all__ = ["simplify", "simplify_mps"]

@@ -24,6 +24,8 @@ from .factories import (
 )
 from . import entropies, sampling
 from .environments import scprod, vdot
+from .simplification import simplify, SIMPLIFICATION_STRATEGY, simplify_mps
+from . import simplification
 
 __all__ = [
     "Strategy",
@@ -48,6 +50,10 @@ __all__ = [
     "spin_wave",
     "to_mps",
     "W",
+    "simplify",
+    "simplify_mps",
+    "simplification",
     "scprod",
     "vdot",
+    "SIMPLIFICATION_STRATEGY",
 ]

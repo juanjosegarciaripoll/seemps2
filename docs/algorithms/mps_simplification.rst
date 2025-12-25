@@ -16,7 +16,7 @@ Mathematically, we are solving the minimization of the norm-2 distance:
    \mathrm{argmin}_{\xi \in \mathcal{MPS}_{D'}} \Vert{\xi-\psi}\Vert^2
 
 There are two variants of the algorithm. The first one
-:func:`~seemps.truncate.simplify` approximates just a single state. The second
+:func:`~seemps.state.simplify` approximates just a single state. The second
 one approximates a linear combination of states and weights :math:`\psi_i` and
 :math:`w_i`, as in
 
@@ -33,8 +33,8 @@ It is possible to extend this algorithm to MPOs by recasting them as an MPS.
 .. autosummary::
    :toctree: ../generated/
 
-   ~seemps.truncate.simplify
-   ~seemps.truncate.simplify_mpo
+   ~seemps.state.simplify
+   ~seemps.operators.simplify_mpo
    ~seemps.state.Strategy
    ~seemps.state.Simplification
    ~seemps.state.Truncation

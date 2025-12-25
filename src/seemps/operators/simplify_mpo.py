@@ -1,7 +1,6 @@
 from math import isqrt
-from ..operators import MPO, MPOList, MPOSum
-from ..state import DEFAULT_STRATEGY, MPS, Strategy
-from ..truncate import SIMPLIFICATION_STRATEGY, simplify
+from . import MPO, MPOList, MPOSum
+from ..state import DEFAULT_STRATEGY, MPS, Strategy, SIMPLIFICATION_STRATEGY, simplify
 
 
 def mpo_as_mps(mpo: MPO) -> MPS:
@@ -9,13 +8,14 @@ def mpo_as_mps(mpo: MPO) -> MPS:
     data = []
     for site in mpo._data:
         bl, i, j, br = site.shape
-        data.append(site.reshape(bl, i*j, br))
+        data.append(site.reshape(bl, i * j, br))
 
     return MPS(data)
 
+
 def mps_as_mpo(
-        mps: MPS,
-        mpo_strategy: Strategy = DEFAULT_STRATEGY,
+    mps: MPS,
+    mpo_strategy: Strategy = DEFAULT_STRATEGY,
 ) -> MPO:
     """Recast MPS as MPO."""
     data = []
@@ -23,7 +23,9 @@ def mps_as_mpo(
         bl, p, br = site.shape
         s = isqrt(p)
         if s**2 != p:
-            raise ValueError("The physical dimensions of the MPS must be a perfect square")
+            raise ValueError(
+                "The physical dimensions of the MPS must be a perfect square"
+            )
 
         data.append(site.reshape(bl, s, s, br))
 

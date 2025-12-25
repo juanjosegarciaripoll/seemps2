@@ -4,8 +4,7 @@ from math import sqrt
 import numpy as np
 from ..operators import MPO
 from ..qft import qft_mpo
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy
-from ..truncate import simplify
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, simplify
 from .finite_differences import tridiagonal_mpo
 from .space import Space, mpo_flip
 

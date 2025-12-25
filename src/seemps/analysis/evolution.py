@@ -4,9 +4,8 @@ from math import sqrt
 import numpy as np
 import dataclasses
 from ..optimization.descent import DESCENT_STRATEGY
-from ..state import MPS, CanonicalMPS, MPSSum, Strategy, scprod
+from ..state import MPS, CanonicalMPS, MPSSum, Strategy, scprod, simplify
 from ..operators import MPO, MPOList, MPOSum
-from ..truncate import simplify
 
 
 @dataclasses.dataclass

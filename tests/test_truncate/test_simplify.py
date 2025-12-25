@@ -4,8 +4,8 @@ from seemps.state import (
     Truncation,
     random_uniform_mps,
     scprod,
+    simplify,
 )
-from seemps.truncate import simplify
 from .. import tools
 
 

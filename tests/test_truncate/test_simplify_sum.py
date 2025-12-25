@@ -6,7 +6,7 @@ from seemps.state import (
     Truncation,
     random_uniform_mps,
 )
-from seemps.truncate.simplify import simplify_mps_sum
+from seemps.state.simplification import simplify_mps_sum
 from .. import tools
 
 

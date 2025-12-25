@@ -2,9 +2,8 @@ from __future__ import annotations
 import numpy as np
 from math import sqrt
 from typing import Any
-from ..state import MPS, Strategy, DEFAULT_STRATEGY, scprod
+from ..state import MPS, Strategy, DEFAULT_STRATEGY, scprod, simplify
 from ..operators import MPO
-from ..truncate import simplify
 from .common import (
     ODECallback,
     ODEFunction,

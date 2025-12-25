@@ -20,7 +20,7 @@ from seemps.analysis.cross import (
 )
 from seemps.analysis.cross.cross import maxvol_square, CrossResults
 from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
-from seemps.truncate.simplify_mpo import mps_as_mpo
+from seemps.operators import mps_as_mpo
 from .tools_analysis import reorder_tensor
 from ..tools import TestCase
 

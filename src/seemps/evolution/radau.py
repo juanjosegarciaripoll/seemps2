@@ -2,11 +2,10 @@ from __future__ import annotations
 from typing import Any, TypeVar
 import numpy as np
 from ..operators import MPO
-from ..state import DEFAULT_STRATEGY, MPS, Strategy
+from ..state import DEFAULT_STRATEGY, MPS, Strategy, simplify
 from ..solve import dmrg_solve
-from ..truncate import simplify
 from ..operators.projectors import identity_mpo
-from ..truncate.simplify_mpo import simplify_mpo
+from ..operators.simplify_mpo import simplify_mpo
 from .common import ode_solver, ODECallback, TimeSpan
 
 

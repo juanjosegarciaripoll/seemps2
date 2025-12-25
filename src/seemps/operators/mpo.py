@@ -241,7 +241,7 @@ class MPO(TensorArray):
             raise TypeError(f"Cannot multiply MPO with {state}")
 
         if simplify:
-            state = truncate.simplify(state, strategy=strategy)
+            state = simplify_mps(state, strategy=strategy)
         return state
 
     @overload
@@ -534,7 +534,7 @@ class MPOList(object):
             # log(f'Total error before applying MPOList {b.error()}')
             state = mpo.apply(state)
         if simplify:
-            state = truncate.simplify(state, strategy=strategy)
+            state = simplify_mps(state, strategy=strategy)
         return state
 
     @overload
@@ -630,5 +630,5 @@ class MPOList(object):
         return MPOList([o.reverse() for o in self.mpos], self.strategy)
 
 
-from .. import truncate  # noqa: E402
+from ..state.simplification import simplify_mps  # noqa: E402
 from .mposum import MPOSum  # noqa: E402

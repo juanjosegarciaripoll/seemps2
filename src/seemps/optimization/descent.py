@@ -12,8 +12,8 @@ from ..state import (
     Strategy,
     scprod,
     to_mps,
+    simplify_mps,
 )
-from ..truncate.simplify import simplify
 from ..operators import MPO, MPOList, MPOSum
 
 DESCENT_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
@@ -90,7 +90,7 @@ def gradient_descent(
     if tol_up is None:
         tol_up = tol
     normalization_strategy = strategy.replace(normalize=True)
-    state = simplify(guess, strategy=strategy)
+    state = simplify_mps(guess, strategy=strategy)
     results = OptimizeResults(
         state=state,
         energy=np.inf,
@@ -152,7 +152,7 @@ def gradient_descent(
                 w, v = scipy.linalg.eig(A, B)  # type: ignore # (Pylance eror)
                 v = v[:, np.argmin(w)]
                 v /= np.linalg.norm(v)
-                state = simplify(
+                state = simplify_mps(
                     MPSSum(v, [state, H_state]), strategy=normalization_strategy
                 )
         logger(

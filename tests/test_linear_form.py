@@ -1,7 +1,7 @@
 import numpy as np
 from .tools import TestCase, almostIdentity, run_over_random_uniform_mps
 from seemps.state import CanonicalMPS, MPS
-from seemps.truncate import AntilinearForm
+from seemps.state.simplification import AntilinearForm
 from seemps.expectation import expectation1
 
 

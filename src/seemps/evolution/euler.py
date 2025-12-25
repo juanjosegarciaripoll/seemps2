@@ -3,8 +3,7 @@ import numpy as np
 from ..analysis.operators import id_mpo
 from ..solve import cgs_solve
 from ..operators import MPO, MPOSum
-from ..state import DEFAULT_STRATEGY, MPS, Strategy
-from ..truncate import simplify
+from ..state import DEFAULT_STRATEGY, MPS, Strategy, simplify
 from .common import ode_solver, ODECallback, TimeSpan
 
 

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from ..typing import Weight, DenseOperator, Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, MPSSum, Strategy
 from .mpo import MPO, MPOList
-from .. import truncate
+from ..state import simplify_mps
 
 
 class MPOSum(object):
@@ -154,7 +154,7 @@ class MPOSum(object):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if simplify:
-            return truncate.simplify(output, strategy=strategy)
+            return simplify_mps(output, strategy=strategy)
         return output
 
     def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:

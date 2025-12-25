@@ -2,8 +2,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.polynomial.polynomial import Polynomial
 import scipy.special  # type: ignore
-from ..state import MPS, Strategy, DEFAULT_STRATEGY
-from ..truncate import simplify
+from ..state import MPS, Strategy, DEFAULT_STRATEGY, simplify
 from .factories import mps_interval
 from .mesh import RegularInterval
 

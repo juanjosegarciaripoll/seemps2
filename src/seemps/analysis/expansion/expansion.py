@@ -3,10 +3,8 @@ import numpy as np
 from typing import Callable, Optional
 from abc import ABC, abstractmethod
 
-from ...state import MPS, MPSSum, CanonicalMPS, Strategy, DEFAULT_STRATEGY
-from ...operators import MPO, MPOList, MPOSum
-from ...truncate import simplify
-from ...truncate.simplify_mpo import simplify_mpo
+from ...state import MPS, MPSSum, CanonicalMPS, Strategy, DEFAULT_STRATEGY, simplify
+from ...operators import MPO, MPOList, MPOSum, simplify_mpo
 from ...typing import Vector
 from ...tools import make_logger
 from ..mesh import Interval

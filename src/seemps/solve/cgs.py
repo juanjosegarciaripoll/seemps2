@@ -7,9 +7,9 @@ from ..state import (
     DEFAULT_TOLERANCE,
     DEFAULT_STRATEGY,
     Strategy,
+    simplify,
 )
 from ..operators import MPO, MPOList, MPOSum
-from ..truncate import simplify
 from ..tools import make_logger
 
 

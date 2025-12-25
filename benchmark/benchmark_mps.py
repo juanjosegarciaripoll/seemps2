@@ -45,7 +45,7 @@ def canonicalize(state, strategy):
 
 
 def simplify(state, strategy):
-    return seemps.truncate.simplify(state, strategy=strategy)
+    return seemps.state.simplify(state, strategy=strategy)
 
 
 def run_all():
