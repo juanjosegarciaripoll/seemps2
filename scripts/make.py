@@ -96,7 +96,7 @@ def clean() -> None:
     delete_directories(["seemps.egg-info"])
     delete_directories(["__pycache__"], root="src")
     delete_directories(["__pycache__"], root="test")
-    delete_files([r".*\.so", r".*\.pyd", r".*\.pyc"], root="src")
+    delete_files([r".*\.so", r".*\.c", r".*\.cc", r".*\.pyd", r".*\.pyc"], root="src")
 
 
 def run_tests(verbose=False) -> bool:
