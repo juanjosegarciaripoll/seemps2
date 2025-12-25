@@ -44,7 +44,6 @@ sequentially, :math:`s_1:=s_{11},s_2:=s_{12},\ldots`, or by significance, :math:
 The :class::`Space` creates an object to define the problem's coordinates for a multidimensional problem.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.space.Space
     ~seemps.analysis.space.mpo_flip
@@ -62,7 +61,6 @@ Currently, there are three types of :class:`~seemps.analysis.mesh.Interval` impl
 - :class:`~seemps.analysis.mesh.IntegerInterval`: An interval representing a regular discretization with integers.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.mesh.Mesh
     ~seemps.analysis.mesh.Interval

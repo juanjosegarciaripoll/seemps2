@@ -31,7 +31,6 @@ same front-end function.
 It is possible to extend this algorithm to MPOs by recasting them as an MPS.
 
 .. autosummary::
-   :toctree: ../generated/
 
    ~seemps.state.simplify
    ~seemps.operators.simplify_mpo

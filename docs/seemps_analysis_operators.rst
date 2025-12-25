@@ -7,7 +7,6 @@ Predefined Operators (MPO)
 The SeeMPS library provides a exact MPO representation of basic operators.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.operators.id_mpo
     ~seemps.analysis.operators.x_to_n_mpo

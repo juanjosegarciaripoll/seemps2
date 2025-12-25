@@ -33,7 +33,6 @@ In addition to creating the sums implicitly, you can also create them explicitly
 using the classes' constructor.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.state.MPSSum
 
@@ -46,7 +45,6 @@ algorithm known as "simplification", explained in
 to an MPS (with possibly quite large bond dimensions) and to standard wavefunctions.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.state.MPSSum.join
     ~seemps.state.MPSSum.to_vector

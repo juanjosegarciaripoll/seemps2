@@ -16,7 +16,7 @@ i.e., they update all tensors simultaneously.
 
 The order of the expansion `p` determines the truncation error of the method, which
 is :math:`O(\Delta \beta ^{p+1})`, and also the cost of the method, since
-a higher order implies more operations. Thus, it is important to consider 
+a higher order implies more operations. Thus, it is important to consider
 trade-off in cost and accuracy to choose the most suitable method for each application.
 
 The SeeMPS library considers four methods.
@@ -34,7 +34,7 @@ and a simple update with a fixed time-step :math:`\beta_k = k \Delta\beta`.
 2. Improved Euler or Heun method
 ---------------------------------
 
-This is a second-order, fixed-step explicit method that uses two matrix-vector multiplications and two linear combinations of 
+This is a second-order, fixed-step explicit method that uses two matrix-vector multiplications and two linear combinations of
 vectors to achieve an error :math:`\mathcal{O}(\Delta\beta^3)`.
 
 .. math::
@@ -53,16 +53,15 @@ This algorithm achieves an error :math:`\mathcal{O}(\Delta\beta^5)` using four m
     v_3 &= -H\left(\psi_k + \frac{\Delta\beta}{2}v_2\right), \\
     v_4 &= -H\left(\psi_k + \Delta\beta v_3\right).
 
-4. Runge-Kutta-Fehlberg method  
+4. Runge-Kutta-Fehlberg method
 -------------------------------
-The Runge-Kutta-Fehlberg algorithm is an adaptative step-size solver that combines a fifth-order accurate integrator  
-:math:`O(\Delta\beta^5)` with a sixth-order error estimator  :math:`O(\Delta\beta^6)`. This combination dynamically adjusts the step size  :math:`\Delta\beta` 
-to maintain the integration error within a specified tolerance. The method requires an initial estimate of the step size, which can be obtained from a simpler 
-method. Each iteration involves six matrix-vector multiplications and six linear combinations, and it may repeat the evolution steps if the proposed step size 
+The Runge-Kutta-Fehlberg algorithm is an adaptative step-size solver that combines a fifth-order accurate integrator
+:math:`O(\Delta\beta^5)` with a sixth-order error estimator  :math:`O(\Delta\beta^6)`. This combination dynamically adjusts the step size  :math:`\Delta\beta`
+to maintain the integration error within a specified tolerance. The method requires an initial estimate of the step size, which can be obtained from a simpler
+method. Each iteration involves six matrix-vector multiplications and six linear combinations, and it may repeat the evolution steps if the proposed step size
 is deemed unsuitable.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.evolution.euler.euler
     ~seemps.evolution.euler.euler2

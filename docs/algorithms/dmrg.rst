@@ -66,6 +66,5 @@ pairs of sites---e.g., (1,2), then (2,3), then (3,4), and so on---back and forth
 until the energy and the state converge.
 
 .. autosummary::
-    :toctree: ../generated
 
     ~seemps.optimization.dmrg

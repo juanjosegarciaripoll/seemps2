@@ -16,7 +16,6 @@ objects. This class is extended by different convenience classes that simplify
 the construction of such models, or provide specific, well-known ones:
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.hamiltonians.NNHamiltonian
     ~seemps.hamiltonians.ConstantNNHamiltonian

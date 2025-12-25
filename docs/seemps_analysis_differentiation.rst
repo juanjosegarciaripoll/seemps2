@@ -43,7 +43,6 @@ This approximation is improved with a smoother formula to avoid noise resilience
 An example on how to use these functions is shown in `Differentiation.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Differentiation.ipynb>`_.
 
 .. autosummary::
-    :toctree: generated/
 
     ~finite_differences.smooth_finite_differences_mpo
 
@@ -63,7 +62,6 @@ where :math:`W` is a suitable index where the summand vanishes,
 and :math:`H_n(x)` is the :math:`n`-th Hermite polynomial on :math:`x`.
 
 .. autosummary::
-   :toctree: generated/
 
    ~hdaf.hdaf_mpo
 

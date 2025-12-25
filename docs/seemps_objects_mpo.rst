@@ -39,7 +39,6 @@ quantum subsystems---for instance, when you wish to implement a QFT onto a
 set of qubits, the :py:meth:`~seemps.operators.MPO.extend` function allows you to do it.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.operators.MPO
     ~seemps.operators.MPOList
@@ -74,7 +73,6 @@ is the matrix multiplication operator `@`, which relies on the strategy
 stored in the state for contraction and simplification.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.operators.MPO.apply
     ~seemps.operators.MPOList.apply

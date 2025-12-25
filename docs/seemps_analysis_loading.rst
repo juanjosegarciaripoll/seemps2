@@ -11,7 +11,6 @@ Tensorized operations
 These methods are useful to construct MPS corresponding to domain discretizations, and compose them using tensor products and sums to construct multivariate domains.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.mesh.RegularInterval
     ~seemps.analysis.mesh.ChebyshevInterval

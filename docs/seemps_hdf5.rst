@@ -41,7 +41,6 @@ same state from the file.
 This is a summary of all the functions provided by :py:mod:`seemps.hdf5`.
 
 .. autosummary::
-   :toctree: generated/
 
    ~seemps.hdf5.read_mps
    ~seemps.hdf5.write_mps

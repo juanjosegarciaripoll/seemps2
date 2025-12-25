@@ -46,7 +46,6 @@ specifying both the center for the canonical form, as well as the truncation
 errors and bond dimensions that we will allow.
 
 .. autosummary::
-    :toctree: generated/
 
     CanonicalMPS
     CanonicalMPS.from_vector

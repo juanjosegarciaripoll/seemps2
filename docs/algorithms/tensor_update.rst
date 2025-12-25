@@ -75,7 +75,6 @@ In SeeMPS, two functions are responsible for this update. These are the followin
 two methods of the :class:`CanonicalMPS` class:
 
 .. autosummary::
-    :toctree: ../generated
 
     ~seemps.state.CanonicalMPS.update_2site_right
     ~seemps.state.CanonicalMPS.update_2site_left

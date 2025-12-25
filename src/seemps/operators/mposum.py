@@ -181,7 +181,7 @@ class MPOSum(object):
             Where to place the tensors of the original MPO.
 
         Returns
-        ------
+        -------
         MPOSum
             The extended operator.
         """

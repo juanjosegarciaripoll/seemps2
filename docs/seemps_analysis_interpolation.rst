@@ -29,7 +29,6 @@ are performed by the displacement operators
   \right. \quad \hat{\Sigma}^- = \left(\hat{\Sigma}^+\right)^\dagger.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.interpolation.finite_differences_interpolation
 
@@ -53,7 +52,6 @@ intervals `s \in [0,2^{n-1}) \cup [2^{n+m}-2^{n-1},2^{n+m})`, and (iii)  Fourier
   |f^{(n+m)}\rangle = \text{QFT}^{-1}U_{\text{sym}} \left(|{0}\rangle^{\otimes m} \otimes \text{QFT}|{f^{(n)}}\rangle\right)=: U_\text{int}^{n,m}|{f^{(n)}}\rangle.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.analysis.interpolation.fourier_interpolation
 

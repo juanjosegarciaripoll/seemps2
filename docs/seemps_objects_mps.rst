@@ -45,7 +45,6 @@ from the state vector of the composite quantum state. In addition to this, we
 offer some functions to create convenience states
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.state.MPS
     ~seemps.state.MPS.from_vector
@@ -96,7 +95,6 @@ The following functions provide access to single- and two-body expectation
 values in a convenient way.
 
 .. autosummary::
-    :toctree: generated/
 
     ~seemps.state.scprod
     ~seemps.state.vdot

@@ -23,7 +23,6 @@ These are useful to integrate equispaced discretizations, each of increasing ord
 - :func:`mps_fifth_order` requires a number of qubits divisible by 4.
 
 .. autosummary::
-    :toctree: generated/
 
     mps_trapezoidal
     mps_simpson38
@@ -34,7 +33,6 @@ Clenshaw-Curtis quadratures
 These are useful to integrate irregular discretizations on either the Chebyshev zeros (Chebyshev-Gauss nodes) or the Chebyshev extrema (Chebyshev-Lobatto nodes). These have an exponentially better rate of convergence than the Newton-Côtes ones. Compatible with discretizations stemming from :class:`~seemps.analysis.mesh.ChebyshevInterval` objects.
 
 .. autosummary::
-    :toctree: generated/
 
     mps_fejer
     mps_clenshaw_curtis
@@ -44,7 +42,6 @@ Integration
 The standard method for integration consists in first constructing the multivariate quadrature rule using the previous routines, together with :class:`~seemps.analysis.factories.mps_tensor_product` and :class:`~seemps.analysis.factories.mps_tensor_sum` tensorized operations. Then, this quadrature is to be contracted with the desired MPS target using the scalar product routine :class:`~seemps.state.scprod`. However, for ease of use, a helper routine :class:`integrate_mps` is given that automatically computes the best possible quadrature rule associated to a :class:`~seemps.analysis.mesh.Mesh` object, and contracts with the target MPS to compute the integral:
 
 .. autosummary::
-    :toctree: generated/
 
     integrate_mps
 

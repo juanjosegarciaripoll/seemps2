@@ -27,7 +27,6 @@ Moreover, this method performs the decomposition of a given input black-box. Thi
 An example on how to use TCI for all these scenarios is shown in `TT-Cross.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/TT-Cross.ipynb>`_.
 
 .. autosummary::
-    :toctree: generated/
 
     ~cross_dmrg
     ~cross_greedy

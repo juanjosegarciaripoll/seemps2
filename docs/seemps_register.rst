@@ -18,7 +18,6 @@ implement local and two-qubit transformations onto an MPS that encodes a quantum
 register. These include the following ones:
 
 .. autosummary::
-   :toctree: generated/
 
    ~seemps.register.circuit.VQECircuit
    ~seemps.register.circuit.ParameterizedLayeredCircuit
@@ -62,7 +61,6 @@ over the whole quantum register (:func:`qft`, :func:`qft_mpo`,...) and in
 other cases you can specify a subset of quantum systems (:func:`qft_nd_mpo`, etc).
 
 .. autosummary::
-   :toctree: generated/
 
    ~seemps.qft.qft
    ~seemps.qft.iqft
@@ -78,7 +76,6 @@ Other transformations
 ---------------------
 
 .. autosummary::
-   :toctree: generated/
 
    ~seemps.register.twoscomplement
    ~seemps.register.qubo_mpo

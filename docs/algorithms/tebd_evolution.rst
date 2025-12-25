@@ -21,7 +21,6 @@ The algorithm proceeds by applying local gates made of small time-steps
 the bond dimension does not grow too much.
 
 .. autosummary::
-   :toctree: ../generated/
 
    ~seemps.evolution.trotter.Trotter2ndOrder
    ~seemps.evolution.trotter.Trotter3rdOrder

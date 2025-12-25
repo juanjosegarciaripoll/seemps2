@@ -16,7 +16,6 @@ This method can be enhanced by performing rank-revealing optimizations using SVD
 Finally, the interpolative constructions can be developed on top of a local Lagrange interpolation framework, :func:`~lagrange_local_rank_revealing`. Then, the tensor cores become sparse, largely improving the overall efficiency of the algorithm.
 
 .. autosummary::
-    :toctree: generated/
 
     ~mps_lagrange_chebyshev_basic
     ~mps_lagrange_chebyshev_rr

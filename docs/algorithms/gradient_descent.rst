@@ -44,6 +44,5 @@ with the definitions
 This formulation, used in Ref. :cite:t:`GarciaMolina2024`, is implemented by the function :func:`~seemps.optimization.gradient_descent`.
 
 .. autosummary::
-   :toctree: ../generated/
 
    ~seemps.optimization.gradient_descent

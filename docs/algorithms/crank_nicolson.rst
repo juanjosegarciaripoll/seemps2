@@ -13,6 +13,5 @@ Techniques for matrix inversion can be employed to solve the system of equations
 Other methods, such as the conjugate gradient descent :func:`seemps.cgs.cgs` , can also be adapted for implementation within an MPO-MPS framework.
 
 .. autosummary::
-   :toctree: ../generated/
 
    ~seemps.evolution.crank_nicolson

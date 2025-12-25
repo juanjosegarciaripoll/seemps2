@@ -120,8 +120,7 @@ dev = [
 doc = [
     "numpydoc>=1.10.0",
     "pydata-sphinx-theme>=0.16.1",
-    "sphinx>=8.2.3",
-    "sphinx-design>=0.6.1",
+    "sphinx>=9.0.0",
     "sphinxcontrib-bibtex>=2.6.5",
 ]
 
