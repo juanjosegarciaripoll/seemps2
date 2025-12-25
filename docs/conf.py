@@ -43,7 +43,6 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
-    "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",  # Link to other project's doc.
     "sphinxcontrib.bibtex",  # Bibliography files
 ]
@@ -64,7 +63,7 @@ numpydoc_xref_param_type = True
 numpydoc_show_class_members = False  # https://stackoverflow.com/a/34604043/5201771
 numpydoc_attributes_as_param_list = False
 
-autoclass_content = "both"
+autoclass_content = "class"
 # TODO: Fix type hints. They should show somewhere.
 # autodoc_typehints = "description"
 autodoc_typehints_format = "short"
@@ -78,15 +77,10 @@ autodoc_type_aliases = {
 }
 autodoc_default_options = {
     "no-value": True,
+    "exclude-members": "__init__",
     "inherited-members": False,
     "show-inheritance": True,
-}
-
-napoleon_numpy_docstring = True
-napoleon_type_aliases = None
-napoleon_include_special_with_doc = False
-napoleon_type_aliases = {
-    "Strategy": "~seemps.state.Strategy",
+    "special-members": False,
 }
 
 intersphinx_mapping = {
