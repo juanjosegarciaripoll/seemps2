@@ -34,4 +34,7 @@ It is possible to extend this algorithm to MPOs by recasting them as an MPS.
    :toctree: ../generated/
 
    ~seemps.truncate.simplify
-   ~seemps.truncate.simplify_mpo.simplify_mpo
+   ~seemps.truncate.simplify_mpo
+   ~seemps.state.Strategy
+   ~seemps.state.Simplification
+   ~seemps.state.Truncation
