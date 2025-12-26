@@ -15,8 +15,8 @@ These methods are useful to construct MPS corresponding to domain discretization
     ~seemps.analysis.mesh.RegularInterval
     ~seemps.analysis.mesh.ChebyshevInterval
     ~seemps.analysis.factories.mps_interval
-    ~seemps.analysis.factories.mps_tensor_product
-    ~seemps.analysis.factories.mps_tensor_sum
+    ~seemps.state.mps_tensor_product
+    ~seemps.state.mps_tensor_sum
 
 Tensor cross-interpolation (TT-Cross)
 -------------------------------------

@@ -2,9 +2,9 @@ import numpy as np
 from numpy.polynomial import Chebyshev
 from scipy.special import erf
 
-from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION
+from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION, mps_tensor_sum
 from seemps.analysis.mesh import RegularInterval
-from seemps.analysis.factories import mps_tensor_sum, mps_interval
+from seemps.analysis.factories import mps_interval
 from seemps.analysis.expansion import (
     ChebyshevExpansion,
     LegendreExpansion,

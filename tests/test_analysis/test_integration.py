@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.fft import ifft
 
-from seemps.state import MPS, scprod
-from seemps.analysis.factories import mps_exponential, mps_tensor_product
+from seemps.state import MPS, scprod, mps_tensor_product
+from seemps.analysis.factories import mps_exponential
 from seemps.analysis.mesh import (
     Mesh,
     ChebyshevInterval,

@@ -1,13 +1,13 @@
 import numpy as np
-from seemps.state import NO_TRUNCATION
+
+# TODO: Move mps_tensor_product/sum tests elsewhere
+from seemps.state import NO_TRUNCATION, mps_tensor_product, mps_tensor_sum
 from seemps.analysis.factories import (
     mps_equispaced,
     mps_exponential,
     mps_sin,
     mps_cos,
     mps_interval,
-    mps_tensor_sum,
-    mps_tensor_product,
 )
 from seemps.analysis.mesh import RegularInterval, ChebyshevInterval
 from ..tools import TestCase

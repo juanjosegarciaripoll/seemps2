@@ -39,7 +39,7 @@ These are useful to integrate irregular discretizations on either the Chebyshev 
 
 Integration
 -----------
-The standard method for integration consists in first constructing the multivariate quadrature rule using the previous routines, together with :class:`~seemps.analysis.factories.mps_tensor_product` and :class:`~seemps.analysis.factories.mps_tensor_sum` tensorized operations. Then, this quadrature is to be contracted with the desired MPS target using the scalar product routine :class:`~seemps.state.scprod`. However, for ease of use, a helper routine :class:`integrate_mps` is given that automatically computes the best possible quadrature rule associated to a :class:`~seemps.analysis.mesh.Mesh` object, and contracts with the target MPS to compute the integral:
+The standard method for integration consists in first constructing the multivariate quadrature rule using the previous routines, together with :class:`~seemps.state.mps_tensor_product` and :class:`~seemps.state.mps_tensor_sum` tensorized operations. Then, this quadrature is to be contracted with the desired MPS target using the scalar product routine :class:`~seemps.state.scprod`. However, for ease of use, a helper routine :class:`integrate_mps` is given that automatically computes the best possible quadrature rule associated to a :class:`~seemps.analysis.mesh.Mesh` object, and contracts with the target MPS to compute the integral:
 
 .. autosummary::
 

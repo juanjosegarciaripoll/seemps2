@@ -25,6 +25,7 @@ from .factories import (
 from . import entropies, sampling
 from .environments import scprod, vdot
 from .simplification import simplify, SIMPLIFICATION_STRATEGY, simplify_mps
+from .compose import mps_tensor_product, mps_tensor_sum
 from . import simplification
 
 __all__ = [
@@ -44,6 +45,8 @@ __all__ = [
     "AKLT",
     "GHZ",
     "graph_state",
+    "mps_tensor_product",
+    "mps_tensor_sum",
     "product_state",
     "random_mps",
     "random_uniform_mps",

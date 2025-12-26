@@ -1,10 +1,9 @@
 from __future__ import annotations
 import numpy as np
 
-from ...state import MPS, scprod
+from ...state import MPS, scprod, mps_tensor_product
 from ...typing import Matrix, MPSOrder
 from ..cross import cross_interpolation, CrossStrategyMaxvol, BlackBoxLoadMPS
-from ..factories import mps_tensor_product
 from ..mesh import Interval, RegularInterval, ChebyshevInterval, ArrayInterval, Mesh
 from .mps_quadratures import (
     mps_trapezoidal,
