@@ -1,6 +1,6 @@
 import numpy as np
 from math import sqrt
-from seemps.state.factories import graph_state, GHZ, product_state, W, AKLT
+from seemps.state.factories import graph_state, GHZ, product_state, W, AKLT, mps_ones
 from ..tools import TestCase
 
 
@@ -120,3 +120,16 @@ class TestSampleStates(TestCase):
             Ψ = W(i)
             self.assertEqual(Ψ.size, i)
             self.assertEqual(Ψ.dimension(), 2**i)
+
+    def test_mps_ones(self):
+        A23 = mps_ones([2, 3, 4])
+        self.assertEqual(A23.physical_dimensions(), [2, 3, 4])
+        self.assertEqual(A23.bond_dimensions(), [1, 1, 1, 1])
+        self.assertSimilar(A23.to_vector(), np.ones(2 * 3 * 4))
+
+        A23_norm = mps_ones([2, 3, 4], normalize=True)
+        self.assertEqual(A23_norm.physical_dimensions(), [2, 3, 4])
+        self.assertEqual(A23_norm.bond_dimensions(), [1, 1, 1, 1])
+        self.assertSimilar(
+            A23_norm.to_vector(), np.ones(2 * 3 * 4) / np.sqrt(2 * 3 * 4)
+        )
