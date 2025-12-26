@@ -100,6 +100,10 @@ class MPS(array.TensorArray):
         """Convert this MPS to a state vector."""
         return _mps2vector(self._data)
 
+    def to_tensor(self) -> Vector:
+        """Convert this MPS to a multidimensional tensor."""
+        return _mps2vector(self._data).reshape(self.physical_dimensions())
+
     @classmethod
     def from_vector(
         cls,

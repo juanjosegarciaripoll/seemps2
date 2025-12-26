@@ -109,9 +109,17 @@ class MPSSum:
             return MPSSum([n * w for w in self.weights], self.states, check_args=False)
         raise InvalidOperation("*", n, self)
 
+    def physical_dimensions(self) -> list[int]:
+        """List of physical dimensions for the quantum subsystems."""
+        return self.states[0].physical_dimensions()
+
     def to_vector(self) -> Vector:
         """Return the wavefunction of this quantum state."""
         return sum(wa * A.to_vector() for wa, A in zip(self.weights, self.states))  # type: ignore # pyright: ignore[reportReturnType]
+
+    def to_tensor(self) -> Vector:
+        """Convert this MPS to a multidimensional tensor."""
+        return self.to_vector().reshape(self.physical_dimensions())
 
     def _joined_tensors(self, i: int, L: int) -> Tensor3:
         """Join the tensors from all MPS into bigger tensors."""
