@@ -19,6 +19,13 @@ class TestMPSTensorProduct(TestCase):
         self.v2_tensor = self.v2.reshape(1, -1, 1)
         return super().setUp()
 
+    def test_tensor_sum_preserves_states(self):
+        A = self.random_mps([2, 3, 4])
+        B = mps_tensor_product([A], mps_order="A", strategy=None)
+        self.assertTrue(all(np.all(A[i] == B[i]) for i in range(len(A))))
+        B = mps_tensor_product([A], mps_order="B", strategy=None)
+        self.assertTrue(all(np.all(A[i] == B[i]) for i in range(len(A))))
+
     def test_tensor_product_states_A_order(self):
         A = product_state(self.v1, 3)
         B = product_state(self.v2, 2)

@@ -140,6 +140,8 @@ def mps_tensor_sum(
     result : MPS | CanonicalMPS
         The resulting MPS from the tensor sum of the input list.
     """
+    if len(mps_list) == 1:
+        return mps_list[0]
     if mps_order == "A":
         result = _mps_tensor_sum_serial_order(mps_list)
     elif mps_order == "B":

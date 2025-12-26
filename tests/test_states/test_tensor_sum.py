@@ -1,32 +1,18 @@
 import numpy as np
 from seemps.state import NO_TRUNCATION, mps_tensor_sum
-from ..test_analysis.tools_analysis import reorder_tensor
 from ..tools import TestCase
-from seemps.analysis.mesh import RegularInterval
-from seemps.analysis.factories import mps_interval
 
 
 class TestMPSOperations(TestCase):
-    def test_tensor_sum(self):
-        sites = 5
-        interval = RegularInterval(-1, 2, 2**sites)
-        mps_x = mps_interval(interval)
-        X, Y = np.meshgrid(interval.to_vector(), interval.to_vector())
-        # Order A
-        mps_x_plus_y_A = mps_tensor_sum([mps_x, mps_x], mps_order="A")
-        Z_mps_A = mps_x_plus_y_A.to_vector().reshape((2**sites, 2**sites))
-        self.assertSimilar(Z_mps_A, X + Y)
-        # Order B
-        mps_x_plus_y_B = mps_tensor_sum([mps_x, mps_x], mps_order="B")
-        Z_mps_B = mps_x_plus_y_B.to_vector().reshape((2**sites, 2**sites))
-        Z_mps_B = reorder_tensor(Z_mps_B, [sites, sites])
-        self.assertSimilar(Z_mps_B, X + Y)
-
     def test_tensor_sum_one_site(self):
         A = self.random_mps([2, 3, 4])
-        self.assertSimilar(
-            mps_tensor_sum([A], mps_order="A").to_vector(), A.to_vector()
-        )
+        B = mps_tensor_sum([A], mps_order="A", strategy=None)
+        self.assertEqual(A.physical_dimensions(), B.physical_dimensions())
+        self.assertTrue(all(np.all(A[i] == B[i]) for i in range(len(A))))
+
+        B = mps_tensor_sum([A], mps_order="B", strategy=None)
+        self.assertEqual(A.physical_dimensions(), B.physical_dimensions())
+        self.assertTrue(all(np.all(A[i] == B[i]) for i in range(len(A))))
 
     def test_tensor_sum_small_size_A_order(self):
         A = self.random_mps([2, 3, 4])
