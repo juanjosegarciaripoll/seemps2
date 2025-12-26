@@ -27,7 +27,7 @@ def product_state(
     """
 
     def to_tensor(v: VectorLike | Iterable[VectorLike]) -> Tensor3:
-        v = np.asarray(v)
+        v = np.asarray(v, copy=True)
         assert v.ndim == 1
         return v.reshape(1, v.size, 1)
 

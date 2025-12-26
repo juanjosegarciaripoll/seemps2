@@ -3,6 +3,8 @@ from .mps import MPS
 from ..typing import Tensor3, MPSOrder
 from .simplification import simplify_mps, Strategy
 
+# TODO: All this logic *must* be simplified
+
 
 def _map_mps_locations(
     mps_list: list[MPS], mps_order: MPSOrder
@@ -94,9 +96,7 @@ def mps_tensor_product(
         The resulting MPS from the tensor product of the input list.
     """
     if mps_order == "A":
-        nested_sites = [mps._data for mps in mps_list]
-        flattened_sites = [site for sites in nested_sites for site in sites]
-        result = MPS(flattened_sites)
+        result = MPS(sum((mps._data for mps in mps_list), []))
     elif mps_order == "B":
         terms = _mps_tensor_terms(mps_list, mps_order)
         result = terms[0]
