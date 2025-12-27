@@ -3,6 +3,7 @@
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
+import warnings
 import seemps
 import importlib
 import inspect
@@ -74,12 +75,17 @@ autodoc_typehints_format = "short"
 autodoc_preserve_defaults = True
 autodoc_type_aliases = {
     "DenseOperator": "~seemps.typing.DenseOperator",
+    "MPS": "~seemps.state.MPS",
+    "MPSSum": "~seemps.state.MPSSum",
+    "MPO": "~seemps.operator.MPO",
+    "MPOList": "~seemps.operator.MPOList",
+    "MPOSum": "~seemps.operator.MPOSum",
     "Operator": "~seemps.typing.Operator",
+    "Strategy": "~seemps.state.Strategy",
     "Vector": "~seemps.typing.Vector",
     "VectorLike": "~seemps.typing.VectorLike",
+    "Weight": "~seemps.typing.Weight",
     "python:list": "list",
-    "Weight": "Weight",
-    "Strategy": "~seemps.state.Strategy",
 }
 autodoc_default_options = {
     "no-value": True,
@@ -87,6 +93,7 @@ autodoc_default_options = {
     "inherited-members": False,
     "show-inheritance": True,
     "special-members": False,
+    "imported-members": False,
 }
 
 intersphinx_mapping = {
@@ -233,7 +240,9 @@ def generate_type(module_name, name):
 def generate_files_for_module(module_name: str, m):
     symbols = m.__dict__
     if "__all__" in symbols:
-        for name in symbols:
+        all_symbols = symbols["__all__"]
+        print(f"Exporting:\n{all_symbols}")
+        for name in all_symbols:
             o = symbols[name]
             if inspect.isclass(o):
                 generate_class(module_name, name)
@@ -241,6 +250,8 @@ def generate_files_for_module(module_name: str, m):
                 generate_function(module_name, name)
             elif name in autodoc_type_aliases:
                 generate_type(module_name, name)
+    else:
+        warnings.warn(f"Module {module_name} at {m.__file__} lacks field __all__")
 
 
 def generate_files():

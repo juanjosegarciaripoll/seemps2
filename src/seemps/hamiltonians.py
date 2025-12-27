@@ -334,3 +334,11 @@ class HeisenbergHamiltonian(ConstantTIHamiltonian):
         else:
             Hlocal = field[0] * σx + field[1] * σy + field[2] * σz
         return super().__init__(size, interaction=Hint, local_term=Hlocal)
+
+
+__all__ = [
+    "ConstantNNHamiltonian",
+    "ConstantTIHamiltonian",
+    "HeisenbergHamiltonian",
+    "NNHamiltonian",
+]

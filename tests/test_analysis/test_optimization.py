@@ -6,7 +6,7 @@ from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.optimization import (
     optimize_mps,
     binary_search_mps,
-    get_search_environments,
+    _get_search_environments,
 )
 
 from ..tools import TestCase
@@ -32,7 +32,7 @@ class TestBinarySearch(TestCase):
         rng = np.random.default_rng(42)
         thresholds = rng.uniform(a, b, size=10)
         for t in thresholds:
-            envs = get_search_environments(mps)
+            envs = _get_search_environments(mps)
             bits_cached = binary_search_mps(mps, t, search_environments=envs)
             bits_fresh = binary_search_mps(mps, t)
             self.assertSimilar(bits_cached, bits_fresh)
@@ -49,7 +49,7 @@ class TestBinarySearch(TestCase):
         rng = np.random.default_rng(42)
         thresholds = rng.uniform(a, b, size=10)
         for t in thresholds:
-            envs = get_search_environments(mps)
+            envs = _get_search_environments(mps)
             bits_cached = binary_search_mps(
                 mps, t, increasing=False, search_environments=envs
             )

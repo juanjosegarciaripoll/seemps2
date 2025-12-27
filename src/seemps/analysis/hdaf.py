@@ -21,18 +21,18 @@ def auto_sigma(
 def _asymptotic_factor(M: int, l: int, c: Float) -> Float:
     """
     Equivalent to sqrt(factorial(M + l)) * c ** (M // 2) / factorial(M // 2).
-    This is a helper to allow computing 'width_bound' even for very large M.
+    This is a helper to allow computing `width_bound` even for very large M.
     """
     Mhalf = M // 2
     return np.exp(0.5 * loggamma(M + l + 1) + Mhalf * np.log(c) - loggamma(Mhalf + 1))
 
 
-def width_bound(s0: Float, M: int, l: int, time: Float, eps: Float = 1e-16) -> Float:
-    """
+def _width_bound(s0: Float, M: int, l: int, time: Float, eps: Float = 1e-16) -> Float:
+    r"""
     Analytic upper bound for the width of the HDAF with the same given
     parameters.
 
-    Returns a value xb such that |HDAF(x)| < eps, for |x| >= xb.
+    Returns a value xb such that :math:`|HDAF(x)| < \mathrm{eps}`, for :math:`|x| >= xb`.
     """
     abs_st = (s0**4 + time**2) ** 0.25
 
@@ -153,7 +153,7 @@ def hdaf_mpo(
     tol = strategy.get_simplification_tolerance()
 
     # Make kernel vector
-    num_elems = ceil(width_bound(s0=s0, M=M, l=derivative, time=time, eps=tol) / dx)
+    num_elems = ceil(_width_bound(s0=s0, M=M, l=derivative, time=time, eps=tol) / dx)
     num_elems = min(num_elems, 2 ** (num_qubits - 1))
     pos_half = dx * np.arange(num_elems)
     hdaf_vec_pos = hdaf_kernel(pos_half, dx, s0, M, time, derivative)
@@ -171,3 +171,8 @@ def hdaf_mpo(
     mpo.strategy = strategy
 
     return mpo
+
+
+__all__ = [
+    "hdaf_mpo",
+]

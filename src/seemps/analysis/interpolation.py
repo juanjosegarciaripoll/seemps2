@@ -9,7 +9,7 @@ from .finite_differences import tridiagonal_mpo
 from .space import Space, mpo_flip
 
 
-def twoscomplement(L: int, strategy: Strategy = DEFAULT_STRATEGY):
+def twos_complement(L: int, strategy: Strategy = DEFAULT_STRATEGY):
     """Two's complement operation."""
     A0 = np.zeros((1, 2, 2, 2))
     A0[0, 0, 0, 0] = 1.0
@@ -24,7 +24,7 @@ def twoscomplement(L: int, strategy: Strategy = DEFAULT_STRATEGY):
 
 
 def fourier_interpolation_1D(
-    ψ0mps: MPS,
+    vector: MPS,
     space: Space,
     M0: int,
     Mf: int,
@@ -36,30 +36,30 @@ def fourier_interpolation_1D(
 
     Parameters
     ----------
-    ψ0mps: MPS
+    vector: MPS
         Discretized multidimensional function MPS.
     space: Space
-        Space object of the defined ψ0mps.
+        Space object of the defined vector.
     MO: int
         Initial number of sites.
     Mf: int
         Final number of sites.
     dim: int
         Dimension to perform the interpolation.
-        strategy : Strategy, optional
-            Truncation strategy, defaults to DEFAULT_STRATEGY
+    strategy : Strategy, optional
+        Truncation strategy, defaults to DEFAULT_STRATEGY
 
     Returns
     -------
-    ψfmps: MPS
+    result: MPS
         Interpolated MPS.
     new_space: Space
         New space of the interpolated MPS.
     """
     old_sites = space.sites
-    U2c = space.extend(mpo_flip(twoscomplement(M0)), dim)
+    U2c = space.extend(mpo_flip(twos_complement(M0)), dim)
     QFT_op = space.extend(qft_mpo(len(old_sites[dim]), sign=+1, strategy=strategy), dim)
-    Fψ0mps = U2c @ (QFT_op @ ψ0mps)
+    Fvector = U2c @ (QFT_op @ vector)
     #
     # Extend the state with zero qubits
     new_qubits_per_dimension = space.qubits_per_dimension.copy()
@@ -70,24 +70,24 @@ def fourier_interpolation_1D(
     idx_old_sites[dim] = list(
         np.append(idx_old_sites[dim][: (-(Mf - M0) - 1)], idx_old_sites[dim][-1])
     )
-    new_size = Fψ0mps.size + Mf - M0
-    Fψfmps = Fψ0mps.extend(L=new_size, sites=sum(idx_old_sites, []))
+    new_size = Fvector.size + Mf - M0
+    Fresult = Fvector.extend(L=new_size, sites=sum(idx_old_sites, []))
     #
     # Undo Fourier transform
     iQFT_op = new_space.extend(
         mpo_flip(qft_mpo(len(new_sites[dim]), sign=-1, strategy=strategy)), dim
     )
-    U2c = new_space.extend(mpo_flip(twoscomplement(Mf, strategy=strategy)), dim)
-    ψfmps = iQFT_op @ (U2c @ Fψfmps)
-    ψfmps = sqrt(2 ** (Mf - M0)) * ψfmps
+    U2c = new_space.extend(mpo_flip(twos_complement(Mf, strategy=strategy)), dim)
+    result = iQFT_op @ (U2c @ Fresult)
+    result = sqrt(2 ** (Mf - M0)) * result
     factor = sqrt(2 ** (Mf - M0))
     if strategy.get_normalize_flag():
-        factor /= ψfmps.norm()
-    return factor * ψfmps, new_space
+        factor /= result.norm()
+    return factor * result, new_space
 
 
 def fourier_interpolation(
-    ψmps: MPS,
+    tensor: MPS,
     space: Space,
     old_sites: list,
     new_sites: list,
@@ -97,7 +97,7 @@ def fourier_interpolation(
 
     Parameters
     ----------
-    ψmps : MPS
+    tensor : MPS
         Discretized multidimensional function MPS.
     space: Space
         Space object of the defined ψmps.
@@ -106,26 +106,25 @@ def fourier_interpolation(
     new_sites : list[int]
         List of integers with the new number of sites for each dimension.
     strategy : Strategy, optional
-            Truncation strategy, defaults to DEFAULT_STRATEGY.
+        Truncation strategy, defaults to DEFAULT_STRATEGY.
 
     Returns
     -------
     MPS
         Interpolated multidimensional function MPS.
-
     """
     space = copy.copy(space)
-    if not isinstance(ψmps, CanonicalMPS):
-        ψmps = CanonicalMPS(ψmps, strategy=strategy)
+    if not isinstance(tensor, CanonicalMPS):
+        tensor = CanonicalMPS(tensor, strategy=strategy)
     for i, sites in enumerate(new_sites):
-        ψmps, space = fourier_interpolation_1D(
-            ψmps, space, old_sites[i], sites, dim=i, strategy=strategy
+        tensor, space = fourier_interpolation_1D(
+            tensor, space, old_sites[i], sites, dim=i, strategy=strategy
         )
-    return ψmps
+    return tensor
 
 
 def finite_differences_interpolation_1D(
-    ψ0mps: MPS,
+    vector: MPS,
     space: Space,
     dim: int = 0,
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -137,14 +136,14 @@ def finite_differences_interpolation_1D(
 
     Parameters
     ----------
-    ψ0mps : MPS
+    vector : MPS
         MPS representing a multidimensional function.
     space : Space
         Space on which the function is defined.
     dim : int
         Dimension to perform the interpolation.
     strategy : Strategy, optional
-            Truncation strategy, defaults to DEFAULT_STRATEGY.
+        Truncation strategy, defaults to DEFAULT_STRATEGY.
 
     Returns
     -------
@@ -159,7 +158,7 @@ def finite_differences_interpolation_1D(
                 ),
                 dim,
             )
-            @ ψ0mps
+            @ vector
         )
         # Extend the state with zero qubits
         new_qubits_per_dimension = space.qubits_per_dimension.copy()
@@ -168,7 +167,7 @@ def finite_differences_interpolation_1D(
         new_sites = new_space.sites
         new_positions = new_sites.copy()
         new_positions[dim] = list(np.array(new_positions[dim][:-(1)]))
-        new_size = ψ0mps.size + 1
+        new_size = vector.size + 1
         derivative_mps = derivative_mps.extend(L=new_size, sites=sum(new_positions, []))
         derivative_mps = (
             new_space.extend(
@@ -179,7 +178,7 @@ def finite_differences_interpolation_1D(
             )
             @ derivative_mps
         )
-        new_ψ0mps = ψ0mps.extend(L=new_size, sites=sum(new_positions, []))
+        new_ψ0mps = vector.extend(L=new_size, sites=sum(new_positions, []))
         new_ψ0mps = derivative_mps + new_ψ0mps
         return simplify(new_ψ0mps, strategy=strategy), new_space
     else:
@@ -194,11 +193,11 @@ def finite_differences_interpolation_1D(
         # First order is just a mid-point interpolation
         if order == 1:
             interpolated_points = simplify(
-                MPSSum([0.5, 0.5], [ψ0mps, Sup @ ψ0mps]),
+                MPSSum([0.5, 0.5], [vector, Sup @ vector]),
                 strategy=strategy,
             )
         elif order == 2:
-            f1 = ψ0mps
+            f1 = vector
             f2 = Sup @ f1
             f3 = Sup @ f2
             f0 = Sup.T @ f1
@@ -208,7 +207,7 @@ def finite_differences_interpolation_1D(
             )
         elif order == 3:
             Sdo = Sup.T
-            f2 = ψ0mps
+            f2 = vector
             f3 = Sup @ f2
             f4 = Sup @ f3
             f5 = Sup @ f4
@@ -233,7 +232,7 @@ def finite_differences_interpolation_1D(
         # and placing the interpolating polynomials in an MPS that
         # is only nonzero in the odd sites. We then add. There are better
         # ways for sure.
-        odd = ψ0mps.extend(
+        odd = vector.extend(
             L=new_space.n_sites,
             sites=new_positions,
             dimensions=2,
@@ -256,12 +255,12 @@ def finite_differences_interpolation(
 
     Parameters
     ----------
-    ψ0mps : MPS
+    vector : MPS
         MPS representing a multidimensional function.
     space : Space
         Space on which the function is defined.
     strategy : Strategy, optional
-            Truncation strategy, defaults to DEFAULT_STRATEGY.
+        Truncation strategy, defaults to DEFAULT_STRATEGY.
 
     Returns
     -------
@@ -276,3 +275,12 @@ def finite_differences_interpolation(
             ψmps, space, dim=i, strategy=strategy
         )
     return ψmps
+
+
+__all__ = [
+    "twos_complement",
+    "fourier_interpolation_1D",
+    "fourier_interpolation",
+    "finite_differences_interpolation_1D",
+    "finite_differences_interpolation",
+]

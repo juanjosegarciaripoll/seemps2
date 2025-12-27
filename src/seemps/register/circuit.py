@@ -355,3 +355,14 @@ class VQECircuit(ParameterizedLayeredCircuit):
             default_parameters,
             strategy,
         )
+
+
+__all__ = [
+    "interpret_operator",
+    "UnitaryCircuit",
+    "ParameterizedCircuit",
+    "LocalRotationsLayer",
+    "TwoQubitGatesLayer",
+    "ParameterizedLayeredCircuit",
+    "VQECircuit",
+]

@@ -147,3 +147,6 @@ def smooth_finite_differences_mpo(
             periodic=periodic,
             base=base,
         )
+
+
+__all__ = ["tridiagonal_mpo", "smooth_finite_differences_mpo"]

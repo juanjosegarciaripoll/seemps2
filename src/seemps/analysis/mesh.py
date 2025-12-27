@@ -386,3 +386,16 @@ def interleaving_permutation(sites_per_dimension: list[int]) -> Vector:
                 permutation.append(offsets[j] + i)
 
     return np.array(permutation, dtype=int)
+
+
+__all__ = [
+    "Interval",
+    "IntegerInterval",
+    "RegularInterval",
+    "ChebyshevInterval",
+    "ArrayInterval",
+    "Mesh",
+    "array_affine",
+    "mps_to_mesh_matrix",
+    "interleaving_permutation",
+]

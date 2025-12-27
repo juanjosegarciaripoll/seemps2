@@ -237,3 +237,15 @@ def iqft_nd_mpo(
     for subset of qubits in a quantum register with `N` qubits. See `qft_nd_mpo`.
     """
     return qft_nd_mpo(sites, N, +1, strategy)
+
+
+__all__ = [
+    "iqft",
+    "iqft_mpo",
+    "iqft_nd_mpo",
+    "qft",
+    "qft_flip",
+    "qft_mpo",
+    "qft_nd_mpo",
+    "qft_wavefunction",
+]

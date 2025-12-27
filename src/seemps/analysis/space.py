@@ -7,9 +7,9 @@ from ..operators import MPO, MPOList, MPOSum
 from .mesh import Mesh, RegularInterval
 
 
-# TODO: This might not be the place to have this function
-# It should be under operators or in qft.
 _Operator = TypeVar("_Operator", MPOSum, MPO, MPOList)
+
+# TODO: Remove this function
 
 
 def mpo_flip(operator: _Operator) -> _Operator:
@@ -209,3 +209,9 @@ class Space:
                 )
             new_positions[d] = new_positions[d][:n]
         return sorted(sum(new_positions, []))
+
+
+__all__ = [
+    "mpo_flip",
+    "Space",
+]
