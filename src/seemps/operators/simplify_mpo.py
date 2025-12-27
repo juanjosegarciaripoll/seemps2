@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import isqrt
 from . import MPO, MPOList, MPOSum
 from ..state import DEFAULT_STRATEGY, MPS, Strategy, SIMPLIFICATION_STRATEGY, simplify

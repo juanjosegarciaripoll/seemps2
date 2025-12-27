@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 from .mps import MPS
 from ..typing import Tensor3, MPSOrder

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import sqrt, log, ceil
 import numpy as np
 from scipy.special import loggamma  # type: ignore

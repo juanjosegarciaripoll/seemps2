@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from ..state import mps_tensor_product, Strategy
 from ..typing import MPSOrder
 from .mpo import MPO
