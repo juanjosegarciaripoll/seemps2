@@ -54,7 +54,7 @@ extensions = [
 bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+# templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -74,18 +74,25 @@ autoclass_content = "class"
 autodoc_typehints_format = "short"
 autodoc_preserve_defaults = True
 autodoc_type_aliases = {
+    # SeeMPS types - point to canonical locations
     "DenseOperator": "~seemps.typing.DenseOperator",
     "MPS": "~seemps.state.MPS",
     "MPSSum": "~seemps.state.MPSSum",
-    "MPO": "~seemps.operator.MPO",
-    "MPOList": "~seemps.operator.MPOList",
-    "MPOSum": "~seemps.operator.MPOSum",
+    "CanonicalMPS": "~seemps.state.CanonicalMPS",
+    "MPO": "~seemps.operators.MPO",
+    "MPOList": "~seemps.operators.MPOList",
+    "MPOSum": "~seemps.operators.MPOSum",
     "Operator": "~seemps.typing.Operator",
     "Strategy": "~seemps.state.Strategy",
     "Vector": "~seemps.typing.Vector",
     "VectorLike": "~seemps.typing.VectorLike",
     "Weight": "~seemps.typing.Weight",
-    "python:list": "list",
+    # Python stdlib types - use intersphinx
+    "Iterator": "~collections.abc.Iterator",
+    "Callable": "~collections.abc.Callable",
+    "Sequence": "~collections.abc.Sequence",
+    # Numpy types - use intersphinx
+    "ndarray": "~numpy.ndarray",
 }
 autodoc_default_options = {
     "no-value": True,
@@ -94,13 +101,22 @@ autodoc_default_options = {
     "show-inheritance": True,
     "special-members": False,
     "imported-members": False,
+    "ignore-module-all": False,  # Respect __all__ but filter by origin
 }
+
+# Prefer canonical module paths over re-exported paths
+# This ensures that links point to the original module where classes are defined
+autodoc_class_signature = "separated"
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://www.numpy.org/devdocs", None),
     "scipy": ("https://scipy.github.io/devdocs", None),
 }
+
+# Suppress warnings about duplicate type descriptions for external types
+# These happen when a type is imported but autodoc_type_aliases points to intersphinx
+# suppress_warnings = ['autodoc.import_object']
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -144,8 +160,10 @@ def generate_toplevel():
     with open(path, "w") as file:
         print(
             r""".. _API:
+
 API Reference
 =============
+
 .. toctree::
    :maxdepth: 1
 
@@ -185,6 +203,8 @@ def generate_class(module_name, name):
     object_name = module_name + "." + name
     path = Path(__file__).parent / "api" / "class" / (object_name + ".rst")
     underscore = "=" * len(object_name)
+    if name not in autodoc_type_aliases:
+        autodoc_type_aliases[name] = f"~{module_name}.{name}"
     with open(path, "w") as file:
         print(f"Creating {path}")
         print(
@@ -262,7 +282,7 @@ def generate_files():
         generate_files_for_module(module_name, m)
 
 
-def setup(app):
+def setup(app):  # noqa: ARG001
     generate_files()
 
 
