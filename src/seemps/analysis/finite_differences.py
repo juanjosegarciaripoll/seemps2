@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import numpy as np
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..operators import MPO

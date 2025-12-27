@@ -39,4 +39,4 @@ under a spin-1/2 Heisenberg Hamiltonian::
    ...   mps = U.apply_inplace(mps)
    ...   t += dt
    >>> mps
-   <seemps.state.canonical_mps.CanonicalMPS object at 0x000002166AFFC1D0>
+   <seemps.state.CanonicalMPS object at 0x000002166AFFC1D0>

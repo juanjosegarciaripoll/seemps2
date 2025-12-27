@@ -199,12 +199,16 @@ def generate_hidden_toctrees():
             )
 
 
-def generate_class(module_name, name):
+def generate_class(module_name, name, m, cls):
     object_name = module_name + "." + name
     path = Path(__file__).parent / "api" / "class" / (object_name + ".rst")
     underscore = "=" * len(object_name)
     if name not in autodoc_type_aliases:
         autodoc_type_aliases[name] = f"~{module_name}.{name}"
+    try:
+        cls.__module__ = module_name
+    except TypeError:
+        pass
     with open(path, "w") as file:
         print(f"Creating {path}")
         print(
@@ -265,7 +269,7 @@ def generate_files_for_module(module_name: str, m):
         for name in all_symbols:
             o = symbols[name]
             if inspect.isclass(o):
-                generate_class(module_name, name)
+                generate_class(module_name, name, m, o)
             elif inspect.isfunction(o):
                 generate_function(module_name, name)
             elif name in autodoc_type_aliases:
