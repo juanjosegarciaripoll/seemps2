@@ -74,6 +74,7 @@ class Interval(ABC):
         return (self[i] for i in range(self.size))
 
 
+# TODO: This must be a subclass of RegularInterval
 class IntegerInterval(Interval):
     """Equispaced integer discretization between `start` and `stop` with given `step`."""
 
@@ -109,15 +110,15 @@ class RegularInterval(Interval):
     endpoint_right: bool
     num_steps: int
     step: float
-    start_displaced: float
+    _start_displaced: float
 
     def __init__(
         self,
         start: float,
         stop: float,
         size: int,
-        endpoint_right: bool = False,
         endpoint_left: bool = True,
+        endpoint_right: bool = False,
     ):
         super().__init__(start, stop, size)
         self.endpoint_left = endpoint_left
@@ -129,7 +130,7 @@ class RegularInterval(Interval):
         else:
             self.num_steps = self.size + 1
         self.step = (stop - start) / self.num_steps
-        self.start_displaced = (
+        self._start_displaced = (
             self.start if self.endpoint_left else self.start + self.step
         )
 
@@ -143,7 +144,27 @@ class RegularInterval(Interval):
         self, idx: int | NDArray[np.integer]
     ) -> float | NDArray[np.floating]:
         super()._validate_index(idx)
-        return self.start_displaced + idx * self.step
+        return self._start_displaced + idx * self.step
+
+
+class QuantizedInterval(RegularInterval):
+    """
+    Equispaced discretization between `start` and `stop` with `n` qubits.
+
+    Specialized version of :class:`RegularInterval` that uses :math:`2^n`
+    points. Otherwise it takes the same parameters.
+    """
+
+    def __init__(
+        self,
+        start: float,
+        stop: float,
+        n: int,
+        endpoint_left: bool = True,
+        endpoint_right: bool = False,
+    ):
+        assert isinstance(n, int) and (n > 0)
+        super().__init__(start, stop, 2**n, endpoint_left, endpoint_right)
 
 
 class ChebyshevInterval(Interval):

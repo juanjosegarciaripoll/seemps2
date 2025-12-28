@@ -2,6 +2,7 @@ import numpy as np
 from math import sqrt
 from seemps.analysis.mesh import (
     Mesh,
+    QuantizedInterval,
     RegularInterval,
     ChebyshevInterval,
     mps_to_mesh_matrix,
@@ -60,6 +61,20 @@ class TestIntervals(TestCase):
 
         self.assertEqual([I[0], I[1], I[2]], list(I))
         self.assertEqual([I[0], I[1], I[2]], [x for x in I])
+
+    def test_quantized_interval_constructor(self):
+        I1 = QuantizedInterval(0, 1, 3, endpoint_left=False)
+        I2 = RegularInterval(0, 1, 2**3, endpoint_left=False)
+        self.assertEqual(I1.start, I2.start)
+        self.assertEqual(I1.stop, I2.stop)
+        self.assertEqual(I1.size, I2.size)
+        self.assertSimilar(I1.to_vector(), I2.to_vector())
+
+    def test_quantized_interval_rejects_negative_sizes(self):
+        with self.assertRaises(Exception):
+            QuantizedInterval(0, 1, -1, endpoint_left=False)
+        with self.assertRaises(Exception):
+            QuantizedInterval(0, 1, -0, endpoint_left=False)
 
     def test_regular_chebyshev_zeros_interval_constructor(self):
         I = ChebyshevInterval(-1, 1, 2)
