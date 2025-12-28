@@ -138,6 +138,7 @@ all_modules = [
     "seemps.analysis.mesh",
     "seemps.analysis.operators",
     "seemps.analysis.optimization",
+    "seemps.analysis.polynomials",
     "seemps.analysis.space",
     "seemps.evolution",
     "seemps.expectation",
