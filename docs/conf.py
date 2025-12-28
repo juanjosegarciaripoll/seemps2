@@ -129,6 +129,7 @@ html_theme = "pydata_sphinx_theme"
 all_modules = [
     "seemps.analysis",
     "seemps.analysis.cross",
+    "seemps.analysis.expansion",
     "seemps.analysis.factories",
     "seemps.analysis.finite_differences",
     "seemps.analysis.hdaf",
