@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import Sequence
+from ..typing import Weight
 import numpy as np
 from ..state import MPS
 from .mesh import Interval, RegularInterval, ChebyshevInterval
@@ -36,10 +38,61 @@ def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
     return MPS(tensors)
 
 
-def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MPS:
+def mps_sum_of_exponentials(
+    start: float,
+    stop: float,
+    sites: int,
+    k: Sequence[float | complex],
+    weights: Sequence[float | complex] | complex | float | int = 1.0,
+) -> MPS:
+    r"""
+    Create an MPS representing a sum of exponentials evaluated over a half-open interval.
+
+    Creates an MPS representation of a function
+
+    .. math::
+        f(x) = \sum_n w_n exp(-i k_n x)
+
+    Parameters
+    ----------
+    start, stop : float
+        Beginning and end of the interval :math:`[start, stop)`.
+    sites : float
+        Number `n` of tensors to discretize the interval into :math:`2^n` points.
+    k : Sequence[Weight]
+        Sequence of exponents in the function.
+    weights : Sequence[Weight] | Weight
+        Sequence of weights, or a uniform weight for all exponentials (default is 1.0).
+
+    Returns
+    -------
+    MPS
+        The MPS encoding of the function.
     """
-    Returns an MPS representing an exponential function discretized over a
-    half-open interval [start, stop).
+    output = []
+    p = np.asarray(k)
+    n = len(p)
+    ndx = list(range(n))
+    factor = np.exp(p * (start / sites))
+    w = np.ones(n) * weights
+    dx = (stop - start) / 2
+    dtype = np.dtype(type(k[0] * w[0]))
+    for _ in range(sites):
+        A = np.zeros((n, 2, n), dtype=dtype)
+        A[ndx, 0, ndx] = 1.0 * factor
+        A[ndx, 1, ndx] = np.exp(p * dx) * factor
+        output.append(A)
+        dx /= 2
+    output[0] = np.sum(output[0], 0).reshape(1, 2, n)
+    output[-1] = np.sum(output[-1] * w, -1).reshape(n, 2, 1)
+    return MPS(output)
+
+
+def mps_exponential(start: float, stop: float, sites: int, k: complex = 1) -> MPS:
+    """
+    Returns an MPS encoding of :math:`exp(k x)`.
+
+    See :func:`mps_sum_of_exponentials`.
 
     Parameters
     ----------
@@ -49,33 +102,22 @@ def mps_exponential(start: float, stop: float, sites: int, c: complex = 1) -> MP
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    c : complex, default=1
-        The coefficient in the exponent of the exponential function.
+    c : complex
+        The exponent coefficent (default is 1.0)
 
     Returns
     -------
     MPS
         An MPS representing the discretized exponential function over the interval.
     """
-    step = (stop - start) / 2**sites
-    tensor_1 = np.zeros((1, 2, 1), dtype=complex)
-    tensor_1[0, 0, 0] = np.exp(c * start)
-    tensor_1[0, 1, 0] = np.exp(c * start + c * step * 2 ** (sites - 1))
-    tensor_2 = np.zeros((1, 2, 1), dtype=complex)
-    tensor_2[0, 0, 0] = 1
-    tensor_2[0, 1, 0] = np.exp(c * step)
-    tensors_bulk = [np.zeros((1, 2, 1), dtype=complex) for _ in range(sites - 2)]
-    for idx, tensor in enumerate(tensors_bulk):
-        tensor[0, 0, 0] = 1
-        tensor[0, 1, 0] = np.exp(c * step * 2 ** (sites - (idx + 2)))
-    tensors = [tensor_1] + tensors_bulk + [tensor_2]
-    return MPS(tensors)
+    return mps_sum_of_exponentials(start, stop, sites, [k])
 
 
-def mps_sin(start: float, stop: float, sites: int) -> MPS:
+def mps_sin(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
     """
-    Returns an MPS representing a sine function discretized over a
-    half-open interval [start, stop).
+    Returns an MPS encoding of :math:`sin(k x)`.
+
+    See :func:`mps_sum_of_exponentials`.
 
     Parameters
     ----------
@@ -85,23 +127,22 @@ def mps_sin(start: float, stop: float, sites: int) -> MPS:
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    strategy : Strategy, default=DEFAULT_STRATEGY
-        The MPS simplification strategy to apply.
+    k : complex
+        The quasimomentum :math:`k` (default is 1.0)
 
     Returns
     -------
     MPS
         An MPS representing the discretized sine function over the interval.
     """
-    mps_1 = mps_exponential(start, stop, sites, c=1j)
-    mps_2 = mps_exponential(start, stop, sites, c=-1j)
-    return -0.5j * (mps_1 - mps_2).join()
+    return mps_sum_of_exponentials(start, stop, sites, [1j * k, -1j * k], [-0.5j, 0.5j])
 
 
-def mps_cos(start: float, stop: float, sites: int) -> MPS:
+def mps_cos(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
     """
-    Returns an MPS representing a cosine function discretized over a
-    half-open interval [start, stop).
+    Returns an MPS encoding of :math:`cos(k x)`.
+
+    See :func:`mps_sum_of_exponentials`.
 
     Parameters
     ----------
@@ -111,17 +152,15 @@ def mps_cos(start: float, stop: float, sites: int) -> MPS:
         The end of the interval.
     sites : int
         The number of sites or qubits for the MPS.
-    strategy : Strategy, default=DEFAULT_STRATEGY
-        The MPS simplification strategy to apply.
+    c : complex
+        The quasimomentum :math:`k` (default is 1.0)
 
     Returns
     -------
     MPS
         An MPS representing the discretized cosine function over the interval.
     """
-    mps_1 = mps_exponential(start, stop, sites, c=1j)
-    mps_2 = mps_exponential(start, stop, sites, c=-1j)
-    return 0.5 * (mps_1 + mps_2).join()
+    return mps_sum_of_exponentials(start, stop, sites, [1j * k, -1j * k], [0.5, 0.5])
 
 
 def mps_affine(mps: MPS, orig: tuple[float, float], dest: tuple[float, float]) -> MPS:
