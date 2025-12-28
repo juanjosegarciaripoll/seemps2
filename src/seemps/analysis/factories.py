@@ -280,10 +280,11 @@ def mps_interval(interval: Interval):
 
 
 __all__ = [
+    "mps_affine",
+    "mps_cos",
     "mps_exponential",
     "mps_heaviside",
-    "mps_sin",
-    "mps_cos",
-    "mps_affine",
     "mps_interval",
+    "mps_sin",
+    "mps_sum_of_exponentials",
 ]
