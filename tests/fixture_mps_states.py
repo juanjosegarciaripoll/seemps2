@@ -4,6 +4,7 @@ from .tools import TestCase
 
 class MPSStatesFixture(TestCase):
     def setUp(self):
+        super().setUp()
         self.product_state = [
             np.reshape([1.0, 2.0], (1, 2, 1)),
             np.reshape([3.0, 5.0], (1, 2, 1)),
