@@ -270,7 +270,7 @@ def generate_files_for_module(module_name: str, m):
             o = symbols[name]
             if inspect.isclass(o):
                 generate_class(module_name, name, m, o)
-            elif inspect.isfunction(o):
+            elif inspect.isfunction(o) or inspect.isbuiltin(o):
                 generate_function(module_name, name)
             elif name in autodoc_type_aliases:
                 generate_type(module_name, name)
