@@ -6,6 +6,7 @@ from seemps.analysis.factories import mps_exponential
 from seemps.analysis.mesh import (
     Mesh,
     ChebyshevInterval,
+    QuantizedInterval,
     mps_to_mesh_matrix,
     interleaving_permutation,
 )
@@ -72,22 +73,25 @@ class TestMPSIntegration(TestCase):
 
     def test_trapezoidal_integral(self):
         n = 11
-        f_mps = mps_exponential(self.a, self.b + self.step(n), n)
-        q_mps = mps_trapezoidal(self.a, self.b, n)
+        interval = QuantizedInterval(self.a, self.b, n, endpoint_right=True)
+        f_mps = mps_exponential(interval)
+        q_mps = mps_trapezoidal(interval[0], interval[-1], n)
         integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral, places=5)
 
     def test_simpson38_integral(self):
         n = 10
-        f_mps = mps_exponential(self.a, self.b + self.step(n), n)
-        q_mps = mps_simpson38(self.a, self.b, n)
+        interval = QuantizedInterval(self.a, self.b, n, endpoint_right=True)
+        f_mps = mps_exponential(interval)
+        q_mps = mps_simpson38(interval[0], interval[-1], n)
         integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral)
 
     def test_fifth_order_integral(self):
         n = 8
-        f_mps = mps_exponential(self.a, self.b + self.step(n), n)
-        q_mps = mps_fifth_order(self.a, self.b, n)
+        interval = QuantizedInterval(self.a, self.b, n, endpoint_right=True)
+        f_mps = mps_exponential(interval)
+        q_mps = mps_fifth_order(interval[0], interval[-1], n)
         integral = scprod(f_mps, q_mps)
         self.assertAlmostEqual(self.integral, integral)
 

@@ -63,7 +63,7 @@ class TestBinarySearch(TestCase):
 
 class TestMPSOptimization(TestCase):
     def test_optimize_mps_sin(self):
-        mps = mps_sin(-2, 2, 6)
+        mps = mps_sin((-2.0, 2.0, 6))
         y = mps.to_vector()
         i_min, i_max = np.argmin(y), np.argmax(y)
         (bits_min, z_min), (bits_max, z_max) = optimize_mps(mps)

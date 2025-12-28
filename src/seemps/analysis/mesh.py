@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
 from collections.abc import Sequence, Iterator
-from typing import overload
+from typing import TypeAlias, TypeVar, overload
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from ..typing import Vector, Matrix
@@ -40,15 +40,19 @@ class Interval(ABC):
     def __len__(self) -> int:
         return self.size
 
-    def _validate_index(self, idx: int | np.ndarray):
+    def _validate_index(self, idx: int | np.ndarray) -> int | np.ndarray:
         if isinstance(idx, int):
+            if idx < 0:
+                idx = self.size + idx
             if not (0 <= idx < self.size):
                 raise IndexError("Index out of range")
         elif isinstance(idx, np.ndarray):
+            idx = np.where(idx < 0, self.size + idx, idx)
             if not np.all((0 <= idx) & (idx < self.size)):
                 raise IndexError("Index out of range")
         else:
             raise TypeError("Index must be an integer or a NumPy array")
+        return idx
 
     @overload
     def __getitem__(self, idx: NDArray[np.integer]) -> NDArray[np.floating]: ...
@@ -94,8 +98,7 @@ class IntegerInterval(Interval):
     def __getitem__(
         self, idx: int | NDArray[np.integer]
     ) -> float | NDArray[np.floating]:
-        super()._validate_index(idx)
-        return self.start + idx * self.step
+        return self.start + super()._validate_index(idx) * self.step
 
 
 class RegularInterval(Interval):
@@ -143,8 +146,7 @@ class RegularInterval(Interval):
     def __getitem__(
         self, idx: int | NDArray[np.integer]
     ) -> float | NDArray[np.floating]:
-        super()._validate_index(idx)
-        return self._start_displaced + idx * self.step
+        return self._start_displaced + super()._validate_index(idx) * self.step
 
 
 class QuantizedInterval(RegularInterval):
@@ -155,16 +157,23 @@ class QuantizedInterval(RegularInterval):
     points. Otherwise it takes the same parameters.
     """
 
+    qubits: int
+
     def __init__(
         self,
         start: float,
         stop: float,
-        n: int,
+        qubits: int,
         endpoint_left: bool = True,
         endpoint_right: bool = False,
     ):
-        assert isinstance(n, int) and (n > 0)
-        super().__init__(start, stop, 2**n, endpoint_left, endpoint_right)
+        assert isinstance(qubits, int) and (qubits > 0)
+        super().__init__(start, stop, 2**qubits, endpoint_left, endpoint_right)
+        self.qubits = qubits
+
+
+#: Alternative description (a,b,n) of a semi-open :class:`QuantizedInterval` `[a,b)` with `n` qubits.
+IntervalTuple: TypeAlias = tuple[float, float, int]
 
 
 class ChebyshevInterval(Interval):
@@ -191,7 +200,7 @@ class ChebyshevInterval(Interval):
     def __getitem__(
         self, idx: int | NDArray[np.integer]
     ) -> float | NDArray[np.floating]:
-        super()._validate_index(idx)
+        idx = super()._validate_index(idx)
         if self.endpoints:  # Chebyshev extrema
             nodes = np.cos(np.pi * idx / (self.size - 1))
         else:  # Chebyshev zeros
@@ -216,8 +225,7 @@ class ArrayInterval(Interval):
     def __getitem__(
         self, idx: int | NDArray[np.integer]
     ) -> float | NDArray[np.floating]:
-        self._validate_index(idx)
-        return self.values[idx]
+        return self.values[self._validate_index(idx)]
 
     def to_vector(self) -> np.ndarray:
         return self.values
@@ -414,6 +422,7 @@ __all__ = [
     "IntegerInterval",
     "RegularInterval",
     "ChebyshevInterval",
+    "QuantizedInterval",
     "ArrayInterval",
     "Mesh",
     "array_affine",

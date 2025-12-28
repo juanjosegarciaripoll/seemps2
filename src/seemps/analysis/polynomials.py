@@ -39,7 +39,7 @@ def _mps_x_tensor(
     N = len(x_mps)
     for n in range(N):
         # This is the operator with the information about
-        # position carried by this qubit (see `mps_equispaced()`)
+        # position carried by this qubit (see `mps_interval()`)
         On = x_mps[n]
         On = On[0, :, min(1, On.shape[2] - 1)]
         ndx = np.where(On != 0)

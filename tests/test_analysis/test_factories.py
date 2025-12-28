@@ -1,72 +1,54 @@
 import numpy as np
 from seemps.analysis.factories import (
-    mps_equispaced,
     mps_sum_of_exponentials,
     mps_exponential,
     mps_sin,
     mps_cos,
     mps_interval,
 )
-from seemps.analysis.mesh import RegularInterval, ChebyshevInterval
+from seemps.analysis.mesh import RegularInterval, ChebyshevInterval, QuantizedInterval
 from ..tools import TestCase
 
 
 class TestMPSFactories(TestCase):
-    def test_mps_equispaced(self):
-        self.assertSimilar(
-            mps_equispaced(-1, 1, 5).to_vector(),
-            np.linspace(-1, 1, 2**5, endpoint=False),
-        )
-
     def test_mps_exponential(self):
-        start = -0.3
-        end = 1.0
-        x = np.linspace(start, end, 2**5, endpoint=False)
+        interval = QuantizedInterval(-0.3, 1.0, 5)
+        x = interval.to_vector()
+        self.assertSimilar(mps_exponential(interval, k=1).to_vector(), np.exp(x))
         self.assertSimilar(
-            mps_exponential(start, end, 5, k=1).to_vector(),
-            np.exp(x),
+            mps_exponential(interval, k=0.5).to_vector(), np.exp(0.5 * x)
         )
         self.assertSimilar(
-            mps_exponential(start, end, 5, k=0.5).to_vector(),
-            np.exp(0.5 * x),
-        )
-        self.assertSimilar(
-            mps_exponential(-0.3, 1, 5, k=-0.5j).to_vector(),
-            np.exp(-0.5j * np.linspace(-0.3, 1, 2**5, endpoint=False)),
+            mps_exponential(interval, k=-0.5j).to_vector(), np.exp(-0.5j * x)
         )
 
     def test_mps_sum_of_exponentials(self):
-        start = -0.3
-        end = 1.0
-        x = np.linspace(start, end, 2**5, endpoint=False)
+        interval = QuantizedInterval(-0.3, 1.0, 5)
+        x = interval.to_vector()
         self.assertSimilar(
-            mps_exponential(start, end, 5, k=0.5).to_vector(),
-            np.exp(0.5 * x),
+            mps_exponential(interval, k=0.5).to_vector(), np.exp(0.5 * x)
         )
         self.assertSimilar(
-            mps_sum_of_exponentials(start, end, 5, k=[0.5]).to_vector(),
-            np.exp(0.5 * x),
+            mps_sum_of_exponentials(interval, k=[0.5]).to_vector(), np.exp(0.5 * x)
         )
         self.assertSimilar(
-            mps_sum_of_exponentials(start, end, 5, k=[1, 0.5]).to_vector(),
+            mps_sum_of_exponentials(interval, k=[1, 0.5]).to_vector(),
             np.exp(x) + np.exp(0.5 * x),
         )
         self.assertSimilar(
-            mps_sum_of_exponentials(
-                start, end, 5, k=[1, 0.5], weights=[2, -3j]
-            ).to_vector(),
+            mps_sum_of_exponentials(interval, k=[1, 0.5], weights=[2, -3j]).to_vector(),
             2 * np.exp(x) - 3j * np.exp(0.5 * x),
         )
 
     def test_mps_sin(self):
         self.assertSimilar(
-            mps_sin(-1, 1, 5).to_vector(),
+            mps_sin((-1, 1, 5)).to_vector(),
             np.sin(np.linspace(-1, 1, 2**5, endpoint=False)),
         )
 
     def test_mps_cos(self):
         self.assertSimilar(
-            mps_cos(-1, 1, 5).to_vector(),
+            mps_cos((-1, 1, 5)).to_vector(),
             np.cos(np.linspace(-1, 1, 2**5, endpoint=False)),
         )
 

@@ -1,30 +1,37 @@
 from __future__ import annotations
 from typing import Sequence
-from ..typing import Weight
 import numpy as np
 from ..state import MPS
-from .mesh import Interval, RegularInterval, ChebyshevInterval
+from .mesh import (
+    Interval,
+    RegularInterval,
+    ChebyshevInterval,
+    QuantizedInterval,
+    IntervalTuple,
+)
 
 
-def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
+def _mps_equispaced(interval: QuantizedInterval | IntervalTuple) -> MPS:
     """
     Returns an MPS representing a discretized interval with equispaced points.
 
     Parameters
     ----------
-    start : float
-        The start of the interval.
-    stop : float
-        The end of the interval.
-    sites : int
-        The number of sites or qubits for the MPS.
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
 
     Returns
     -------
     MPS
         An MPS representing an equispaced discretization within [start, stop].
     """
-    step = (stop - start) / 2**sites
+    if isinstance(interval, tuple):
+        interval = QuantizedInterval(*interval)
+    start, sites, step = (
+        interval[0],
+        interval.qubits,
+        interval.step,
+    )
     tensor_1 = np.zeros((1, 2, 2))
     tensor_1[0, :, :] = np.array([[[1, start], [1, start + step * 2 ** (sites - 1)]]])
     tensor_2 = np.zeros((2, 2, 1))
@@ -39,9 +46,7 @@ def mps_equispaced(start: float, stop: float, sites: int) -> MPS:
 
 
 def mps_sum_of_exponentials(
-    start: float,
-    stop: float,
-    sites: int,
+    interval: QuantizedInterval | IntervalTuple,
     k: Sequence[float | complex],
     weights: Sequence[float | complex] | complex | float | int = 1.0,
 ) -> MPS:
@@ -55,10 +60,8 @@ def mps_sum_of_exponentials(
 
     Parameters
     ----------
-    start, stop : float
-        Beginning and end of the interval :math:`[start, stop)`.
-    sites : float
-        Number `n` of tensors to discretize the interval into :math:`2^n` points.
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
     k : Sequence[Weight]
         Sequence of exponents in the function.
     weights : Sequence[Weight] | Weight
@@ -69,26 +72,27 @@ def mps_sum_of_exponentials(
     MPS
         The MPS encoding of the function.
     """
+    if isinstance(interval, tuple):
+        interval = QuantizedInterval(*interval)
+    start, step, sites = interval[0], interval.step, interval.qubits
     output = []
     p = np.asarray(k)
     n = len(p)
     ndx = list(range(n))
     factor = np.exp(p * (start / sites))
     w = np.ones(n) * weights
-    dx = (stop - start) / 2
     dtype = np.dtype(type(k[0] * w[0]))
-    for _ in range(sites):
+    for i in range(sites):
         A = np.zeros((n, 2, n), dtype=dtype)
         A[ndx, 0, ndx] = 1.0 * factor
-        A[ndx, 1, ndx] = np.exp(p * dx) * factor
+        A[ndx, 1, ndx] = np.exp(p * step * (2 ** (sites - i - 1))) * factor
         output.append(A)
-        dx /= 2
     output[0] = np.sum(output[0], 0).reshape(1, 2, n)
     output[-1] = np.sum(output[-1] * w, -1).reshape(n, 2, 1)
     return MPS(output)
 
 
-def mps_exponential(start: float, stop: float, sites: int, k: complex = 1) -> MPS:
+def mps_exponential(interval: QuantizedInterval | IntervalTuple, k: complex = 1) -> MPS:
     """
     Returns an MPS encoding of :math:`exp(k x)`.
 
@@ -96,12 +100,8 @@ def mps_exponential(start: float, stop: float, sites: int, k: complex = 1) -> MP
 
     Parameters
     ----------
-    start : float
-        The start of the interval.
-    stop : float
-        The end of the interval.
-    sites : int
-        The number of sites or qubits for the MPS.
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
     c : complex
         The exponent coefficent (default is 1.0)
 
@@ -110,10 +110,10 @@ def mps_exponential(start: float, stop: float, sites: int, k: complex = 1) -> MP
     MPS
         An MPS representing the discretized exponential function over the interval.
     """
-    return mps_sum_of_exponentials(start, stop, sites, [k])
+    return mps_sum_of_exponentials(interval, [k])
 
 
-def mps_sin(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
+def mps_sin(interval: QuantizedInterval | IntervalTuple, k: complex = 1.0) -> MPS:
     """
     Returns an MPS encoding of :math:`sin(k x)`.
 
@@ -121,12 +121,8 @@ def mps_sin(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
 
     Parameters
     ----------
-    start : float
-        The start of the interval.
-    stop : float
-        The end of the interval.
-    sites : int
-        The number of sites or qubits for the MPS.
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
     k : complex
         The quasimomentum :math:`k` (default is 1.0)
 
@@ -135,10 +131,10 @@ def mps_sin(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
     MPS
         An MPS representing the discretized sine function over the interval.
     """
-    return mps_sum_of_exponentials(start, stop, sites, [1j * k, -1j * k], [-0.5j, 0.5j])
+    return mps_sum_of_exponentials(interval, [1j * k, -1j * k], [-0.5j, 0.5j])
 
 
-def mps_cos(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
+def mps_cos(interval: QuantizedInterval | IntervalTuple, k: complex = 1.0) -> MPS:
     """
     Returns an MPS encoding of :math:`cos(k x)`.
 
@@ -146,12 +142,8 @@ def mps_cos(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
 
     Parameters
     ----------
-    start : float
-        The start of the interval.
-    stop : float
-        The end of the interval.
-    sites : int
-        The number of sites or qubits for the MPS.
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
     c : complex
         The quasimomentum :math:`k` (default is 1.0)
 
@@ -160,7 +152,7 @@ def mps_cos(start: float, stop: float, sites: int, k: complex = 1.0) -> MPS:
     MPS
         An MPS representing the discretized cosine function over the interval.
     """
-    return mps_sum_of_exponentials(start, stop, sites, [1j * k, -1j * k], [0.5, 0.5])
+    return mps_sum_of_exponentials(interval, [1j * k, -1j * k], [0.5, 0.5])
 
 
 def mps_affine(mps: MPS, orig: tuple[float, float], dest: tuple[float, float]) -> MPS:
@@ -218,7 +210,7 @@ def mps_interval(interval: Interval):
     if isinstance(interval, RegularInterval):
         start_reg = start + interval.step if not interval.endpoint_left else start
         stop_reg = stop + interval.step if interval.endpoint_right else stop
-        return mps_equispaced(start_reg, stop_reg, sites)
+        return _mps_equispaced((start_reg, stop_reg, sites))
     elif isinstance(interval, ChebyshevInterval):
         if interval.endpoints is True:  # Extrema
             start_cheb = 0
@@ -227,7 +219,7 @@ def mps_interval(interval: Interval):
             start_cheb = np.pi / (2 ** (sites + 1))
             stop_cheb = np.pi + start_cheb
         return mps_affine(
-            mps_cos(start_cheb, stop_cheb, sites),
+            mps_cos((start_cheb, stop_cheb, sites)),
             (1, -1),  # Reverse order
             (start, stop),
         )
@@ -236,7 +228,6 @@ def mps_interval(interval: Interval):
 
 
 __all__ = [
-    "mps_equispaced",
     "mps_exponential",
     "mps_sin",
     "mps_cos",

@@ -8,7 +8,6 @@ The SeeMPS library provides an exact MPS representation of several basic states,
 
 .. autosummary::
 
-    ~seemps.analysis.factories.mps_equispaced
     ~seemps.analysis.factories.mps_exponential
     ~seemps.analysis.factories.mps_sin
     ~seemps.analysis.factories.mps_cos
