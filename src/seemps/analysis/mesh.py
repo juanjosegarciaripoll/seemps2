@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from itertools import product
 from collections.abc import Sequence, Iterator
-from typing import TypeAlias, TypeVar, overload
+from typing import TypeAlias, overload
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 from ..typing import Vector, Matrix
