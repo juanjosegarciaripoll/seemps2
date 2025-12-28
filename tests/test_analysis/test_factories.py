@@ -1,5 +1,6 @@
 import numpy as np
 from seemps.analysis.factories import (
+    mps_heaviside,
     mps_sum_of_exponentials,
     mps_exponential,
     mps_sin,
@@ -11,6 +12,16 @@ from ..tools import TestCase
 
 
 class TestMPSFactories(TestCase):
+    def test_mps_heaviside(self):
+        interval = QuantizedInterval(0, 3, 2, endpoint_right=True)
+        # x = [0, 1, 2, 3]
+        self.assertSimilar(mps_heaviside(interval, 0).to_vector(), [1, 1, 1, 1])
+        self.assertSimilar(mps_heaviside(interval, 1).to_vector(), [0, 1, 1, 1])
+        self.assertSimilar(mps_heaviside(interval, 1.5).to_vector(), [0, 0, 1, 1])
+        self.assertSimilar(mps_heaviside(interval, 2).to_vector(), [0, 0, 1, 1])
+        self.assertSimilar(mps_heaviside(interval, 2.3).to_vector(), [0, 0, 0, 1])
+        self.assertSimilar(mps_heaviside(interval, 3).to_vector(), [0, 0, 0, 1])
+
     def test_mps_exponential(self):
         interval = QuantizedInterval(-0.3, 1.0, 5)
         x = interval.to_vector()

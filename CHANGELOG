@@ -3,7 +3,8 @@ Version 2.9.5
 
 * Improved creation of documentation for all exported objects.
 
-* Added new factory of MPS-encoded functions: `mps_sum_of_exponentials`.
+* Added new factory of MPS-encoded functions: `mps_sum_of_exponentials`
+  and `mps_heaviside`.
 
 * Introduced `QuantizedInterval` for regular intervals with `2**n` points.
 

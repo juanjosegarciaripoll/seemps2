@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 from typing import Sequence
 import numpy as np
 from ..state import MPS
@@ -43,6 +44,57 @@ def _mps_equispaced(interval: QuantizedInterval | IntervalTuple) -> MPS:
         tensor[0, 1, 1] = step * 2 ** (sites - (idx + 2))
     tensors = [tensor_1] + tensors_bulk + [tensor_2]
     return MPS(tensors)
+
+
+def mps_heaviside(interval: QuantizedInterval | IntervalTuple, x0: float = 0.0) -> MPS:
+    r"""
+    MPS quantization of the Heaviside function :math:`\Theta(x)`.
+
+    Creates an MPS representation of a function
+
+    .. math::
+        \Theta(x) = \left\{\begin{array}{ll}
+            0, & x < x_0\\
+            1, & \mbox{else.}
+        \end{array}\right.
+
+    Parameters
+    ----------
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
+    x0 : float
+        Position of the step (defaults to 0.0)
+
+    Returns
+    -------
+    MPS
+        The MPS encoding of the function.
+    """
+    if isinstance(interval, tuple):
+        interval = QuantizedInterval(*interval)
+    start, step, qubits = interval[0], interval.step, interval.qubits
+    output = []
+    if x0 < start:
+        ndx = 0
+    elif x0 > interval[-1]:
+        ndx = interval.size
+    else:
+        ndx = int(math.ceil(x0 - start) / step)
+    shift = qubits
+    for _ in range(qubits):
+        shift -= 1
+        bit = (ndx >> shift) & 1
+        A = np.zeros((2, 2, 2))
+        A[1, :, 1] = 1.0
+        if bit == 0:
+            A[0, 1, 1] = 1.0
+            A[0, 0, 0] = 1.0
+        else:
+            A[0, 1, 0] = 1.0
+        output.append(A)
+    output[0] = output[0][[0], :, :]
+    output[1] = np.sum(output[1], -1).reshape(2, 2, 1)
+    return MPS(output)
 
 
 def mps_sum_of_exponentials(
