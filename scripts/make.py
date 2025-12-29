@@ -93,7 +93,7 @@ def clean() -> None:
         if os.path.exists(path):
             print(f"Removing {path}")
             shutil.rmtree(path)
-    delete_directories(["seemps.egg-info"])
+    delete_directories(["SeeMPS.egg-info", "seemps.egg-info"], root="src")
     delete_directories(["__pycache__"], root="src")
     delete_directories(["__pycache__"], root="test")
     delete_files([r".*.rst"], root="docs/api/class")
@@ -101,14 +101,21 @@ def clean() -> None:
     delete_files([r".*\.so", r".*\.c", r".*\.cc", r".*\.pyd", r".*\.pyc"], root="src")
 
 
-def run_tests(verbose=False) -> bool:
+def run_tests(verbose=False, coverage=False) -> bool:
     env = os.environ.copy()
     if use_sanitizer != "no":
         env["LD_PRELOAD"] = asan_library() + " " + cpp_library()
         print(f"LD_PRELOAD={env['LD_PRELOAD']}")
     return run(
-        valgrind + uv_run + python + ["-m", "unittest", "-fv" if verbose else "-f"]
+        valgrind
+        + uv_run
+        + (["coverage", "run"] if coverage else python)
+        + ["-m", "unittest", "-fv" if verbose else "-f"]
     )
+
+
+def code_coverage_report() -> bool:
+    return run(["uv", "run", "coverage", "lcov"])
 
 
 def build_documentation(verbose=False) -> bool:
@@ -186,6 +193,9 @@ parser.add_argument(
     "--install-hooks", action="store_true", help="Install git pre-commit hooks"
 )
 parser.add_argument("--check", action="store_true", help="Run tests")
+parser.add_argument(
+    "--coverage", action="store_true", help="Run tests with coverage report"
+)
 parser.add_argument("--verbose", action="store_true", help="Verbose mode")
 parser.add_argument("--tests", action="store_true", help="Run unit tests")
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
@@ -238,7 +248,12 @@ if args.check:
     if not check(args.verbose):
         raise Exception("Tests failed")
 else:
-    if args.tests:
+    if args.coverage:
+        if not run_tests(args.verbose, args.coverage):
+            raise Exception("Unit tests failed")
+        if not code_coverage_report():
+            raise Exception("Unable to produce coverage report")
+    elif args.tests:
         if not run_tests(args.verbose):
             raise Exception("Unit tests failed")
     if args.pyright:
