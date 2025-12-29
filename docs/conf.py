@@ -141,6 +141,7 @@ all_modules = [
     "seemps.analysis.optimization",
     "seemps.analysis.polynomials",
     "seemps.analysis.space",
+    "seemps.analysis.tree",
     "seemps.evolution",
     "seemps.expectation",
     "seemps.hdf5",

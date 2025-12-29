@@ -3,7 +3,7 @@ from .black_box import (
     BlackBoxComposeMPS,
     BlackBoxLoadMPO,
 )
-from .cross import cross_interpolation, CrossStrategy
+from .cross import cross_interpolation, CrossStrategy, maxvol_square
 from .cross_maxvol import cross_maxvol, CrossStrategyMaxvol
 from .cross_dmrg import cross_dmrg, CrossStrategyDMRG
 from .cross_greedy import cross_greedy, CrossStrategyGreedy
@@ -20,4 +20,5 @@ __all__ = [
     "CrossStrategyMaxvol",
     "CrossStrategyDMRG",
     "CrossStrategyGreedy",
+    "maxvol_square",
 ]
