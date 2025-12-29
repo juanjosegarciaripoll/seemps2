@@ -39,7 +39,6 @@ class DMRGMatrixOperator(scipy.sparse.linalg.LinearOperator):
             dtype=type(L[0, 0, 0] * R[0, 0, 0] * H12[0, 0, 0, 0, 0, 0]),  # type: ignore # pyright: ignore[reportCallIssue]
         )
 
-    # TODO: implement _rmatvec() so that we can use bicg() in solve()
     def _matvec(self, v: np.ndarray) -> np.ndarray:
         """This sequence comes from
         a = opt_einsum.contract_path(
@@ -69,6 +68,71 @@ class DMRGMatrixOperator(scipy.sparse.linalg.LinearOperator):
         aux = tensordot(v, self.L, ((0,), (2,)))
         aux = tensordot(aux, self.H12, ((0, 1, 4), (2, 4, 0)))
         return tensordot(aux, self.R, ((0, 4), (2, 1))).reshape(-1)
+
+    def _rmatvec(self, v: np.ndarray) -> np.ndarray:
+        a = self.L.shape[0]
+        i = self.H12.shape[1]
+        j = self.H12.shape[3]
+        e = self.R.shape[0]
+
+        v = v.reshape(a, i, j, e)
+        aux = tensordot(v, self.L.conj(), axes=(0, 0))
+        aux = tensordot(aux, self.H12.conj(), axes=([3, 0, 1], [0, 1, 3]))
+        aux = tensordot(aux, self.R.conj(), axes=([0, 4], [0, 1]))
+
+        return aux.reshape(-1)
+
+    def trace(self) -> complex:
+        l_c = np.trace(self.L, axis1=0, axis2=2)
+        tmp = np.trace(self.H12, axis1=1, axis2=2)
+        w_ce = np.trace(tmp, axis1=1, axis2=2)
+        r_e = np.trace(self.R, axis1=0, axis2=2)
+        return np.dot(l_c, np.dot(w_ce, r_e))
+
+
+class OneSiteDMRGOperator(scipy.sparse.linalg.LinearOperator):
+    L: np.ndarray
+    H_mpo: np.ndarray
+    R: np.ndarray
+    v_shape: tuple[int, int, int]
+
+    def __init__(self, L: np.ndarray, H: np.ndarray, R: np.ndarray):
+        self.L = L
+        self.H_mpo = H
+        self.R = R
+        _, _, b = L.shape
+        _, _, f = R.shape
+        _, _, k, _ = H.shape
+        self.v_shape = (b, k, f)
+
+        super().__init__(dtype=L.dtype, shape=(b * k * f, b * k * f))  # type: ignore[call-arg] # pyright: ignore[reportCallIssue]
+
+    def _matvec(self, v: np.ndarray) -> np.ndarray:
+        v = v.reshape(self.v_shape)
+
+        aux = tensordot(v, self.L, axes=(0, 2))
+        aux = tensordot(aux, self.H_mpo, axes=([0, 3], [2, 0]))
+        aux = tensordot(aux, self.R, axes=([0, 3], [2, 1]))
+
+        return aux.reshape(-1)
+
+    def _rmatvec(self, v: np.ndarray) -> np.ndarray:
+        a = self.L.shape[0]
+        g = self.H_mpo.shape[1]
+        d = self.R.shape[0]
+        v = v.reshape(a, g, d)
+
+        aux = tensordot(v, self.L.conj(), axes=(0, 0))
+        aux = tensordot(aux, self.H_mpo.conj(), axes=([0, 2], [1, 0]))
+        aux = tensordot(aux, self.R.conj(), axes=([0, 3], [0, 1]))
+
+        return aux.reshape(-1)
+
+    def trace(self) -> complex:
+        l_c = np.trace(self.L, axis1=0, axis2=2)
+        w_ce = np.trace(self.H_mpo, axis1=1, axis2=2)
+        r_e = np.trace(self.R, axis1=0, axis2=2)
+        return np.dot(l_c, np.dot(w_ce, r_e))
 
 
 class QuadraticForm:
