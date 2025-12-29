@@ -46,6 +46,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+*.lcov
 
 # Translations
 *.mo
@@ -122,3 +123,4 @@ benchmark*.json
 
 # uv created files
 uv.lock
+
