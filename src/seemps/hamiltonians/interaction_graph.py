@@ -9,10 +9,46 @@ from ..typing import (
     Operator,
     to_dense_operator,
 )
-from ..operators import MPO, CANONICALIZE_MPO, simplify_mpo
+from ..operators import MPO
+from ..cython import _canonicalize
 
 
 class InteractionGraph:
+    r"""
+    Proxy object to help in the construction of MPOs from local terms and
+    arbitrary interactions.
+
+    This class allows the user to keep track of all interactions in a complex
+    Hamiltonian, adding local terms
+
+    .. math::
+        \sum_i h_i O_i
+
+    nearest-neighbor interactions
+
+    .. math::
+        \sum_i J_i O_i O_{i+1}
+
+    or arbitrary long-range terms
+
+    .. math::
+        \sum_{ij} J_{ij} O_i O_j
+
+    Parameters
+    ----------
+    dimensions : list[int]
+        List of dimensions of the quantum objects involved
+
+    Attributes
+    ----------
+    size : int
+        Number of quantum objects
+    dimensions : list[int]
+        List of dimensions
+    dimension: int
+        Total dimension of the Hilbert space (if it can be computed).
+    """
+
     size: int
     dimensions: list[int]
     _operators: dict[str, DenseOperator]
@@ -32,92 +68,122 @@ class InteractionGraph:
     def _add_identities(self, dimensions: list[int]) -> str:
         interaction = ""
         for d in dimensions:
-            interaction += self.operator_name(np.eye(d))
+            interaction += self._operator_name(np.eye(d))
         return interaction
 
-    @property
-    def dimension(self) -> int:
-        return math.prod(self.dimensions)
-
-    def add_identical_local_terms(self, O: Operator) -> None:
-        for i in range(self.size):
-            self.add_local_term(i, O)
-
-    def add_local_term(self, i: int, O: Operator) -> None:
-        assert 0 <= i < self.size
-        assert O.ndim == 2
-        assert O.shape[0] == self.dimensions[i] and O.shape[1] == self.dimensions[i]
-        self._interactions.append(
-            self._identity[:i] + self.operator_name(O) + self._identity[i + 1 :]
-        )
-
-    def add_interaction_term(self, i: int, Oi: Operator, j: int, Oj: Operator) -> None:
-        if j < i:
-            i, j = j, i
-            Oi, Oj = Oj, Oi
-        self._interactions.append(
-            self._identity[:i]
-            + self.operator_name(Oi)
-            + self._identity[i + 1 : j]
-            + self.operator_name(Oj)
-            + self._identity[j + 1 :]
-        )
-
-    def add_nearest_neighbor_interaction(
-        self, Oi: Operator, Oj: Operator, weights: int | float | FloatVector = 1.0
-    ) -> None:
-        if isinstance(weights, (float, int)):
-            weights = weights * np.ones(self.size - 1)
-        assert len(weights) == (self.size - 1)
-        for i, w in enumerate(weights):
-            self.add_interaction_term(i, Oi, i + 1, w * Oj)
-
-    def add_long_range_interaction(
-        self,
-        J: Operator,
-        Oi: Operator,
-        Oj: Operator | None = None,
-        keep_diagonals: bool = False,
-    ) -> None:
-        assert J.shape == (self.size, self.size)
-        J = to_dense_operator(J)
-        Oi = to_dense_operator(Oi)
-        if Oj is None:
-            symmetric = True
-        else:
-            Oj = to_dense_operator(Oj)
-            symmetric = bool(np.all(Oi == Oj))
-        if symmetric:
-            for i in range(J.shape[0]):
-                for j in range(i):
-                    self.add_interaction_term(i, Oi, j, (J[i, j] + J[j, i]) * Oi)
-                if keep_diagonals:
-                    self.add_local_term(i, J[i, i] * (Oi @ Oi))
-        else:
-            for i in range(J.shape[0]):
-                for j in range(J.shape[1]):
-                    if j != i or keep_diagonals:
-                        self.add_interaction_term(i, Oi, j, J[i, j] * Oj)
-
-    def operator_name(self, O: Operator) -> str:
+    def _operator_name(self, O: Operator) -> str:
         O = to_dense_operator(O)
         for key, value in self._operators.items():
             if (O.shape == value.shape) and np.allclose(O, value):
                 return key
-        key = self.new_key()
+        key = self._new_key()
         self._operators[key] = O
         return key
 
-    def new_key(self) -> str:
+    def _new_key(self) -> str:
         if self._last_key is None:
             self._last_key = "a"
         else:
             self._last_key = chr(ord(self._last_key) + 1)
         return self._last_key
 
+    @property
+    def dimension(self) -> int:
+        return math.prod(self.dimensions)
+
+    def add_identical_local_terms(self, O: Operator) -> None:
+        r"""Add a sum of local terms :math:`\sum_i O`."""
+        for i in range(self.size):
+            self.add_local_term(i, O)
+
+    def add_local_term(self, i: int, O: Operator) -> None:
+        """Add a single local term `O` acting on the i-th component."""
+        assert 0 <= i < self.size
+        assert O.ndim == 2
+        assert O.shape[0] == self.dimensions[i] and O.shape[1] == self.dimensions[i]
+        self._interactions.append(
+            self._identity[:i] + self._operator_name(O) + self._identity[i + 1 :]
+        )
+
+    def add_interaction_term(self, i: int, Oi: Operator, j: int, Oj: Operator) -> None:
+        """Add a pair-wise interaction between sites `i` and `j` with respective operators `Oi` and `Oj`."""
+        if j < i:
+            i, j = j, i
+            Oi, Oj = Oj, Oi
+        self._interactions.append(
+            self._identity[:i]
+            + self._operator_name(Oi)
+            + self._identity[i + 1 : j]
+            + self._operator_name(Oj)
+            + self._identity[j + 1 :]
+        )
+
+    def add_nearest_neighbor_interaction(
+        self, A: Operator, B: Operator, weights: int | float | FloatVector = 1.0
+    ) -> None:
+        r"""Add a nearest-neighbor interaction sum :math:`\sum_{i} w_{i} A_i B_{i+1}`.
+
+        Parameters
+        ----------
+        A, B : Operator
+            These are the operators :math:`A` and :math:`B`.
+        weights : int | float | FloatVector
+            The list of weights, or a common weight :math:`w_i=w` for all.
+            Defaults to :math:`w_i=1`.
+        """
+        if isinstance(weights, (float, int)):
+            weights = weights * np.ones(self.size - 1)
+        assert len(weights) == (self.size - 1)
+        for i, w in enumerate(weights):
+            self.add_interaction_term(i, A, i + 1, w * B)
+
+    def add_long_range_interaction(
+        self,
+        J: Operator,
+        A: Operator,
+        B: Operator | None = None,
+        keep_diagonals: bool = False,
+    ) -> None:
+        r"""Add a nearest-neighbor interaction sum :math:`\sum_{i} J_{ij} A_i B_{i+1}`.
+
+        Parameters
+        ----------
+        J : Operator
+            The list of weights, or a common weight :math:`w_i=w` for all.
+            Defaults to :math:`w_i=1`.
+        A, B : Operator
+            These are the operators :math:`A` and :math:`B`.
+        keep_diagonals : bool
+            If False, the terms :math:`A_iB_i` are not included (defaults to False).
+        """
+        assert J.shape == (self.size, self.size)
+        J = to_dense_operator(J)
+        A = to_dense_operator(A)
+        if B is None:
+            symmetric = True
+        else:
+            B = to_dense_operator(B)
+            symmetric = bool(np.all(A == B))
+        if symmetric:
+            for i in range(J.shape[0]):
+                for j in range(i):
+                    self.add_interaction_term(i, A, j, (J[i, j] + J[j, i]) * A)
+                if keep_diagonals:
+                    self.add_local_term(i, J[i, i] * (A @ A))
+        else:
+            for i in range(J.shape[0]):
+                for j in range(J.shape[1]):
+                    if j != i or keep_diagonals:
+                        self.add_interaction_term(i, A, j, J[i, j] * B)
+
     def to_mpo(
-        self, strategy: Strategy = DEFAULT_STRATEGY, simplify: bool = True
+        self,
+        strategy: Strategy = DEFAULT_STRATEGY,
+        simplify: bool = True,
+        simplification_strategy: Strategy = DEFAULT_STRATEGY,
     ) -> MPO:
+        """Construct the MPO associated to these interactions."""
+
         def all_prefixes(site: int) -> dict[str, int]:
             output = dict()
             n = 0
@@ -128,38 +194,43 @@ class InteractionGraph:
                     n += 1
             return output
 
-        def all_suffixes(site: int) -> dict[str, int]:
-            output = dict()
-            n = 0
-            for term in self._interactions:
-                suffix = term[site:]
-                if suffix not in output:
-                    output[suffix] = n
-                    n += 1
-            return output
+        def all_local_terms(site: int) -> set[str]:
+            return set(term[i] for term in self._interactions)
 
-        tensors = []
+        state = []
+        local_operators = []
+        L = all_prefixes(0)
         for i in range(self.size):
-            L = all_prefixes(i)
+            C = {name: index for index, name in enumerate(all_local_terms(i))}
             R = all_prefixes(i + 1)
-            A = np.zeros(
-                (len(L), self.dimensions[i], self.dimensions[i], len(R)),
-                dtype=np.complex128,
-            )
+            A = np.zeros((len(L), len(C), len(R)))
             for term in self._interactions:
                 iL = L[term[:i]]
+                iC = C[term[i]]
                 iR = R[term[: i + 1]]
-                O = self._operators[term[i]]
-                A[iL, :, :, iR] = O
-            tensors.append(A.real if np.all(A.imag == 0.0) else A)
-        lastA = tensors[-1]
-        tensors[-1] = np.sum(lastA, -1).reshape(lastA.shape[:-1] + (1,))
-        mpo = MPO(tensors, strategy)
+                A[iL, iC, iR] = 1
+            local_operators.append(C)
+            state.append(A)
+            L = R
+        lastA = state[-1]
+        state[-1] = np.sum(lastA, -1).reshape(lastA.shape[:-1] + (1,))
         if simplify:
-            return simplify_mpo(mpo, CANONICALIZE_MPO, direction=+1)
-        return mpo
+            _canonicalize(state, 0, simplification_strategy)
+
+        tensors = []
+        for d, C, A in zip(self.dimensions, local_operators, state):
+            a, _, b = A.shape
+            B = np.zeros((A.shape[0], d, d, A.shape[-1]), dtype=np.complex128)
+            for name, index in C.items():
+                B += A[:, index, :].reshape(a, 1, 1, b) * self._operators[name].reshape(
+                    d, d, 1
+                )
+            tensors.append(B.real if np.all(B.imag == 0.0) else B)
+        return MPO(tensors, strategy)
 
     def to_matrix(self) -> SparseOperator:
+        """Construct the sparse matrix associated to these interactions."""
+
         def build_sparse_matrix(term: str) -> SparseOperator:
             output = sp.identity(1).tobsr()  # type: ignore
             for name in term:
