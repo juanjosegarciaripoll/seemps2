@@ -6,7 +6,7 @@ from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod, ABC
 
-from ..cython import core
+from ..cython import destructively_truncate_vector
 from ..operators import MPO
 from ..state import schmidt, DEFAULT_STRATEGY, Strategy
 from ..typing import SparseOperator, Operator, Real
@@ -132,7 +132,7 @@ class NNHamiltonian(ABC):
                 .reshape(di * di, dj * dj)
             )
             U, s, V = schmidt._destructive_svd(Hij)
-            core.destructively_truncate_vector(s, strategy)
+            destructively_truncate_vector(s, strategy)
             ds = s.size
             s = np.sqrt(s)
             #
@@ -229,12 +229,9 @@ class ConstantNNHamiltonian(NNHamiltonian):
                 site - 1, np.eye(self.dimensions[site - 1]), operator
             )
         else:
-            self.add_interaction_term(
-                site - 1, np.eye(self.dimensions[site - 1]), 0.5 * operator
-            )
-            self.add_interaction_term(
-                site, 0.5 * operator, np.eye(self.dimensions[site + 1])
-            )
+            half = 0.5 * sp.csr_matrix(operator)
+            self.add_interaction_term(site - 1, np.eye(self.dimensions[site - 1]), half)
+            self.add_interaction_term(site, half, np.eye(self.dimensions[site + 1]))
         return self
 
     def add_interaction_term(

@@ -49,7 +49,7 @@ class TestFiniteDifferences(tools.TestCase):
         )
         D = self.Down(2, periodic=True)
         I = eye(4)
-        self.assertSimilar(D2, (D - 2 * I + D.T) / dx2)
+        self.assertSimilar(D2, (D - 2.0 * I + D.T) / dx2)
 
     def test_first_derivative_two_qubits_non_perodic(self):
         dx = 0.1
