@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Sequence
 import numpy as np
 from typing import Iterable
 from ...state import MPS
@@ -115,7 +116,9 @@ def _update_right_environment(
 
 
 def get_environment(
-    bra: SparseMPS, ket: SparseMPS, left_to_right: bool = False
+    bra: Sequence[SparseMPSTensor],
+    ket: Sequence[SparseMPSTensor],
+    left_to_right: bool = False,
 ) -> Matrix:
     """
     Build the contraction environment between two SparseMPS objects.
@@ -138,5 +141,5 @@ def get_environment(
 
 
 def scprod_filter(filter: SparseMPS, distribution: MPS) -> Vector:
-    ρ = get_environment(filter[:-1], distribution, left_to_right=True)  # pyright: ignore
-    return _contract_last_and_first(ρ.T, filter[-1]).reshape(-1)  # pyright: ignore
+    ρ = get_environment(filter[:-1], distribution, left_to_right=True)
+    return _contract_last_and_first(ρ.T, filter[-1]).reshape(-1)  # type: ignore # pyright: ignore[reportArgumentType]

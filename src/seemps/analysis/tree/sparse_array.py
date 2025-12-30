@@ -100,7 +100,7 @@ class SparseTensorArray(Sequence[SparseMPSTensor]):
         # is an MP, we can now do A[k] = value
         #
         if isinstance(k, slice):
-            self._data[k] = list(value)  # type: ignore
+            self._data[k] = list(value)  # type: ignore # pyright: ignore[reportArgumentType]
         else:
             self._data[k] = value  # type: ignore # pyright: ignore[reportCallIssue, reportArgumentType]
         return value
