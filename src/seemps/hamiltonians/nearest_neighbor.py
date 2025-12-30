@@ -6,11 +6,11 @@ from math import sqrt
 import scipy.sparse as sp  # type: ignore
 from abc import abstractmethod, ABC
 
-from .cython import core
-from .operators import MPO
-from .state import schmidt, DEFAULT_STRATEGY, Strategy
-from .typing import SparseOperator, Operator, Real
-from .tools import σx, σy, σz
+from ..cython import core
+from ..operators import MPO
+from ..state import schmidt, DEFAULT_STRATEGY, Strategy
+from ..typing import SparseOperator, Operator, Real
+from ..tools import σx, σy, σz
 
 
 class NNHamiltonian(ABC):
