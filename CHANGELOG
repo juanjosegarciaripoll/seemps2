@@ -1,4 +1,4 @@
-Version 2.9.5
+Version 2.9.6
 =============
 
 * Improved creation of documentation for all exported objects.
@@ -9,3 +9,8 @@ Version 2.9.5
 * Introduced `QuantizedInterval` for regular intervals with `2**n` points.
 
 * All MPS-encoded function factories now use `QuantizedInterval`.
+
+* Introduced `InteractionGraph` to construct arbitrarily complex
+  Hamiltonians into MPO or sparse matrix form.
+
+* Extended the documentation to include missing functions.

@@ -94,6 +94,7 @@ autodoc_type_aliases = {
     # Numpy types - use intersphinx
     "ndarray": "~numpy.ndarray",
 }
+numpydoc_xref_aliases = autodoc_type_aliases
 autodoc_default_options = {
     "no-value": True,
     "exclude-members": "__init__",

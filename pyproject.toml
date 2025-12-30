@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seemps"
-version = "2.9.5"
+version = "2.9.6"
 description = "Matrix Product State library for quantum simulation and numerical analysis"
 readme = "README.md"
 license = "MIT"

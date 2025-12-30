@@ -5,6 +5,7 @@ from .radau import radau
 from .runge_kutta import runge_kutta, runge_kutta_fehlberg
 from .tdvp import tdvp
 from . import trotter
+from .trotter import Trotter2ndOrder, Trotter3rdOrder
 from .common import TimeSpan, ODECallback
 
 __all__ = [
@@ -18,4 +19,6 @@ __all__ = [
     "radau",
     "TimeSpan",
     "ODECallback",
+    "Trotter2ndOrder",
+    "Trotter3rdOrder",
 ]

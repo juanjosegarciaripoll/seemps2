@@ -135,24 +135,24 @@ class Trotter(ABC):
 
 
 class Trotter2ndOrder(Trotter):
-    """Class implementing a 2nd order Trotter algorithm.
+    r"""Class implementing a 2nd order Trotter algorithm.
 
     This class implements a Trotter algorithm in TEBD form for a nearest-neighbor
-    interaction Hamiltonain :math:`\\sum_i h_{i,i+1}`. This second-order
+    interaction Hamiltonain :math:`\sum_i h_{i,i+1}`. This second-order
     formula is a variation of the two-sweep algorithm
 
     .. math::
-        \\Prod_{j=1}^{N} \\exp(-\\frac{i}{2} h_{j,j+1} dt)
-        \\Prod_{j=N}^{1} \\exp(-\\frac{i}{2} h_{j,j+1} dt)
+        \prod_{j=1}^{N} \exp(-\frac{i}{2} h_{j,j+1} dt)
+        \prod_{j=N}^{1} \exp(-\frac{i}{2} h_{j,j+1} dt)
 
     Parameters
     ----------
-    H : NNHamiltonian
+    H : ~seemps.hamiltonians.NNHamiltonian
         The Hamiltonian with nearest-neighbor interactions generating the
         unitary transformations.
     dt : float
         Length of the time step.
-    strategy : Strategy
+    strategy : ~seemps.state.Strategy
         Truncation strategy for the application of the unitaries."""
 
     U: PairwiseUnitaries
@@ -198,16 +198,16 @@ class Trotter2ndOrder(Trotter):
 
 
 class Trotter3rdOrder(Trotter):
-    """Class implementing a 3rd order Trotter algorithm.
+    r"""Class implementing a 3rd order Trotter algorithm.
 
     This class implements a Trotter algorithm in TEBD form for a nearest-neighbor
-    interaction Hamiltonain :math:`\\sum_i h_{i,i+1}`. This third-order
+    interaction Hamiltonain :math:`\sum_i h_{i,i+1}`. This third-order
     formula is a variation of the three-sweep algorithm
 
     .. math::
-        \\Prod_{j=1}^{N} \\exp(-\\frac{i}{4} h_{j,j+1} dt)
-        \\Prod_{j=N}^{1} \\exp(-\\frac{i}{2} h_{j,j+1} dt)
-        \\Prod_{j=1}^{N} \\exp(-\\frac{i}{4} h_{j,j+1} dt)
+        \prod_{j=1}^{N} \exp(-\frac{i}{4} h_{j,j+1} dt)
+        \prod_{j=N}^{1} \exp(-\frac{i}{2} h_{j,j+1} dt)
+        \prod_{j=1}^{N} \exp(-\frac{i}{4} h_{j,j+1} dt)
 
     Parameters
     ----------
@@ -216,7 +216,7 @@ class Trotter3rdOrder(Trotter):
         unitary transformations.
     dt : float
         Length of the time step.
-    strategy : Strategy
+    strategy : ~seemps.state.Strategy
         Truncation strategy for the application of the unitaries."""
 
     U: PairwiseUnitaries
@@ -265,3 +265,9 @@ class Trotter3rdOrder(Trotter):
         state = self.U.apply_inplace(state)
         state = self.Umid.apply_inplace(state)
         return self.U.apply_inplace(state)
+
+
+__all__ = [
+    "Trotter2ndOrder",
+    "Trotter3rdOrder",
+]
