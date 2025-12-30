@@ -1,8 +1,9 @@
 from __future__ import annotations
 from math import cos, sin, sqrt
 import numpy as np
+import scipy.sparse as sp
 from typing import Any
-from .typing import DenseOperator
+from .typing import DenseOperator, Operator
 
 
 class InvalidOperation(TypeError):
@@ -149,3 +150,9 @@ def creation(d: int) -> DenseOperator:
 def annihilation(d: int) -> DenseOperator:
     """Bosonic annihilation operator for a Hilbert space with occupations 0 to `d-1`."""
     return np.diag(sqrt(np.arange(1, d)), 1).astype(complex)
+
+
+def mkron(A: Operator, *other_operators: Operator) -> Operator:
+    for B in other_operators:
+        A = sp.kron(A, B)
+    return A
