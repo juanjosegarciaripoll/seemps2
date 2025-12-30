@@ -120,16 +120,14 @@ class TestInteractionGraph(TestCase):
         self.assertSimilar(Hmpo.to_matrix(), H, atol=0)
 
     def test_large_nearest_neighbor(self):
-        ig = InteractionGraph([2] * 10)
+        L = 11
+        ig = InteractionGraph([2] * L)
         ig.add_nearest_neighbor_interaction(self.sx, self.sx)
 
-        Hmpo = ig.to_mpo(simplify=False)
-        self.assertEqual(Hmpo.physical_dimensions(), [2] * 10)
-        self.assertSimilar(Hmpo.to_matrix(), ig.to_matrix(), atol=0)
-
         Hmpo = ig.to_mpo(simplify=True)
-        self.assertEqual(Hmpo.physical_dimensions(), [2] * 10)
-        self.assertSimilar(Hmpo.to_matrix(), ig.to_matrix(), atol=1e-15)
+        self.assertEqual(Hmpo.physical_dimensions(), [2] * L)
+        self.assertEqual(Hmpo.bond_dimensions(), ([2] + [3] * (L - 3) + [2]))
+        self.assertSimilar(Hmpo.to_matrix(), ig.to_matrix(), atol=0)
 
     def test_long_range_Ising(self):
         J = self.rng.normal(size=(3, 3))
@@ -150,6 +148,6 @@ class TestInteractionGraph(TestCase):
         self.assertSimilar(Hmpo.to_matrix(), H, atol=0)
         Hmpo = ig.to_mpo(simplify=True)
         self.assertEqual(
-            [A.shape for A in Hmpo], [(1, 2, 2, 3), (3, 2, 2, 3), (3, 2, 2, 1)]
+            [A.shape for A in Hmpo], [(1, 2, 2, 3), (3, 2, 2, 2), (2, 2, 2, 1)]
         )
-        self.assertSimilar(Hmpo.to_matrix(), H, rtol=1e-15)
+        self.assertSimilar(Hmpo.to_matrix(), H, atol=1e-15)
