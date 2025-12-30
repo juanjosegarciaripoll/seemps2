@@ -1,8 +1,18 @@
 from __future__ import annotations
-
 from math import isqrt
 from . import MPO, MPOList, MPOSum
-from ..state import DEFAULT_STRATEGY, MPS, Strategy, SIMPLIFICATION_STRATEGY, simplify
+from ..state import (
+    DEFAULT_STRATEGY,
+    MPS,
+    Strategy,
+    Simplification,
+    SIMPLIFICATION_STRATEGY,
+    NO_TRUNCATION,
+    simplify,
+)
+
+#: MPO simplification strategy based on canonical forms without truncation.
+CANONICALIZE_MPO = NO_TRUNCATION.replace(simplify=Simplification.DO_NOT_SIMPLIFY)
 
 
 def mpo_as_mps(mpo: MPO) -> MPS:
@@ -38,8 +48,8 @@ def simplify_mpo(
     operator: MPO | MPOList | MPOSum,
     strategy: Strategy = SIMPLIFICATION_STRATEGY,
     direction: int = +1,
-    guess: MPS | None = None,
-    mpo_strategy: Strategy = DEFAULT_STRATEGY,
+    guess: MPO | None = None,
+    mpo_strategy: Strategy | None = None,
 ) -> MPO:
     """Simplify an MPO state transforming it into another one with a smaller bond
     dimension, sweeping until convergence is achieved.
@@ -55,8 +65,8 @@ def simplify_mpo(
         Initial direction for the sweeping algorithm.
     guess : MPS, optional
         Guess for the new state, to ease the optimization.
-    mpo_strategy : Strategy, default=DEFAULT_STRATEGY
-        Strategy of the resulting MPO.
+    mpo_strategy : Strategy | None
+        Strategy of the resulting MPO (defaults to the one from `operator`)
 
     Returns
     -------
@@ -65,5 +75,12 @@ def simplify_mpo(
     """
     if isinstance(operator, MPOList) or isinstance(operator, MPOSum):
         operator = operator.join()
-    mps = simplify(mpo_as_mps(operator), strategy, direction, guess)
+    if mpo_strategy is None:
+        mpo_strategy = operator.strategy
+    mps = mpo_as_mps(operator)
+    if guess is None:
+        guess_mps = mps
+    else:
+        guess_mps = mpo_as_mps(guess)
+    mps = simplify(mps, strategy, direction, guess_mps)
     return mps_as_mpo(mps, mpo_strategy=mpo_strategy)
