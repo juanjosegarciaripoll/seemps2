@@ -87,7 +87,7 @@ class InteractionGraph:
             symmetric = True
         else:
             Oj = to_dense_operator(Oj)
-            symmetric = np.all(Oi == Oj)
+            symmetric = bool(np.all(Oi == Oj))
         if symmetric:
             for i in range(J.shape[0]):
                 for j in range(i):
@@ -152,11 +152,9 @@ class InteractionGraph:
                 iR = R[term[: i + 1]]
                 O = self._operators[term[i]]
                 A[iL, :, :, iR] = O
-            if np.all(A.imag == 0.0):
-                A = A.real
-            tensors.append(A)
-        A = tensors[-1]
-        tensors[-1] = np.sum(A, -1).reshape(A.shape[:-1] + (1,))
+            tensors.append(A.real if np.all(A.imag == 0.0) else A)
+        lastA = tensors[-1]
+        tensors[-1] = np.sum(lastA, -1).reshape(lastA.shape[:-1] + (1,))
         mpo = MPO(tensors, strategy)
         if simplify:
             return simplify_mpo(mpo, CANONICALIZE_MPO, direction=+1)
@@ -164,9 +162,9 @@ class InteractionGraph:
 
     def to_matrix(self) -> SparseOperator:
         def build_sparse_matrix(term: str) -> SparseOperator:
-            output = sp.identity(1)  # type: ignore
+            output = sp.identity(1).tobsr()  # type: ignore
             for name in term:
-                output = sp.kron(output, self._operators[name])
+                output = sp.kron(output, sp.bsr_matrix(self._operators[name]))
             return output.tocsr()
 
         return sum(
