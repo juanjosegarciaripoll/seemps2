@@ -63,7 +63,7 @@ def run_output(command: list[str], *args, **kwdargs) -> str:
 
 def delete_directories(patterns: list[str], root: str = "."):
     to_delete = []
-    for dirname, _, _ in os.walk("."):
+    for dirname, _, _ in os.walk(root):
         if os.path.basename(dirname) in patterns:
             to_delete.append(dirname)
     for path in to_delete:
