@@ -1,5 +1,4 @@
 import math
-from re import I
 import numpy as np
 import scipy.sparse as sp
 from ..state import Strategy, DEFAULT_STRATEGY

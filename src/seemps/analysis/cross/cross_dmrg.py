@@ -8,7 +8,7 @@ from time import perf_counter
 from typing import Callable, Any
 
 from ...state import Strategy, DEFAULT_TOLERANCE, SIMPLIFICATION_STRATEGY
-from ...cython.core import destructively_truncate_vector
+from ...cython import destructively_truncate_vector
 from ...typing import Matrix
 from ...tools import make_logger
 from .black_box import BlackBox

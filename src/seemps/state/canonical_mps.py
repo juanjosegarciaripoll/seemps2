@@ -3,6 +3,14 @@ import warnings
 import numpy as np
 from collections.abc import Sequence, Iterable
 from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
+from ..cython import (
+    DEFAULT_STRATEGY,
+    Strategy,
+    _update_in_canonical_form_right,
+    _update_in_canonical_form_left,
+    _canonicalize,
+    _recanonicalize,
+)
 from .schmidt import (
     _vector2mps,
     _schmidt_weights,
@@ -13,14 +21,6 @@ from .environments import (
     _begin_environment,
     _update_left_environment,
     _update_right_environment,
-)
-from ..cython.core import (
-    DEFAULT_STRATEGY,
-    Strategy,
-    _update_in_canonical_form_right,
-    _update_in_canonical_form_left,
-    _canonicalize,
-    _recanonicalize,
 )
 from .mps import MPS
 

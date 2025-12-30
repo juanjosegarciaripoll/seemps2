@@ -8,8 +8,7 @@ from typing import Callable
 
 from ..state import MPS, Strategy, DEFAULT_STRATEGY, simplify
 from ..state.schmidt import _destructive_svd
-from ..cython import _contract_last_and_first
-from ..cython.core import destructively_truncate_vector
+from ..cython import _contract_last_and_first, destructively_truncate_vector
 from ..typing import Tensor3, MPSOrder
 from .mesh import Interval, ArrayInterval, Mesh, array_affine
 

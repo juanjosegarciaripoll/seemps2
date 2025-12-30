@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.cython.core import _gemm, GemmOrder
+from seemps.cython import _gemm, GemmOrder
 from .. import tools
 
 

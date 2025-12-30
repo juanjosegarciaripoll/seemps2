@@ -1,6 +1,6 @@
 import numpy as np
 from .tools import TestCase
-from seemps.cython.core import (
+from seemps.cython import (
     Strategy,
     Truncation,
     NO_TRUNCATION,
