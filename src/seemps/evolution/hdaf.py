@@ -71,7 +71,7 @@ def split_step(
     mesh = Mesh([interval])
 
     if itime:
-        factor = 1.0
+        factor: complex | float = 1.0
     else:
         factor = 1j
 
@@ -98,6 +98,7 @@ def split_step(
     U_potential_mps = cross_results.mps
 
     # Kinetic Propagator exp(-factor * T * dt) with T = -0.5 * d^2/dx^2
+    hdaf_time: complex | float
     if isinstance(factor, complex) and factor.imag != 0:
         hdaf_time = dt  # Imaginary time
     else:
