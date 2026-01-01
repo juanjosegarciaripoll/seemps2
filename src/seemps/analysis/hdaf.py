@@ -17,7 +17,7 @@ def auto_sigma(
     if lower_bound is None:
         lower_bound = 3 * dx
     s0: Float = hdaf_kernel(0, dx=dx, s0=1.0, M=M)
-    return max(float(lower_bound), sqrt(time), s0)  # type: ignore
+    return max(float(lower_bound), sqrt(abs(time)), s0)  # type: ignore
 
 
 def _asymptotic_factor(M: int, l: int, c: Float) -> Float:
@@ -36,12 +36,14 @@ def _width_bound(s0: Float, M: int, l: int, time: Float, eps: Float = 1e-16) -> 
 
     Returns a value xb such that :math:`|HDAF(x)| < \mathrm{eps}`, for :math:`|x| >= xb`.
     """
-    abs_st = (s0**4 + time**2) ** 0.25
+    st2 = s0**2 + 1j * time
+    abs_st = abs(st2) ** 0.5
+    inv_st2 = 1.0 / st2
 
-    A = 0.5 / (s0**2 + (time / s0) ** 2)
+    A = 0.5 * np.real(inv_st2)
     B = -sqrt(M + l) / abs_st
 
-    chi = _asymptotic_factor(M, l, c=0.5 * (s0 / abs_st) ** 2)
+    chi = _asymptotic_factor(M, l, c=0.5 * abs(s0 / abs_st) ** 2)
     chi /= sqrt(2 * np.pi) * abs_st ** (l + 1)
 
     C = log(eps / chi)
