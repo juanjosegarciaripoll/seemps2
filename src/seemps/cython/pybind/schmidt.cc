@@ -97,7 +97,7 @@ _left_orth_2site(py::object AA, const Strategy &strategy) {
   auto d2 = array_dim(AA, 2);
   auto b = array_dim(AA, 3);
   auto [U, s, V] =
-      destructive_svd(array_reshape(AA, array_dims_t{a * d1, d2 * b}));
+      destructive_svd(as_matrix(AA, a * d1, d2 * b));
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
   return {as_3tensor(matrix_resize(U, -1, D), a, d1, D),
@@ -115,7 +115,7 @@ _right_orth_2site(py::object AA, const Strategy &strategy) {
   auto d2 = array_dim(AA, 2);
   auto b = array_dim(AA, 3);
   auto [U, s, V] =
-      destructive_svd(array_reshape(AA, array_dims_t{a * d1, d2 * b}));
+      destructive_svd(as_matrix(AA, a * d1, d2 * b));
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
   return {as_3tensor(matrix_resize(U, -1, D) * s, a, d1, D),
