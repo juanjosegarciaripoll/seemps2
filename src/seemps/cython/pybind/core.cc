@@ -23,6 +23,9 @@ PYBIND11_MODULE(pybind, m) {
   py::options options;
   options.disable_function_signatures();
 
+  auto numpy = py::module_::import("numpy");
+  numpy_matmul = numpy.attr("matmul");
+
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
   m.def("destructively_truncate_vector", &destructively_truncate_vector,

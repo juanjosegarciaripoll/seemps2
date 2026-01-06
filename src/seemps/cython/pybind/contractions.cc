@@ -4,10 +4,11 @@
 
 namespace seemps {
 
+py::object numpy_matmul;
+
 py::object _matmul(py::object &A, py::object &B) {
-  auto numpy = py::module_::import("numpy");
-  auto matmul = numpy.attr("matmul");
-  return matmul(A, B);
+  //return gemm(A, GEMM_NORMAL, B, GEMM_NORMAL);
+  return numpy_matmul(A, B);
 }
 
 py::object contract_nrjl_ijk_klm(py::object U, py::object A, py::object B) {
