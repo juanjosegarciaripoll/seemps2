@@ -34,6 +34,10 @@ arises from the following works on quantum-inspired algorithms for numerical ana
 - *Chebyshev approximation and composition of functions in matrix product states for quantum-inspired numerical analysis*,
   Juan José Rodríguez-Aldavero, Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll
   https://arxiv.org/abs/2407.09609
+  
+- *Pseudospectral method for solving PDEs using matrix product states*,
+  Jorge Gidi, Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll
+  https://arxiv.org/abs/2409.02916
 
 ## Usage
 

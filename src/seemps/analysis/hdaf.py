@@ -12,12 +12,12 @@ from ..typing import FloatOrArray, Float
 
 
 def auto_sigma(
-    M: int, dx: Float, time: Float = 0.0, lower_bound: Float | None = None
+    M: int, dx: Float, time: Float | complex = 0.0, lower_bound: Float | None = None
 ) -> Float:
     if lower_bound is None:
         lower_bound = 3 * dx
     s0: Float = hdaf_kernel(0, dx=dx, s0=1.0, M=M)
-    return max(float(lower_bound), sqrt(time), s0)  # type: ignore
+    return max(float(lower_bound), sqrt(abs(time)), float(s0))  # type: ignore
 
 
 def _asymptotic_factor(M: int, l: int, c: Float) -> Float:
@@ -29,31 +29,35 @@ def _asymptotic_factor(M: int, l: int, c: Float) -> Float:
     return np.exp(0.5 * loggamma(M + l + 1) + Mhalf * np.log(c) - loggamma(Mhalf + 1))
 
 
-def _width_bound(s0: Float, M: int, l: int, time: Float, eps: Float = 1e-16) -> Float:
+def _width_bound(
+    s0: Float, M: int, l: int, time: Float | complex, eps: Float = 1e-16
+) -> Float:
     r"""
     Analytic upper bound for the width of the HDAF with the same given
     parameters.
 
     Returns a value xb such that :math:`|HDAF(x)| < \mathrm{eps}`, for :math:`|x| >= xb`.
     """
-    abs_st = (s0**4 + time**2) ** 0.25
+    st2 = complex(s0**2 + 1j * time)
+    abs_st = float(abs(st2)) ** 0.5
+    inv_st2 = 1.0 / st2
 
-    A = 0.5 / (s0**2 + (time / s0) ** 2)
+    A = 0.5 * np.real(inv_st2)
     B = -sqrt(M + l) / abs_st
 
-    chi = _asymptotic_factor(M, l, c=0.5 * (s0 / abs_st) ** 2)
-    chi /= sqrt(2 * np.pi) * abs_st ** (l + 1)
+    chi = _asymptotic_factor(M, l, c=0.5 * abs(s0 / abs_st) ** 2)
+    chi /= sqrt(2 * np.pi) * abs_st ** (l + 1)  # type: ignore
 
-    C = log(eps / chi)
+    C = log(eps / abs(chi))
 
     return 0.5 * (-B + sqrt(B**2 - 4 * A * C)) / A
 
 
 def _hnl(
     x: np.ndarray,
-    c: Float = 1.0,
+    c: Float | complex = 1.0,
     l: int = 0,
-    d: Float = 1.0,
+    d: Float | complex | np.ndarray = 1.0,
 ) -> Iterator[np.ndarray]:
     """
     Generator for H(2n + l, x) * c**n * d / factorial(n), without explicitly
@@ -62,7 +66,7 @@ def _hnl(
     """
 
     n = 0
-    hn = np.ones(x.shape) * d  # H0 with appropriate shape
+    hn: np.ndarray = np.ones(x.shape) * d  # H0 with appropriate shape
     gn = 2 * x * d  # H1
 
     # Compute initial values
@@ -87,7 +91,7 @@ def hdaf_kernel(
     dx: Float,
     s0: Float,
     M: int,
-    time: Float = 0.0,
+    time: Float | complex = 0.0,
     derivative: int = 0,
 ) -> FloatOrArray:
     if time == 0:  # Spread under the free propagator
@@ -109,7 +113,7 @@ def hdaf_mpo(
     dx: Float,
     M: int,
     s0: Float | None = None,
-    time: Float = 0.0,
+    time: Float | complex = 0.0,
     derivative: int = 0,
     periodic: bool = True,
     strategy: Strategy = DEFAULT_STRATEGY,
