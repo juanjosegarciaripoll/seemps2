@@ -120,6 +120,8 @@ PYBIND11_MODULE(pybind, m) {
     float | complex
         Scalar product.
 		 )doc");
+  m.def("vdot", &scprod,
+    "Alias for :func:`seemps.state.scprod`")
   m.def(
       "_begin_environment", &_begin_environment, py::arg("D") = int(1),
       R"doc(Initiate the computation of a left environment from two MPS. The bond
