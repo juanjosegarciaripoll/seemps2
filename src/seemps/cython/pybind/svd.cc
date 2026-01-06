@@ -49,7 +49,7 @@ static int _dgesvd(double *A, double *U, double *s, double *VT, int m, int n,
 
   // Create space in memory for temporary array
   lwork = int(work_temp);
-  auto work = std::make_unique<double[]>(static_cast<int>(work_temp));
+  auto work = std::make_unique<double[]>(lwork);
 
   // Perform computation using LAPACK
   dgesvd_ptr(&jobu, &jobvt, &m, &n, A, &m, s, U, &m, VT, &r, work.get(), &lwork,
@@ -98,7 +98,7 @@ static int _dgesdd(double *A, double *U, double *s, double *VT, int m, int n,
 
   // Create space in memory for temporary array
   lwork = int(work_temp);
-  auto work = std::make_unique<double[]>(static_cast<int>(work_temp));
+  auto work = std::make_unique<double[]>(lwork);
 
   // Perform computation using LAPACK
   dgesdd_ptr(&jobz, &m, &n, A, &m, s, U, &m, VT, &r, work.get(), &lwork,
