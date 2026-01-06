@@ -33,10 +33,11 @@ static double _truncate_relative_norm_squared(const py::object &a,
   }
   final_size = std::min(final_size, s.get_max_bond_dimension());
   max_error = errors[N - final_size];
-
+  /*
   if (s.get_normalize_flag()) {
     _normalize(data_start, final_size, std::sqrt(total - max_error));
   }
+  */
   if (final_size < N) {
     vector_resize_in_place(a, final_size);
   }
@@ -65,9 +66,11 @@ static double _truncate_absolute_singular_value(const py::object &a,
   for (size_t i = final_size; i < N; ++i) {
     max_error += data[i] * data[i];
   }
+  /*
   if (s.get_normalize_flag()) {
     _normalize(data, final_size);
   }
+  */
   if (final_size < N) {
     vector_resize_in_place(a, final_size);
   }
