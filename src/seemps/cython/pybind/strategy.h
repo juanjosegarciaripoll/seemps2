@@ -13,7 +13,8 @@ enum Truncation {
 enum Simplification {
   DO_NOT_SIMPLIFY = 0,
   CANONICAL_FORM = 1,
-  VARIATIONAL = 2
+  VARIATIONAL = 2,
+  VARIATIONAL_EXACT_GUESS = 3
 };
 
 class Strategy {

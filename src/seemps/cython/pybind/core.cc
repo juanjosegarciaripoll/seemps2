@@ -66,13 +66,13 @@ PYBIND11_MODULE(pybind, m) {
            py::arg("max_bond_dimension") = py::cast<py::none>(Py_None),
            py::arg("max_sweeps") = py::cast<py::none>(Py_None),
            py::arg("normalize") = py::cast<py::none>(Py_None))
-      .def("get_method", &Strategy::get_method)
-      .def("get_simplification_method", &Strategy::get_simplification_method)
       .def("get_tolerance", &Strategy::get_tolerance)
       .def("get_simplification_tolerance",
            &Strategy::get_simplification_tolerance)
+      .def("get_simplification_method", &Strategy::get_simplification_method)
       .def("get_max_bond_dimension", &Strategy::get_max_bond_dimension)
       .def("get_max_sweeps", &Strategy::get_max_sweeps)
+      .def("get_method", &Strategy::get_method)
       .def("get_normalize_flag", &Strategy::get_normalize_flag)
       .def("get_simplify_flag", &Strategy::get_simplify_flag)
       .def("__str__", &Strategy::str);
@@ -101,6 +101,7 @@ PYBIND11_MODULE(pybind, m) {
       .value("DO_NOT_SIMPLIFY", Simplification::DO_NOT_SIMPLIFY)
       .value("CANONICAL_FORM", Simplification::CANONICAL_FORM)
       .value("VARIATIONAL", Simplification::VARIATIONAL)
+      .value("VARIATIONAL_EXACT_GUESS", Simplification::VARIATIONAL_EXACT_GUESS)
       .export_values();
 
   m.def("scprod", &scprod,
