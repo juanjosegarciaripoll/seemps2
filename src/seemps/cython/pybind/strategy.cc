@@ -14,24 +14,18 @@ static double _truncate_relative_norm_squared(const py::object &a,
   double *errors = &buffer[0];
   double total = 0.0;
   double *data_start = array_data<double>(a);
-  double *data = data_start + N;
+  double *data = data_start + (N - 1);
   size_t i;
-  for (i = 1; i <= N; ++i) {
-    --data;
-    total += data[0] * data[0];
+  for (i = 0; i < N; i++, data--) {
     errors[i] = total;
+    total += data[0] * data[0];
   }
+  errors[N] = total;
 
   double max_error = total * s.get_tolerance();
-  double final_error = 0.0;
-  size_t final_size = 1;
-  for (i = 1; i < N; ++i) {
-    if (errors[i] > max_error) {
-      final_size = N - i + 1;
-      break;
-    }
+  for (i = 1; (i < N) && (errors[i] <= max_error); i++) {
   }
-  final_size = std::min(final_size, s.get_max_bond_dimension());
+  size_t final_size = std::min(N - i + 1, s.get_max_bond_dimension());
   max_error = errors[N - final_size];
   /*
   if (s.get_normalize_flag()) {
