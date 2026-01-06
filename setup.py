@@ -62,4 +62,34 @@ extensions = [
     )
     for name, file in zip(extension_names, cython_files)
 ]
-setup(ext_modules=cythonize(extensions, compiler_directives=directives))
+
+#
+# Note:
+# Sort input source files if you glob sources to ensure bit - for - bit
+# reproducible builds(https: // github.com/pybind/python_example/pull/53)
+from pybind11.setup_helpers import Pybind11Extension
+
+extra_compile_args = []
+pybind11_modules = [
+    Pybind11Extension(
+        "seemps.cython.pybind",
+        [
+            "src/seemps/cython/pybind/schmidt.cc",
+            "src/seemps/cython/pybind/blas.cc",
+            "src/seemps/cython/pybind/svd.cc",
+            "src/seemps/cython/pybind/tensors.cc",
+            "src/seemps/cython/pybind/contractions.cc",
+            "src/seemps/cython/pybind/strategy.cc",
+            "src/seemps/cython/pybind/environments.cc",
+            "src/seemps/cython/pybind/core.cc",
+        ],
+        extra_compile_args=extra_compile_args,
+        include_dirs=[np.get_include()],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+        cxx_std=17,
+    ),
+]
+
+setup(
+    ext_modules=cythonize(extensions, compiler_directives=directives) + pybind11_modules
+)
