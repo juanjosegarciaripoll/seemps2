@@ -22,7 +22,7 @@ class Strategy:
         method: Truncation = Truncation.RELATIVE_SINGULAR_VALUE,
         tolerance: float = 1e-8,
         simplification_tolerance: float = 1e-8,
-        max_bond_dimension: int = 0x8FFFFFFF,
+        max_bond_dimension: int = 0x7FFFFFFF,
         max_sweeps: int = 16,
         normalize: bool = False,
         simplify: Simplification = Simplification.VARIATIONAL,
