@@ -7,6 +7,8 @@
 
 namespace seemps {
 
+extern py::object numpy_matmul;
+
 /*
  * BLAS-like operations
  */
