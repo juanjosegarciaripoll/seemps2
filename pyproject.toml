@@ -106,7 +106,7 @@ test = [
 [dependency-groups]
 # Local development dependencies (not published to PyPI)
 dev = [
-    "numpy>=2.3",
+    "numpy>=2.2",
     "mypy>=1.19",
     "ruff>=0.14",
     "basedpyright>=1.34",
