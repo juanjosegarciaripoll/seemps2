@@ -161,9 +161,9 @@ def build() -> bool:
     env = os.environ.copy()
     extra: list[str] = []
     if use_sanitizer != "no":
-        env["SANITIZE"] = use_sanitizer
+        env["SEEMPS_ASAN"] = use_sanitizer
     if debug:
-        env["SEEMPS2DEBUG"] = "ON"
+        env["SEEMPS_DEBUG"] = "ON"
     if incremental:
         extra = ["--no-build-isolation", "-ve"] + extra
     return run(["pip", "install"] + extra + ["."], env=env)
@@ -177,6 +177,7 @@ parser = argparse.ArgumentParser(prog="make", description="SeeMPS build driver")
 parser.add_argument("--uv", action="store_true", help="Run jobs under 'uv'")
 parser.add_argument("--debug", action="store_true", help="Build debug versions")
 parser.add_argument("--here", action="store_true", help="Run jobs incrementally")
+parser.add_argument("--pybind", action="store_true", help="Activate pybind11 bindings")
 parser.add_argument("--leak", action="store_true", help="Link against leak sanitizer")
 parser.add_argument(
     "--memcheck", action="store_true", help="Run inside valgrind to check memory leaks"
@@ -232,6 +233,8 @@ if args.memcheck:
     ]
 if args.asan:
     use_sanitizer = "address"
+if args.pybind:
+    os.environ["SEEMPS_PYBIND"] = "ON"
 if args.install_hooks:
     install_hooks()
 

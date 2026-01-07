@@ -1,3 +1,4 @@
+import warnings
 from setuptools import setup, Extension  # type: ignore
 import glob
 import numpy as np
@@ -73,11 +74,13 @@ extensions = [
 from pybind11.setup_helpers import Pybind11Extension
 
 # Enable ASAN (AddressSanitizer) for debugging memory issues
-use_asan = debug_library and sys.platform in ["linux", "darwin"]
-if use_asan:
-    asan_flags = ["-fsanitize=address", "-fno-omit-frame-pointer", "-g"]
-    extra_compile_args.extend(asan_flags)
-    extra_link_args.extend(["-fsanitize=address"])
+if "SEEMPS_ASAN" in os.environ:
+    if sys.platform in ["linux", "darwin"]:
+        asan_flags = ["-fsanitize=address", "-fno-omit-frame-pointer", "-g"]
+        extra_compile_args.extend(asan_flags)
+        extra_link_args.extend(["-fsanitize=address"])
+    else:
+        warnings.warn("SEEMPS_ASAN not supported on Windows")
 
 pybind11_modules = [
     Pybind11Extension(
