@@ -68,6 +68,6 @@
         "${workspaceFolder}/src/seemps/cython/pybind",
         "${workspaceFolder}/.venv/**/site-packages/numpy/_core/include",
         "${workspaceFolder}/.venv/**/site-packages/pybind11/include",
-        "/usr/include/python3.*/include"
+        "/usr/include/python3.*"
     ]
 }
