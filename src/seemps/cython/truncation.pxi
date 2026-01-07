@@ -251,7 +251,7 @@ cdef void _resize_vector_in_place(cnp.ndarray s, Py_ssize_t N):
 cdef double _truncate_relative_norm_squared_error(cnp.ndarray s, Strategy strategy):
     global _errors_buffer
     cdef:
-        Py_ssize_t i, final_size, N = s.size
+        Py_ssize_t i=0, final_size, N = s.size
         double max_error, new_norm, final_error
         double total = 0.0
         cnp.float64_t *errors
