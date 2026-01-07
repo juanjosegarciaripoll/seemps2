@@ -2,12 +2,14 @@ from setuptools import setup, Extension  # type: ignore
 import glob
 import numpy as np
 import sys
+import os
 
 # This flag controls whether we build the library with bounds checks and
 # other safety measures. Useful when testing where a code breaks down;
 # but bad for production performance
-debug_library = False
+debug_library = "SEEMPS_DEBUG" in os.environ
 extra_compile_args = []
+extra_link_args = []
 from Cython.Build import cythonize  # type: ignore
 import Cython.Compiler.Options  # type: ignore
 
@@ -57,6 +59,7 @@ extensions = [
         [file],
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
         extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         include_dirs=[np.get_include()],
         depends=include_files,
     )
@@ -69,7 +72,13 @@ extensions = [
 # reproducible builds(https: // github.com/pybind/python_example/pull/53)
 from pybind11.setup_helpers import Pybind11Extension
 
-extra_compile_args = []
+# Enable ASAN (AddressSanitizer) for debugging memory issues
+use_asan = debug_library and sys.platform in ["linux", "darwin"]
+if use_asan:
+    asan_flags = ["-fsanitize=address", "-fno-omit-frame-pointer", "-g"]
+    extra_compile_args.extend(asan_flags)
+    extra_link_args.extend(["-fsanitize=address"])
+
 pybind11_modules = [
     Pybind11Extension(
         "seemps.cython.pybind",
@@ -84,6 +93,7 @@ pybind11_modules = [
             "src/seemps/cython/pybind/core.cc",
         ],
         extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
         include_dirs=[np.get_include()],
         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
         cxx_std=17,
