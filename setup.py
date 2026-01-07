@@ -69,7 +69,10 @@ extensions = [
 # Note:
 # Sort input source files if you glob sources to ensure bit - for - bit
 # reproducible builds(https: // github.com/pybind/python_example/pull/53)
-from pybind11.setup_helpers import Pybind11Extension
+from pybind11.setup_helpers import Pybind11Extension, ParallelCompile
+
+# Optional multithreaded build
+ParallelCompile("NPY_NUM_BUILD_JOBS").install()
 
 # Enable ASAN (AddressSanitizer) for debugging memory issues
 if "SEEMPS_ASAN" in os.environ:
