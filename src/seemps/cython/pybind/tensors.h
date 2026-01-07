@@ -225,6 +225,7 @@ eye(npy_intp rows)
  * Advanced contractions
  */
 
+extern py::object numpy_matmul;
 py::object _matmul(const py::object& A, const py::object& B);
 
 py::object contract_last_and_first(py::object A, py::object B);

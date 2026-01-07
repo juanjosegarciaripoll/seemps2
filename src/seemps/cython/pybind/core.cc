@@ -20,12 +20,27 @@ ok_loaded()
   return 1;
 }
 
+static void
+_cleanup()
+{
+  numpy_matmul = py::none();
+}
+
 PYBIND11_MODULE(pybind, m)
 {
   load_scipy_wrappers();
 
   py::options options;
   options.disable_function_signatures();
+
+  {
+    auto numpy = py::module_::import("numpy");
+    numpy_matmul = numpy.attr("matmul");
+    auto atexit = py::module_::import("atexit");
+    auto atexit_register = atexit.attr("register");
+    m.def("_cleanup", &_cleanup);
+    atexit_register(m.attr("_cleanup"));
+  }
 
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 

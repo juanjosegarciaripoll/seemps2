@@ -4,16 +4,17 @@
 namespace seemps
 {
 
-// py::object numpy_matmul;
+py::object numpy_matmul = py::none();
 
 py::object
 _matmul(const py::object& A, const py::object& B)
 {
-#if 1
+#if 0
   return gemm(A, GEMM_NORMAL, B, GEMM_NORMAL);
-#else
+#elif 0
   auto numpy = py::module_::import("numpy");
   auto numpy_matmul = numpy.attr("matmul");
+#else
   return numpy_matmul(A, B);
 #endif
 }
