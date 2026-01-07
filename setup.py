@@ -29,11 +29,9 @@ if not debug_library:
         "overflowcheck": False,
         "binding": False,
     }
-    if sys.platform == "linux":
+    if sys.platform in ["linux", "darwin"]:
         # We assume GCC or other compilers with compatible command line
         extra_compile_args = ["-O3", "-ffast-math"]
-    elif sys.platform == "darwin":  # <-- just change this part
-        extra_compile_args = ["-O3", "-ffast-math"]  # <-- macOS  use gcc/clang style.
     else:
         # We assume Microsoft Visual C/C++ compiler
         extra_compile_args = ["/Ox", "/fp:fast"]
