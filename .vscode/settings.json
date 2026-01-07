@@ -62,5 +62,11 @@
                 }
             }
         ]
-    }
+    },
+    "C_Cpp.dimInactiveRegions": false,
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/src/seemps/cython/pybind",
+        "${workspaceFolder}/.venv/**/site-packages/numpy/_core/include",
+        "${workspaceFolder}/.venv/**/site-packages/pybind11/include"
+    ]
 }
