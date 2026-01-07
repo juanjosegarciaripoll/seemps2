@@ -3,3 +3,4 @@ IndentWidth: 2
 PointerAlignment: Left
 SpaceBeforeParens: ControlStatementsExceptControlMacros
 ColumnLimit: 80
+SortIncludes: Never
