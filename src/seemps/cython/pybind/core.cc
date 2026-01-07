@@ -1,30 +1,31 @@
 // Here we initialize the MY_PyArray_API
 #define INIT_NUMPY_ARRAY_CPP
 #include "core.h"
-#include "tensors.h"
-#include "strategy.h"
 #include "mps.h"
+#include "strategy.h"
+#include "tensors.h"
 
 using namespace seemps;
 
-const char *__version__ = "pybind11";
+const char* __version__ = "pybind11";
 
-static int ok_loaded() {
+static int
+ok_loaded()
+{
   import_array();
-  if (PyErr_Occurred()) {
-    throw std::runtime_error("Failed to import numpy Python module(s)");
-  }
+  if (PyErr_Occurred())
+    {
+      throw std::runtime_error("Failed to import numpy Python module(s)");
+    }
   return 1;
 }
 
-PYBIND11_MODULE(pybind, m) {
+PYBIND11_MODULE(pybind, m)
+{
   load_scipy_wrappers();
 
   py::options options;
   options.disable_function_signatures();
-
-  auto numpy = py::module_::import("numpy");
-  numpy_matmul = numpy.attr("matmul");
 
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
@@ -54,8 +55,8 @@ PYBIND11_MODULE(pybind, m) {
 
   py::class_<Strategy>(m, "Strategy")
       .def(py::init<int, double, int, double, size_t, int, bool>(),
-           py::arg("method") =
-               static_cast<int>(Truncation::RELATIVE_NORM_SQUARED_ERROR),
+           py::arg("method")
+           = static_cast<int>(Truncation::RELATIVE_NORM_SQUARED_ERROR),
            py::arg("tolerance") = 1e-8,
            py::arg("simplify") = static_cast<int>(Simplification::VARIATIONAL),
            py::arg("simplification_tolerance") = 1e-8,
@@ -83,10 +84,10 @@ PYBIND11_MODULE(pybind, m) {
   py::object DEFAULT_STRATEGY = py::cast(Strategy());
   m.attr("DEFAULT_STRATEGY") = DEFAULT_STRATEGY;
 
-  py::object NO_TRUNCATION =
-      py::cast(Strategy()
-                   .set_method(DO_NOT_TRUNCATE)
-                   .set_simplification_method(DO_NOT_SIMPLIFY));
+  py::object NO_TRUNCATION
+      = py::cast(Strategy()
+                     .set_method(DO_NOT_TRUNCATE)
+                     .set_simplification_method(DO_NOT_SIMPLIFY));
   m.attr("NO_TRUNCATION") = NO_TRUNCATION;
 
   m.attr("DEFAULT_TOLERANCE") = std::numeric_limits<double>::epsilon();
@@ -123,8 +124,7 @@ PYBIND11_MODULE(pybind, m) {
     float | complex
         Scalar product.
 		 )doc");
-  m.def("vdot", &scprod,
-    "Alias for :func:`seemps.state.scprod`");
+  m.def("vdot", &scprod, "Alias for :func:`seemps.state.scprod`");
   m.def(
       "_begin_environment", &_begin_environment, py::arg("D") = int(1),
       R"doc(Initiate the computation of a left environment from two MPS. The bond
