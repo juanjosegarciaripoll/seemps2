@@ -143,3 +143,11 @@ class TestMPOList(TestCase):
         V = MPO([self.rng.random(size=(1, 4, 3, 1))] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
         self.assertEqual(UV.dimensions(), U.dimensions())
+
+    def test_mpolist_conj_returns_conjugate(self):
+        mpo1 = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(4)])
+        mpo2 = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(4)])
+        mpolist = MPOList([mpo1, mpo2])
+        conj_mpolist = mpolist.conj()
+        self.assertIsInstance(conj_mpolist, MPOList)
+        self.assertSimilar(conj_mpolist.to_matrix(), mpolist.to_matrix().conj())

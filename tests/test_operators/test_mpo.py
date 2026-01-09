@@ -114,3 +114,11 @@ class TestMPO(TestCase):
         mpo = MPO([self.rng.normal(size=(1, 2, 3, 1)) for _ in range(5)])
         mpoT = mpo.T
         self.assertSimilar(mpo.to_matrix().T, mpoT.to_matrix())
+
+    def test_mpo_conj_returns_conjugate(self):
+        mpo = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(5)])
+        conj_mpo = mpo.conj()
+        self.assertIsInstance(conj_mpo, MPO)
+        self.assertSimilar(conj_mpo.to_matrix(), mpo.to_matrix().conj())
+        self.assertTrue(mpo is not conj_mpo)
+        self.assertTrue(mpo._data is not conj_mpo._data)
