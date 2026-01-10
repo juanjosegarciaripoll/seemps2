@@ -74,6 +74,9 @@ class Interval(ABC):
     def update_size(self, size: int) -> Interval:
         return type(self)(self.start, self.stop, size)
 
+    def length(self) -> float:
+        return self.stop - self.start
+
     def __iter__(self) -> Iterator:
         return (self[i] for i in range(self.size))
 

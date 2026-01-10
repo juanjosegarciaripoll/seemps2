@@ -87,6 +87,7 @@ _filtered_differences = {
 }
 
 
+# TODO: Use intervals
 def smooth_finite_differences_mpo(
     L: int,
     order: int,

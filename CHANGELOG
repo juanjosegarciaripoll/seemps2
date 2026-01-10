@@ -18,3 +18,6 @@ Version 2.9.6
 * Now it is possible to multiply `A @ B` when `A` and `B` are either
   `MPO` or `MPOList`. This is not implemented for `MPOSum` to avoid
   exponential blowup of operators.
+
+* Added `fourier_derivative_mpo` and `fourier_derivative` for QFT-based
+  differentiation of functions.
