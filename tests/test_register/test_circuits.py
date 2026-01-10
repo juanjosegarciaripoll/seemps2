@@ -1,15 +1,6 @@
 import numpy as np
-
-from seemps.state.mps import MPS
 from ..tools import TestCase
-from seemps.state import CanonicalMPS
-from seemps.register.circuit import (
-    LocalRotationsLayer,
-    TwoQubitGatesLayer,
-    VQECircuit,
-    interpret_operator,
-)
-from scipy.linalg import expm  # type: ignore
+from seemps.register.circuit import interpret_operator
 
 
 class TestKnownOperators(TestCase):
