@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.tools import σx
+from seemps.tools import σx, σy, σz
 from seemps.state import (
     random_uniform_mps,
     MPSSum,
@@ -122,3 +122,21 @@ class TestMPO(TestCase):
         self.assertSimilar(conj_mpo.to_matrix(), mpo.to_matrix().conj())
         self.assertTrue(mpo is not conj_mpo)
         self.assertTrue(mpo._data is not conj_mpo._data)
+
+    def test_mpo_times_mpo_gives_mpolist(self):
+        A = MPO([σx.reshape(1, 2, 2, 1)] * 5)
+        B = MPO([σy.reshape(1, 2, 2, 1)] * 5)
+        C = A @ B
+        self.assertIsInstance(C, MPOList)
+        self.assertEqual(C.physical_dimensions(), A.physical_dimensions())
+        self.assertSimilar(C.to_matrix(), A.to_matrix() @ B.to_matrix())
+
+    def test_mpo_times_mpolist_gives_mpolist(self):
+        A = MPO([σx.reshape(1, 2, 2, 1)] * 5)
+        B = MPO([σy.reshape(1, 2, 2, 1)] * 5)
+        AB = MPOList([A, B])
+        C = MPO([σz.reshape(1, 2, 2, 1)] * 5)
+        D = C @ AB
+        self.assertIsInstance(D, MPOList)
+        self.assertEqual(D.physical_dimensions(), C.physical_dimensions())
+        self.assertSimilar(D.to_matrix(), C.to_matrix() @ AB.to_matrix())

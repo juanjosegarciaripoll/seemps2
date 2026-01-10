@@ -254,9 +254,23 @@ class MPO(TensorArray):
     @overload
     def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
-    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+    @overload
+    def __matmul__(self, b: MPO) -> MPOList: ...
+
+    @overload
+    def __matmul__(self, b: MPOList) -> MPOList: ...
+
+    def __matmul__(
+        self, b: MPS | MPSSum | MPO | MPOList
+    ) -> MPS | MPSSum | MPO | MPOList:
         """Implement multiplication `self @ b`."""
-        return self.apply(b)
+        if isinstance(b, (MPS, MPSSum)):
+            return self.apply(b)
+        if isinstance(b, MPO):
+            return MPOList([b] + [self])
+        if isinstance(b, MPOList):
+            return MPOList(b.mpos + [self], b.strategy)
+        raise TypeError(f"Cannot multiply MPO with {b}")
 
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
@@ -362,6 +376,8 @@ class MPO(TensorArray):
 
         .. math::
             B_{a_{n-1},i_n,j_n,a_n} = A_{a_{N-n-1},i_{N-n-1},j_{N-n-1},a_{N-n-2}}
+
+        See also see :meth:`~seemps.state.MPS.reverse`.
         """
         return MPO(
             [
@@ -551,9 +567,23 @@ class MPOList(object):
     @overload
     def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
-    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+    @overload
+    def __matmul__(self, b: MPO) -> MPOList: ...
+
+    @overload
+    def __matmul__(self, b: MPOList) -> MPOList: ...
+
+    def __matmul__(
+        self, b: MPS | MPSSum | MPO | MPOList
+    ) -> MPS | MPSSum | MPO | MPOList:
         """Implement multiplication `self @ b`."""
-        return self.apply(b)
+        if isinstance(b, (MPS, MPSSum)):
+            return self.apply(b)
+        if isinstance(b, MPO):
+            return MPOList([b] + self.mpos, self.strategy)
+        if isinstance(b, MPOList):
+            return MPOList(b.mpos + self.mpos, b.strategy)
+        raise TypeError(f"Cannot multiply MPO with {b}")
 
     def extend(
         self, L: int, sites: list[int] | None = None, dimensions: int | list[int] = 2

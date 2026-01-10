@@ -14,3 +14,7 @@ Version 2.9.6
   Hamiltonians into MPO or sparse matrix form.
 
 * Extended the documentation to include missing functions.
+
+* Now it is possible to multiply `A @ B` when `A` and `B` are either
+  `MPO` or `MPOList`. This is not implemented for `MPOSum` to avoid
+  exponential blowup of operators.

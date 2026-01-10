@@ -241,8 +241,8 @@ class MPSSum:
     def reverse(self) -> MPSSum:
         """Reverse the sites (see :meth:`~seemps.state.MPS.reverse`)."""
         return MPSSum(
-            self.weights[-1::],
-            [state.reverse() for state in reversed(self.states)],
+            self.weights,
+            [state.reverse() for state in self.states],
         )
 
 

@@ -152,4 +152,23 @@ class TestMPOList(TestCase):
         self.assertIsInstance(conj_mpolist, MPOList)
         self.assertSimilar(conj_mpolist.to_matrix(), mpolist.to_matrix().conj())
 
+    def test_mpolist_times_mpo_gives_mpolist(self):
+        A = MPO([σx.reshape(1, 2, 2, 1)] * 5)
+        B = MPO([σy.reshape(1, 2, 2, 1)] * 5)
+        AB = MPOList([A, B])
+        C = MPO([σz.reshape(1, 2, 2, 1)] * 5)
+        D = AB @ C
+        self.assertIsInstance(D, MPOList)
+        self.assertEqual(D.physical_dimensions(), AB.physical_dimensions())
+        self.assertSimilar(D.to_matrix(), AB.to_matrix() @ C.to_matrix())
 
+    def test_mpolist_times_mpolist_gives_mpolist(self):
+        A = MPO([σx.reshape(1, 2, 2, 1)] * 5)
+        B = MPO([σy.reshape(1, 2, 2, 1)] * 5)
+        C = MPO([σz.reshape(1, 2, 2, 1)] * 5)
+        AB = MPOList([A, B])
+        CA = MPOList([C, A])
+        D = AB @ CA
+        self.assertIsInstance(D, MPOList)
+        self.assertEqual(D.physical_dimensions(), AB.physical_dimensions())
+        self.assertSimilar(D.to_matrix(), AB.to_matrix() @ CA.to_matrix())
