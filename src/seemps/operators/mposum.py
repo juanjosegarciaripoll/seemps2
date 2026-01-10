@@ -118,6 +118,14 @@ class MPOSum(object):
         output.mpos = [A.T for A in output.mpos]
         return output
 
+    def conj(self) -> MPOSum:
+        """Return the complex conjugate of this operator."""
+        return MPOSum(
+            [mpo.conj() for mpo in self.mpos],
+            [w.conjugate() for w in self.weights],
+            self.strategy,
+        )
+
     def tomatrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO (Deprecated, see :meth:`to_matrix`)."""
         warnings.warn(

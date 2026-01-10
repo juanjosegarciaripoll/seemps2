@@ -152,6 +152,10 @@ class MPO(TensorArray):
         """Return the transpose of this operator."""
         return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
 
+    def conj(self) -> MPO:
+        """Return the complex conjugate of this operator."""
+        return MPO([A.conj() for A in self], self.strategy)
+
     def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix (Deprecated, see :meth:`to_matrix`)."""
         warnings.warn(
@@ -443,6 +447,10 @@ class MPOList(object):
     def T(self) -> MPOList:
         """Return the transpose of this operator."""
         return MPOList([A.T for A in reversed(self.mpos)], self.strategy)
+
+    def conj(self) -> MPOList:
+        """Return the complex conjugate of this operator."""
+        return MPOList([mpo.conj() for mpo in self.mpos], self.strategy)
 
     def dimensions(self) -> list[int]:
         """Return the physical dimensions (Deprecated, see :meth:`dimensions`)."""
