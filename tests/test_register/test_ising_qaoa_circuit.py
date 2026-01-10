@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.linalg import expm
-from seemps.register.circuit import HamiltonianEvolutionLayer
 from ..tools import TestCase
 from seemps.register import IsingQAOACircuit, interpret_operator, qubo_mpo
 
