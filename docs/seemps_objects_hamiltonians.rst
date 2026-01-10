@@ -9,8 +9,8 @@ Hamiltonians acting on composite quantum systems. These Hamiltonians can be
 constant, time-dependent or translationally invariant. They can be converted
 to matrices, tensors or matrix-product operators.
 
-The basic class is the :class:`NNHamiltonian`, an abstract object representing
-a sum of nearest-neighbor operators :math:`H = \sum_{i=0}^{N-2} h_{i,i+1}`
+The basic (and a bit obsolete) class is :class:`~seemps.hamiltonians.NNHamiltonian`,
+an abstract object representing a sum of nearest-neighbor operators :math:`H = \sum_{i=0}^{N-2} h_{i,i+1}`
 where each :math:`h_{i,i+1}` acts on a different, consecutive pair of quantum
 objects. This class is extended by different convenience classes that simplify
 the construction of such models, or provide specific, well-known ones:
@@ -22,7 +22,7 @@ the construction of such models, or provide specific, well-known ones:
     ~seemps.hamiltonians.ConstantTIHamiltonian
     ~seemps.hamiltonians.HeisenbergHamiltonian
 
-As example of use, we can inspect the :class:`~seemps.hamiltonians.HeisenbergHamiltonian` class,
+As example of use, we provide the :class:`~seemps.hamiltonians.HeisenbergHamiltonian` class,
 which creates the model :math:`\sum_i \vec{S}_i\cdot\vec{S}_{i+1}` more or less
 like this::
 
@@ -30,7 +30,7 @@ like this::
     >>> ConstantTIHamiltonian(size, SdotS)
 
 
-The more advanced class is :class:`~seemps.hamiltonains.InteractionGraph`, an
+The more advanced class is :class:`~seemps.hamiltonians.InteractionGraph`, an
 object that can record all types of interactions in a quantum system and produce
 both the :class:`MPO` and sparse matrix representation for it. This class is
 preferred over the previous ones, except in some algorithms, such as TEBD and
