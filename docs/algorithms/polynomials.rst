@@ -1,43 +1,46 @@
 .. _analysis_polynomials:
 
-************************
-Polynomial Approximation
-************************
+*********************
+Polynomial expansions
+*********************
 
-Given a function :math:`f(x)` expressed in a basis of polynomials
+Consider a function :math:`f(x)` expressed as a finite polynomial expansion
 
 .. math::
     f(x) = \sum_{k=0}^d c_k p_k(x)
 
-SeeMPS provides routines to
+SeeMPS provides two *distinct* but related sets of polynomial approximation tools:
 
-* Reconstruct :math:`f(x)` as an MPS, over some interval.
-* Evaluate :math:`f(A)` where :math:`A` is either an MPS or an MPO.
+* **Exact construction of MPS for 1D polynomials**, when the coefficients are known explicitly.
 
-Both applications are implemented using the :meth:`seemps.analysis.expansion.PolynomialExpansion.to_mps`
-and :meth:`seemps.analysis.expansion.PolynomialExpansion.to_mpo`, and a clever applications
-of Clenshaw's evaluation method for polynomials (a numerically stable technique to compute
-polynomials in situations of finite precision).
+* **Polynomial expansions of operators or states**, evaluating :math:`f(A)` where :math:`A` is either an MPS or an MPO.
 
-SeeMPS provides four polynomial expansions:
+Exact polynomial MPS constructions
+----------------------------------
 
-* :func:`seemps.analysis.mps_from_polynomial` constructs an unoptimize MPS from is expansion in monomials :math:`p_k(x)=x^k`.
+The function :func:`seemps.analysis.polynomials.mps_from_polynomial` constructs the *exact* MPS corresponding to a one-dimensional polynomial expressed in the monomial basis :math:`p_k(x)=x^k` over some equispaced discretization :math:`[a, b]`, represented by the class :class:`seemps.analysis.mesh.RegularInterval`.
 
-* :class:`seemps.analysis.expansion.PowerExpansion` is another expansion in monomials :math:`p_k(x)=x^k` using now Clenshaw's formula.
+Polynomial expansions of MPS and MPOs
+-------------------------------------
 
-* :class:`seemps.analysis.expansion.ChebyshevExpansion` is an expansion in the orthogonal basis of Chebyshev_ polynomials.
+This implements the remaining functionality using the :meth:`seemps.analysis.expansion.PolynomialExpansion.to_mps` and :meth:`seemps.analysis.expansion.PolynomialExpansion.to_mpo` methods. These apply the Clenshaw evaluation method, a numerically stable technique to evaluate polynomials in situations of finite precision.
 
-* :class:`seemps.analysis.expansion.LegendreExpansion` is an expansion in orthogonal Legendre_ polynomials.
+SeeMPS currently provides the following expansion classes:
+
+* :class:`seemps.analysis.expansion.PowerExpansion`, a polynomial expansion in the monomial basis :math:`p_k(x)=x^k`. In this scenario, Clenshaw's evaluation formula reduces to Horner's method, an efficient and robust technique for evaluating polynomial expansions.
+
+* :class:`seemps.analysis.expansion.ChebyshevExpansion`, an expansion in the orthogonal basis of Chebyshev_ polynomials.
+
+* :class:`seemps.analysis.expansion.LegendreExpansion`, an expansion in the orthogonal basis of Legendre_ polynomials.
 
 .. _Chebyshev: https://en.wikipedia.org/wiki/Chebyshev_polynomials
 .. _Legendre: https://en.wikipedia.org/wiki/Legendre_polynomials
 
-All expansion objects can be constructed by providing explicitly the coefficients `[c_0,c_1,...]`
-and the domain of definition `[a,b]`. However, the orthogonal expansions also have additional
-`project()` methods that, given a scalar function and a definition domain, estimate a finite-order
-expansion using numerical integration techniques.
+This expansion framework is easily extensible to any orthogonal polynomial family by subclassing :class:`seemps.analysis.expansion.OrthogonalExpansion`, requiring only the three-term recurrence relation and the canonical domain of definition.
 
-An example on how to use these functions is shown in
+All expansion objects can be constructed by providing the coefficients :math:`[c_0,c_1,...]` explicitly. Alternatively, the coefficients can be computed by projecting the target function onto the orthogonal basis through projection methods, which estimate a finite-order expansion of a scalar function over a given domain :math:`[a, b]` using numerical quadratures.
+
+An example demonstrating the use of these functions for the case of Chebyshev polynomials is shown in
 `Chebyshev.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Chebyshev.ipynb>`_.
 
 .. autosummary::
@@ -46,5 +49,4 @@ An example on how to use these functions is shown in
     ~seemps.analysis.expansion.ChebyshevExpansion
     ~seemps.analysis.expansion.LegendreExpansion
     ~seemps.analysis.expansion.ChebyshevExpansion.project
-    ~seemps.analysis.expansion.LegendreExpansion.project
     ~seemps.analysis.polynomials.mps_from_polynomial

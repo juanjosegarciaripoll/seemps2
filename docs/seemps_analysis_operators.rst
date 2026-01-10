@@ -15,3 +15,4 @@ The SeeMPS library provides a exact MPO representation of basic operators.
     ~seemps.analysis.operators.cos_mpo
     ~seemps.analysis.operators.sin_mpo
     ~seemps.analysis.operators.mpo_affine
+    ~seemps.analysis.operators.mpo_cumsum

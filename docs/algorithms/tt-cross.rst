@@ -2,17 +2,17 @@
 
 .. _alg_ttcross:
 
-*******************************************
-Tensor-train cross-interpolation (TT-Cross)
-*******************************************
+********************************
+Tensor cross-interpolation (TCI)
+********************************
 
-Tensor-train cross-interpolation, known as TT-Cross or TCI, is a method that computes the tensor-train representation of a black-box function by sampling some of its elements along some patterns known as crosses. As it does not act on the explicit tensor representation, it provides an exponential advantage over the standard Schmidt decomposition and evades the *curse of dimensionality*.
+Tensor cross-interpolation, known as TCI or TT-Cross, is a method that computes the tensor-train representation of a black-box function by sampling some of its elements along some patterns known as crosses. As it does not act on the explicit tensor representation, it provides an exponential advantage over the standard Schmidt decomposition and evades the *curse of dimensionality*.
 
-There are several variants available for TT-Cross. Each shows different advantages and disadvantages in terms of computational cost and accuracy for different initial conditions. This library implements three:
+There are several variants available for TCI. Each shows different advantages and disadvantages in terms of computational cost and accuracy for different initial conditions. This library implements three:
 
 1. :func:`~cross_dmrg`: Based on two-site optimizations combining the skeleton decomposition and the Schmidt decomposition. It is efficient for structures of low physical dimension, such as binary MPS, as it can increase the bond dimension by several units for each sweep. Inefficient for structures of large physical dimension due to its computational complexity. Has an associated parameter dataclass given by :class:`~CrossStrategyDMRG`.
 
-2. :func:`~cross_greedy`: Based on two-site optimizations performing greedy searches for maximum-volume pivots. Efficient for structures of large physical dimension, such as tensor-trains with dense modes, due to its advantageous computational complexity. Inefficient for structures of reduced physical dimension, as it increases the bond dimension by one each sweep. Presents the ``full search`` variant or the ``partial search`` variants. Has an associated parameter dataclass given by :class:`~CrossStrategyGreedy`.
+2. :func:`~cross_greedy`: Based on two-site optimizations performing greedy searches for maximum-volume pivots. Efficient for structures of large physical dimension, such as tensor-trains with dense modes, due to its advantageous computational complexity. Inefficient for structures of reduced physical dimension, as it increases the bond dimension by one each sweep. Has an associated parameter dataclass given by :class:`~CrossStrategyGreedy`.
 
 3. :func:`~cross_maxvol`: Based on rank-adaptive one-site optimizations using the rectangular skeleton decomposition. Can be seen as a middle ground between the former two methods. Has an associated parameter dataclass given by :class:`~CrossStrategyMaxvol`.
 
@@ -24,7 +24,7 @@ Moreover, this method performs the decomposition of a given input black-box. Thi
 
 3. :class:`~BlackBoxComposeMPS`: Required to compose scalar functions on collections of MPS.
 
-An example on how to use TCI for all these scenarios is shown in `TT-Cross.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/TT-Cross.ipynb>`_.
+An example on how to use TCI for all these scenarios is shown in `TCI.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/TCI.ipynb>`_.
 
 .. autosummary::
 

@@ -16,36 +16,33 @@ class BranchNode:
         max_rank: int | None = None,
     ):
         """
-        Internal node in a computational tree.
+        Internal node in a computation-tree.
 
-        A `BranchNode` represents an intermediate functional dependence
+        A `BranchNode` represents an intermediate functional update
 
             x_out = func(x_in, x_s),
 
-        where:
-            - x_in is a value passed by a child subtree (i.e., by an upstream functional dependence).
-            - x_s is a free parameter obtained by evaluating the node's discretization grid at index s.
+        where x_in is the value propagated from an upstream node and x_s is obtained by evaluating the
+        node’s one-dimensional discretization grid at index s. The function `func` is applied to the
+        pair (x_in, x_s) to produce the output passed downstream. If the node has no upstream dependency,
+        x_in may be `None`.
 
-        For each call, the node receives an input value x_in from upstream and pairs it with a grid
-        value x_s = grid[s] representing one possible configuration of the local variable.
-        The contained function `func` is then evaluated on (x_in, x_s), where x_in may be None if
-        the node is placed at the boundary and has no further upstream dependencies.
-        The index s represents the local physical index of the MPS core generated at this node.
-
-        The node presents compression parameters used to optionally compress the output image of
-        `func` by merging together values within a relative tolerance (`binning_tol`) or by enforcing
-        a maximum allowed MPS rank (`max_rank`).
+        The index s labels the local physical dimension of the MPS core associated with this node.
+        Optional compression parameters (`binning_tol`, `max_rank`) control the binning and truncation
+        of the output image during MPS construction.
 
         Parameters
         ----------
         func : Callable
-            The functional dependence x_out = func(x_in, x_s).
+            Binary function implementing the update x_out = func(x_in, x_s).
         grid : Sequence
-            Discretization of the local variable x_s. Its size defines the local physical dimension.
+            One-dimensional discretization grid for the local variable. Its length denotes the local
+            MPS physical dimension.
         binning_tol : float, optional
-            Relative tolerance for binning similar output values.
+            Relative tolerance used to bin nearby output values during image compression.
         max_rank : int, optional
-            Upper bound on the size of the compressed output image.
+            Maximum allowed number of distinct values (bins) in the compressed output image,
+            which bounds the maximum bond dimension of the MPS core generated at this node.
         """
         self.func = func
         self.grid = grid
@@ -69,15 +66,17 @@ class BranchNode:
         self, values: Vector, default_tol: float = 1e-4, tol_multiplier: float = 1.25
     ) -> Vector:
         """
-        Compute all distinct outputs produced by applying the node function to an input
-        array `values` over all grid indices.
+        Compute the image of the node function over a set of input values.
 
-        The resulting image size is optionally compressed by binning similar values up to a maximal
-        size `max_rank`. Returns a 1D array of sorted unique values.
+        The node function x_out = func(x_in, x_s) is evaluated for all combinations of input
+        values and grid indices, and the resulting outputs are collected into a set of sorted
+        unique values. The image can be optionally compressed by binning nearby values and by
+        enforcing `max_rank`, which prevents a combinatorial growth of image sizes across the
+        tree and bounds the bond dimension of the corresponding MPS core.
         """
         logger = make_logger(3)
 
-        # Compute the image. TODO: Vectorize
+        # Compute the image
         image_matrix = np.zeros((len(values), self.N))
         for j, x_in in enumerate(values):
             for s in range(self.N):
@@ -111,7 +110,12 @@ class BranchNode:
 
     @staticmethod
     def _bin_image(image: Vector, binning_tol: float) -> Vector:
-        """Combines the values of the input `image` that are closer than `binning_tol` to reduce image size."""
+        """
+        Bin nearby values in a sorted image using a relative tolerance.
+
+        Consecutive image values within `binning_tol` are grouped and replaced by their mean,
+        reducing the image size while controlling relative error.
+        """
         binned_image = []
         bin = [image[0]]
         for x in image[1:]:
@@ -142,16 +146,18 @@ def get_transitions(
     nodes: list[BranchNode], images: list[Vector], logger: Logger = Logger()
 ) -> list[dict]:
     """
-    Helper functions to construct the transition mappings for a chain of BranchNodes.
+    Construct transition mappings for a chain of `BranchNode`s.
 
-    These transitions are essential for assembling the MPS cores from the functional dependencies by
-    determining their structur. Given consecutive images R_in and R_pout, the transition determines
-    for each input value index k_in and grid index s, the corresponding output index k_out such that:
+    For each node, this function determines how input image indices map to output image
+    indices under the node's functional update. Given consecutive images R_in and R_out,
+    the transition assigns, for each input index k_in and grid index s, the output index
+    k_out such that
 
-        x_out = func(R_in[k_in], grid[s])  ≈  R_out[k_out].
+        func(R_in[k_in], grid[s]) ≈ R_out[k_out].
 
-    Exact matches are used when possible; otherwise the nearest value R_out is chosen. The result for
-    each node is a dictionary of transitions (k_in, s) -> k_out.
+    When no binning is applied, exact matches in R_out are guaranteed. If binning is used,
+    the nearest value in R_out is assigned instead. Each node yields a dictionary mapping
+    (k_in, s) → k_out, which is used to assemble the corresponding MPS core.
     """
     l = len(nodes)
     transitions = []
@@ -183,15 +189,14 @@ def assemble_cores(
     transitions: list[dict], logger: Logger = Logger()
 ) -> list[SparseCore]:
     """
-    Helper function that assembles sparse MPS cores from the transition mappings.
+    Assemble sparse MPS cores from transition mappings.
 
-    These MPS cores translate the transitions into tensor slices. For each node, a rank-3 tensor
-    A[r_L, s, r_R] is assembled such that:
+    For each node, a rank-3 tensor A[r_L, s, r_R] is constructed such that
 
         A[k_in, s, k_out] = 1
 
-    whenever the transition dictionary contains (k_in, s) -> k_out. Each physical slice (fixed s)
-    is stored as a sparse CSR matrix, producing a compact MPS representation.
+    whenever the transition mapping contains (k_in, s) → k_out. Each physical slice
+    (fixed s) is stored as a sparse CSR matrix, yielding a compact sparse-core representation.
     """
     cores = []
     l = len(transitions)

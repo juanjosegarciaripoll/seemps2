@@ -200,7 +200,7 @@ def cross_greedy(
 
     converged = False
     trajectories: defaultdict[str, list[Any]] = defaultdict(list)
-    for i in range(cross_strategy.max_iters // 2):
+    for i in range(cross_strategy.range_iters[1] // 2):
         # Left-to-right half sweep
         tick = perf_counter()
         for k in range(cross.sites - 1):
@@ -274,7 +274,7 @@ def _update_cross(
     j_l, j_g = j_l_random[i], j_g_random[j]
 
     c_A = c_B = r_A = r_B = np.empty(0)
-    for iter in range(cross_strategy.max_iters):
+    for iter in range(cross_strategy.range_iters[1]):
         # Traverse column residual
         c_A = cross.sample_superblock(k, j_g=j_g).reshape(-1)
         c_B = cross.sample_skeleton(k, j_g=j_g)
