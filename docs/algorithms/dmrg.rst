@@ -12,7 +12,7 @@ minimum of an energy functional:
 
 .. math::
     \mathrm{argmin}_\psi E[\psi] :=
-    \mathrm{argmin}_\psi \frac{\langle{\psi|H|\psi}}{\langle{\psi|\psi}},
+    \mathrm{argmin}_\psi \frac{\langle{\psi|H|\psi}\rangle}{\langle{\psi|\psi}\rangle},
 
 where the state :math:`\psi` is a matrix product state. The algorithm works by
 reinterpreting this functional as a function over the individual tensors.
