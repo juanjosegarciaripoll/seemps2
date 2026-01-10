@@ -1,6 +1,6 @@
 import numpy as np
 from ..tools import TestCase
-from seemps.state import MPS, Strategy
+from seemps.state import MPS, CanonicalMPS, Strategy
 from seemps.evolution.hdaf import split_step
 
 
@@ -37,6 +37,7 @@ class TestSplitStep(TestCase):
             strategy=strategy,
             itime=False,
         )
+        assert isinstance(final_state, MPS)
 
         # Analytical solution
         A0 = 1.0 / (sigma0**2)
@@ -87,6 +88,7 @@ class TestSplitStep(TestCase):
             strategy=strategy,
             itime=True,
         )
+        assert isinstance(final_state, CanonicalMPS)
 
         final_state = final_state.normalize_inplace()
         overlap = abs(final_state.to_vector() @ gs_mps.to_vector())
