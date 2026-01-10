@@ -455,7 +455,7 @@ class MPOList(object):
 
     def physical_dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPOList (Deprecated, see :meth:`dimensions`)."""
-        return self.mpos[0].dimensions()
+        return self.mpos[0].physical_dimensions()
 
     def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix (Deprecated, see :meth:`to_matrix`)."""
