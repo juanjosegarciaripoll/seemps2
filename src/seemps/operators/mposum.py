@@ -40,10 +40,18 @@ class MPOSum(object):
         self.weights = [1.0] * len(mpos) if weights is None else list(weights)
         self.strategy = strategy
 
-    # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
+        """Return the physical dimensions (Deprecated, see :meth:`dimensions`)."""
+        warnings.warn(
+            "MPO*.dimensions is deprecated. Use MPO*.physical_dimensions.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.physical_dimensions()
+
+    def physical_dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPO."""
-        return self.mpos[0].dimensions()
+        return self.mpos[0].physical_dimensions()
 
     def copy(self) -> MPOSum:
         return MPOSum(self.mpos, self.weights, self.strategy)
