@@ -1,6 +1,6 @@
 from __future__ import annotations
 import numpy as np
-from typing import Callable
+from typing import Callable, overload
 import dataclasses
 from ...tools import make_logger
 from ...typing import Vector
@@ -13,13 +13,15 @@ from .branch import (
 from .sparse_mps import SparseMPS
 
 
-class BinaryRootNode:
+class BinaryRoot:
     """
-    Root functional dependence for a `BinaryTree`.
+    Terminal node for a `BinaryTree`, representing the final ternary functional dependence.
 
-    Represents a ternary function f(x_L, x_s, x_R), where x_L and x_R arise from the left and right
-    subtrees and x_s is selected from the given discretization grid, where the index s represents
-    the physical dimensions of the MPS core.
+    Represents a ternary function f(x_L, x_s, x_R), where x_L and x_R are values propagated
+    from the left and right subtrees, respectively, and x_s is obtained by evaluating the node's
+    discretization grid at index s.
+
+    The length of the discretization grid determines the physical dimension of the corresponding MPS core.
     """
 
     def __init__(self, func: Callable, grid: Vector):
@@ -27,7 +29,15 @@ class BinaryRootNode:
         self.grid = grid
         self.N = len(grid)
 
-    def evaluate(self, x_L: float | None, s: int, x_R: float | None) -> float:
+    @overload
+    def evaluate(self, x_L: float | None, s: int, x_R: float | None) -> float: ...
+
+    @overload
+    def evaluate(
+        self, x_L: np.ndarray | None, s: np.ndarray, x_R: np.ndarray | None
+    ) -> np.ndarray: ...
+
+    def evaluate(self, x_L, s, x_R):
         if x_L is None or x_R is None:
             return 0
         x_s = self.grid[s]
@@ -37,23 +47,21 @@ class BinaryRootNode:
 @dataclasses.dataclass
 class BinaryTree:
     """
-    Binary-tree representation of a multivariate function.
+    Binary computation-tree representation of a multivariate function.
 
-    This class encodes a multivariate function with a branching algebraic structure:
+    This class encodes a multivariate function with a binary branching algebraic structure:
 
-        f[ g1( g11(...), g12(...)) , g2( g21(...), g22(...) )].
+        f[ g1( g11(...), g12(...)) , g2( g21(...), g22(...) )],
 
-    The tree is composed of left and right chains of `BranchNode`s, which define how input
-    variables are combined within each subtree, and a `BinaryRootNode` that merges the two
-    aggregated results through a ternary function. Each node exposes a grid variable x_s,
-    corresponding to one input dimension and, ultimately, one physical dimension of the MPS.
+    i.e. in which two chain-like subtrees are evaluated and merged at a terminal root.
+    The left and right subtrees are represented by sequences of nodes (`BranchNode`), and
+    their aggregated values are combined by a `BinaryRoot` through a ternary function.
 
-    This can express hierarchical dependencies in a way that can be efficiently compiled into
-    an MPS using :func:`mps_binary_tree`.
+    This representation can be efficiently loaded into a MPS using :func:`mps_binary_tree`.
     """
 
     left_nodes: list[BranchNode]
-    root_node: BinaryRootNode
+    root_node: BinaryRoot
     right_nodes: list[BranchNode]
 
     # Keep type checker happy
@@ -73,16 +81,15 @@ class BinaryTree:
 
 def mps_binary_tree(binary_tree: BinaryTree) -> SparseMPS:
     """
-    Compute the MPS representation of a function encoded as a `BinaryTree`.
+    Compute the MPS representation of a multivariate function encoded as a `BinaryTree`.
 
-    Returns an `SparseMPS` where each core is highly sparse and represented by a collection of
-    CSR matrices (see `SparseCore`). It efficiently approximates the multivariate function spanned
-    by the binary tree. Source: https://arxiv.org/abs/2206.03832
+    Returns an `SparseMPS`, whose cores are highly sparse and represented as collections
+    of CSR matrices. Source: https://arxiv.org/abs/2206.03832
 
     Parameters
     ----------
     binary_tree : BinaryTree
-        Binary tree representation of the target multivariate function.
+        Binary computation-tree representation of the target function.
 
     Returns
     -------
