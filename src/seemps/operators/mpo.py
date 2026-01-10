@@ -4,7 +4,14 @@ from typing import overload
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
-from ..typing import Tensor4, Tensor3, DenseOperator, Weight
+from ..typing import (
+    Tensor4,
+    Tensor3,
+    DenseOperator,
+    Weight,
+    Operator,
+    to_dense_operator,
+)
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
@@ -65,6 +72,16 @@ class MPO(TensorArray):
         """Return a shallow copy of the MPO, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
         return MPO(self, self.strategy)
+
+    @classmethod
+    def from_local_operators(
+        cls, operators: list[Operator], strategy: Strategy = DEFAULT_STRATEGY
+    ) -> MPO:
+        """Product of local operators acting on each subsystem."""
+        return MPO(
+            [to_dense_operator(o).reshape((1,) + o.shape + (1,)) for o in operators],
+            strategy,
+        )
 
     def __add__(self, A: MPO | MPOList | MPOSum) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""

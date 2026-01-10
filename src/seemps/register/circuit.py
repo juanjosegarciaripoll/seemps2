@@ -2,6 +2,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 import numpy as np
 from math import sqrt
+
+from ..optimization.arnoldi import MPSArnoldiRepresentation
+
+from ..operators import MPO, MPOList
 from ..typing import DenseOperator, Operator, Real
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..cython import _contract_nrjl_ijk_klm
@@ -32,6 +36,9 @@ known_operators: dict[str, DenseOperator] = {
     "CNOT": CNOT,
     "CX": CNOT,
     "CZ": np.diag([1.0, 1.0, 1.0, -1.0]),
+    "SX(1)": np.asarray([[0, 1, 0], [1, 0, 1], [0, 1, 0]]) / np.sqrt(2),
+    "SY(1)": np.asarray([[0, -1j, 0], [1, 0, -1j], [0, 1, 0]]) / np.sqrt(2),
+    "SZ(1)": np.asarray([[1, 0, 0], [0, 0, 0], [0, 0, -1]]),
 }
 
 
@@ -99,6 +106,31 @@ class ParameterizedCircuit(UnitaryCircuit, ABC):
                     f"'default_parameters' length {len(default_parameters)} does not match size 'parameters_size' {parameters_size}"
                 )
         self.parameters_size = parameters_size
+
+
+class ParameterFreeMPO(ParameterizedCircuit):
+    """A quantum register unitary transformation, given by an MPO
+    with no parameters.
+
+    Arguments
+    ---------
+    operator : MPO | MPOList
+        The operator that implements the transformation
+    """
+
+    operator: MPO | MPOList
+
+    def __init__(self, operator: MPO | MPOList):
+        dimensions = operator.physical_dimensions()
+        if not all(d == 2 for d in dimensions):
+            raise Exception("MPO layer not defined over qubit spaces")
+        super().__init__(operator.size, 0, [], operator.strategy)
+        self.operator = operator
+
+    def apply_inplace(
+        self, state: MPS, parameters: Parameters | None = None
+    ) -> CanonicalMPS:
+        return CanonicalMPS(self.operator.apply(state, simplify=True))
 
 
 class LocalRotationsLayer(ParameterizedCircuit):
@@ -252,6 +284,67 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         return state
 
 
+class HamiltonianEvolutionLayer(ParameterizedCircuit):
+    r"""Exponential of a Hamiltonian acting on the quantum register.
+
+    This parameterized circuit implements :math:`\exp(-1j * g * H)`,
+    where `g` is the circuit's parameter and `H` is a Hermitian
+    :class:`~seemps.operators.MPO` acting on the qubit register.
+    The exponential is approximated using the Arnoldi expansion
+    of the given `order` (see :func:`~seemps.evolution.arnoldi`).
+
+    Parameters
+    ----------
+    H : MPO
+        Number of qubits on which to operate.
+    default_parameter : float | None
+        Default rotation angle if none provided.
+    order : int
+        Order of exponential approximation (defaults to 4)
+    strategy : Strategy
+        Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
+
+    Examples
+    --------
+    >>> state = random_uniform_mps(2, 3)
+    >>> U = LocalRotationsLayer(register_size=state.size, operator="Sz")
+    >>> Ustate = U @ state
+    """
+
+    H: MPO
+    arnoldi: MPSArnoldiRepresentation
+    order: int
+
+    def __init__(
+        self,
+        H: MPO,
+        default_parameter: float = 1.0,
+        order: int = 6,
+        strategy: Strategy = DEFAULT_STRATEGY,
+    ):
+        register_size = len(H)
+        if not all(d == 2 for d in H.physical_dimensions()):
+            raise Exception("Hamiltonian not defined over qubit spaces")
+        assert order > 1 and isinstance(order, int)
+
+        default_parameters = [default_parameter]
+        super().__init__(register_size, 1, default_parameters, strategy)
+        self.H = H
+        self.arnoldi = MPSArnoldiRepresentation(self.H, strategy)
+        self.order = order
+
+    def apply_inplace(
+        self, state: MPS, parameters: Parameters | None = None
+    ) -> CanonicalMPS:
+        assert self.register_size == state.size
+        if parameters is None:
+            parameters = self.parameters
+        assert len(parameters) == 1
+        angle = parameters[0]
+        self.arnoldi.build_Krylov_basis(state, self.order)
+        return self.arnoldi.exponential(complex(1j * angle))
+
+
 class ParameterizedLayeredCircuit(ParameterizedCircuit):
     """Variational quantum circuit with Ry rotations and CNOTs.
 
@@ -264,7 +357,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
     ----------
     register_size : int
         Number of qubits on which to operate
-    layers : list[UnitaryCircuit]
+    layers : list[UnitaryCircuit | MPO | MPOList]
         List of constant or parameterized unitary layers.
     default_parameters : Sequence[Real]
         Default angles for the rotations (Defaults to zeros).
@@ -277,13 +370,15 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
     def __init__(
         self,
         register_size: int,
-        layers: list[UnitaryCircuit],
+        layers: list[UnitaryCircuit | MPO | MPOList],
         default_parameters: Parameters | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         parameters_size = 0
         segments: list[tuple[UnitaryCircuit, int, int]] = []
         for circuit in layers:
+            if isinstance(circuit, (MPO, MPOList)):
+                circuit = ParameterFreeMPO(circuit)
             if isinstance(circuit, ParameterizedCircuit):
                 l = circuit.parameters_size
                 segments.append((circuit, parameters_size, parameters_size + l))
