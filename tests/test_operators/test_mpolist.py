@@ -142,4 +142,4 @@ class TestMPOList(TestCase):
         U = MPO([self.rng.random(size=(1, 3, 2, 1))] * 3)
         V = MPO([self.rng.random(size=(1, 4, 3, 1))] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        self.assertEqual(UV.dimensions(), U.dimensions())
+        self.assertEqual(UV.physical_dimensions(), U.physical_dimensions())
