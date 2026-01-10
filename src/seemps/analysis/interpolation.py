@@ -1,11 +1,12 @@
 from __future__ import annotations
 import copy
 from math import sqrt
+from typing import Literal
 import numpy as np
+from ..register import mpo_weighted_shifts
 from ..operators import MPO
 from ..qft import qft_mpo
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, simplify
-from .finite_differences import tridiagonal_mpo
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, simplify
 from .space import Space, mpo_flip
 
 
@@ -127,9 +128,8 @@ def finite_differences_interpolation_1D(
     vector: MPS,
     space: Space,
     dim: int = 0,
+    order: Literal[1] | Literal[2] | Literal[3] = 1,
     strategy: Strategy = DEFAULT_STRATEGY,
-    closed: bool = True,
-    order: int = 1,
 ):
     """Finite differences interpolation of dimension dim of an MPS representing
     a multidimensional function.
@@ -142,6 +142,8 @@ def finite_differences_interpolation_1D(
         Space on which the function is defined.
     dim : int
         Dimension to perform the interpolation.
+    order : int
+        Interpolation order, 1, 2 or 3 (defaults to 1).
     strategy : Strategy, optional
         Truncation strategy, defaults to DEFAULT_STRATEGY.
 
@@ -150,115 +152,66 @@ def finite_differences_interpolation_1D(
     MPS
         Interpolated MPS with one more site for the given dimension.
     """
-    if False:
-        derivative_mps = (
-            space.extend(
-                tridiagonal_mpo(
-                    len(space.sites[dim]), 0.5, 0, 0.5, closed=closed, strategy=strategy
-                ),
-                dim,
-            )
-            @ vector
-        )
-        # Extend the state with zero qubits
-        new_qubits_per_dimension = space.qubits_per_dimension.copy()
-        new_qubits_per_dimension[dim] += 1
-        new_space = Space(new_qubits_per_dimension, space.L, space.closed)
-        new_sites = new_space.sites
-        new_positions = new_sites.copy()
-        new_positions[dim] = list(np.array(new_positions[dim][:-(1)]))
-        new_size = vector.size + 1
-        derivative_mps = derivative_mps.extend(L=new_size, sites=sum(new_positions, []))
-        derivative_mps = (
-            new_space.extend(
-                tridiagonal_mpo(
-                    len(new_space.sites[dim]), 0, 1, 0, closed=closed, strategy=strategy
-                ),
-                dim,
-            )
-            @ derivative_mps
-        )
-        new_ψ0mps = vector.extend(L=new_size, sites=sum(new_positions, []))
-        new_ψ0mps = derivative_mps + new_ψ0mps
-        return simplify(new_ψ0mps, strategy=strategy), new_space
-    else:
-        # Shift operator for finite difference formulas
-        Sup = space.extend(
-            tridiagonal_mpo(
-                len(space.sites[dim]), 0, 0, 1, closed=closed, strategy=strategy
-            ),
-            dim,
-        )
-        # Formulas obtained from InterpolatingPolynomial[] in Mathematica
-        # First order is just a mid-point interpolation
-        if order == 1:
-            interpolated_points = simplify(
-                MPSSum([0.5, 0.5], [vector, Sup @ vector]),
-                strategy=strategy,
-            )
-        elif order == 2:
-            f1 = vector
-            f2 = Sup @ f1
-            f3 = Sup @ f2
-            f0 = Sup.T @ f1
-            interpolated_points = simplify(
-                MPSSum([-1 / 16, 9 / 16, 9 / 16, -1 / 16], [f0, f1, f2, f3]),
-                strategy=strategy,
-            )
-        elif order == 3:
-            Sdo = Sup.T
-            f2 = vector
-            f3 = Sup @ f2
-            f4 = Sup @ f3
-            f5 = Sup @ f4
-            f1 = Sdo @ f2
-            f0 = Sdo @ f1
-            interpolated_points = simplify(
-                MPSSum(
-                    [-3 / 256, 21 / 256, -35 / 128, 105 / 128, 105 / 256, -7 / 256],
-                    [f0, f1, f2, f3, f4, f5],
-                ),
-                strategy=strategy,
-            )
-
-        else:
+    # Shift operator for finite difference formulas
+    # Formulas obtained from InterpolatingPolynomial[] in Mathematica
+    # First order is just a mid-point interpolation
+    match order:
+        case 1:
+            weights = [0.5, 0.5]
+            shifts = [0, -1]
+        case 2:
+            weights = [-1 / 16, 9 / 16, 9 / 16, -1 / 16]
+            shifts = [1, 0, -1, -2]
+        case 3:
+            weights = [-3 / 256, 21 / 256, -35 / 128, 105 / 128, 105 / 256, -7 / 256]
+            shifts = [2, 1, 0, -1, -2, -3]
+        case _:
             raise Exception("Invalid interpolation order")
-        #
-        # The new space representation with one more qubit
-        new_space = space.enlarge_dimension(dim, 1)
-        new_positions = new_space.new_positions_from_old_space(space)
-        #
-        # We create an MPS by extending the old one to the even sites
-        # and placing the interpolating polynomials in an MPS that
-        # is only nonzero in the odd sites. We then add. There are better
-        # ways for sure.
-        odd = vector.extend(
-            L=new_space.n_sites,
-            sites=new_positions,
-            dimensions=2,
-            state=np.asarray([1.0, 0.0]),
-        )
-        even = interpolated_points.extend(
-            L=new_space.n_sites,
-            sites=new_positions,
-            dimensions=2,
-            state=np.asarray([0.0, 1.0]),
-        )
-        return simplify(odd + even, strategy=strategy), new_space
+    interpolant = mpo_weighted_shifts(
+        vector.size, weights, shifts, periodic=space.closed
+    )
+    interpolated_points = interpolant.apply(vector, strategy=strategy, simplify=True)
+    #
+    # The new space representation with one more qubit
+    new_space = space.enlarge_dimension(dim, 1)
+    new_positions = new_space.new_positions_from_old_space(space)
+    #
+    # We create an MPS by extending the old one to the even sites
+    # and placing the interpolating polynomials in an MPS that
+    # is only nonzero in the odd sites. We then add. There are better
+    # ways for sure.
+    odd = vector.extend(
+        L=new_space.n_sites,
+        sites=new_positions,
+        dimensions=2,
+        state=np.asarray([1.0, 0.0]),
+    )
+    even = interpolated_points.extend(
+        L=new_space.n_sites,
+        sites=new_positions,
+        dimensions=2,
+        state=np.asarray([0.0, 1.0]),
+    )
+    return simplify(odd + even, strategy=strategy), new_space
 
 
 def finite_differences_interpolation(
-    ψmps: MPS, space: Space, strategy: Strategy = DEFAULT_STRATEGY
+    tensor: MPS,
+    space: Space,
+    order: Literal[1] | Literal[2] | Literal[3] = 1,
+    strategy: Strategy = DEFAULT_STRATEGY,
 ):
     """Finite differences interpolation of an MPS representing
     a multidimensional function.
 
     Parameters
     ----------
-    vector : MPS
+    tensor : MPS
         MPS representing a multidimensional function.
     space : Space
         Space on which the function is defined.
+    order : int
+        Interpolation order, 1, 2 or 3 (defaults to 1).
     strategy : Strategy, optional
         Truncation strategy, defaults to DEFAULT_STRATEGY.
 
@@ -268,13 +221,13 @@ def finite_differences_interpolation(
         Interpolated MPS with one more site for each dimension.
     """
     space = copy.deepcopy(space)
-    if not isinstance(ψmps, CanonicalMPS):
-        ψmps = CanonicalMPS(ψmps, strategy=strategy)
+    if not isinstance(tensor, CanonicalMPS):
+        tensor = CanonicalMPS(tensor, strategy=strategy)
     for i, _ in enumerate(space.qubits_per_dimension):
-        ψmps, space = finite_differences_interpolation_1D(
-            ψmps, space, dim=i, strategy=strategy
+        tensor, space = finite_differences_interpolation_1D(
+            tensor, space, dim=i, strategy=strategy, order=order
         )
-    return ψmps
+    return tensor
 
 
 __all__ = [
