@@ -1,10 +1,10 @@
 from . import (
     cross,
+    differentiation,
     expansion,
     evaluation,
     evolution,
     factories,
-    finite_differences,
     integration,
     interpolation,
     mesh,
@@ -16,11 +16,11 @@ from . import (
 
 __all__ = [
     "cross",
+    "differentiation",
     "evaluation",
     "evolution",
     "expansion",
     "factories",
-    "finite_differences",
     "integration",
     "interpolation",
     "mesh",

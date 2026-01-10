@@ -22,6 +22,9 @@ Version 2.9.6
 * Added `fourier_derivative_mpo` and `fourier_derivative` for QFT-based
   differentiation of functions.
 
+* All derivative functions are in `seemps.analysis.differentiation`
+  Module `seemps.analysis.finite_differences` has been removed.
+
 Fixes
 -----
 * `finite_differences_interpolation` now accepts an `order` parameter.

@@ -7,7 +7,7 @@ from seemps.analysis.operators import id_mpo
 from seemps.analysis.polynomials import mps_from_polynomial
 from seemps.state import MPS
 from seemps.state.factories import random_mps
-from seemps.analysis.finite_differences import smooth_finite_differences_mpo
+from seemps.analysis.differentiation import smooth_finite_differences_mpo
 
 
 @dataclasses.dataclass
@@ -45,7 +45,7 @@ def make_complex_problem(
         label = f"Complex operator and state in {n} qubits"
 
     if rhs is None:
-        rhs = random_mps([2]*n, complex=True, rng=np.random.default_rng(0))
+        rhs = random_mps([2] * n, complex=True, rng=np.random.default_rng(0))
 
     return MPOInverseProblem(label, 1j * id_mpo(n), rhs)
 

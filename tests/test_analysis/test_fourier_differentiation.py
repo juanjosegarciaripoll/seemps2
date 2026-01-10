@@ -1,5 +1,5 @@
 import numpy as np
-from seemps.analysis.fourier_differentiation import (
+from seemps.analysis.differentiation import (
     fourier_derivative,
     fourier_derivative_mpo,
 )

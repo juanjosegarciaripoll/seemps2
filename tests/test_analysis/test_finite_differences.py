@@ -1,7 +1,7 @@
 from typing import cast
 import numpy as np
 from scipy.sparse import spdiags, csr_matrix, eye
-from seemps.analysis.finite_differences import smooth_finite_differences_mpo
+from seemps.analysis.differentiation import smooth_finite_differences_mpo
 from .. import tools
 
 

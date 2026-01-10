@@ -1,8 +1,8 @@
 from __future__ import annotations
 import numpy as np
-from ..state import Strategy, DEFAULT_STRATEGY
+from ...state import Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
-from ..register.transforms import mpo_weighted_shifts
+from ...register.transforms import mpo_weighted_shifts
 
 
 def tridiagonal_mpo(
