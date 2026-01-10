@@ -78,7 +78,7 @@ def cross_maxvol(
 
     converged = False
     trajectories: defaultdict[str, list[Any]] = defaultdict(list)
-    for i in range(cross_strategy.max_iters // 2):
+    for i in range(cross_strategy.range_iters[1] // 2):
         tick = perf_counter()
 
         # Left-to-right half sweep
