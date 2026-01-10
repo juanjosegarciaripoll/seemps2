@@ -1,7 +1,7 @@
 from typing import cast
 import numpy as np
 from scipy.sparse import spdiags, csr_matrix, eye
-from seemps.analysis.differentiation import smooth_finite_differences_mpo
+from seemps.analysis.derivatives import finite_differences_mpo
 from .. import tools
 
 
@@ -17,7 +17,7 @@ class TestFiniteDifferences(tools.TestCase):
 
     def test_first_derivative_two_qubits_perodic(self):
         dx = 0.1
-        D2 = smooth_finite_differences_mpo(
+        D2 = finite_differences_mpo(
             2, order=1, filter=3, periodic=True, dx=dx
         ).to_matrix()
         self.assertSimilar(
@@ -34,7 +34,7 @@ class TestFiniteDifferences(tools.TestCase):
 
     def test_second_derivative_two_qubits_perodic(self):
         dx = 0.1
-        D2 = smooth_finite_differences_mpo(
+        D2 = finite_differences_mpo(
             2, order=2, filter=3, periodic=True, dx=dx
         ).to_matrix()
         dx2 = dx * dx
@@ -53,7 +53,7 @@ class TestFiniteDifferences(tools.TestCase):
 
     def test_first_derivative_two_qubits_non_perodic(self):
         dx = 0.1
-        D2 = smooth_finite_differences_mpo(
+        D2 = finite_differences_mpo(
             2, order=1, filter=3, periodic=False, dx=dx
         ).to_matrix()
         self.assertSimilar(
@@ -70,7 +70,7 @@ class TestFiniteDifferences(tools.TestCase):
 
     def test_second_derivative_two_qubits_non_perodic(self):
         dx = 0.1
-        D2 = smooth_finite_differences_mpo(
+        D2 = finite_differences_mpo(
             2, order=2, filter=3, periodic=False, dx=dx
         ).to_matrix()
         dx2 = dx * dx

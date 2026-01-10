@@ -1,6 +1,6 @@
 from . import (
     cross,
-    differentiation,
+    derivatives,
     expansion,
     evaluation,
     evolution,
@@ -16,7 +16,7 @@ from . import (
 
 __all__ = [
     "cross",
-    "differentiation",
+    "derivatives",
     "evaluation",
     "evolution",
     "expansion",

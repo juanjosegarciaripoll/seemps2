@@ -44,7 +44,7 @@ An example on how to use these functions is shown in `Differentiation.ipynb <htt
 
 .. autosummary::
 
-    ~finite_differences.smooth_finite_differences_mpo
+    ~derivatives.finite_differences_mpo
 
 Hermite Distributed Approximating Functionals (HDAFs)
 =====================================================

@@ -132,7 +132,7 @@ all_modules = [
     "seemps.analysis.cross",
     "seemps.analysis.expansion",
     "seemps.analysis.factories",
-    "seemps.analysis.finite_differences",
+    "seemps.analysis.derivatives",
     "seemps.analysis.hdaf",
     "seemps.analysis.integration",
     "seemps.analysis.interpolation",

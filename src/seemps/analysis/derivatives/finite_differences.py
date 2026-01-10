@@ -88,7 +88,7 @@ _filtered_differences = {
 
 
 # TODO: Use intervals
-def smooth_finite_differences_mpo(
+def finite_differences_mpo(
     L: int,
     order: int,
     filter: int = 3,
@@ -149,4 +149,4 @@ def smooth_finite_differences_mpo(
         )
 
 
-__all__ = ["tridiagonal_mpo", "smooth_finite_differences_mpo"]
+__all__ = ["tridiagonal_mpo", "finite_differences_mpo"]
