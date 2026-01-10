@@ -64,10 +64,10 @@ def power_method(
     if tol_cgs is None:
         tol_cgs = tol_variance
     if abs(shift):
-        identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.dimensions()])
+        identity = MPO([np.eye(d).reshape(1, d, d, 1) for d in H.physical_dimensions()])
         H = (H + shift * identity).join()
     state = CanonicalMPS(
-        random_mps(H.dimensions(), D=2) if guess is None else guess,
+        random_mps(H.physical_dimensions(), D=2) if guess is None else guess,
         strategy=strategy,
     )
     results = PowerMethodOptimizeResults(
