@@ -2,7 +2,11 @@ import numpy as np
 from scipy.linalg import expm
 from seemps.operators import MPO
 from seemps.hamiltonians import HeisenbergHamiltonian, ConstantTIHamiltonian
-from seemps.register.circuit import HamiltonianEvolutionLayer, interpret_operator
+from seemps.register.circuit import (
+    HamiltonianEvolutionLayer,
+    interpret_operator,
+    qubo_mpo,
+)
 from ..tools import TestCase
 
 
@@ -42,8 +46,8 @@ class TestHamiltonianEvolutionLayer(TestCase):
         U = HamiltonianEvolutionLayer(self.H)
         c = U.apply_inplace(a.copy())
         self.assertSimilar(
-            expm(-1j * U.parameters[0] * self.H.to_matrix()) @ c.to_vector(),
-            a.to_vector(),
+            c.to_vector(),
+            expm(-1j * U.parameters[0] * self.H.to_matrix()) @ a.to_vector(),
         )
 
     def test_hamiltonian_layer_users_parameters(self):
@@ -52,6 +56,18 @@ class TestHamiltonianEvolutionLayer(TestCase):
         g = 0.23
         c = U.apply_inplace(a.copy(), parameters=[g])
         self.assertSimilar(
-            expm(-1j * g * self.H.to_matrix()) @ c.to_vector(),
-            a.to_vector(),
+            c.to_vector(),
+            expm(-1j * g * self.H.to_matrix()) @ a.to_vector(),
+        )
+
+    def test_hamiltonian_layer_ising(self):
+        J = np.asarray([[0, 1, 0], [1, 0, 2], [0, 2, 0]])
+        H = qubo_mpo(J, None)
+        parameters = [1.0]
+        a = self.random_uniform_mps(2, H.size, truncate=True, normalize=True)
+        U = HamiltonianEvolutionLayer(H)
+        c = U.apply_inplace(a.copy(), parameters)
+        self.assertSimilar(
+            c.to_vector(),
+            expm(-1j * parameters[0] * H.to_matrix()) @ a.to_vector(),
         )

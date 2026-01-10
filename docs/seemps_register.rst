@@ -24,6 +24,7 @@ register. These include the following ones:
    ~seemps.register.circuit.TwoQubitGatesLayer
    ~seemps.register.circuit.HamiltonianEvolutionLayer
    ~seemps.register.circuit.VQECircuit
+   ~seemps.register.circuit.IsingQAOACircuit
 
 The :class:`~seemps.register.circuit.ParameterizedLayeredCircuit` is a
 composite circuit that can be built from :class:`~seemps.register.circuit.LocalRotationsLayer`,

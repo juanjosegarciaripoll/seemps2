@@ -5,6 +5,7 @@ from . import (
     test_local_layer,
     test_entangling_layer,
     test_vqe,
+    test_ising_qaoa_circuit,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "test_local_layer",
     "test_entangling_layer",
     "test_vqe",
+    "test_ising_qaoa_circuit",
 ]
