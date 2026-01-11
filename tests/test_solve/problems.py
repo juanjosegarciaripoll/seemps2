@@ -2,7 +2,7 @@ import numpy as np
 import dataclasses
 from typing import Sequence
 from seemps.operators import MPO
-from seemps.analysis.mesh import RegularInterval
+from seemps.analysis.mesh import QuantizedInterval
 from seemps.analysis.operators import id_mpo
 from seemps.analysis.polynomials import mps_from_polynomial
 from seemps.state import MPS
@@ -55,10 +55,10 @@ def make_Laplacian_problem(
 ) -> MPOInverseProblem:
     if label is None:
         label = f"Laplacian problem with {n} qubits"
-    interval = RegularInterval(0.0, 1.0, 2**n)
-    x = interval.to_vector()
-    dx = x[1] - x[0]
-    mpo = id_mpo(n) + finite_differences_mpo(n, order=2, filter=3, periodic=True, dx=dx)
+    interval = QuantizedInterval(0.0, 1.0, qubits=n)
+    mpo = id_mpo(n) + finite_differences_mpo(
+        order=2, filter=3, interval=interval, periodic=True
+    )
     if rhs is None:
         rhs = np.asarray([0.5, 1.0])  # 0.5 + x
     rhs_mps = mps_from_polynomial(np.asarray(rhs), interval)

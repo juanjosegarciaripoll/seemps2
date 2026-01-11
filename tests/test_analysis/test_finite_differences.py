@@ -2,10 +2,13 @@ from typing import cast
 import numpy as np
 from scipy.sparse import spdiags, csr_matrix, eye
 from seemps.analysis.derivatives import finite_differences_mpo
+from seemps.analysis.mesh import QuantizedInterval
 from .. import tools
 
 
 class TestFiniteDifferences(tools.TestCase):
+    interval = QuantizedInterval(-1, 1, qubits=2)
+
     def Down(self, nqubits: int, periodic: bool = False) -> csr_matrix:
         """Moves f[i] to f[i-1]"""
         L = 2**nqubits
@@ -16,9 +19,9 @@ class TestFiniteDifferences(tools.TestCase):
         return cast(csr_matrix, M)
 
     def test_first_derivative_two_qubits_perodic(self):
-        dx = 0.1
+        dx = self.interval.step
         D2 = finite_differences_mpo(
-            2, order=1, filter=3, periodic=True, dx=dx
+            order=1, filter=3, interval=self.interval, periodic=True
         ).to_matrix()
         self.assertSimilar(
             D2,
@@ -33,9 +36,9 @@ class TestFiniteDifferences(tools.TestCase):
         self.assertSimilar(D2, (D - D.T) / (2.0 * dx))
 
     def test_second_derivative_two_qubits_perodic(self):
-        dx = 0.1
+        dx = self.interval.step
         D2 = finite_differences_mpo(
-            2, order=2, filter=3, periodic=True, dx=dx
+            order=2, filter=3, interval=self.interval, periodic=True
         ).to_matrix()
         dx2 = dx * dx
         self.assertSimilar(
@@ -52,9 +55,9 @@ class TestFiniteDifferences(tools.TestCase):
         self.assertSimilar(D2, (D - 2.0 * I + D.T) / dx2)
 
     def test_first_derivative_two_qubits_non_perodic(self):
-        dx = 0.1
+        dx = self.interval.step
         D2 = finite_differences_mpo(
-            2, order=1, filter=3, periodic=False, dx=dx
+            order=1, filter=3, interval=self.interval, periodic=False
         ).to_matrix()
         self.assertSimilar(
             D2,
@@ -69,9 +72,9 @@ class TestFiniteDifferences(tools.TestCase):
         self.assertSimilar(D2, (D - D.T) / (2.0 * dx))
 
     def test_second_derivative_two_qubits_non_perodic(self):
-        dx = 0.1
+        dx = self.interval.step
         D2 = finite_differences_mpo(
-            2, order=2, filter=3, periodic=False, dx=dx
+            order=2, filter=3, interval=self.interval, periodic=False
         ).to_matrix()
         dx2 = dx * dx
         self.assertSimilar(
