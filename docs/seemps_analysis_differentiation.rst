@@ -11,7 +11,7 @@ differential equations. We provide three mechanisms to do it, which are describe
 
     ~seemps.analysis.derivatives.finite_differences_mpo
     ~seemps.analysis.derivatives.fourier_derivative_mpo
-    ~seemps.analysis.hdaf.hdaf_mpo
+    ~seemps.analysis.derivatives.hdaf_derivative_mpo
 
 
 Finite Differences
@@ -62,8 +62,6 @@ where :math:`W` is a suitable index where the summand vanishes,
    \delta_{M}^{(k)}(x; \sigma) = \left(\frac{-1}{\sqrt{2}\sigma}\right)^{k} \frac{\exp\left(\frac{-x^{2}}{2\sigma^{2}}\right)}{\sqrt{2\pi}\sigma} \sum_{m=0}^{M/2}\left(-\frac{1}{4}\right)^{m} \frac{H_{2m + k}\left(\frac{x}{\sqrt{2}\sigma}\right)}{m!},
 
 and :math:`H_n(x)` is the :math:`n`-th Hermite polynomial on :math:`x`.
-
-.. autosummary::
 
 
 Fourier approximation
