@@ -16,19 +16,27 @@ class TestFourierDerivative(tools.TestCase):
         self.cos = mps_cos(interval)
 
     def test_first_derivative_periodic_functions(self):
-        L = self.interval.length()
-        self.assertSimilar(fourier_derivative(self.exp1j, 1, L), 1j * self.exp1j)
-        self.assertSimilar(fourier_derivative(self.sin, 1, L), self.cos)
-        self.assertSimilar(fourier_derivative(self.cos, 1, L), -1.0 * self.sin)
+        self.assertSimilar(
+            fourier_derivative(self.exp1j, 1, self.interval), 1j * self.exp1j
+        )
+        self.assertSimilar(fourier_derivative(self.sin, 1, self.interval), self.cos)
+        self.assertSimilar(
+            fourier_derivative(self.cos, 1, self.interval), -1.0 * self.sin
+        )
 
     def test_second_derivative_periodic_functions(self):
-        L = self.interval.length()
-        self.assertSimilar(fourier_derivative(self.exp1j, 2, L), -1.0 * self.exp1j)
-        self.assertSimilar(fourier_derivative(self.sin, 2, L), -1.0 * self.sin)
-        self.assertSimilar(fourier_derivative(self.cos, 2, L), -1.0 * self.cos)
+        self.assertSimilar(
+            fourier_derivative(self.exp1j, 2, self.interval), -1.0 * self.exp1j
+        )
+        self.assertSimilar(
+            fourier_derivative(self.sin, 2, self.interval), -1.0 * self.sin
+        )
+        self.assertSimilar(
+            fourier_derivative(self.cos, 2, self.interval), -1.0 * self.cos
+        )
 
     def test_first_derivative_mpo(self):
-        A = fourier_derivative_mpo(2, 1, self.interval.step)
+        A = fourier_derivative_mpo(1, self.interval)
         self.assertSimilar(
             A.to_matrix(),
             [
@@ -40,7 +48,7 @@ class TestFourierDerivative(tools.TestCase):
         )
 
     def test_second_derivative_mpo(self):
-        A = fourier_derivative_mpo(2, 2, self.interval.step)
+        A = fourier_derivative_mpo(2, self.interval)
         self.assertSimilar(
             A.to_matrix(),
             [

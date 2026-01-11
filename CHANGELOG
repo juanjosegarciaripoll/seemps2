@@ -25,6 +25,8 @@ Version 2.9.7
 * All derivative functions are in `seemps.analysis.derivatives`
   Module `seemps.analysis.finite_differences` has been removed.
 
+* All derivative functions use a `QuantizedInterval`
+
 * `smooth_finite_differences_mpo` has been renamed to `finite_differences_mpo`.
 
 Fixes
