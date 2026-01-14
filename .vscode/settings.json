@@ -62,5 +62,8 @@
                 }
             }
         ]
+    },
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
     }
 }
