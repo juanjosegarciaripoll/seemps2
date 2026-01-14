@@ -127,18 +127,26 @@ def mps_sum_of_exponentials(
     if isinstance(interval, tuple):
         interval = QuantizedInterval(*interval)
     start, step, sites = interval[0], interval.step, interval.qubits
-    output = []
     p = np.asarray(k)
     n = len(p)
-    ndx = list(range(n))
     factor = np.exp(p * (start / sites))
     w = np.ones(n) * weights
-    dtype = np.dtype(type(k[0] * w[0]))
-    for i in range(sites):
-        A = np.zeros((n, 2, n), dtype=dtype)
-        A[ndx, 0, ndx] = 1.0 * factor
-        A[ndx, 1, ndx] = np.exp(p * step * (2 ** (sites - i - 1))) * factor
-        output.append(A)
+    if False:
+        ndx = list(range(n))
+        output = []
+        for i in range(sites):
+            A = np.zeros((n, 2, n), dtype=np.dtype(type(k[0] * w[0])))
+            A[ndx, 0, ndx] = 1.0 * factor
+            A[ndx, 1, ndx] = np.exp(p * step * (2 ** (sites - i - 1))) * factor
+            output.append(A)
+    else:
+        phase = (
+            (2 ** np.arange(sites - 1, -1, -1).reshape(-1, 1, 1, 1))
+            * np.array([0, step]).reshape(1, 2, 1)
+            * p
+        )
+        A = np.exp(phase) * np.eye(n, n).reshape(n, 1, n) * factor
+        output = [Ai for Ai in np.ascontiguousarray(A)]
     output[0] = np.sum(output[0], 0).reshape(1, 2, n)
     output[-1] = np.sum(output[-1] * w, -1).reshape(n, 2, 1)
     return MPS(output)
