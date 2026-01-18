@@ -50,7 +50,7 @@ enum Gemm
   GEMM_ADJOINT = 2
 };
 
-py::object gemm(py::object A, Gemm AT, py::object B, Gemm BT);
+py::object gemm(py::object& A, Gemm AT, py::object& B, Gemm BT);
 
 std::tuple<py::object, py::object, py::object> destructive_svd(py::object A);
 
@@ -96,6 +96,12 @@ inline auto
 array_dim(const py::object& a, int n)
 {
   return PyArray_DIM(to_array(a), n);
+}
+
+inline auto
+array_stride(const py::object& a, int n)
+{
+  return PyArray_STRIDE(to_array(a), n);
 }
 
 inline int
