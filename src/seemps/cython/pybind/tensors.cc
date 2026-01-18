@@ -75,8 +75,8 @@ _normalize(double* data, size_t size)
  */
 
 static py::object
-_dgemm(py::object A, py::object B, int m, int n, int k, char Aorder,
-       char Border)
+_dgemm(py::object A, py::object B, int m, int n, int k, char* Aorder,
+       char* Border)
 {
   if (array_stride(A, 1) != sizeof(double))
     {
@@ -95,14 +95,14 @@ _dgemm(py::object A, py::object B, int m, int n, int k, char Aorder,
   int ldb = array_int_dim(B, 1);
   double alpha = 1.0;
   double beta = 0.0;
-  dgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
+  dgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
             array_data<double>(B), &ldb, &beta, array_data<double>(C), &m);
   return C;
 }
 
 static py::object
-_zgemm(py::object A, py::object B, int m, int n, int k, char Aorder,
-       char Border)
+_zgemm(py::object A, py::object B, int m, int n, int k, char* Aorder,
+       char* Border)
 {
   if (array_stride(A, 1) != sizeof(std::complex<double>))
     {
@@ -121,7 +121,7 @@ _zgemm(py::object A, py::object B, int m, int n, int k, char Aorder,
   int ldb = array_int_dim(B, 1);
   std::complex<double> alpha = 1.0;
   std::complex<double> beta = 0.0;
-  zgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha,
+  zgemm_ptr(Aorder, Border, &m, &n, &k, &alpha,
             array_data<std::complex<double>>(A), &lda,
             array_data<std::complex<double>>(B), &ldb, &beta,
             array_data<std::complex<double>>(C), &m);
@@ -132,28 +132,28 @@ py::object
 gemm(py::object& B, Gemm BT, py::object& A, Gemm AT)
 {
   int m, n, k;
-  char Aorder, Border;
+  char *Aorder, *Border;
   if (AT == Gemm::GEMM_NORMAL)
     {
       m = array_int_dim(A, 1);
       k = array_int_dim(A, 0);
-      Aorder = 'N';
+      Aorder = "N";
     }
   else
     {
       m = array_int_dim(A, 0);
       k = array_int_dim(A, 1);
-      Aorder = (AT == Gemm::GEMM_TRANSPOSE) ? 'T' : 'C';
+      Aorder = (AT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
     }
   if (BT == Gemm::GEMM_NORMAL)
     {
       n = array_int_dim(B, 0);
-      Border = 'N';
+      Border = "N";
     }
   else
     {
       n = array_int_dim(B, 1);
-      Border = (BT == Gemm::GEMM_TRANSPOSE) ? 'T' : 'C';
+      Border = (BT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
     }
   switch (array_type(A))
     {
