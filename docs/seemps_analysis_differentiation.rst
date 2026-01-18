@@ -1,5 +1,3 @@
-.. currentmodule:: seemps.analysis
-
 .. _analysis_derivatives:
 
 ************************************
@@ -7,7 +5,14 @@ Function Differentiation
 ************************************
 
 The approximation of differential operators is key to efficiently solve partial
-differential equations.
+differential equations. We provide three mechanisms to do it, which are described below.
+
+.. autosummary::
+
+    ~seemps.analysis.derivatives.finite_differences_mpo
+    ~seemps.analysis.derivatives.fourier_derivative_mpo
+    ~seemps.analysis.derivatives.hdaf_derivative_mpo
+
 
 Finite Differences
 ==================
@@ -42,9 +47,6 @@ This approximation is improved with a smoother formula to avoid noise resilience
 
 An example on how to use these functions is shown in `Differentiation.ipynb <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Differentiation.ipynb>`_.
 
-.. autosummary::
-
-    ~finite_differences.smooth_finite_differences_mpo
 
 Hermite Distributed Approximating Functionals (HDAFs)
 =====================================================
@@ -61,10 +63,6 @@ where :math:`W` is a suitable index where the summand vanishes,
 
 and :math:`H_n(x)` is the :math:`n`-th Hermite polynomial on :math:`x`.
 
-.. autosummary::
-
-   ~hdaf.hdaf_mpo
-
 
 Fourier approximation
 =====================
@@ -74,4 +72,4 @@ as differential operator as
 .. math::
   D(-i\nabla) := \mathcal{F}^{-1} \sum_{\lbrace s \rbrace} D(p_s)\ket{s}\!\bra{s} \mathcal{F}.
 
-This can be obtained combining the :func:`operators.p_to_n_mpo` function with SeeMPS's QFT :func:`seemps.qft.qft`. However, the QFT is not yet optimally implemented for this task, since the bond dimension scales linearly with the number of sites.
+This can be obtained combining the :func:`operators.p_to_n_mpo` function with SeeMPS's QFT :func:`seemps.qft.qft`. The only drawback of this method is that it can create a rather large :class:`seemps.operators.MPOList` object, that, in order to be effectively used, must be first simplified using :func:`seemps.operators.simplify_mpo`.

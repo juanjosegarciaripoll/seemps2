@@ -142,4 +142,33 @@ class TestMPOList(TestCase):
         U = MPO([self.rng.random(size=(1, 3, 2, 1))] * 3)
         V = MPO([self.rng.random(size=(1, 4, 3, 1))] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        self.assertEqual(UV.dimensions(), U.dimensions())
+        self.assertEqual(UV.physical_dimensions(), U.physical_dimensions())
+
+    def test_mpolist_conj_returns_conjugate(self):
+        mpo1 = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(4)])
+        mpo2 = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(4)])
+        mpolist = MPOList([mpo1, mpo2])
+        conj_mpolist = mpolist.conj()
+        self.assertIsInstance(conj_mpolist, MPOList)
+        self.assertSimilar(conj_mpolist.to_matrix(), mpolist.to_matrix().conj())
+
+    def test_mpolist_times_mpo_gives_mpolist(self):
+        A = MPO([σx.reshape(1, 2, 2, 1)] * 5)
+        B = MPO([σy.reshape(1, 2, 2, 1)] * 5)
+        AB = MPOList([A, B])
+        C = MPO([σz.reshape(1, 2, 2, 1)] * 5)
+        D = AB @ C
+        self.assertIsInstance(D, MPOList)
+        self.assertEqual(D.physical_dimensions(), AB.physical_dimensions())
+        self.assertSimilar(D.to_matrix(), AB.to_matrix() @ C.to_matrix())
+
+    def test_mpolist_times_mpolist_gives_mpolist(self):
+        A = MPO([σx.reshape(1, 2, 2, 1)] * 5)
+        B = MPO([σy.reshape(1, 2, 2, 1)] * 5)
+        C = MPO([σz.reshape(1, 2, 2, 1)] * 5)
+        AB = MPOList([A, B])
+        CA = MPOList([C, A])
+        D = AB @ CA
+        self.assertIsInstance(D, MPOList)
+        self.assertEqual(D.physical_dimensions(), AB.physical_dimensions())
+        self.assertSimilar(D.to_matrix(), AB.to_matrix() @ CA.to_matrix())

@@ -18,17 +18,25 @@ These methods are useful to construct MPS corresponding to domain discretization
     ~seemps.state.mps_tensor_product
     ~seemps.state.mps_tensor_sum
 
-Tensor cross-interpolation (TT-Cross)
--------------------------------------
-These methods are useful to compose MPS or MPO representations of black-box functions using tensor-train cross-interpolation (TT-Cross). See :doc:`algorithms/tt-cross`
+Tensor cross-interpolation (TCI)
+--------------------------------
+These methods are useful to compose MPS or MPO representations of black-box functions using tensor cross-interpolation (TCI). See :doc:`algorithms/tt-cross`.
 
 
 Polynomial expansions
 ---------------------
-These methods are useful to compose univariate function on generic initial MPS or MPO and compute MPS approximations of functions. See :doc:`algorithms/polynomials`
+These methods are useful to compose univariate function on generic initial MPS or MPO and compute MPS approximations of functions. See :doc:`algorithms/polynomials`.
 
 
 Multiscale interpolative constructions
 --------------------------------------
-These methods are useful to construct polynomial interpolants of univariate functions in MPS using the Lagrange interpolation framework.
+These methods are useful to construct polynomial interpolants of low-dimensional functions in MPS using the Chebyshev-Lagrange interpolation framework.
 See :doc:`algorithms/lagrange`.
+
+Sketching methods
+-----------------
+These methods are useful to construct high-dimensional densities or other black-box non-normalized functions from a collection of samples defining the region of interest. See :doc:`algorithms/sketching`.
+
+Computation-tree methods
+------------------------
+These methods are useful to construct procedurally defined functions and functions with sharp features, where polynomial expansions and tensor cross interpolation may suffer from slow convergence or Gibbs-type artifacts. See :doc:`algorithms/comptree`.

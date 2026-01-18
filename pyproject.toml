@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seemps"
-version = "2.9.6"
+version = "2.9.7"
 description = "Matrix Product State library for quantum simulation and numerical analysis"
 readme = "README.md"
 license = "MIT"
@@ -116,6 +116,8 @@ dev = [
     "scipy-stubs",
     "coverage>=7.12.0",
     "pre-commit>=4.5.0",
+    "ipykernel>=7.1.0",
+    "matplotlib>=3.10.8",
 ]
 doc = [
     "numpydoc>=1.10.0",

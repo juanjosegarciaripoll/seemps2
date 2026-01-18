@@ -16,5 +16,7 @@ Index of algorithms
    crank_nicolson
    tebd_evolution
    polynomials
+   sketching
+   comptree
    tt-cross
    lagrange

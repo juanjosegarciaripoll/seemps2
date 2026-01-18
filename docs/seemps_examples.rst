@@ -12,8 +12,8 @@ In the directory `examples` of the library, we have created various Jupyter note
 - `Function differentiation <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Differentiation.ipynb>`_.
 - `Function integration <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Integration.ipynb>`_.
 - `Function optimization <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Optimization.ipynb>`_.
-- `Function loading with Chebyshev expansions <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Chebyshev.ipynb>`_.
-- `Function loading with TT-Cross <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/TT-Cross.ipynb>`_.
+- `Function loading with orthogonal polynomial expansions <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/Chebyshev.ipynb>`_.
+- `Function loading with TCI <https://github.com/juanjosegarciaripoll/seemps2/blob/main/examples/TCI.ipynb>`_.
 
 
 Further examples of use appear in the datasets and associated codes to the following publications:

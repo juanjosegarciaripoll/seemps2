@@ -17,6 +17,7 @@ TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 class TestMPOSum(TestCase):
     def setUp(self):
+        super().setUp()
         self.mpoA = MPO([σx.reshape(1, 2, 2, 1)] * 10)
         self.mpoB = MPO([σz.reshape(1, 2, 2, 1)] * 10)
         self.mpoC = MPOList([self.mpoA, self.mpoB])
@@ -136,3 +137,12 @@ class TestMPOSum(TestCase):
         self.assertSimilar(
             mposum.T.to_matrix(), self.mpoA.to_matrix().T + 1j * self.mpoB.to_matrix().T
         )
+
+    def test_mposum_conj_returns_conjugate(self):
+        mpo1 = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(4)])
+        mpo2 = MPO([self.rng.normal(size=(1, 2, 2, 1)) * (1 + 1j) for _ in range(4)])
+        weights = [0.5 + 0.1j, 0.2 - 0.3j]
+        mposum = MPOSum([mpo1, mpo2], weights)
+        conj_mposum = mposum.conj()
+        self.assertIsInstance(conj_mposum, MPOSum)
+        self.assertSimilar(conj_mposum.to_matrix(), mposum.to_matrix().conj())

@@ -2,9 +2,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 import numpy as np
 from math import sqrt
-from ..typing import DenseOperator, Operator, Real
+from ..optimization.arnoldi import MPSArnoldiRepresentation
+from ..operators import MPO, MPOList
+from ..typing import DenseOperator, Operator, Real, Vector
 from ..state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from ..cython import _contract_nrjl_ijk_klm
+from .qubo import qubo_mpo
 from abc import abstractmethod, ABC
 
 σx = np.array([[0.0, 1.0], [1.0, 0.0]])
@@ -23,22 +26,26 @@ CNOT = np.array(
 Parameters = Sequence[Real] | np.ndarray[tuple[int], np.dtype[np.floating]]
 
 known_operators: dict[str, DenseOperator] = {
-    "SX": σx / 2.0,
-    "SY": σy / 2.0,
-    "SZ": σz / 2.0,
-    "σX": σx,
-    "σY": σy,
-    "σZ": σz,
-    "CNOT": CNOT,
-    "CX": CNOT,
-    "CZ": np.diag([1.0, 1.0, 1.0, -1.0]),
+    "sx": σx / 2.0,
+    "sy": σy / 2.0,
+    "sz": σz / 2.0,
+    "σx": σx,
+    "σy": σy,
+    "σz": σz,
+    "cnot": CNOT,
+    "cx": CNOT,
+    "cz": np.diag([1.0, 1.0, 1.0, -1.0]),
+    "h": np.asarray([[1, 1], [1, -1]]) / np.sqrt(2),
+    "sx(1)": np.asarray([[0, 1, 0], [1, 0, 1], [0, 1, 0]]) / np.sqrt(2),
+    "sy(1)": np.asarray([[0, -1j, 0], [1, 0, -1j], [0, 1, 0]]) / np.sqrt(2),
+    "sz(1)": np.asarray([[1, 0, 0], [0, 0, 0], [0, 0, -1]]),
 }
 
 
 def interpret_operator(op: str | Operator) -> DenseOperator:
     O: Operator
     if isinstance(op, str):
-        O = known_operators[op.upper()]
+        O = known_operators[op.lower()]
     elif not isinstance(op, np.ndarray) or op.ndim != 2 or op.shape[0] != op.shape[1]:
         raise Exception(f"Invalid qubit operator of type '{type(op)}")
     else:
@@ -68,7 +75,8 @@ class UnitaryCircuit(ABC):
 
     def apply(self, state: MPS, parameters: Parameters | None = None) -> CanonicalMPS:
         return self.apply_inplace(
-            state.copy() if isinstance(state, CanonicalMPS) else state, parameters
+            state.copy() if isinstance(state, CanonicalMPS) else CanonicalMPS(state),
+            parameters,
         )
 
 
@@ -99,6 +107,31 @@ class ParameterizedCircuit(UnitaryCircuit, ABC):
                     f"'default_parameters' length {len(default_parameters)} does not match size 'parameters_size' {parameters_size}"
                 )
         self.parameters_size = parameters_size
+
+
+class ParameterFreeMPO(ParameterizedCircuit):
+    """A quantum register unitary transformation, given by an MPO
+    with no parameters.
+
+    Arguments
+    ---------
+    operator : MPO | MPOList
+        The operator that implements the transformation
+    """
+
+    operator: MPO | MPOList
+
+    def __init__(self, operator: MPO | MPOList):
+        dimensions = operator.physical_dimensions()
+        if not all(d == 2 for d in dimensions):
+            raise Exception("MPO layer not defined over qubit spaces")
+        super().__init__(operator.size, 0, [], operator.strategy)
+        self.operator = operator
+
+    def apply_inplace(
+        self, state: MPS, parameters: Parameters | None = None
+    ) -> CanonicalMPS:
+        return CanonicalMPS(self.operator.apply(state, simplify=True))
 
 
 class LocalRotationsLayer(ParameterizedCircuit):
@@ -252,6 +285,69 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         return state
 
 
+class HamiltonianEvolutionLayer(ParameterizedCircuit):
+    r"""Exponential of a Hamiltonian acting on the quantum register.
+
+    This parameterized circuit implements :math:`\exp(-1j * g * H)`,
+    where `g` is the circuit's parameter and `H` is a Hermitian
+    :class:`~seemps.operators.MPO` acting on the qubit register.
+    The exponential is approximated using the Arnoldi expansion
+    of the given `order` (see :func:`~seemps.evolution.arnoldi`).
+
+    Parameters
+    ----------
+    H : MPO
+        Number of qubits on which to operate.
+    default_parameter : float | None
+        Default rotation angle if none provided.
+    order : int
+        Order of exponential approximation (defaults to 4)
+    strategy : Strategy
+        Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
+
+    Examples
+    --------
+    >>> state = random_uniform_mps(2, 3)
+    >>> U = LocalRotationsLayer(register_size=state.size, operator="Sz")
+    >>> Ustate = U @ state
+    """
+
+    H: MPO
+    arnoldi: MPSArnoldiRepresentation
+    order: int
+
+    def __init__(
+        self,
+        H: MPO,
+        default_parameter: float = 1.0,
+        order: int = 6,
+        strategy: Strategy = DEFAULT_STRATEGY,
+    ):
+        register_size = len(H)
+        if not all(d == 2 for d in H.physical_dimensions()):
+            raise Exception("Hamiltonian not defined over qubit spaces")
+        assert order > 1 and isinstance(order, int)
+
+        default_parameters = [default_parameter]
+        super().__init__(register_size, 1, default_parameters, strategy)
+        self.H = H
+        self.arnoldi = MPSArnoldiRepresentation(self.H, strategy)
+        self.order = order
+
+    def apply_inplace(
+        self, state: MPS, parameters: Parameters | None = None
+    ) -> CanonicalMPS:
+        assert self.register_size == state.size
+        if parameters is None:
+            parameters = self.parameters
+        assert len(parameters) == 1
+        angle = parameters[0]
+        if angle == 0:
+            return CanonicalMPS(state)
+        self.arnoldi.build_Krylov_basis(state, self.order)
+        return self.arnoldi.exponential(complex(-1j * angle))
+
+
 class ParameterizedLayeredCircuit(ParameterizedCircuit):
     """Variational quantum circuit with Ry rotations and CNOTs.
 
@@ -264,7 +360,7 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
     ----------
     register_size : int
         Number of qubits on which to operate
-    layers : list[UnitaryCircuit]
+    layers : list[UnitaryCircuit | MPO | MPOList]
         List of constant or parameterized unitary layers.
     default_parameters : Sequence[Real]
         Default angles for the rotations (Defaults to zeros).
@@ -277,13 +373,15 @@ class ParameterizedLayeredCircuit(ParameterizedCircuit):
     def __init__(
         self,
         register_size: int,
-        layers: list[UnitaryCircuit],
+        layers: Sequence[UnitaryCircuit | MPO | MPOList],
         default_parameters: Parameters | None = None,
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         parameters_size = 0
         segments: list[tuple[UnitaryCircuit, int, int]] = []
         for circuit in layers:
+            if isinstance(circuit, (MPO, MPOList)):
+                circuit = ParameterFreeMPO(circuit)
             if isinstance(circuit, ParameterizedCircuit):
                 l = circuit.parameters_size
                 segments.append((circuit, parameters_size, parameters_size + l))
@@ -357,12 +455,68 @@ class VQECircuit(ParameterizedLayeredCircuit):
         )
 
 
+class IsingQAOACircuit(ParameterizedLayeredCircuit):
+    r"""Variational QAOA circuit for the Ising model.
+
+    This circuit implements a variational quantum circuit that consists
+    on a layer of Hadamard gates, followed by `N` layers of evolution
+    with an Ising Hamiltonian and local :math:`\sigma_y` rotations.
+    The Ising model is defined by a matrix `J` and a vector `h`
+
+    .. math::
+        H = \sum_{ij} J_{ij}\sigma^z_i \sigma^z_j + \sum_i h_i \sigma_i
+
+    Parameters
+    ----------
+    J : ~seemps.typing.Operator | None
+        Matrix of interactions. See :func:`~seemps.regster.qubo_mpo`.
+    h : ~seemps.typing.Vector | None
+        Local magnetic fields. See :func:`~seemps.regster.qubo_mpo`.
+    layers : int
+        Number of local rotation layers and of Hamiltonian evolution layers.
+    default_parameters : Vector
+        Default angles for the rotations (Defaults to zeros). Must have
+        size `2 * layers * register_size`.
+    strategy : Strategy
+        Truncation and simplification strategy (Defaults to `DEFAULT_STRATEGY`)
+    """
+
+    def __init__(
+        self,
+        J: Operator | None,
+        h: Vector | None,
+        layers: int,
+        default_parameters: Parameters | None = None,
+        strategy: Strategy = DEFAULT_STRATEGY,
+    ):
+        H = qubo_mpo(J, h)
+        register_size = H.size
+        Hadamard = interpret_operator("H")
+        circuit_layers: list[UnitaryCircuit] = [
+            ParameterFreeMPO(MPO.from_local_operators([Hadamard] * register_size))
+        ]
+        for _ in range(layers):
+            circuit_layers.append(HamiltonianEvolutionLayer(H))
+            circuit_layers.append(
+                LocalRotationsLayer(register_size, "σy", same_parameter=True)
+            )
+        super().__init__(
+            register_size,
+            circuit_layers,
+            default_parameters=default_parameters,
+            strategy=strategy,
+        )
+
+
 __all__ = [
     "interpret_operator",
     "UnitaryCircuit",
+    "ParameterFreeMPO",
     "ParameterizedCircuit",
     "LocalRotationsLayer",
     "TwoQubitGatesLayer",
+    "HamiltonianEvolutionLayer",
     "ParameterizedLayeredCircuit",
     "VQECircuit",
+    "IsingQAOACircuit",
 ]

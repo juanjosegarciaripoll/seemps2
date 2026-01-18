@@ -40,10 +40,18 @@ class MPOSum(object):
         self.weights = [1.0] * len(mpos) if weights is None else list(weights)
         self.strategy = strategy
 
-    # TODO: Rename to physical_dimensions()
     def dimensions(self) -> list[int]:
+        """Return the physical dimensions (Deprecated, see :meth:`dimensions`)."""
+        warnings.warn(
+            "MPO*.dimensions is deprecated. Use MPO*.physical_dimensions.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.physical_dimensions()
+
+    def physical_dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPO."""
-        return self.mpos[0].dimensions()
+        return self.mpos[0].physical_dimensions()
 
     def copy(self) -> MPOSum:
         return MPOSum(self.mpos, self.weights, self.strategy)
@@ -109,6 +117,14 @@ class MPOSum(object):
         output = self.copy()
         output.mpos = [A.T for A in output.mpos]
         return output
+
+    def conj(self) -> MPOSum:
+        """Return the complex conjugate of this operator."""
+        return MPOSum(
+            [mpo.conj() for mpo in self.mpos],
+            [w.conjugate() for w in self.weights],
+            self.strategy,
+        )
 
     def tomatrix(self) -> DenseOperator:
         """Return the matrix representation of this MPO (Deprecated, see :meth:`to_matrix`)."""

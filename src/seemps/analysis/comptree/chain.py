@@ -14,13 +14,14 @@ from .branch import (
 from .sparse_mps import SparseMPS
 
 
-class UnaryRootNode:
+class ChainRoot:
     """
-    Root functional dependence for a `UnaryTree`.
+    Terminal node for a `ChainTree`, representing the final binary functional dependence.
 
-    Represents a binary function f(x_L, x_s), where x_L arises from the left subtrees and x_s is
-    selected from the given discretization grid, where the index s represents the physical dimensions
-    of the MPS core.
+    Represents a binary function f(x_L, x_s), where x_L is the value propagated from the evaluation
+    of the left subtrees, and x_s is selected from the given discretization grid.
+
+    The length of the discretization grid determines the physical dimension of the corresponding MPS core.
     """
 
     def __init__(self, func: Callable, grid: Vector):
@@ -42,25 +43,23 @@ class UnaryRootNode:
 
 
 @dataclasses.dataclass
-class UnaryTree:
+class ChainTree:
     """
-    Unary-tree representation of a multivariate function.
+    Chain-like computation-tree representation of a multivariate function.
 
-    This class encodes a multivariate function with chain-like algebraic structure:
+    This class encodes a multivariate function with a chain-like algebraic structure:
 
         f_n[...f_2(f_1(None, s_1), s_2), ..., s_n].
 
-    The tree is composed of left nodes (`BranchNode`) representing the inner functional dependencies
-    f_i and a right-most root node (`UnaryRootNode`) representing the binary function f_n that
-    terminates the chain evaluation. Each node presents a free parameter x_s representing the input
-    dimensions of the function (i.e., the leaves of the tree) and the physical dimensions of the
-    MPS cores.
+    The tree consists of a sequence of left nodes (`BranchNode`) that define intermediate functional
+    updates f_k, k = 1,...,n-1, and a terminal root node (`ChainRoot`) that applies the final binary
+    function f_n and terminates the chain evaluation.
 
-    This representation can be efficiently loaded into a MPS using :func:`mps_unary_tree`.
+    This representation can be efficiently loaded into a MPS using :func:`mps_chain_tree`.
 
     Examples
     --------
-    A unary tree for the Heaviside function applied to the running sum
+    A chain-like tree for the Heaviside function applied to the running sum
 
         f(x₁,x₂,... ) = Θ(x₁ + x₂ + ...)
 
@@ -68,11 +67,11 @@ class UnaryTree:
 
     - Each `BranchNode` represents the partial accumulation f_i(x_in, x_s) = x_in + x_s where
       its discretization grid is the domain of x_i and s ranges over its support.
-    - The `UnaryRootNode` applies the Heaviside step f_n(x_{n-1}, x_s) = Θ(x_{n-1} + x_s).
+    - The `ChainRoot` applies the Heaviside step f_n(x_{n-1}, x_s) = Θ(x_{n-1} + x_s).
     """
 
     left_nodes: list[BranchNode]
-    root_node: UnaryRootNode
+    root_node: ChainRoot
 
     # Keep type checker happy
     center: int = dataclasses.field(init=False)
@@ -86,25 +85,23 @@ class UnaryTree:
         self.length = len(self.physical_dimensions)
 
 
-def mps_unary_tree(
-    unary_tree: UnaryTree, allowed_values: Vector | None = None
+def mps_chain_tree(
+    chain_tree: ChainTree, allowed_support: Vector | None = None
 ) -> SparseMPS:
     """
-    Compute the MPS representation of a function encoded as a `UnaryTree`.
+    Compute the MPS representation of a multivariate function encoded as a `ChainTree`.
 
-    Returns an `SparseMPS` where each core is highly sparse and represented by a collection of
-    CSR matrices (see `SparseCore`). This construction is particularly efficient for functions with
-    few distinct outputs, which are recompressed with a right-to-left binning sweep. Such outputs
-    must be explicitly specified using the `allowed_values` parameter. For example, the Heaviside
-    function Θ(f(x, y, z, ...)) has `allowed_values=[0, 1]`.
+    Returns a `SparseMPS`, whose cores are highly sparse and represented as collections
+    of CSR matrices. This construction is particularly efficient for functions with a reduced
+    support, which are recompressed with a right-to-left binning sweep.
     Source: https://arxiv.org/abs/2206.03832
 
     Parameters
     ----------
-    unary_tree : UnaryTree
-        Unary tree representation of the target multivariate function.
-    allowed_values : Vector, optional
-        Discrete set of possible function outputs.
+    chain_tree : ChainTree
+        Chain-like computation-tree representation of the target function.
+    allowed_support : Vector, optional
+        Discrete set of admissible function outputs (e.g., `[0, 1]` for a Heaviside function).
 
     Returns
     -------
@@ -113,22 +110,22 @@ def mps_unary_tree(
     """
     with make_logger(2) as logger:
         logger("Computing branch images:")
-        left_images = propagate_images(unary_tree.left_nodes, logger)
+        left_images = propagate_images(chain_tree.left_nodes, logger)
 
-        if allowed_values is not None:  # Recompression sweep (more efficient)
+        if allowed_support is not None:  # Recompression sweep (more efficient)
             logger("Computing grouped transitions:")
             root_transition, left_transitions = _recompress_transitions(
-                unary_tree, left_images, allowed_values, logger
+                chain_tree, left_images, allowed_support, logger
             )
         else:
             logger("Computing transitions:")
             left_transitions = get_transitions(
-                unary_tree.left_nodes, left_images, logger
+                chain_tree.left_nodes, left_images, logger
             )
             root_transition = {
-                (k_L, s): unary_tree.root_node.evaluate(x_L, s)
+                (k_L, s): chain_tree.root_node.evaluate(x_L, s)
                 for k_L, x_L in enumerate(left_images[-1])
-                for s in range(unary_tree.root_node.N)
+                for s in range(chain_tree.root_node.N)
             }
 
         logger("Computing MPS cores:")
@@ -148,15 +145,15 @@ def mps_unary_tree(
 
 
 def _recompress_transitions(
-    unary_tree: UnaryTree,
+    chain_tree: ChainTree,
     left_images: list[Vector],
     tensor_values: Vector,
     logger: Logger = Logger(),
 ) -> tuple[dict, list[dict]]:
-    l = unary_tree.length - 1
+    l = chain_tree.length - 1
 
     # Root node transition
-    root_node = unary_tree.root_node
+    root_node = chain_tree.root_node
     x_in = left_images[-1]
     root_image = root_node.evaluate(x_in[:, np.newaxis], np.arange(root_node.N))
     root_image = _round_matrix_to_vector(root_image, tensor_values)
@@ -167,7 +164,7 @@ def _recompress_transitions(
     # Left node transitions
     left_transitions = []
     for i in reversed(range(l)):
-        left_node = unary_tree.left_nodes[i]
+        left_node = chain_tree.left_nodes[i]
         x_in = left_images[i]
         left_image = left_node.evaluate(x_in[:, np.newaxis], np.arange(left_node.N))
         assert left_image is not None  # To keep the type checker happy

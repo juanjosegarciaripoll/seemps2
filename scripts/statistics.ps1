@@ -64,7 +64,8 @@ $table = @(
         "src/seemps/analysis/tree"
     )
     Get-PythonCodeLines "Differentiation" @(
-        "src/seemps/analysis/finite_differences.py"
+        "src/seemps/analysis/derivatives/finite_differences.py"
+        "src/seemps/analysis/derivatives/fourier_differentiation.py"
         "src/seemps/analysis/hdaf.py"
     )
     Get-PythonCodeLines "Integration" @("src/seemps/analysis/integration")

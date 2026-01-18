@@ -108,6 +108,7 @@ def hdaf_kernel(
     return cast(FloatOrArray, sum(next(gen) for _ in range(int(M) // 2 + 1)))
 
 
+# TODO: Which "M" should users use? Any sensible default value?
 def hdaf_mpo(
     num_qubits: int,
     dx: Float,
@@ -150,6 +151,7 @@ def hdaf_mpo(
     mpo: MPO
         The HDAF approximation to an operator specified by the input parameters.
     """
+    M = 2 * (int(M + 1) // 2)
 
     # Compute width if not provided
     if s0 is None:

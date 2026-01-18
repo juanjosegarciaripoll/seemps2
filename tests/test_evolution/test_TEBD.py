@@ -12,7 +12,7 @@ from .problem import EvolutionTestCase
 
 
 def random_wavefunction(n):
-    ψ = np.random.rand(n) - 0.5
+    ψ = np.random.rand(n) - np.float64(0.5)
     return ψ / np.linalg.norm(ψ)
 
 

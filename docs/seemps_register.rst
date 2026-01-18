@@ -19,14 +19,19 @@ register. These include the following ones:
 
 .. autosummary::
 
-   ~seemps.register.circuit.VQECircuit
    ~seemps.register.circuit.ParameterizedLayeredCircuit
    ~seemps.register.circuit.LocalRotationsLayer
    ~seemps.register.circuit.TwoQubitGatesLayer
+   ~seemps.register.circuit.HamiltonianEvolutionLayer
+   ~seemps.register.circuit.VQECircuit
+   ~seemps.register.circuit.IsingQAOACircuit
 
 The :class:`~seemps.register.circuit.ParameterizedLayeredCircuit` is a
-composite circuit that can be built from :class:`~seemps.register.circuit.LocalRotationsLayer`
-or :class:`~seemps.register.circuit.TwoQubitGatesLayer` circuits.
+composite circuit that can be built from :class:`~seemps.register.circuit.LocalRotationsLayer`,
+:class:`~seemps.register.circuit.TwoQubitGatesLayer`, and
+:class:`~seemps.register.circuit.HamiltonianEvolutionLayer` parameterized layers,
+as well as :class:`~seemps.operators.MPO` and :class:`~seemps.operators.MPOList`
+transformations without parameters.
 
 For example, the following two codes create equivalent operators, `U3` and `U4`:
 

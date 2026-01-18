@@ -4,7 +4,14 @@ from typing import overload
 import warnings
 import numpy as np
 from ..tools import InvalidOperation
-from ..typing import Tensor4, Tensor3, DenseOperator, Weight
+from ..typing import (
+    Tensor4,
+    Tensor3,
+    DenseOperator,
+    Weight,
+    Operator,
+    to_dense_operator,
+)
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, MPSSum, Strategy, TensorArray
 from ..state.environments import (
     scprod,
@@ -65,6 +72,16 @@ class MPO(TensorArray):
         """Return a shallow copy of the MPO, without duplicating the tensors."""
         # We use the fact that TensorArray duplicates the list
         return MPO(self, self.strategy)
+
+    @classmethod
+    def from_local_operators(
+        cls, operators: list[Operator], strategy: Strategy = DEFAULT_STRATEGY
+    ) -> MPO:
+        """Product of local operators acting on each subsystem."""
+        return MPO(
+            [to_dense_operator(o).reshape((1,) + o.shape + (1,)) for o in operators],
+            strategy,
+        )
 
     def __add__(self, A: MPO | MPOList | MPOSum) -> MPOSum:
         """Represent `self + A` as :class:`.MPOSum`."""
@@ -151,6 +168,10 @@ class MPO(TensorArray):
     def T(self) -> MPO:
         """Return the transpose of this operator."""
         return MPO([A.transpose(0, 2, 1, 3) for A in self], self.strategy)
+
+    def conj(self) -> MPO:
+        """Return the complex conjugate of this operator."""
+        return MPO([A.conj() for A in self], self.strategy)
 
     def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix (Deprecated, see :meth:`to_matrix`)."""
@@ -250,9 +271,23 @@ class MPO(TensorArray):
     @overload
     def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
-    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+    @overload
+    def __matmul__(self, b: MPO) -> MPOList: ...
+
+    @overload
+    def __matmul__(self, b: MPOList) -> MPOList: ...
+
+    def __matmul__(
+        self, b: MPS | MPSSum | MPO | MPOList
+    ) -> MPS | MPSSum | MPO | MPOList:
         """Implement multiplication `self @ b`."""
-        return self.apply(b)
+        if isinstance(b, (MPS, MPSSum)):
+            return self.apply(b)
+        if isinstance(b, MPO):
+            return MPOList([b] + [self])
+        if isinstance(b, MPOList):
+            return MPOList(b.mpos + [self], b.strategy)
+        raise TypeError(f"Cannot multiply MPO with {b}")
 
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
@@ -358,6 +393,8 @@ class MPO(TensorArray):
 
         .. math::
             B_{a_{n-1},i_n,j_n,a_n} = A_{a_{N-n-1},i_{N-n-1},j_{N-n-1},a_{N-n-2}}
+
+        See also see :meth:`~seemps.state.MPS.reverse`.
         """
         return MPO(
             [
@@ -444,6 +481,10 @@ class MPOList(object):
         """Return the transpose of this operator."""
         return MPOList([A.T for A in reversed(self.mpos)], self.strategy)
 
+    def conj(self) -> MPOList:
+        """Return the complex conjugate of this operator."""
+        return MPOList([mpo.conj() for mpo in self.mpos], self.strategy)
+
     def dimensions(self) -> list[int]:
         """Return the physical dimensions (Deprecated, see :meth:`dimensions`)."""
         warnings.warn(
@@ -455,7 +496,7 @@ class MPOList(object):
 
     def physical_dimensions(self) -> list[int]:
         """Return the physical dimensions of the MPOList (Deprecated, see :meth:`dimensions`)."""
-        return self.mpos[0].dimensions()
+        return self.mpos[0].physical_dimensions()
 
     def tomatrix(self) -> DenseOperator:
         """Convert this MPO to a dense or sparse matrix (Deprecated, see :meth:`to_matrix`)."""
@@ -543,9 +584,23 @@ class MPOList(object):
     @overload
     def __matmul__(self, b: MPSSum) -> MPS | MPSSum: ...
 
-    def __matmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+    @overload
+    def __matmul__(self, b: MPO) -> MPOList: ...
+
+    @overload
+    def __matmul__(self, b: MPOList) -> MPOList: ...
+
+    def __matmul__(
+        self, b: MPS | MPSSum | MPO | MPOList
+    ) -> MPS | MPSSum | MPO | MPOList:
         """Implement multiplication `self @ b`."""
-        return self.apply(b)
+        if isinstance(b, (MPS, MPSSum)):
+            return self.apply(b)
+        if isinstance(b, MPO):
+            return MPOList([b] + self.mpos, self.strategy)
+        if isinstance(b, MPOList):
+            return MPOList(b.mpos + self.mpos, b.strategy)
+        raise TypeError(f"Cannot multiply MPO with {b}")
 
     def extend(
         self, L: int, sites: list[int] | None = None, dimensions: int | list[int] = 2

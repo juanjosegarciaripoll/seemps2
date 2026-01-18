@@ -7,7 +7,7 @@ from typing import Callable, TypeAlias
 
 from ...state import MPS
 from ...tools import make_logger
-from ...typing import Vector, Matrix, Tensor3, Tensor4
+from ...typing import Vector, Matrix, Tensor3, Tensor4, Natural
 from ..evaluation import random_mps_indices, evaluate_mps
 from .black_box import BlackBox
 
@@ -43,13 +43,13 @@ def cross_interpolation(
 @dataclasses.dataclass
 class CrossStrategy:
     tol: float = 1e-8
-    num_samples: int = 2**10
+    num_samples: Natural = 2**10
     error_norm: float = np.inf
     error_relative: bool = False
-    max_iters: int = 200
-    max_bond: int = 1000
+    range_iters: tuple[Natural, Natural] = (1, 200)
+    range_max_bonds: tuple[Natural, Natural] = (1, 1000)
     max_time: float | None = None
-    max_evals: int | None = None
+    max_evals: Natural | None = None
     rng: np.random.Generator = dataclasses.field(
         default_factory=lambda: np.random.default_rng()
     )
@@ -60,27 +60,28 @@ class CrossStrategy:
     ----------
     tol : float, default=1e-12
         Tolerance for the sampled error.
-    num_samples : int, default=1024
+    num_samples : Natural, default=1024
         Number of function samples to evaluate the error.
     error_norm : float, default=np.inf
         L^p norm used for computing the error.
     error_relative : bool, default=False
         Whether to compute the absolute or relative error.
-    max_iters : int, default=200
-        Maximum number of iterations (half-sweeps) allowed.
-    max_bond : int, default=1000
-        Maximum MPS bond dimension allowed.
-    max_time : Optional[float], default=None
+    range_iters : tuple[Natural, Natural], default=(1, 200)
+        Range of iterations (half-sweeps) allowed.
+    range_max_bonds : tuple[Natural, Natural], default=(1, 1000)
+        Range of MPS maximum bond dimension allowed.
+    max_time : float | None, default=None
         Maximum computation time allowed.
-    max_evals : Optional[int], default=None
+    max_evals : Natural | None, default=None
         Maximum number of evaluations allowed.
     rng : np.random.Generator, default=np.random.default_rng()
         Random number generator used to initialize the algorithm and sample the error.
     """
 
     def __post_init__(self) -> None:
-        assert self.max_iters > 0
         assert self.num_samples > 0
+        assert self.range_iters[0] > 0
+        assert self.range_max_bonds[0] > 0
 
     @property
     def algorithm(self) -> Callable:
@@ -252,34 +253,43 @@ def check_convergence(
     half_sweep: int, trajectories: dict, cross_strategy: CrossStrategy
 ) -> bool:
     """Checks the convergence of TCI from its trajectories and logs the results for each iteration."""
+    iter_min, iter_max = cross_strategy.range_iters
+    bond_min, bond_max = cross_strategy.range_max_bonds
     maxbond = np.max(trajectories["bonds"][-1])
     maxbond_prev = np.max(trajectories["bonds"][-2]) if half_sweep > 2 else 0
     time = np.sum(trajectories["times"])
     evals = trajectories["evals"][-1]
+    error = trajectories["errors"][-1]
+
     with make_logger(2) as logger:
         logger(
-            f"Iteration (half-sweep): {half_sweep:3}/{cross_strategy.max_iters}, "
+            f"Iteration (half-sweep): {half_sweep:3}/{iter_max}, "
             f"error: {trajectories['errors'][-1]:1.15e}/{cross_strategy.tol:.2e}, "
-            f"maxbond: {maxbond:3}/{cross_strategy.max_bond}, "
+            f"maxbond: {maxbond:3}/{bond_max}, "
             f"time: {time:8.6f}/{cross_strategy.max_time}, "
             f"evals: {evals:8}/{cross_strategy.max_evals}."
         )
 
-    if trajectories["errors"][-1] <= cross_strategy.tol:
-        logger(f"State converged within tolerance {cross_strategy.tol}")
-        return True
-    elif maxbond >= cross_strategy.max_bond:
-        logger(f"Max. bond reached above the threshold {cross_strategy.max_bond}")
-        return True
-    elif cross_strategy.max_time is not None and time >= cross_strategy.max_time:
-        logger(f"Max. time reached above the threshold {cross_strategy.max_time}")
-        return True
-    elif cross_strategy.max_evals is not None and evals >= cross_strategy.max_evals:
-        logger(f"Max. evals reached above the threshold {cross_strategy.max_evals}")
-        return True
-    elif maxbond - maxbond_prev <= 0:
-        logger(f"Max. bond dimension converged with value {maxbond}")
-        return True
+        if half_sweep < iter_min or maxbond < bond_min:
+            return False
+        if error <= cross_strategy.tol:
+            logger(f"State converged within tolerance {cross_strategy.tol}")
+            return True
+        elif maxbond - maxbond_prev <= 0:
+            logger(f"Max. bond dimension converged with value {maxbond}")
+            return True
+        elif half_sweep >= iter_max:
+            logger(f"Max. iterations reached at {iter_max}")
+            return True
+        elif maxbond >= bond_max:
+            logger(f"Max. bond reached above the threshold {bond_max}")
+            return True
+        elif cross_strategy.max_time is not None and time >= cross_strategy.max_time:
+            logger(f"Max. time reached above the threshold {cross_strategy.max_time}")
+            return True
+        elif cross_strategy.max_evals is not None and evals >= cross_strategy.max_evals:
+            logger(f"Max. evals reached above the threshold {cross_strategy.max_evals}")
+            return True
 
     return False
 

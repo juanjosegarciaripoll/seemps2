@@ -107,7 +107,7 @@ def iqft(state: MPS | MPSSum, strategy: Strategy = DEFAULT_STRATEGY) -> MPS | MP
     return qft_mpo(state.size, +1, strategy).apply(state)
 
 
-_State = TypeVar("_State", MPS, MPSSum)
+_State = TypeVar("_State", MPS, MPSSum, MPS | MPSSum)
 
 
 def qft_flip(state: _State) -> _State:
@@ -116,20 +116,15 @@ def qft_flip(state: _State) -> _State:
 
     Parameters
     ----------
-    state : MPS
+    state : MPS | MPSSum
         Transformed state
 
     Returns
     -------
-    MPS
+    MPS | MPSSum
         State with qubits reversed.
     """
-    if isinstance(state, MPSSum):
-        return MPSSum(state.weights, [qft_flip(s) for s in state.states])  # type: ignore
-    return MPS(
-        [np.moveaxis(A, [0, 1, 2], [2, 1, 0]) for A in reversed(state)],
-        error=state.error(),
-    )
+    return state.reverse()
 
 
 def qft_wavefunction(Ψ: Vector) -> Vector:

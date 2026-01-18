@@ -1,6 +1,19 @@
-from . import test_shifts, test_transforms
+from . import (
+    test_shifts,
+    test_transforms,
+    test_circuits,
+    test_local_layer,
+    test_entangling_layer,
+    test_vqe,
+    test_ising_qaoa_circuit,
+)
 
 __all__ = [
     "test_shifts",
     "test_transforms",
+    "test_circuits",
+    "test_local_layer",
+    "test_entangling_layer",
+    "test_vqe",
+    "test_ising_qaoa_circuit",
 ]

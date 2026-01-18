@@ -74,6 +74,9 @@ class Interval(ABC):
     def update_size(self, size: int) -> Interval:
         return type(self)(self.start, self.stop, size)
 
+    def length(self) -> float:
+        return self.stop - self.start
+
     def __iter__(self) -> Iterator:
         return (self[i] for i in range(self.size))
 
@@ -417,6 +420,32 @@ def interleaving_permutation(sites_per_dimension: list[int]) -> Vector:
     return np.array(permutation, dtype=int)
 
 
+def mesh_to_mps_indices(mesh_indices: Matrix, map_matrix: Matrix) -> Matrix:
+    """
+    Map mesh indices to (quantized) MPS indices.
+
+    Given integer coordinates of a discretization `Mesh`, this function computes the corresponding
+    MPS indices consistent with the linear mapping defined by `mps_to_mesh_matrix`. Since that
+    forward mapping is generally non-injective, a unique inverse does not exist; the mapping back
+    to MPS indices is therefore constructed here algorithmically by decomposing mesh indices into
+    their quantized components.
+    """
+    if not (mesh_indices.shape[1] == map_matrix.shape[1]):
+        raise ValueError("Invalid dimensions")
+
+    K = mesh_indices.shape[0]
+    n, m = map_matrix.shape
+    mps_indices = np.zeros((K, n), dtype=int)
+    for dim in range(m):
+        rows = np.where(map_matrix[:, dim] != 0)[0]
+        weights = map_matrix[rows, dim]
+        col = mesh_indices[:, dim].copy()
+        for r, w in zip(rows, weights):
+            mps_indices[:, r] = col // w
+            col = col % w
+    return mps_indices
+
+
 __all__ = [
     "Interval",
     "IntegerInterval",
@@ -428,4 +457,5 @@ __all__ = [
     "array_affine",
     "mps_to_mesh_matrix",
     "interleaving_permutation",
+    "mesh_to_mps_indices",
 ]

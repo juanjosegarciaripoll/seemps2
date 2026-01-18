@@ -1,8 +1,9 @@
 from __future__ import annotations
 import numpy as np
-from ..state import Strategy, DEFAULT_STRATEGY
+from ...state import Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
-from ..register.transforms import mpo_weighted_shifts
+from ...register.transforms import mpo_weighted_shifts
+from ..mesh import QuantizedInterval, IntervalTuple
 
 
 def tridiagonal_mpo(
@@ -87,11 +88,10 @@ _filtered_differences = {
 }
 
 
-def smooth_finite_differences_mpo(
-    L: int,
+def finite_differences_mpo(
     order: int,
+    interval: QuantizedInterval | IntervalTuple,
     filter: int = 3,
-    dx: float = 1.0,
     periodic: bool = False,
     base: int = 2,
     tol: float = 1e-4,
@@ -104,14 +104,12 @@ def smooth_finite_differences_mpo(
 
     Parameters
     ----------
-    L : int
-        Number of elements in the quantum register
     order : int
         Order of the derivative (currently 1 or 2)
+    interval: QuantizedInterval | IntervalTuple
+        The interval over which the function is defined.
     filter : int, default = 3
         Size of the finite-difference formula with implicit filtering
-    dx : float, default = 1.0
-        Spacing of the grid
     periodic : bool, default = False
         Whether the grid assumes periodic boundary conditions
     base : int, default = 2
@@ -128,6 +126,10 @@ def smooth_finite_differences_mpo(
     -----
     See http://www.holoborodko.com/pavel/numerical-methods/numerical-derivative/smooth-low-noise-differentiators
     """
+    if isinstance(interval, tuple):
+        interval = QuantizedInterval(*interval)
+    L = interval.qubits
+    dx = interval.step
     key = (order, filter)
     weights, shifts = _filtered_differences.get(key, (None, None))
     if shifts is None:
@@ -148,4 +150,4 @@ def smooth_finite_differences_mpo(
         )
 
 
-__all__ = ["tridiagonal_mpo", "smooth_finite_differences_mpo"]
+__all__ = ["tridiagonal_mpo", "finite_differences_mpo"]

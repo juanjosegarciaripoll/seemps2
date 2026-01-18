@@ -70,7 +70,7 @@ def cross_dmrg(
         The black box to approximate as a MPS.
     cross_strategy : CrossStrategy, default=CrossStrategyDMRG()
         A dataclass containing the parameters of the algorithm.
-    initial_points : np.ndarray, optional
+    initial_points : Matrix | None, default=None
         A collection of initial points used to initialize the algorithm.
         If None, an initial point at the origin is used.
 
@@ -85,7 +85,7 @@ def cross_dmrg(
 
     converged = False
     trajectories: defaultdict[str, list[Any]] = defaultdict(list)
-    for i in range(cross_strategy.max_iters // 2):
+    for i in range(cross_strategy.range_iters[1] // 2):
         # Left-to-right half sweep
         tick = perf_counter()
         for k in range(cross.sites - 1):
