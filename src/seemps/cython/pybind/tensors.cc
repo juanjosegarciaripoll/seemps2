@@ -78,21 +78,21 @@ static py::object
 _dgemm(py::object A, py::object B, int m, int n, int k, char* Aorder,
        char* Border)
 {
+  auto C = empty_matrix(n, m, NPY_DOUBLE);
   if (array_stride(A, 1) != sizeof(double))
     {
       // throw std::exception("Non-contiguous A array in GEMM");
       // std::cerr << "Non-contiguous A array in GEMM\n";
       A = array_getcontiguous(A);
     }
+  int lda = array_stride(A, 0) / sizeof(double);
   if (array_stride(B, 1) != sizeof(double))
     {
       // throw std::exception("Non-contiguous B array in GEMM");
       // std::cerr << "Non-contiguous B array in GEMM\n";
       B = array_getcontiguous(B);
     }
-  auto C = empty_matrix(n, m, NPY_DOUBLE);
-  int lda = array_int_dim(A, 1);
-  int ldb = array_int_dim(B, 1);
+  int ldb = array_stride(B, 0) / sizeof(double);
   double alpha = 1.0;
   double beta = 0.0;
   dgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
@@ -104,21 +104,21 @@ static py::object
 _zgemm(py::object A, py::object B, int m, int n, int k, char* Aorder,
        char* Border)
 {
+  auto C = empty_matrix(n, m, NPY_COMPLEX128);
   if (array_stride(A, 1) != sizeof(std::complex<double>))
     {
       // throw std::exception("Non-contiguous A array in GEMM");
       // std::cerr << "Non-contiguous A array in GEMM\n";
       A = array_getcontiguous(A);
     }
+  int lda = array_stride(A, 0) / sizeof(std::complex<double>);
   if (array_stride(B, 1) != sizeof(std::complex<double>))
     {
       // throw std::exception("Non-contiguous B array in GEMM");
       // std::cerr << "Non-contiguous B array in GEMM\n";
       B = array_getcontiguous(B);
     }
-  auto C = empty_matrix(n, m, NPY_COMPLEX128);
-  int lda = array_int_dim(A, 1);
-  int ldb = array_int_dim(B, 1);
+  int ldb = array_stride(B, 0) / sizeof(std::complex<double>);
   std::complex<double> alpha = 1.0;
   std::complex<double> beta = 0.0;
   zgemm_ptr(Aorder, Border, &m, &n, &k, &alpha,
