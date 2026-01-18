@@ -72,5 +72,8 @@
     ],
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
     }
 }
