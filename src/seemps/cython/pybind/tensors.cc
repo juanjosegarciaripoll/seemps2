@@ -74,113 +74,112 @@ _normalize(double* data, size_t size)
  * where A', B' and C' are Fotran ordered arrays on the same memory region.
  */
 
-static py::object
-_dgemm(py::object A, py::object B, int m, int n, int k, char* Aorder,
-       char* Border)
+template <typename number> class GemmData
+{
+  typedef number number;
+
+  static py::object
+  ensure_contiguous_column(py::object& A)
+  {
+    if (array_stride(A, 1) != sizeof(number))
+      {
+        // throw std::exception("Non-contiguous array in GEMM");
+        // std::cerr << "Non-contiguous array in GEMM\n";
+        return array_getcontiguous(A);
+      }
+    return A;
+  }
+
+  GemmData();
+  GemmData(const GemmData&) = delete;
+  GemmData(const GemmData&&) = delete;
+
+public:
+  number alpha = 1.0;
+  number beta = 0.0;
+  char* Aorder = "N";
+  char* Border = "N";
+  py::object A;
+  int m, k, lda;
+  py::object B;
+  int n, ldb;
+
+  GemmData(py::object& oA, Gemm AT, py::object& oB, Gemm BT)
+      : A{ ensure_contiguous_column(oA) }, m{ array_int_dim(A, 1) },
+        k{ array_int_dim(A, 0) },
+        lda{ static_cast<int>(array_stride(A, 0) / sizeof(number)) },
+        B{ ensure_contiguous_column(oB) }, n{ array_int_dim(B, 0) },
+        ldb{ static_cast<int>(array_stride(B, 0) / sizeof(number)) }
+  {
+    if (AT != Gemm::GEMM_NORMAL)
+      {
+        std::swap(m, k);
+        Aorder = (AT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
+      }
+    if (BT != Gemm::GEMM_NORMAL)
+      {
+        n = array_int_dim(B, 1);
+        Border = (BT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
+      }
+  }
+
+  py::object gemm();
+};
+
+template <>
+py::object
+GemmData<double>::gemm()
 {
   auto C = empty_matrix(n, m, NPY_DOUBLE);
-  if (array_stride(A, 1) != sizeof(double))
-    {
-      // throw std::exception("Non-contiguous A array in GEMM");
-      // std::cerr << "Non-contiguous A array in GEMM\n";
-      A = array_getcontiguous(A);
-    }
-  int lda = array_stride(A, 0) / sizeof(double);
-  if (array_stride(B, 1) != sizeof(double))
-    {
-      // throw std::exception("Non-contiguous B array in GEMM");
-      // std::cerr << "Non-contiguous B array in GEMM\n";
-      B = array_getcontiguous(B);
-    }
-  int ldb = array_stride(B, 0) / sizeof(double);
-  double alpha = 1.0;
-  double beta = 0.0;
-  dgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
-            array_data<double>(B), &ldb, &beta, array_data<double>(C), &m);
+  dgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
+            array_data<number>(B), &ldb, &beta, array_data<number>(C), &m);
   return C;
 }
 
-static py::object
-_zgemm(py::object A, py::object B, int m, int n, int k, char* Aorder,
-       char* Border)
+template <>
+py::object
+GemmData<std::complex<double>>::gemm()
 {
   auto C = empty_matrix(n, m, NPY_COMPLEX128);
-  if (array_stride(A, 1) != sizeof(std::complex<double>))
-    {
-      // throw std::exception("Non-contiguous A array in GEMM");
-      // std::cerr << "Non-contiguous A array in GEMM\n";
-      A = array_getcontiguous(A);
-    }
-  int lda = array_stride(A, 0) / sizeof(std::complex<double>);
-  if (array_stride(B, 1) != sizeof(std::complex<double>))
-    {
-      // throw std::exception("Non-contiguous B array in GEMM");
-      // std::cerr << "Non-contiguous B array in GEMM\n";
-      B = array_getcontiguous(B);
-    }
-  int ldb = array_stride(B, 0) / sizeof(std::complex<double>);
-  std::complex<double> alpha = 1.0;
-  std::complex<double> beta = 0.0;
-  zgemm_ptr(Aorder, Border, &m, &n, &k, &alpha,
-            array_data<std::complex<double>>(A), &lda,
-            array_data<std::complex<double>>(B), &ldb, &beta,
-            array_data<std::complex<double>>(C), &m);
+  zgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
+            array_data<number>(B), &ldb, &beta, array_data<number>(C), &m);
   return C;
 }
 
 py::object
 gemm(py::object& B, Gemm BT, py::object& A, Gemm AT)
 {
-  int m, n, k;
-  char *Aorder, *Border;
-  if (AT == Gemm::GEMM_NORMAL)
-    {
-      m = array_int_dim(A, 1);
-      k = array_int_dim(A, 0);
-      Aorder = "N";
-    }
-  else
-    {
-      m = array_int_dim(A, 0);
-      k = array_int_dim(A, 1);
-      Aorder = (AT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
-    }
-  if (BT == Gemm::GEMM_NORMAL)
-    {
-      n = array_int_dim(B, 0);
-      Border = "N";
-    }
-  else
-    {
-      n = array_int_dim(B, 1);
-      Border = (BT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
-    }
   switch (array_type(A))
     {
     case NPY_DOUBLE:
       switch (array_type(B))
         {
         case NPY_DOUBLE:
-          return _dgemm(A, B, m, n, k, Aorder, Border);
+          return GemmData<double>(A, AT, B, BT).gemm();
         case NPY_COMPLEX64:
           B = array_cast(B, NPY_COMPLEX128);
         case NPY_COMPLEX128:
-          return _zgemm(array_cast(A, NPY_COMPLEX128), B, m, n, k, Aorder,
-                        Border);
+          return GemmData<std::complex<double>>(array_cast(A, NPY_COMPLEX128),
+                                                AT, B, BT)
+              .gemm();
         default:
-          return _dgemm(A, array_cast(B, NPY_DOUBLE), m, n, k, Aorder, Border);
+          return GemmData<double>(A, AT, array_cast(B, NPY_DOUBLE), BT).gemm();
         }
     case NPY_COMPLEX128:
-      return _zgemm(
-          A,
-          array_type(B) == NPY_COMPLEX128 ? B : array_cast(B, NPY_COMPLEX128),
-          m, n, k, Aorder, Border);
+      return GemmData<std::complex<double>>(A, AT,
+                                            array_type(B) == NPY_COMPLEX128
+                                                ? B
+                                                : array_cast(B, NPY_COMPLEX128),
+                                            BT)
+          .gemm();
     case NPY_COMPLEX64:
-      return _zgemm(array_cast(A, NPY_COMPLEX128),
-                    array_cast(B, NPY_COMPLEX128), m, n, k, Aorder, Border);
+      return GemmData<std::complex<double>>(array_cast(A, NPY_COMPLEX128), AT,
+                                            array_cast(B, NPY_COMPLEX128), BT)
+          .gemm();
     default:
-      return _dgemm(array_cast(A, NPY_DOUBLE), array_cast(B, NPY_DOUBLE), m, n,
-                    k, Aorder, Border);
+      return GemmData<double>(array_cast(A, NPY_DOUBLE), AT,
+                              array_cast(B, NPY_DOUBLE), BT)
+          .gemm();
     }
 }
 } // namespace seemps
