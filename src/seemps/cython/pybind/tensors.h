@@ -104,15 +104,20 @@ array_stride(const py::object& a, int n)
   return PyArray_STRIDE(to_array(a), n);
 }
 
-inline int
-array_int_dim(const py::object& a, int n)
+inline void
+check_array_is_blas_compatible(const py::object& a)
 {
-  auto d = array_dim(a, n);
-  if (d > std::numeric_limits<int>::max())
+  if (array_size(a) > std::numeric_limits<int>::max())
     {
       throw std::invalid_argument("Too large matrix for BLAS/LAPACK library");
     }
-  return static_cast<int>(d);
+}
+
+inline int
+array_int_dim(const py::object& a, int n)
+{
+  check_array_is_blas_compatible(a);
+  return static_cast<int>(array_dim(a, n));
 }
 
 inline auto

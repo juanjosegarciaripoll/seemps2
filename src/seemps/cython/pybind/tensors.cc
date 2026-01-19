@@ -81,6 +81,7 @@ template <typename number> class GemmData
   static py::object
   ensure_contiguous_column(py::object& A)
   {
+    check_array_is_blas_compatible(A);
     if (array_stride(A, 1) != sizeof(number))
       {
         // throw std::exception("Non-contiguous array in GEMM");
@@ -102,13 +103,16 @@ public:
   py::object A;
   int m, k, lda;
   py::object B;
-  int n, ldb;
+  int kb, n, ldb;
 
   GemmData(py::object& oA, Gemm AT, py::object& oB, Gemm BT)
-      : A{ ensure_contiguous_column(oA) }, m{ array_int_dim(A, 1) },
-        k{ array_int_dim(A, 0) },
+      : A{ ensure_contiguous_column(oA) },
+        m{ static_cast<int>(array_dim(A, 1)) },
+        k{ static_cast<int>(array_dim(A, 0)) },
         lda{ static_cast<int>(array_stride(A, 0) / sizeof(number)) },
-        B{ ensure_contiguous_column(oB) }, n{ array_int_dim(B, 0) },
+        B{ ensure_contiguous_column(oB) },
+        kb{ static_cast<int>(array_dim(B, 1)) },
+        n{ static_cast<int>(array_dim(B, 0)) },
         ldb{ static_cast<int>(array_stride(B, 0) / sizeof(number)) }
   {
     if (AT != Gemm::GEMM_NORMAL)
@@ -118,8 +122,12 @@ public:
       }
     if (BT != Gemm::GEMM_NORMAL)
       {
-        n = array_int_dim(B, 1);
+        std::swap(kb, n);
         Border = (BT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
+      }
+    if (kb != k)
+      {
+        throw std::exception("A and B matrices have wrong dimensions in GEMM");
       }
   }
 
