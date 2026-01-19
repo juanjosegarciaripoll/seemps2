@@ -78,6 +78,8 @@ template <typename number> class GemmData
 {
   typedef number number;
 
+  static inline char* orders[] = { "N", "T", "C" };
+
   static py::object
   ensure_contiguous_column(py::object& A)
   {
@@ -96,21 +98,17 @@ template <typename number> class GemmData
   GemmData(const GemmData&&) = delete;
 
 public:
-  number alpha = 1.0;
-  number beta = 0.0;
-  char* Aorder = "N";
-  char* Border = "N";
-  py::object A;
-  int m, k, lda;
-  py::object B;
-  int kb, n, ldb;
+  py::object A, B;
+  number alpha, beta;
+  char *Aorder, *Border;
+  int m, k, lda, kb, n, ldb;
 
   GemmData(py::object& oA, Gemm AT, py::object& oB, Gemm BT)
-      : A{ ensure_contiguous_column(oA) },
+      : A{ ensure_contiguous_column(oA) }, B{ ensure_contiguous_column(oB) },
+        alpha{ 1.0 }, beta{ 0.0 }, Aorder{ orders[AT] }, Border{ orders[BT] },
         m{ static_cast<int>(array_dim(A, 1)) },
         k{ static_cast<int>(array_dim(A, 0)) },
         lda{ static_cast<int>(array_stride(A, 0) / sizeof(number)) },
-        B{ ensure_contiguous_column(oB) },
         kb{ static_cast<int>(array_dim(B, 1)) },
         n{ static_cast<int>(array_dim(B, 0)) },
         ldb{ static_cast<int>(array_stride(B, 0) / sizeof(number)) }
