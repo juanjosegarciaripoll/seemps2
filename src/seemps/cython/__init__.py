@@ -1,5 +1,5 @@
 import os
-from .pybind import (
+from .core import (
     _begin_environment,
     _canonicalize,
     _contract_last_and_first,
@@ -31,7 +31,7 @@ from .pybind import (
 
 if os.environ.get("SEEMPS_PYBIND", "off").lower() == "on":
     print("PYBIND!")
-    from .core import (
+    from .pybind import (
         _select_svd_driver,
         _destructive_svd,
         _begin_environment,
