@@ -34,7 +34,9 @@ if not debug_library:
         extra_compile_args = ["-O3", "-ffast-math"]
     else:
         # We assume Microsoft Visual C/C++ compiler
-        extra_compile_args = ["/Ox", "/fp:fast"]
+        # /we4239 removes a non-conformant behavior, whereby a function
+        # argument non-const lvalue reference type can be assigned a temp.
+        extra_compile_args = ["/Ox", "/fp:fast", "/we4239"]
 else:
     directives = {
         "language_level": "3",  # We assume Python 3 code

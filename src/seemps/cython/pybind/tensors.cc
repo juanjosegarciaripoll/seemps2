@@ -78,10 +78,10 @@ template <typename number> class GemmData
 {
   typedef number number;
 
-  static inline char* orders[] = { "N", "T", "C" };
+  static inline char orders[] = { 'N', 'T', 'C' };
 
   static py::object
-  ensure_contiguous_column(py::object& A)
+  ensure_contiguous_column(const py::object& A)
   {
     check_array_is_blas_compatible(A);
     if (array_stride(A, 1) != sizeof(number))
@@ -98,12 +98,12 @@ template <typename number> class GemmData
   GemmData(const GemmData&&) = delete;
 
 public:
-  py::object A, B;
+  const py::object A, B;
   number alpha, beta;
-  char *Aorder, *Border;
   int m, k, lda, kb, n, ldb;
+  char Aorder, Border;
 
-  GemmData(py::object& oA, Gemm AT, py::object& oB, Gemm BT)
+  GemmData(const py::object& oA, Gemm AT, const py::object& oB, Gemm BT)
       : A{ ensure_contiguous_column(oA) }, B{ ensure_contiguous_column(oB) },
         alpha{ 1.0 }, beta{ 0.0 }, Aorder{ orders[AT] }, Border{ orders[BT] },
         m{ static_cast<int>(array_dim(A, 1)) },
@@ -116,12 +116,10 @@ public:
     if (AT != Gemm::GEMM_NORMAL)
       {
         std::swap(m, k);
-        Aorder = (AT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
       }
     if (BT != Gemm::GEMM_NORMAL)
       {
         std::swap(kb, n);
-        Border = (BT == Gemm::GEMM_TRANSPOSE) ? "T" : "C";
       }
     if (kb != k)
       {
@@ -137,7 +135,7 @@ py::object
 GemmData<double>::gemm()
 {
   auto C = empty_matrix(n, m, NPY_DOUBLE);
-  dgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
+  dgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
             array_data<number>(B), &ldb, &beta, array_data<number>(C), &m);
   return C;
 }
@@ -147,13 +145,13 @@ py::object
 GemmData<std::complex<double>>::gemm()
 {
   auto C = empty_matrix(n, m, NPY_COMPLEX128);
-  zgemm_ptr(Aorder, Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
+  zgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
             array_data<number>(B), &ldb, &beta, array_data<number>(C), &m);
   return C;
 }
 
 py::object
-gemm(py::object& B, Gemm BT, py::object& A, Gemm AT)
+gemm(py::object B, Gemm BT, py::object A, Gemm AT)
 {
   switch (array_type(A))
     {

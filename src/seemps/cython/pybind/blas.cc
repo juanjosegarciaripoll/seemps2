@@ -4,11 +4,12 @@
 namespace seemps
 {
 
-void (*dgemm_ptr)(char*, char*, int*, int*, int*, double*, double*, int*,
-                  double*, int*, double*, double*, int*);
-void (*zgemm_ptr)(char*, char*, int*, int*, int*, std::complex<double>*,
-                  std::complex<double>*, int*, std::complex<double>*, int*,
-                  std::complex<double>*, std::complex<double>*, int*);
+void (*dgemm_ptr)(const char*, const char*, int*, int*, int*, double*, double*,
+                  int*, double*, int*, double*, double*, int*);
+void (*zgemm_ptr)(const char*, const char*, int*, int*, int*,
+                  std::complex<double>*, std::complex<double>*, int*,
+                  std::complex<double>*, int*, std::complex<double>*,
+                  std::complex<double>*, int*);
 void (*dgesvd_ptr)(char* jobu, char* jobvt, int* m, int* n, double* a, int* lda,
                    double* s, double* u, int* ldu, double* vt, int* ldvt,
                    double* work, int* lwork, int* info);

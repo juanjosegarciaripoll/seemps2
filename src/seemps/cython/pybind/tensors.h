@@ -17,12 +17,12 @@ void _normalize(double* data, size_t size, double norm);
 
 void _normalize(double* data, size_t size);
 
-extern void (*dgemm_ptr)(char*, char*, int*, int*, int*, double*, double*, int*,
-                         double*, int*, double*, double*, int*);
-extern void (*zgemm_ptr)(char*, char*, int*, int*, int*, std::complex<double>*,
+extern void (*dgemm_ptr)(const char*, const char*, int*, int*, int*, double*,
+                         double*, int*, double*, int*, double*, double*, int*);
+extern void (*zgemm_ptr)(const char*, const char*, int*, int*, int*,
+                         std::complex<double>*, std::complex<double>*, int*,
                          std::complex<double>*, int*, std::complex<double>*,
-                         int*, std::complex<double>*, std::complex<double>*,
-                         int*);
+                         std::complex<double>*, int*);
 
 extern void (*dgesvd_ptr)(char* jobu, char* jobvt, int* m, int* n, double* a,
                           int* lda, double* s, double* u, int* ldu, double* vt,
@@ -50,7 +50,7 @@ enum Gemm
   GEMM_ADJOINT = 2
 };
 
-py::object gemm(py::object& A, Gemm AT, py::object& B, Gemm BT);
+py::object gemm(py::object A, Gemm AT, py::object B, Gemm BT);
 
 std::tuple<py::object, py::object, py::object> destructive_svd(py::object A);
 
