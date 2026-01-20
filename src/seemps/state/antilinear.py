@@ -59,7 +59,7 @@ class AntilinearForm:
         """Return the tensor representing the AntilinearForm at the
         `self.center` site."""
         center = self.center
-        # np.einsum("li,ijk,kn->ljn", L, C, R)
+        # li,ijk,kn->ljn
         return _contract_last_and_first(
             self.L[center], _contract_last_and_first(self.ket[center], self.R[center])
         )

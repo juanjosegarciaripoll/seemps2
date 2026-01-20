@@ -3,6 +3,7 @@ from math import sqrt
 import numpy as np
 from collections.abc import Iterable
 from ..typing import VectorLike, Tensor3
+from ..cython import _contract_last_and_first
 from .mps import MPS
 
 
@@ -125,7 +126,8 @@ def AKLT(n: int) -> MPS:
     AA = np.swapaxes(AA, 0, 1)
     data = [AA] * n
     data[-1] = np.array([[[1, 0], [0, 1], [0, 0]]])
-    data[0] = np.array(np.einsum("ijk,kl->ijl", data[-1], iY)) / sqrt(2)
+    # ijk,kl->ijl
+    data[0] = _contract_last_and_first(data[-1], iY / sqrt(2))
     data[-1] = np.swapaxes(data[-1], 0, 2)
 
     return MPS(data)

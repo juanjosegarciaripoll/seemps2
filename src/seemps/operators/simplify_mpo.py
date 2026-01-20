@@ -14,6 +14,9 @@ from ..state import (
 #: MPO simplification strategy based on canonical forms without truncation.
 CANONICALIZE_MPO = NO_TRUNCATION.replace(simplify=Simplification.DO_NOT_SIMPLIFY)
 
+# MPO simplification should not normalize by default
+MPO_SIMPLIFICATION_STRATEGY = SIMPLIFICATION_STRATEGY.replace(normalize=False)
+
 
 def mpo_as_mps(mpo: MPO) -> MPS:
     """Recast MPO as MPS."""
@@ -46,7 +49,7 @@ def mps_as_mpo(
 
 def simplify_mpo(
     operator: MPO | MPOList | MPOSum,
-    strategy: Strategy = SIMPLIFICATION_STRATEGY,
+    strategy: Strategy = MPO_SIMPLIFICATION_STRATEGY,
     direction: int = +1,
     guess: MPO | None = None,
     mpo_strategy: Strategy | None = None,
@@ -55,7 +58,7 @@ def simplify_mpo(
     dimension, sweeping until convergence is achieved.
 
     Parameters
-    ----------
+    ----------x
     operator : MPO | MPOList | MPOSum
         MPO to simplify. If given as `MPOList` or `MPOSum`, it is joined to `MPO`
         before the simplification.
