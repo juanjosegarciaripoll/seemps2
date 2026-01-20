@@ -176,7 +176,7 @@ destructive_svd(py::object A)
   auto type = array_type(A);
   int err;
   py::object U, s, VT;
-  A = array_getcontiguous(A);
+  A = ensure_contiguous_blas_matrix(A);
   if (r == n)
     {
       // U matrix is destructively overwritten into A

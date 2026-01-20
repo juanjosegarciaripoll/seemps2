@@ -121,9 +121,21 @@ array_int_dim(const py::object& a, int n)
 }
 
 inline auto
+array_item_size(const py::object& a)
+{
+  return PyArray_ITEMSIZE(to_array(a));
+}
+
+inline auto
 array_dims(const py::object& a)
 {
   return PyArray_DIMS(to_array(a));
+}
+
+inline bool
+array_is_c_contiguous(const py::object& a)
+{
+  return (PyArray_FLAGS(to_array(a)) & NPY_ARRAY_C_CONTIGUOUS) != 0;
 }
 
 inline py::object
@@ -188,6 +200,49 @@ array_copy(const py::object& A)
   return py::reinterpret_steal<py::object>(
       PyArray_FROM_OF(A.ptr(), NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED
                                    | NPY_ARRAY_ENSURECOPY));
+}
+
+inline int
+matrix_leading_dimension(const py::object& a)
+{
+  return array_dim(a, 1) / array_item_size(a);
+}
+
+inline void
+check_blas_compatible_matrix(const py::object& a)
+{
+  if (!is_array(a) || array_ndim(a) != 2)
+    {
+      throw std::invalid_argument("Expected a matrix argument");
+    }
+  if (array_size(a) > std::numeric_limits<int>::max())
+    {
+      throw std::invalid_argument("Too large matrix for BLAS/LAPACK library");
+    }
+}
+
+inline py::object
+ensure_contiguous_column_blas_matrix(const py::object& A)
+{
+  check_array_is_blas_compatible(A);
+  if (array_stride(A, 1) != array_item_size(A))
+    {
+      // std::cerr << "Non-contiguous array in BLAS operation\n";
+      return array_getcontiguous(A);
+    }
+  return A;
+}
+
+inline py::object
+ensure_contiguous_blas_matrix(const py::object& A)
+{
+  check_array_is_blas_compatible(A);
+  if (!array_is_c_contiguous(A))
+    {
+      // std::cerr << "Non-contiguous array in BLAS operation\n";
+      return array_getcontiguous(A);
+    }
+  return A;
 }
 
 inline auto

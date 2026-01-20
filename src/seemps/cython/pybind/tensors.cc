@@ -104,8 +104,9 @@ public:
   char Aorder, Border;
 
   GemmData(const py::object& oA, Gemm AT, const py::object& oB, Gemm BT)
-      : A{ ensure_contiguous_column(oA) }, B{ ensure_contiguous_column(oB) },
-        alpha{ 1.0 }, beta{ 0.0 }, m{ static_cast<int>(array_dim(A, 1)) },
+      : A{ ensure_contiguous_column_blas_matrix(oA) },
+        B{ ensure_contiguous_column_blas_matrix(oB) }, alpha{ 1.0 },
+        beta{ 0.0 }, m{ static_cast<int>(array_dim(A, 1)) },
         k{ static_cast<int>(array_dim(A, 0)) },
         lda{ static_cast<int>(array_stride(A, 0) / sizeof(number)) },
         kb{ static_cast<int>(array_dim(B, 1)) },
