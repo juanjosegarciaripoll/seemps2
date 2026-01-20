@@ -54,10 +54,10 @@ _coerce_to_supported_svd_type(py::object A)
     case NPY_COMPLEX128:
       return A;
     case NPY_COMPLEX64:
-      std::cerr << "Conversion to COMPLEX128\n";
+      // std::cerr << "Conversion to COMPLEX128\n";
       return array_cast(A, NPY_COMPLEX128);
     default:
-      std::cerr << "Conversion to DOUBLE\n";
+      // std::cerr << "Conversion to DOUBLE\n";
       return array_cast(A, NPY_DOUBLE);
     }
 }
@@ -69,11 +69,15 @@ SVDData::SVDData(const py::object& orig_A, bool destructive)
       n{ static_cast<int>(array_dim(A, 0)) }, jobU{ 'S' }, jobVT{ 'S' },
       jobz{ 'S' }, overwrite{ destructive || (to_array(A) != to_array(orig_A)) }
 {
-  ldA = blas_matrix_leading_dimension(A);
-  if (!overwrite)
+  if (overwrite)
+    {
+      ldA = blas_matrix_leading_dimension(A);
+    }
+  else
     {
       // A will be destroyed but we don't want it
       A = array_copy(A);
+      ldA = m;
     }
   if (m >= n)
     {

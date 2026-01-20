@@ -275,7 +275,7 @@ ensure_contiguous_blas_matrix(const py::object& A)
   check_array_is_blas_compatible(A);
   if (!array_is_c_contiguous(A))
     {
-      std::cerr << "Non-contiguous array in BLAS operation\n";
+      // std::cerr << "Non-contiguous array in BLAS operation\n";
       return array_getcontiguous(A);
     }
   return A;
