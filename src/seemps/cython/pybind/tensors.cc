@@ -74,24 +74,9 @@ _normalize(double* data, size_t size)
  * where A', B' and C' are Fotran ordered arrays on the same memory region.
  */
 
-template <typename c_number_type> class GemmData
+class GemmData
 {
-  typedef c_number_type number;
-
   static inline char orders[] = { 'N', 'T', 'C' };
-
-  static py::object
-  ensure_contiguous_column(const py::object& A)
-  {
-    check_array_is_blas_compatible(A);
-    if (array_stride(A, 1) != sizeof(number))
-      {
-        // throw std::exception("Non-contiguous array in GEMM");
-        // std::cerr << "Non-contiguous array in GEMM\n";
-        return array_getcontiguous(A);
-      }
-    return A;
-  }
 
   GemmData();
   GemmData(const GemmData&) = delete;
@@ -99,20 +84,18 @@ template <typename c_number_type> class GemmData
 
 public:
   const py::object A, B;
-  number alpha, beta;
   int m, k, lda, kb, n, ldb;
   char Aorder, Border;
 
   GemmData(const py::object& oA, Gemm AT, const py::object& oB, Gemm BT)
       : A{ ensure_contiguous_column_blas_matrix(oA) },
-        B{ ensure_contiguous_column_blas_matrix(oB) }, alpha{ 1.0 },
-        beta{ 0.0 }, m{ static_cast<int>(array_dim(A, 1)) },
+        B{ ensure_contiguous_column_blas_matrix(oB) },
+        m{ static_cast<int>(array_dim(A, 1)) },
         k{ static_cast<int>(array_dim(A, 0)) },
-        lda{ static_cast<int>(array_stride(A, 0) / sizeof(number)) },
         kb{ static_cast<int>(array_dim(B, 1)) },
         n{ static_cast<int>(array_dim(B, 0)) },
-        ldb{ static_cast<int>(array_stride(B, 0) / sizeof(number)) },
-        Aorder{ orders[AT] }, Border{ orders[BT] }
+        ldb{ blas_matrix_leading_dimension(B) }, Aorder{ orders[AT] },
+        Border{ orders[BT] }
   {
     if (AT != Gemm::GEMM_NORMAL)
       {
@@ -129,28 +112,32 @@ public:
       }
   }
 
-  py::object gemm();
+  py::object
+  dgemm()
+  {
+    auto C = empty_matrix(n, m, NPY_DOUBLE);
+    double alpha = 1.0;
+    double beta = 0.0;
+    int lda = blas_matrix_leading_dimension_from_type<double>(A);
+    dgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
+              array_data<double>(B), &ldb, &beta, array_data<double>(C), &m);
+    return C;
+  }
+
+  py::object
+  zgemm()
+  {
+    auto C = empty_matrix(n, m, NPY_COMPLEX128);
+    std::complex<double> alpha = 1.0;
+    std::complex<double> beta = 0.0;
+    int lda = blas_matrix_leading_dimension_from_type<std::complex<double>>(A);
+    zgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha,
+              array_data<std::complex<double>>(A), &lda,
+              array_data<std::complex<double>>(B), &ldb, &beta,
+              array_data<std::complex<double>>(C), &m);
+    return C;
+  }
 };
-
-template <>
-py::object
-GemmData<double>::gemm()
-{
-  auto C = empty_matrix(n, m, NPY_DOUBLE);
-  dgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
-            array_data<number>(B), &ldb, &beta, array_data<number>(C), &m);
-  return C;
-}
-
-template <>
-py::object
-GemmData<std::complex<double>>::gemm()
-{
-  auto C = empty_matrix(n, m, NPY_COMPLEX128);
-  zgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<number>(A), &lda,
-            array_data<number>(B), &ldb, &beta, array_data<number>(C), &m);
-  return C;
-}
 
 py::object
 gemm(py::object B, Gemm BT, py::object A, Gemm AT)
@@ -161,31 +148,29 @@ gemm(py::object B, Gemm BT, py::object A, Gemm AT)
       switch (array_type(B))
         {
         case NPY_DOUBLE:
-          return GemmData<double>(A, AT, B, BT).gemm();
+          return GemmData(A, AT, B, BT).dgemm();
         case NPY_COMPLEX64:
           B = array_cast(B, NPY_COMPLEX128);
         case NPY_COMPLEX128:
-          return GemmData<std::complex<double>>(array_cast(A, NPY_COMPLEX128),
-                                                AT, B, BT)
-              .gemm();
+          return GemmData(array_cast(A, NPY_COMPLEX128), AT, B, BT).zgemm();
         default:
-          return GemmData<double>(A, AT, array_cast(B, NPY_DOUBLE), BT).gemm();
+          return GemmData(A, AT, array_cast(B, NPY_DOUBLE), BT).dgemm();
         }
     case NPY_COMPLEX128:
-      return GemmData<std::complex<double>>(A, AT,
-                                            array_type(B) == NPY_COMPLEX128
-                                                ? B
-                                                : array_cast(B, NPY_COMPLEX128),
-                                            BT)
-          .gemm();
+      return GemmData(A, AT,
+                      array_type(B) == NPY_COMPLEX128
+                          ? B
+                          : array_cast(B, NPY_COMPLEX128),
+                      BT)
+          .zgemm();
     case NPY_COMPLEX64:
-      return GemmData<std::complex<double>>(array_cast(A, NPY_COMPLEX128), AT,
-                                            array_cast(B, NPY_COMPLEX128), BT)
-          .gemm();
+      return GemmData(array_cast(A, NPY_COMPLEX128), AT,
+                      array_cast(B, NPY_COMPLEX128), BT)
+          .zgemm();
     default:
-      return GemmData<double>(array_cast(A, NPY_DOUBLE), AT,
-                              array_cast(B, NPY_DOUBLE), BT)
-          .gemm();
+      return GemmData(array_cast(A, NPY_DOUBLE), AT, array_cast(B, NPY_DOUBLE),
+                      BT)
+          .dgemm();
     }
 }
 } // namespace seemps

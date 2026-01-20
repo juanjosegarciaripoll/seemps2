@@ -113,13 +113,6 @@ check_array_is_blas_compatible(const py::object& a)
     }
 }
 
-inline int
-array_int_dim(const py::object& a, int n)
-{
-  check_array_is_blas_compatible(a);
-  return static_cast<int>(array_dim(a, n));
-}
-
 inline auto
 array_item_size(const py::object& a)
 {
@@ -231,6 +224,18 @@ ensure_contiguous_column_blas_matrix(const py::object& A)
       return array_getcontiguous(A);
     }
   return A;
+}
+
+template <typename number>
+inline int
+blas_matrix_leading_dimension_from_type(const py::object& A)
+{
+  return static_cast<int>(array_stride(A, 0) / sizeof(number));
+}
+inline int
+blas_matrix_leading_dimension(const py::object& A)
+{
+  return static_cast<int>(array_stride(A, 0) / array_item_size(A));
 }
 
 inline py::object
