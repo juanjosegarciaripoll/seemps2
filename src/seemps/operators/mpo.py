@@ -636,7 +636,7 @@ class MPOList(object):
             # return opt_einsum.contract("aijb,cjkd->acikbd", B, A).reshape(
             #    a * c, d, d, b * e
             # )
-            # aijbc,cjkd->aibckd->acikbd
+            # aijb,cjkd->aibckd->acikbd
             aux = np.tensordot(B, A, ((2,), (1,)))
             return np.ascontiguousarray(
                 aux.transpose(0, 3, 1, 4, 2, 5).reshape(a * c, d, d, b * e)
