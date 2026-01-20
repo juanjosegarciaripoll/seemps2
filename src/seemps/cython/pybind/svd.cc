@@ -16,8 +16,7 @@ schmidt_weights(py::object A)
   auto d1 = array_dim(A, 0);
   auto d2 = array_dim(A, 1);
   auto d3 = array_dim(A, 2);
-  auto [U, s, V] = destructive_svd(
-      array_reshape(array_copy(A), array_dims_t{ d1, d2 * d3 }));
+  auto [U, s, V] = svd(as_matrix(A, d1, d2 * d3));
   _normalize(array_data<double>(s), array_size(s));
   return s * s;
 }
@@ -71,35 +70,26 @@ SVDData::SVDData(const py::object& orig_A, bool destructive)
       jobz{ 'S' }, overwrite{ destructive || (to_array(A) != to_array(orig_A)) }
 {
   ldA = blas_matrix_leading_dimension(A);
+  if (!overwrite)
+    {
+      // A will be destroyed but we don't want it
+      A = array_copy(A);
+    }
   if (m >= n)
     {
       VT = empty_matrix(n, ldVT = r = n, type);
-      if (overwrite)
-        {
-          // U matrix is destructively overwritten into A
-          U = A;
-          ldU = ldA;
-          jobU = jobz = 'O';
-        }
-      else
-        {
-          U = empty_matrix(n, ldU = m, type);
-        }
+      // U matrix is destructively overwritten into A
+      U = A;
+      ldU = ldA;
+      jobU = jobz = 'O';
     }
   else
     {
       U = empty_matrix(m, ldU = r = m, type);
-      if (overwrite)
-        {
-          // VT matrix is destructively overwritten into A
-          VT = A;
-          ldVT = ldA;
-          jobVT = jobz = 'O';
-        }
-      else
-        {
-          VT = empty_matrix(n, ldVT = m, type);
-        }
+      // VT matrix is destructively overwritten into A
+      VT = A;
+      ldVT = ldA;
+      jobVT = jobz = 'O';
     }
   s = empty_vector(r, NPY_DOUBLE);
 }
@@ -128,26 +118,7 @@ SVDData::run()
     {
       throw std::runtime_error("Wrong argument passed to LAPACK SVD.");
     }
-  if (!overwrite)
-    {
-      // SVD did not converge, try the other method
-      if (type == NPY_DOUBLE)
-        {
-          err = _use_gesdd ? _dgesvd() : _dgesdd();
-        }
-      else
-        {
-          err = _use_gesdd ? _zgesvd() : _zgesdd();
-        }
-      if (err == 0)
-        {
-          return { std::move(VT), std::move(s), std::move(U) };
-        }
-      if (err < 0)
-        {
-          throw std::runtime_error("Wrong argument passed to LAPACK SVD.");
-        }
-    }
+  // TODO: Re-run SVD with the other method
   throw std::runtime_error("SVD did not converge");
 }
 
