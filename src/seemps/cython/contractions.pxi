@@ -72,6 +72,7 @@ cdef cnp.ndarray _empty_vector(Py_ssize_t size, int dtype):
 cdef cnp.ndarray _copy_array(cnp.ndarray A):
     return <cnp.ndarray>cnp.PyArray_FROM_OF(A,
                                             cnp.NPY_ARRAY_ENSURECOPY |
+                                            cnp.NPY_ARRAY_ALIGNED |
                                             cnp.NPY_ARRAY_C_CONTIGUOUS)
 
 cdef cnp.ndarray _resize_matrix(cnp.ndarray A, cnp.npy_intp rows, cnp.npy_intp cols):
