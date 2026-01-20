@@ -67,7 +67,7 @@ def _update_right_environment(object B, object A, object rho) ->  cnp.ndarray:
     return __update_right_environment(B, A, rho)
 
 cdef __end_environment(cnp.ndarray rho):
-    return cnp.PyArray_GETITEM(rho, cnp.PyArray_DATA(rho))
+    return cnp.PyArray_GETITEM(rho, <const char*>cnp.PyArray_DATA(rho))
 
 def _end_environment(object rho) -> Weight:
     """Extract the scalar product from the last environment."""
