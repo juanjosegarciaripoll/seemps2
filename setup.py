@@ -31,7 +31,7 @@ if not debug_library:
     }
     if sys.platform in ["linux", "darwin"]:
         # We assume GCC or other compilers with compatible command line
-        extra_compile_args = ["-O3", "-ffast-math"]
+        extra_compile_args = ["-O3", "-ffast-math", "-Wno-unused-function"]
     else:
         # We assume Microsoft Visual C/C++ compiler
         # /we4239 removes a non-conformant behavior, whereby a function
