@@ -2,6 +2,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.polynomial.polynomial import Polynomial
 import scipy.special  # type: ignore
+from ..cython import _contract_last_and_first
 from ..state import MPS, Strategy, DEFAULT_STRATEGY, simplify
 from .factories import mps_interval
 from .mesh import RegularInterval
@@ -102,9 +103,11 @@ def mps_from_polynomial(
     xm_mps = _mps_x_tensor(p.degree(), domain, first)
     coef: np.ndarray = np.asarray(p.coef)
     if first:
-        xm_mps[0] = np.einsum("a,aib->ib", coef, xm_mps[0])[np.newaxis, :, :]
+        # a,aib -> ib
+        xm_mps[0] = _contract_last_and_first(coef, xm_mps[0])[np.newaxis, :, :]
     else:
-        xm_mps[-1] = np.einsum("aib,b->ai", xm_mps[-1], coef)[:, :, np.newaxis]
+        # aib,b -> ai
+        xm_mps[-1] = _contract_last_and_first(xm_mps[-1], coef)[:, :, np.newaxis]
     if strategy.get_simplify_flag():
         return simplify(xm_mps, strategy=strategy)
     return xm_mps

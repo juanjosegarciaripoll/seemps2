@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from typing import overload
 import warnings
 import numpy as np
+from ..cython import _contract_last_and_first
 from ..tools import InvalidOperation
 from ..typing import (
     Tensor4,
@@ -189,10 +190,14 @@ class MPO(TensorArray):
         out = np.array([[[1.0]]])
         for A in self:
             _, i, j, b = A.shape
-            out = np.einsum("lma,aijb->limjb", out, A)
             Di *= i
             Dj *= j
-            out = out.reshape(Di, Dj, b)
+            # lma,aijb->limjb
+            out = (
+                _contract_last_and_first(out, A)
+                .transpose(0, 2, 1, 3, 4)
+                .reshape(Di, Dj, b)
+            )
         return out[:, :, 0]
 
     def set_strategy(self, strategy: Strategy) -> MPO:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from collections.abc import Iterable
+from ..cython import _contract_last_and_first
 from ..typing import VectorLike, Tensor4
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..operators import MPO
@@ -42,7 +43,8 @@ def mpo_weighted_shifts(
         Matrix product operator for `O` above.
     """
     O = mpo_shifts(L, shifts, periodic, base)
-    O[L - 1] = np.einsum("aijb,bc->aijc", O[-1], np.reshape(weights, (-1, 1)))
+    # aijb,bc->aijc
+    O[L - 1] = _contract_last_and_first(O[-1], np.reshape(weights, (-1, 1)))
     return O
 
 
