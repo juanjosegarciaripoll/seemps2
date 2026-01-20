@@ -2,7 +2,8 @@
 #include "core.h"
 #include "strategy.h"
 
-namespace seemps {
+namespace seemps
+{
 
 using Weight = py::object;
 
@@ -19,21 +20,19 @@ py::object schmidt_weights(py::object A);
 
 std::tuple<int, double>
 _update_in_canonical_form_right(py::list state, py::object A, int site,
-                                const Strategy &truncation,
-                                bool overwrite = false);
+                                const Strategy& truncation);
 std::tuple<int, double>
 _update_in_canonical_form_left(py::list state, py::object A, int site,
-                               const Strategy &truncation,
-                               bool overwrite = false);
-double _canonicalize(py::list state, int center, const Strategy &truncation);
+                               const Strategy& truncation);
+double _canonicalize(py::list state, int center, const Strategy& truncation);
 double _recanonicalize(py::list state, int oldcenter, int newcenter,
-                       const Strategy &truncation);
+                       const Strategy& truncation);
 std::tuple<py::object, py::object, double>
-_left_orth_2site(py::object AA, const Strategy &strategy);
+_left_orth_2site(py::object AA, const Strategy& strategy);
 std::tuple<py::object, py::object, double>
-_right_orth_2site(py::object AA, const Strategy &strategy);
+_right_orth_2site(py::object AA, const Strategy& strategy);
 double _update_canonical_2site_left(py::list state, py::object A, int site,
-                                    const Strategy &strategy);
+                                    const Strategy& strategy);
 double _update_canonical_2site_right(py::list state, py::object A, int site,
-                                     const Strategy &strategy);
+                                     const Strategy& strategy);
 } // namespace seemps
