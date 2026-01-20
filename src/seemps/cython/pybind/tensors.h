@@ -52,7 +52,38 @@ enum Gemm
 
 py::object gemm(py::object A, Gemm AT, py::object B, Gemm BT);
 
-std::tuple<py::object, py::object, py::object> destructive_svd(py::object A);
+class SVDData
+{
+  py::object A, U, s, VT;
+  int type, m, n, r, ldA, ldU, ldVT, info;
+  char jobU, jobVT, jobz;
+  bool overwrite;
+
+  SVDData() = delete;
+  SVDData(const SVDData&) = delete;
+  SVDData(const SVDData&&) = delete;
+
+  int _dgesvd();
+  int _dgesdd();
+  int _zgesvd();
+  int _zgesdd();
+
+public:
+  SVDData(const py::object& orig_A, bool destructive);
+  std::tuple<py::object, py::object, py::object> run();
+};
+
+inline std::tuple<py::object, py::object, py::object>
+destructive_svd(py::object A)
+{
+  return SVDData(A, true).run();
+}
+
+inline std::tuple<py::object, py::object, py::object>
+svd(py::object A)
+{
+  return SVDData(A, false).run();
+}
 
 void _select_svd_driver(std::string which);
 
@@ -244,7 +275,7 @@ ensure_contiguous_blas_matrix(const py::object& A)
   check_array_is_blas_compatible(A);
   if (!array_is_c_contiguous(A))
     {
-      // std::cerr << "Non-contiguous array in BLAS operation\n";
+      std::cerr << "Non-contiguous array in BLAS operation\n";
       return array_getcontiguous(A);
     }
   return A;
