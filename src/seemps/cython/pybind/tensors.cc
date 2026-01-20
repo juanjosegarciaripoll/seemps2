@@ -74,9 +74,9 @@ _normalize(double* data, size_t size)
  * where A', B' and C' are Fotran ordered arrays on the same memory region.
  */
 
-template <typename number> class GemmData
+template <typename c_number_type> class GemmData
 {
-  typedef number number;
+  typedef c_number_type number;
 
   static inline char orders[] = { 'N', 'T', 'C' };
 
@@ -105,13 +105,13 @@ public:
 
   GemmData(const py::object& oA, Gemm AT, const py::object& oB, Gemm BT)
       : A{ ensure_contiguous_column(oA) }, B{ ensure_contiguous_column(oB) },
-        alpha{ 1.0 }, beta{ 0.0 }, Aorder{ orders[AT] }, Border{ orders[BT] },
-        m{ static_cast<int>(array_dim(A, 1)) },
+        alpha{ 1.0 }, beta{ 0.0 }, m{ static_cast<int>(array_dim(A, 1)) },
         k{ static_cast<int>(array_dim(A, 0)) },
         lda{ static_cast<int>(array_stride(A, 0) / sizeof(number)) },
         kb{ static_cast<int>(array_dim(B, 1)) },
         n{ static_cast<int>(array_dim(B, 0)) },
-        ldb{ static_cast<int>(array_stride(B, 0) / sizeof(number)) }
+        ldb{ static_cast<int>(array_stride(B, 0) / sizeof(number)) },
+        Aorder{ orders[AT] }, Border{ orders[BT] }
   {
     if (AT != Gemm::GEMM_NORMAL)
       {
@@ -123,7 +123,8 @@ public:
       }
     if (kb != k)
       {
-        throw std::exception("A and B matrices have wrong dimensions in GEMM");
+        throw std::logic_error(
+            "A and B matrices have wrong dimensions in GEMM");
       }
   }
 
