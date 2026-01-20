@@ -20,13 +20,12 @@ _update_in_canonical_form_right(py::list state, py::object A, int site,
       throw std::invalid_argument(
           "Invalid tensor passed to _update_in_canonical_form_right");
     }
-  py::object tensor = array_copy(A);
-  auto a = array_dim(tensor, 0);
-  auto i = array_dim(tensor, 1);
-  auto b = array_dim(tensor, 2);
+  auto a = array_dim(A, 0);
+  auto i = array_dim(A, 1);
+  auto b = array_dim(A, 2);
 
   // Split tensor
-  auto [U, s, V] = destructive_svd(as_matrix(tensor, a * i, b));
+  auto [U, s, V] = svd(as_matrix(A, a * i, b));
   double err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
   state[site] = array_reshape(matrix_resize(U, -1, D), array_dims_t{ a, i, D });
@@ -50,13 +49,12 @@ _update_in_canonical_form_left(py::list state, py::object A, int site,
       throw std::invalid_argument(
           "Invalid tensor passed to _update_in_canonical_form_right");
     }
-  py::object tensor = array_copy(A);
-  auto a = array_dim(tensor, 0);
-  auto i = array_dim(tensor, 1);
-  auto b = array_dim(tensor, 2);
+  auto a = array_dim(A, 0);
+  auto i = array_dim(A, 1);
+  auto b = array_dim(A, 2);
 
   // Split tensor
-  auto [U, s, V] = destructive_svd(as_matrix(tensor, a, i * b));
+  auto [U, s, V] = svd(as_matrix(A, a, i * b));
   double err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
   state[site] = array_reshape(matrix_resize(V, D, -1), array_dims_t{ D, i, b });
@@ -155,15 +153,13 @@ _update_canonical_2site_left(py::list state, py::object A, int site,
       throw std::invalid_argument(
           "Invalid tensor passed to _update_canonical_2site_left");
     }
-  py::object tensor = array_getcontiguous(A);
-  auto a = array_dim(tensor, 0);
-  auto d1 = array_dim(tensor, 1);
-  auto d2 = array_dim(tensor, 2);
-  auto b = array_dim(tensor, 3);
+  auto a = array_dim(A, 0);
+  auto d1 = array_dim(A, 1);
+  auto d2 = array_dim(A, 2);
+  auto b = array_dim(A, 3);
 
   // Split tensor
-  auto [U, s, V]
-      = destructive_svd(array_reshape(tensor, array_dims_t{ a * d1, d2 * b }));
+  auto [U, s, V] = destructive_svd(as_matrix(A, a * d1, d2 * b));
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
 
@@ -182,15 +178,13 @@ _update_canonical_2site_right(py::list state, py::object A, int site,
       throw std::invalid_argument(
           "Invalid tensor passed to _update_canonical_2site_left");
     }
-  py::object tensor = array_getcontiguous(A);
-  auto a = array_dim(tensor, 0);
-  auto d1 = array_dim(tensor, 1);
-  auto d2 = array_dim(tensor, 2);
-  auto b = array_dim(tensor, 3);
+  auto a = array_dim(A, 0);
+  auto d1 = array_dim(A, 1);
+  auto d2 = array_dim(A, 2);
+  auto b = array_dim(A, 3);
 
   // Split tensor
-  auto [U, s, V]
-      = destructive_svd(array_reshape(tensor, array_dims_t{ a * d1, d2 * b }));
+  auto [U, s, V] = destructive_svd(as_matrix(A, a * d1, d2 * b));
   auto err = destructively_truncate_vector(s, strategy);
   auto D = array_size(s);
 
