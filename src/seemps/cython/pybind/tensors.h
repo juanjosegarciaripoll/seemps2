@@ -57,7 +57,6 @@ class SVDData
   py::object A, U, s, VT;
   int type, m, n, r, ldA, ldU, ldVT, info;
   char jobU, jobVT, jobz;
-  bool overwrite;
 
   SVDData() = delete;
   SVDData(const SVDData&) = delete;

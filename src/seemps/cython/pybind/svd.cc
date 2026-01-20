@@ -67,9 +67,9 @@ SVDData::SVDData(const py::object& orig_A, bool destructive)
     : A{ ensure_contiguous_blas_matrix(_coerce_to_supported_svd_type(orig_A)) },
       type{ array_type(A) }, m{ static_cast<int>(array_dim(A, 1)) },
       n{ static_cast<int>(array_dim(A, 0)) }, jobU{ 'S' }, jobVT{ 'S' },
-      jobz{ 'S' }, overwrite{ destructive || (to_array(A) != to_array(orig_A)) }
+      jobz{ 'S' }
 {
-  if (overwrite)
+  if (destructive || (to_array(A) != to_array(orig_A)))
     {
       ldA = blas_matrix_leading_dimension(A);
     }
