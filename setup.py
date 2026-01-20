@@ -63,6 +63,7 @@ extensions = [
         extra_link_args=extra_link_args,
         include_dirs=[np.get_include()],
         depends=include_files,
+        language="c++",
     )
     for name, file in zip(extension_names, cython_files)
 ]
