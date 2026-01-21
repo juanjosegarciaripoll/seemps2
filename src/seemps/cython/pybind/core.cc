@@ -24,23 +24,29 @@ static void
 _cleanup()
 {
   numpy_matmul = py::none();
+  empty_environment = py::none();
 }
 
 PYBIND11_MODULE(pybind, m)
 {
+  py::object OK_LOADED = py::cast(ok_loaded());
+
   load_scipy_wrappers();
 
   py::options options;
   options.disable_function_signatures();
 
   {
-    auto numpy = py::module_::import("numpy");
-    numpy_matmul = numpy.attr("matmul");
     auto atexit = py::module_::import("atexit");
     auto atexit_register = atexit.attr("register");
     m.def("_cleanup", &_cleanup);
     atexit_register(m.attr("_cleanup"));
   }
+  {
+    auto numpy = py::module_::import("numpy");
+    numpy_matmul = numpy.attr("matmul");
+  }
+  empty_environment = eye(1);
 
   m.doc() = "SeeMPS new core routines"; // optional module docstring
 
@@ -63,8 +69,6 @@ PYBIND11_MODULE(pybind, m)
   m.def("_destructive_svd", &destructive_svd);
 
   m.def("_select_svd_driver", &_select_svd_driver);
-
-  py::object OK_LOADED = py::cast(ok_loaded());
 
   m.attr("STATUS") = OK_LOADED;
 

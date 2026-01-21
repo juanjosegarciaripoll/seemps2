@@ -316,11 +316,7 @@ zero_vector(npy_intp size, int type = NPY_DOUBLE)
 }
 
 py::object eye(npy_intp rows, npy_intp cols);
-inline py::object
-eye(npy_intp rows)
-{
-  return eye(rows, rows);
-}
+py::object eye(npy_intp rows);
 
 /*
  * Advanced contractions
