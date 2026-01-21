@@ -32,10 +32,10 @@ same state from the file.
 
     # Create a single file, overwriting any existing one
     with h5py.File("data.hdf5", "w") as file:
-        seemps.hdf5.write_mps(file, "state" my_mps
+        seemps.hdf5.write_mps(file, "state", my_mps)
 
     # Read the MPS from the same file, reopening it as read-only
-    with h5py.File("data.hdf5", "r") as file
+    with h5py.File("data.hdf5", "r") as file:
         seemps.hdf5.read_mps(file, "state")
 
 This is a summary of all the functions provided by :py:mod:`seemps.hdf5`.
