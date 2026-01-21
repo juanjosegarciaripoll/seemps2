@@ -126,8 +126,18 @@ doc = [
     "sphinxcontrib-bibtex>=2.6.5",
 ]
 
-[tool.basedpyright]
-# See https://github.com/DetachHead/basedpyright/blob/main/docs/configuration.md
+[tool.pyright]
+# See https://docs.basedpyright.com/latest/configuration/config-files/
+# typeCheckingMode = "standard"
+deprecateTypingAliases = false
+enableReachabilityAnalysis = true
+strictDictionaryInference = true
+strictListInference = true
+strictSetInference = true
+exclude = ["**/.venv"]
+extraPaths = ["scripts", "src/seemps"]
+reportUnusedClass = "warning"
+reportUnusedImport = "warning"
 reportUnnecessaryTypeIgnoreComment = false
 # TODO: Remove this option and report underscore function being imported
 reportPrivateUsage = false
