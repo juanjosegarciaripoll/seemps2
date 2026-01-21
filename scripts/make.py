@@ -5,6 +5,8 @@ import sys
 import shutil
 import subprocess
 import argparse
+import pstats
+import tempfile
 
 incremental: bool = True
 debug: bool = False
@@ -101,17 +103,137 @@ def clean() -> None:
     delete_files([r".*\.so", r".*\.c", r".*\.cc", r".*\.pyd", r".*\.pyc"], root="src")
 
 
-def run_tests(verbose=False, coverage=False) -> bool:
-    env = os.environ.copy()
+def cProfile_formatter(report: str) -> str:
+    def function_name(line: str) -> str:
+        n = line.find("{")
+        if n < 0:
+            n = line.rfind(" ") + 1
+        name = line[n:].strip()
+        if "seemps.cython" in line:
+            return " " + name
+        else:
+            return name
+
+    lines = report.split("\n")
+    while "ncalls" not in lines[0]:
+        lines = lines[1:]
+    lines = lines[0:1] + sorted(lines[1:], key=function_name)
+    return "\n".join([l for l in lines if l])
+
+
+def cProfile_list(filename: str, module_prefixes: list[str] = []) -> str:
+    """
+    Read a cProfile output file and produce a formatted listing.
+
+    Args:
+        filename: Path to the cProfile output file
+        module_prefixes: Optional list of module prefixes to filter (e.g., ['seemps', 'test'])
+                        If None, shows all functions
+
+    Returns:
+        A string containing the formatted profile statistics with:
+        - Number of calls
+        - Total time (in milliseconds)
+        - Time per call (in milliseconds)
+        - Function name
+    """
+    # Load the profile data
+    stats = pstats.Stats(filename)
+
+    # Build the output manually for better control over formatting
+    lines = []
+    lines.extend(module_prefixes if module_prefixes else ["No filters"])
+    lines.append(
+        f"{'ncalls':<15} {'tottime(ms)':<15} {'ms/call':<15} {'filename:lineno(function)'}"
+    )
+    lines.append("-" * 90)
+
+    # Get all stats sorted by total time
+    stats.sort_stats("tottime")
+
+    # Access the internal stats dictionary
+    # stats.stats is a dict: {(filename, lineno, funcname): (cc, nc, tt, ct, callers)}
+    stats_dict = stats.stats  # type: ignore
+
+    # Filter and format each entry
+    file_prefixes = [module.replace(".", "/") for module in module_prefixes]
+    sorted_lines: list[tuple[str, str]] = []
+    for func, (cc, nc, tt, _, _) in stats_dict.items():
+        filename_str, line, func_name = func
+
+        # Convert filename to relative path
+        rel_filename = filename_str
+        try:
+            if "~" not in filename_str:
+                rel_filename = os.path.relpath(filename_str, start="src")
+        except (ValueError, TypeError):
+            # If relpath fails, use the original filename
+            pass
+
+        # Apply module prefix filter if specified
+        if module_prefixes:
+            if not (
+                any(prefix in func_name for prefix in module_prefixes)
+                or any(subpath in rel_filename for subpath in file_prefixes)
+            ):
+                continue
+
+        # Format call count (handles recursive calls)
+        if cc != nc:
+            ncalls_str = f"{nc}/{cc}"
+        else:
+            ncalls_str = str(nc)
+
+        # Convert times to milliseconds for better resolution
+        tt_ms = tt * 1000
+        percall_tt = (tt_ms / nc) if nc != 0 else 0
+
+        # Format the function location
+        if "~" in rel_filename:
+            func_location = func_name
+        else:
+            func_location = f"{rel_filename}:{line}({func_name})"
+
+        # Format the line
+        line_str = (
+            f"{ncalls_str:<15} {tt_ms:<15.3f} {percall_tt:<15.3f} {func_location}"
+        )
+        sorted_lines.append((func_location, line_str))
+    sorted_lines.sort(key=lambda x: x[0])
+
+    return "\n".join(lines + [line for _, line in sorted_lines])
+
+
+def run_tests(
+    verbose=False,
+    coverage=False,
+    cProfile: bool = False,
+    filter: str | None = None,
+    **kwdargs,
+) -> bool:
     if use_sanitizer != "no":
+        env = os.environ.copy()
         env["LD_PRELOAD"] = asan_library() + " " + cpp_library()
         print(f"LD_PRELOAD={env['LD_PRELOAD']}")
-    return run(
-        valgrind
-        + uv_run
-        + (["coverage", "run"] if coverage else python)
-        + ["-m", "unittest", "-fv" if verbose else "-f"]
-    )
+    else:
+        env = None
+
+    profile_filename = ""
+    command = valgrind + uv_run + python
+    if cProfile:
+        profile_fd, profile_filename = tempfile.mkstemp(suffix=".prof")
+        os.close(profile_fd)
+        command += ["-m", "cProfile", "-o", profile_filename]
+    command += ["-m", "unittest", "-f"]
+    if filter:
+        command.extend(["-k", filter])
+    if verbose:
+        command.append("-v")
+    ok = run(command, env=env, **kwdargs)
+    if cProfile and ok:
+        print(cProfile_list(profile_filename, module_prefixes=["seemps"]))
+        os.unlink(profile_filename)
+    return ok
 
 
 def code_coverage_report() -> bool:
@@ -149,9 +271,9 @@ def darglint() -> bool:
     return run(uv_run + ["darglint", "src/seemps"])
 
 
-def check(verbose: bool = False) -> bool:
+def check(verbose: bool = False, filter: str | None = None) -> bool:
     return (
-        run_tests() and mypy() and ruff() and basedpyright()
+        run_tests(filter=filter) and mypy() and ruff() and basedpyright()
         # and pydocstyle()
         # and darglint()
     )
@@ -199,6 +321,8 @@ parser.add_argument(
 )
 parser.add_argument("--verbose", action="store_true", help="Verbose mode")
 parser.add_argument("--tests", action="store_true", help="Run unit tests")
+parser.add_argument("--filter", nargs=1, help="Regular expression to select tests")
+parser.add_argument("--cProfile", action="store_true", help="Run tests with cProfile")
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
 parser.add_argument("--ruff", action="store_true", help="Run ruff")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
@@ -248,16 +372,16 @@ if args.install:
 if args.docs:
     build_documentation()
 if args.check:
-    if not check(args.verbose):
+    if not check(args.verbose, filter=args.filter[0]):
         raise Exception("Tests failed")
 else:
     if args.coverage:
-        if not run_tests(args.verbose, args.coverage):
+        if not run_tests(args.verbose, args.coverage, filter=args.filter[0]):
             raise Exception("Unit tests failed")
         if not code_coverage_report():
             raise Exception("Unable to produce coverage report")
     elif args.tests:
-        if not run_tests(args.verbose):
+        if not run_tests(args.verbose, cProfile=args.cProfile, filter=args.filter[0]):
             raise Exception("Unit tests failed")
     if args.pyright:
         if not basedpyright():
