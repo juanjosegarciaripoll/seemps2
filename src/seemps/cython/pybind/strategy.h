@@ -49,6 +49,9 @@ private:
   bool normalize{ false };
   TruncationFunction truncation_function{ truncate_do_not_truncate };
 
+  static Truncation truncation_from_int(int value);
+  static Simplification simplification_from_int(int value);
+
 public:
   Strategy() : truncation_function(select_truncation_function()) {}
   Strategy(const Strategy&) = default;
@@ -86,46 +89,11 @@ public:
       }
   }
 
-  Strategy
-  replace(py::object a_method, py::object a_tolerance,
-          py::object a_simplification_method,
-          py::object a_simplification_tolerance, py::object a_bond_dimension,
-          py::object a_num_sweeps, py::object a_normalize_flag)
-  {
-    Strategy output = *this;
-    if (!a_method.is_none())
-      {
-        output.method = truncation_from_int(py::int_(a_method));
-        output.truncation_function = output.select_truncation_function();
-      }
-    if (!a_tolerance.is_none())
-      {
-        output.set_tolerance(py::cast<double>(a_tolerance));
-      }
-    if (!a_simplification_method.is_none())
-      {
-        output.set_simplification_method(
-            simplification_from_int(py::int_(a_simplification_method)));
-      }
-    if (!a_simplification_tolerance.is_none())
-      {
-        output.set_simplification_tolerance(
-            py::float_(a_simplification_tolerance));
-      }
-    if (!a_bond_dimension.is_none())
-      {
-        output.set_max_bond_dimension(py::int_(a_bond_dimension));
-      }
-    if (!a_num_sweeps.is_none())
-      {
-        output.set_max_sweeps(py::int_(a_num_sweeps));
-      }
-    if (!a_normalize_flag.is_none())
-      {
-        output.normalize = py::cast<bool>(a_normalize_flag);
-      }
-    return output;
-  }
+  Strategy replace(py::object a_method, py::object a_tolerance,
+                   py::object a_simplification_method,
+                   py::object a_simplification_tolerance,
+                   py::object a_bond_dimension, py::object a_num_sweeps,
+                   py::object a_normalize_flag) const;
 
   int
   get_method() const
@@ -242,72 +210,11 @@ public:
     throw std::invalid_argument("Invalid Strategy maximum number of sweeps");
   }
 
-  Truncation
-  truncation_from_int(int value)
-  {
-    if (value < 0 || value > 3)
-      {
-        throw std::invalid_argument("Invalid Strategy Truncation");
-      }
-    return static_cast<Truncation>(value);
-  }
-
-  Simplification
-  simplification_from_int(int value)
-  {
-    if (value < 0 || value > 2)
-      {
-        throw std::invalid_argument("Invalid Strategy Simplification");
-      }
-    return static_cast<Simplification>(value);
-  }
-
-  std::string
-  str() const
-  {
-    return "Strategy(method=" + truncation_name()
-           + ", tolerance=" + std::to_string(tolerance)
-           + ", max_bond_dimension=" + std::to_string(max_bond_dimension)
-           + ", normalize=" + std::to_string(normalize)
-           + ", simplification_method=" + simplification_name()
-           + ", max_sweeps=" + std::to_string(max_sweeps) + ")";
-  }
+  py::str str() const;
 
 private:
-  std::string
-  truncation_name() const
-  {
-    switch (method)
-      {
-      case Truncation::DO_NOT_TRUNCATE:
-        return "None";
-      case Truncation::RELATIVE_SINGULAR_VALUE:
-        return "RelativeSVD";
-      case Truncation::RELATIVE_NORM_SQUARED_ERROR:
-        return "RelativeNorm";
-      case Truncation::ABSOLUTE_SINGULAR_VALUE:
-        return "AbsoluteSVD";
-      default:
-        throw std::runtime_error("Invalid truncation method found in Strategy");
-      }
-  }
-
-  std::string
-  simplification_name() const
-  {
-    switch (simplification_method)
-      {
-      case Simplification::DO_NOT_SIMPLIFY:
-        return "None";
-      case Simplification::CANONICAL_FORM:
-        return "CanonicalForm";
-      case Simplification::VARIATIONAL:
-        return "Variational";
-      default:
-        throw std::runtime_error(
-            "Invalid simplification method found in Strategy");
-      }
-  }
+  py::str truncation_name() const;
+  py::str simplification_name() const;
 };
 
 double destructively_truncate_vector(const py::object a, const Strategy& s);
