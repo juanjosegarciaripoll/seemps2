@@ -138,6 +138,12 @@ class MPO(TensorArray):
             )
         raise InvalidOperation("*", n, self)
 
+    def __truediv__(self, n: Weight) -> MPO:
+        """Divide an MPO by a scalar `self / n`."""
+        if isinstance(n, (int, float, complex)):
+            return self.__mul__(1.0 / n)
+        raise InvalidOperation("/", self, n)
+
     def __pow__(self, n: int) -> MPOList:
         """Exponentiate a MPO to n."""
         if isinstance(n, int):
@@ -480,6 +486,12 @@ class MPOList(object):
         if isinstance(n, (int, float, complex)):
             return MPOList([n * self.mpos[0]] + self.mpos[1:], self.strategy)
         raise InvalidOperation("*", n, self)
+
+    def __truediv__(self, n: Weight) -> MPOList:
+        """Divide an MPOList by a scalar `n` as in `self / n`."""
+        if isinstance(n, (int, float, complex)):
+            return self.__mul__(1.0 / n)
+        raise InvalidOperation("/", self, n)
 
     @property
     def T(self) -> MPOList:

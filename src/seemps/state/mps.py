@@ -224,6 +224,12 @@ class MPS(array.TensorArray):
             case _:
                 raise InvalidOperation("*", n, self)
 
+    def __truediv__(self, n: Weight) -> MPS:
+        """Compute `self / n` where `n` is a scalar."""
+        if isinstance(n, (int, float, complex)):
+            return self.__mul__(1.0 / n)
+        raise InvalidOperation("/", self, n)
+
     def norm2(self) -> float:
         """Deprecated alias for :py:meth:`norm_squared`."""
         warnings.warn(

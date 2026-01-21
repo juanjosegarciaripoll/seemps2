@@ -109,6 +109,12 @@ class MPSSum:
             return MPSSum([n * w for w in self.weights], self.states, check_args=False)
         raise InvalidOperation("*", n, self)
 
+    def __truediv__(self, n: Weight) -> MPSSum:
+        """Rescale the linear combination `self / n` for scalar `n`."""
+        if isinstance(n, (int, float, complex)):
+            return self.__mul__(1.0 / n)
+        raise InvalidOperation("/", self, n)
+
     def physical_dimensions(self) -> list[int]:
         """List of physical dimensions for the quantum subsystems."""
         return self.states[0].physical_dimensions()

@@ -111,6 +111,12 @@ class MPOSum(object):
             strategy=self.strategy,
         )
 
+    def __truediv__(self, n: Weight) -> MPOSum:
+        """Divide an MPOSum operator by a scalar n (MPOSum / n)."""
+        if isinstance(n, (int, float, complex)):
+            return self.__mul__(1.0 / n)
+        raise TypeError(f"Cannot divide MPOSum by {n}")
+
     @property
     def T(self) -> MPOSum:
         """Return the transpose of this operator."""
