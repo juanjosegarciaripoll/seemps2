@@ -79,39 +79,43 @@ class TestCanonicalForm(MPSStatesFixture):
         # that is in canonical form and represents the same state, up to
         # a reasonable tolerance.
         #
-        def ok(Ψ):
-            for center in range(Ψ.size):
-                ξ = CanonicalMPS(Ψ, center=center)
+        def ok(mps_state):
+            for center in range(mps_state.size):
+                canonical_state = CanonicalMPS(mps_state, center=center)
                 #
                 # All sites to the left and to the right are isometries
                 #
                 for i in range(center):
-                    self.assertTrue(approximateIsometry(ξ[i], +1))
-                for i in range(center + 1, ξ.size):
-                    self.assertTrue(approximateIsometry(ξ[i], -1))
+                    self.assertTrue(approximateIsometry(canonical_state[i], +1))
+                for i in range(center + 1, canonical_state.size):
+                    self.assertTrue(approximateIsometry(canonical_state[i], -1))
                 #
                 # Both states produce the same wavefunction
                 #
-                self.assertTrue(similar(ξ.to_vector(), Ψ.to_vector()))
+                self.assertTrue(
+                    similar(canonical_state.to_vector(), mps_state.to_vector())
+                )
                 #
                 # The norm is correct
                 #
-                self.assertAlmostEqual(ξ.norm_squared() / Ψ.norm_squared(), 1.0)
+                self.assertAlmostEqual(
+                    canonical_state.norm_squared() / mps_state.norm_squared(), 1.0
+                )
                 #
                 # Local observables give the same
                 #
                 O = np.array([[0, 0], [0, 1]])
-                nrm2 = ξ.norm_squared()
-                self.assertAlmostEqual(
-                    ξ.expectation1(O, center) / nrm2, Ψ.expectation1(O, center) / nrm2
-                )
+                nrm2 = canonical_state.norm_squared()
+                mps_expectation = mps_state.expectation1(O, center) / nrm2
+                canonical_expectation = canonical_state.expectation1(O, center) / nrm2
+                self.assertAlmostEqual(canonical_expectation, mps_expectation)
                 #
                 # The canonical form is the same when we use the
                 # corresponding negative indices of 'center'
                 #
-                χ = CanonicalMPS(Ψ, center=center - Ψ.size)
-                for i in range(Ψ.size):
-                    self.assertTrue(similar(ξ[i], χ[i]))
+                χ = CanonicalMPS(mps_state, center=center - mps_state.size)
+                for i in range(mps_state.size):
+                    self.assertTrue(similar(canonical_state[i], χ[i]))
 
         run_over_random_uniform_mps(ok)
 
