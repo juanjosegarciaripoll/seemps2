@@ -1,35 +1,37 @@
 import os
-from .core import (
-    _begin_environment,
-    _canonicalize,
-    _contract_last_and_first,
-    _contract_nrjl_ijk_klm,
-    _destructive_svd,
-    _gemm,
-    _left_orth_2site,
-    _right_orth_2site,
-    _recanonicalize,
-    _update_left_environment,
-    _update_right_environment,
-    _update_in_canonical_form_right,
-    _update_in_canonical_form_left,
-    _end_environment,
-    _join_environments,
-    _select_svd_driver,
-    DEFAULT_STRATEGY,
-    DEFAULT_TOLERANCE,
-    destructively_truncate_vector,
-    GemmOrder,
-    NO_TRUNCATION,
-    MAX_BOND_DIMENSION,
-    scprod,
-    Simplification,
-    Strategy,
-    Truncation,
-    vdot,
-)
 
-if os.environ.get("SEEMPS_PYBIND", "off").lower() == "on":
+if os.environ.get("SEEMPS_PYBIND", "off").lower() != "on":
+    print("CYTHON!")
+    from .core import (
+        _begin_environment,
+        _canonicalize,
+        _contract_last_and_first,
+        _contract_nrjl_ijk_klm,
+        _destructive_svd,
+        _gemm,
+        _left_orth_2site,
+        _right_orth_2site,
+        _recanonicalize,
+        _update_left_environment,
+        _update_right_environment,
+        _update_in_canonical_form_right,
+        _update_in_canonical_form_left,
+        _end_environment,
+        _join_environments,
+        _select_svd_driver,
+        DEFAULT_STRATEGY,
+        DEFAULT_TOLERANCE,
+        destructively_truncate_vector,
+        GemmOrder,
+        NO_TRUNCATION,
+        MAX_BOND_DIMENSION,
+        scprod,
+        Simplification,
+        Strategy,
+        Truncation,
+        vdot,
+    )
+else:
     print("PYBIND!")
     from .pybind import (
         _select_svd_driver,
