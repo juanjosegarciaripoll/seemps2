@@ -80,11 +80,31 @@ class TestCase(unittest.TestCase):
         if not almostIdentity(A, **kwdargs):
             raise self.failureException(f"Object not close to identity:\nA={A}")
 
-    def random_uniform_mps(
-        self, d: int, size: int, truncate: bool = False, **kwdargs
+    def random_uniform_canonical_mps(
+        self,
+        d: int,
+        size: int,
+        truncate: bool = False,
+        complex: bool = False,
+        **kwdargs,
     ) -> CanonicalMPS:
         return CanonicalMPS(
-            random_uniform_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
+            random_uniform_mps(
+                d, size, truncate=truncate, complex=complex, rng=self.rng
+            ),
+            **kwdargs,
+        )
+
+    def random_uniform_mps(
+        self,
+        d: int,
+        size: int,
+        truncate: bool = False,
+        complex: bool = False,
+        **kwdargs,
+    ) -> MPS:
+        return random_uniform_mps(
+            d, size, truncate=truncate, complex=complex, rng=self.rng
         )
 
     def random_mps(
