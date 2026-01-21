@@ -113,8 +113,8 @@ class ParameterFreeMPO(ParameterizedCircuit):
     """A quantum register unitary transformation, given by an MPO
     with no parameters.
 
-    Arguments
-    ---------
+    Parameters
+    ----------
     operator : MPO | MPOList
         The operator that implements the transformation
     """

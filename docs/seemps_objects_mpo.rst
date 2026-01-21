@@ -12,9 +12,9 @@ of operators acting on quantum states, based on a tensor-network structure.
         \prod_{n=1}^N B_{\alpha_n,i_n,i_n,\alpha_n}
         \vert i_1,i_2\ldots i_N\rangle \langle j_1,j_2\ldots j_N\vert
 
-As before, the :math:`i_n,j_n` are indices labelling quantum states of the `N`
+As before, the :math:`i_n,j_n` are indices labelling quantum states of the :math:`N`
 subsystems, while the :math:`\alpha_i` are integer indices connecting
-(correlating) neigboring quantum systems. The difference is that now this
+(correlating) neighboring quantum systems. The difference is that now this
 models an operator, transforming quantum states from :math:`j_n` to :math:`i_n`
 combinations.
 

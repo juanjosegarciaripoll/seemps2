@@ -46,3 +46,9 @@ This formulation, used in Ref. :cite:t:`GarciaMolina2024`, is implemented by the
 .. autosummary::
 
    ~seemps.optimization.gradient_descent
+
+See also
+========
+
+- :doc:`dmrg` - A more sophisticated optimization algorithm with better convergence
+- :doc:`arnoldi` - Krylov-based optimization, of which gradient descent is a special case

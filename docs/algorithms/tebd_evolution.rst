@@ -40,3 +40,11 @@ under a spin-1/2 Heisenberg Hamiltonian::
    ...   t += dt
    >>> mps
    <seemps.state.CanonicalMPS object at 0x000002166AFFC1D0>
+
+See also
+========
+
+- :doc:`arnoldi` - Krylov-based time evolution
+- :doc:`crank_nicolson` - Implicit time evolution methods
+- :doc:`runge_kutta` - Explicit time evolution methods
+- :doc:`tdvp` - Time-dependent variational principle

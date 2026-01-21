@@ -14,7 +14,7 @@ methods are suitable for both evolution and optimization problems. When using
 MPS, these methods perform a global optimization of the MPS at each step,
 i.e., they update all tensors simultaneously.
 
-The order of the expansion `p` determines the truncation error of the method, which
+The order of the expansion :math:`p` determines the truncation error of the method, which
 is :math:`O(\Delta \beta ^{p+1})`, and also the cost of the method, since
 a higher order implies more operations. Thus, it is important to consider
 trade-off in cost and accuracy to choose the most suitable method for each application.
@@ -67,3 +67,11 @@ is deemed unsuitable.
     ~seemps.evolution.euler.euler2
     ~seemps.evolution.runge_kutta.runge_kutta
     ~seemps.evolution.runge_kutta.runge_kutta_fehlberg
+
+See also
+========
+
+- :doc:`arnoldi` - Krylov-based time evolution
+- :doc:`crank_nicolson` - Implicit time evolution methods
+- :doc:`tebd_evolution` - Local evolution for nearest-neighbor Hamiltonians
+- :doc:`tdvp` - Time-dependent variational principle
