@@ -4,6 +4,7 @@ import numpy as np
 import scipy.sparse as sp
 from typing import Any
 from .typing import DenseOperator, Operator
+import os
 
 
 class InvalidOperation(TypeError):
@@ -34,7 +35,8 @@ class Logger:
         pass
 
 
-DEBUG = 0
+# TODO: Document all environment variables
+DEBUG = int(os.environ.get("SEEMPS_DEBUG", 0))
 PREFIX = ""
 NO_LOGGER = Logger()
 
