@@ -126,3 +126,4 @@ uv.lock
 
 # Performance monitors
 perf.data*
+check*.sh
