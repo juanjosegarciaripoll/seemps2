@@ -5,6 +5,7 @@ import scipy.sparse as sp
 from typing import Any
 from .typing import DenseOperator, Operator
 import os
+import sys
 
 
 class InvalidOperation(TypeError):
@@ -67,7 +68,7 @@ class VerboseLogger(Logger):
         if self.active:
             txt = " ".join([str(a) for a in args])
             txt = " ".join([PREFIX + a for a in txt.split("\n")])
-            print(txt, **kwdargs)
+            print(txt, **kwdargs, file=sys.stderr)
 
     def __exit__(self, exc_type, exc_value, traceback):  # pyright: ignore[reportMissingParameterType]
         self.close()
