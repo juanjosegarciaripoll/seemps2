@@ -84,27 +84,25 @@ class TestCase(unittest.TestCase):
         self,
         d: int,
         size: int,
+        D: int = 1,
         truncate: bool = False,
         complex: bool = False,
         **kwdargs,
     ) -> CanonicalMPS:
         return CanonicalMPS(
-            random_uniform_mps(
-                d, size, truncate=truncate, complex=complex, rng=self.rng
-            ),
-            **kwdargs,
+            self.random_uniform_mps(d, size, D, truncate, complex, **kwdargs)
         )
 
     def random_uniform_mps(
         self,
         d: int,
         size: int,
+        D: int = 1,
         truncate: bool = False,
         complex: bool = False,
-        **kwdargs,
     ) -> MPS:
         return random_uniform_mps(
-            d, size, truncate=truncate, complex=complex, rng=self.rng
+            d, size, D=D, truncate=truncate, complex=complex, rng=self.rng
         )
 
     def random_mps(
@@ -179,90 +177,7 @@ def run_over_random_uniform_mps(function, d=2, N=10, D=10, repeats=10):
             function(seemps.state.random_uniform_mps(d, N, D))
 
 
-def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
-    """
-    A simple profiler that starts immediately and prints a report at program exit.
-    Call this function once at module import time to enable profiling.
-
-    Args:
-        module_prefixes: List of module prefixes to filter (e.g., ['seemps']).
-                        Only functions from these modules will be shown.
-    """
-    import sys
-    import time
-    import atexit
-    from collections import defaultdict
-
-    stats = defaultdict(lambda: {"calls": 0, "time": 0.0})
-    call_stack = []
-    file_prefixes = [module.replace(".", "/") for module in module_prefixes]
-
-    def format_func_name(code) -> tuple[str, bool]:
-        """Format function name and return (name, should_include)."""
-        filename = code.co_filename
-        func_name = code.co_name
-        lineno = code.co_firstlineno
-
-        # Convert to relative path from "src"
-        rel_filename = filename
-        try:
-            if "~" not in filename:
-                rel_filename = os.path.relpath(filename, start="src")
-        except (ValueError, TypeError):
-            pass
-
-        # Check if function matches module filter
-        if module_prefixes:
-            matches = any(prefix in func_name for prefix in module_prefixes) or any(
-                subpath in rel_filename for subpath in file_prefixes
-            )
-            if not matches:
-                return "", False
-
-        # Format the function location
-        if "~" in rel_filename:
-            func_location = func_name
-        else:
-            func_location = f"{rel_filename}:{lineno}({func_name})"
-
-        # Exclude <method entries
-        if "<method" in func_location:
-            return "", False
-
-        return func_location, True
-
-    def profile_callback(frame, event, arg):
-        current_time = time.perf_counter()
-        if event == "call":
-            call_stack.append((frame, current_time))
-        elif event == "return" and call_stack:
-            call_frame, start_time = call_stack.pop()
-            if call_frame is frame:
-                code = frame.f_code
-                func_name, should_include = format_func_name(code)
-                if should_include:
-                    elapsed = current_time - start_time
-                    stats[func_name]["calls"] += 1
-                    stats[func_name]["time"] += elapsed
-
-    def print_report():
-        sys.setprofile(None)
-        if stats:
-            sorted_stats = sorted(stats.items(), key=lambda x: x[0])
-            print(
-                f"\n{'ncalls':<15} {'tottime(ms)':<15} {'ms/call':<15} {'filename:lineno(function)'}"
-            )
-            print("-" * 90)
-            for name, data in sorted_stats:
-                time_ms = data["time"] * 1000
-                ms_per_call = time_ms / data["calls"] if data["calls"] > 0 else 0
-                print(
-                    f"{data['calls']:<15} {time_ms:<15.3f} {ms_per_call:<15.3f} {name}"
-                )
-
-    atexit.register(print_report)
-    sys.setprofile(profile_callback)
-
-
 if os.environ.get("SEEMPS_CPROFILE", "off").lower() == "on":
+    from .profiler import hook_our_profiler
+
     hook_our_profiler()
