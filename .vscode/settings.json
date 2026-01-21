@@ -1,46 +1,12 @@
 {
-    "python.formatting.provider": "ruff",
-    "python.testing.unittestEnabled": true,
-    "python.testing.unittestArgs": [
-        "-v"
-    ],
-    "python.testing.pytestEnabled": false,
-    "editor.formatOnSave": true,
-    "python.autoComplete.extraPaths": [
-        "${workspaceFolder}"
-    ],
-    "python.analysis.extraPaths": [
-        "${workspaceFolder}/.venv/Lib/site-packages"
-    ],
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportUnusedImport": "warning",
-        "reportUnusedClass": "warning",
-        "reportUnusedVariable": "warning"
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
     },
-    "python.testing.pytestArgs": [
-        "-n4"
-    ],
-    "mypy-type-checker.importStrategy": "fromEnvironment",
-    "mypy-type-checker.reportingScope": "workspace",
-    "mypy-type-checker.cwd": "${workspaceFolder}",
-    "python.analysis.typeCheckingMode": "standard",
-    "python.analysis.autoFormatStrings": true,
-    "python.analysis.importFormat": "relative",
-    "python.analysis.inlayHints.functionReturnTypes": false,
-    "python.analysis.languageServerMode": "full",
-    "mypy-type-checker.preferDaemon": true,
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
     "editor.defaultFormatter": "ms-python.python",
-    "python.analysis.diagnosticMode": "workspace",
-    "python.analysis.typeEvaluation.strictListInference": true,
-    "python.analysis.typeEvaluation.strictDictionaryInference": true,
-    "python.analysis.typeEvaluation.strictSetInference": true,
-    "python.analysis.autoImportCompletions": true,
-    "python.analysis.completeFunctionParens": true,
-    "python.analysis.supportDocstringTemplate": true,
-    "python.analysis.typeEvaluation.deprecateTypingAliases": false,
-    "python.analysis.typeEvaluation.enableReachabilityAnalysis": true,
-    "python.experiments.enabled": false,
-    "python.testing.autoTestDiscoverOnSaveEnabled": false,
+    "editor.formatOnSave": true,
     "editor.tokenColorCustomizations": {
         "textMateRules": [
             {
@@ -70,10 +36,29 @@
         "${workspaceFolder}/.venv/**/site-packages/pybind11/include",
         "/usr/include/python3.*"
     ],
-    "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff"
-    },
-    "[cpp]": {
-        "editor.defaultFormatter": "ms-vscode.cpptools"
-    }
+    "mypy-type-checker.cwd": "${workspaceFolder}",
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "mypy-type-checker.preferDaemon": true,
+    "mypy-type-checker.reportingScope": "workspace",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.analysis.autoFormatStrings": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.importFormat": "relative",
+    "python.analysis.inlayHints.functionReturnTypes": false,
+    "python.analysis.languageServerMode": "full",
+    "python.analysis.supportDocstringTemplate": true,
+    "python.autoComplete.extraPaths": [],
+    "python.experiments.enabled": false,
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
+    "python.testing.pytestArgs": [
+        "-n4"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestArgs": [
+        "-v"
+    ],
+    "python.testing.unittestEnabled": true
+
 }
