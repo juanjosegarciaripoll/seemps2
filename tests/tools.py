@@ -90,7 +90,7 @@ class TestCase(unittest.TestCase):
         **kwdargs,
     ) -> CanonicalMPS:
         return CanonicalMPS(
-            self.random_uniform_mps(d, size, D, truncate, complex, **kwdargs)
+            self.random_uniform_mps(d, size, D, truncate, complex), **kwdargs
         )
 
     def random_uniform_mps(

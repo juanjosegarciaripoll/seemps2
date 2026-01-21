@@ -1,6 +1,6 @@
 import numpy as np
-from seemps.state import MPS
-from ..tools import TestCase, random_uniform_mps, random_mps
+from seemps.state import MPS, random_uniform_mps, random_mps
+from ..tools import TestCase
 
 
 class TestRandomUniformMPSStates(TestCase):

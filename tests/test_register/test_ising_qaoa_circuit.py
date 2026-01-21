@@ -23,13 +23,13 @@ class TestIsingQAOACircuit(TestCase):
         self.Hmatrix = self.H.to_matrix()
 
     def test_ising_qaoa_no_layers_is_hadamards(self) -> None:
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = IsingQAOACircuit(self.J, None, layers=0)
         Ustate = U.apply(a)
         self.assertSimilar(Ustate.to_vector(), self.Hadamards @ a.to_vector())
 
     def test_ising_qaoa_one_layer_zero_parameters(self) -> None:
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = IsingQAOACircuit(self.J, None, layers=1)
         parameters = [0.0, 0.0]
         Ustate = U.apply(a, parameters)
@@ -40,7 +40,7 @@ class TestIsingQAOACircuit(TestCase):
         )
 
     def test_ising_qaoa_one_layer_zero_Hamiltonian(self) -> None:
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = IsingQAOACircuit(self.J, None, layers=1)
         parameters = [0.0, 1.0]
         Ustate = U.apply(a.copy(), parameters)
@@ -51,7 +51,7 @@ class TestIsingQAOACircuit(TestCase):
         )
 
     def test_ising_qaoa_one_layer_zero_local(self) -> None:
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = IsingQAOACircuit(self.J, None, layers=1)
         parameters = [1.0, 0.0]
         Ustate = U.apply(a.copy(), parameters)
@@ -62,7 +62,7 @@ class TestIsingQAOACircuit(TestCase):
         )
 
     def test_ising_qaoa_one_layer(self) -> None:
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = IsingQAOACircuit(self.J, None, layers=1)
         parameters = [1.0, -np.pi]
         Ustate = U.apply(a.copy(), parameters)
@@ -76,7 +76,7 @@ class TestIsingQAOACircuit(TestCase):
         )
 
     def test_ising_qaoa_two_layers(self) -> None:
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = IsingQAOACircuit(self.J, None, layers=2)
         parameters = [1.0, -np.pi, 0.23, 0.1 * np.pi]
         Ustate = U.apply(a.copy(), parameters)

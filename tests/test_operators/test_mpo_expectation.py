@@ -4,7 +4,7 @@ from seemps.state import CanonicalMPS
 from seemps.operators import MPO
 from seemps.tools import σx, σy
 from seemps.qft import qft_mpo
-from ..tools import TestCase, random_uniform_mps
+from ..tools import TestCase
 
 
 class TestMPOExpectation(TestCase):
@@ -51,21 +51,21 @@ class TestMPOExpectation(TestCase):
 
     def test_mpo_expected_with_left_orthogonal_state(self):
         H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
-        state = CanonicalMPS(self.random_uniform_mps(2, 10, truncate=True, center=0))
+        state = self.random_uniform_canonical_mps(2, 10, truncate=True, center=0)
         O = H.to_matrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
 
     def test_mpo_expected_with_right_orthogonal_state(self):
         H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
-        state = CanonicalMPS(self.random_uniform_mps(2, 10, truncate=True), center=9)
+        state = self.random_uniform_canonical_mps(2, 10, truncate=True, center=9)
         O = H.to_matrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
 
     def test_mpo_expected_with_middle_orthogonal_state(self):
         H = MPO([σx.reshape(1, 2, 2, 1)] * 10)
-        state = CanonicalMPS(self.random_uniform_mps(2, 10, truncate=True), center=4)
+        state = self.random_uniform_canonical_mps(2, 10, truncate=True, center=4)
         O = H.to_matrix()
         v = state.to_vector()
         self.assertSimilar(H.expectation(state), np.vdot(v, O @ v))
