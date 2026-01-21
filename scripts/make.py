@@ -18,7 +18,7 @@ uv_run: list[str] = []
 
 
 def run(command: list[str], *args, **kwdargs) -> bool:
-    print(f"Running command:\n{' '.join(command)}", flush=True)
+    print(f"Running command:\n{' '.join(command)}", file=sys.stderr, flush=True)
     return subprocess.run(command, *args, **kwdargs).returncode == 0
 
 
@@ -198,7 +198,8 @@ def cProfile_list(filename: str, module_prefixes: list[str] = []) -> str:
         line_str = (
             f"{ncalls_str:<15} {tt_ms:<15.3f} {percall_tt:<15.3f} {func_location}"
         )
-        sorted_lines.append((func_location, line_str))
+        if "<method" not in func_location:
+            sorted_lines.append((func_location, line_str))
     sorted_lines.sort(key=lambda x: x[0])
 
     return "\n".join(lines + [line for _, line in sorted_lines])
@@ -226,10 +227,15 @@ def run_tests(
         command += ["-m", "cProfile", "-o", profile_filename]
     command += ["-m", "unittest", "-f"]
     if filter:
+        if len(filter) == 1:
+            filter = filter[0]
+        else:
+            filter = r"\(" + "|".join(filter) + r"\)"
         command.extend(["-k", filter])
     if verbose:
         command.append("-v")
     ok = run(command, env=env, **kwdargs)
+    print(f"Output of tests is {ok}", file=sys.stderr, flush=True)
     if cProfile and ok:
         print(cProfile_list(profile_filename, module_prefixes=["seemps"]))
         os.unlink(profile_filename)
@@ -372,16 +378,16 @@ if args.install:
 if args.docs:
     build_documentation()
 if args.check:
-    if not check(args.verbose, filter=args.filter[0]):
+    if not check(args.verbose, filter=args.filter):
         raise Exception("Tests failed")
 else:
     if args.coverage:
-        if not run_tests(args.verbose, args.coverage, filter=args.filter[0]):
+        if not run_tests(args.verbose, args.coverage, filter=args.filter):
             raise Exception("Unit tests failed")
         if not code_coverage_report():
             raise Exception("Unable to produce coverage report")
     elif args.tests:
-        if not run_tests(args.verbose, cProfile=args.cProfile, filter=args.filter[0]):
+        if not run_tests(args.verbose, cProfile=args.cProfile, filter=args.filter):
             raise Exception("Unit tests failed")
     if args.pyright:
         if not basedpyright():
