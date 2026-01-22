@@ -1,7 +1,10 @@
-Version 2.9.7
+Version 2.9.8
 =============
 
 * Improved creation of documentation for all exported objects.
+
+* Added more detail in all algorithms, matching descriptions in
+  upcoming software manuscript.
 
 * Added new factory of MPS-encoded functions: `mps_sum_of_exponentials`
   and `mps_heaviside`.
@@ -13,7 +16,7 @@ Version 2.9.7
 * Introduced `InteractionGraph` to construct arbitrarily complex
   Hamiltonians into MPO or sparse matrix form.
 
-* Extended the documentation to include missing functions.
+* MPOs and MPS can now be divided by a scalar.
 
 * Now it is possible to multiply `A @ B` when `A` and `B` are either
   `MPO` or `MPOList`. This is not implemented for `MPOSum` to avoid
