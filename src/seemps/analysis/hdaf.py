@@ -108,11 +108,10 @@ def hdaf_kernel(
     return cast(FloatOrArray, sum(next(gen) for _ in range(int(M) // 2 + 1)))
 
 
-# TODO: Which "M" should users use? Any sensible default value?
 def hdaf_mpo(
     num_qubits: int,
     dx: Float,
-    M: int,
+    M: int = 10,
     s0: Float | None = None,
     time: Float | complex = 0.0,
     derivative: int = 0,
@@ -131,7 +130,7 @@ def hdaf_mpo(
         The number of qubits to discretize the system.
     dx : Float
         The grid stepsize.
-    M : int
+    M : int, default=10
         The order of the highest Hermite polynomial (must be an even integer).
     s0 : Float | None, default=None
         The width of the HDAF Gaussian weight. If not provided, a suitable

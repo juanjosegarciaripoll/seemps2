@@ -8,7 +8,7 @@ from ..hdaf import hdaf_mpo
 def hdaf_derivative_mpo(
     order: int,
     interval: QuantizedInterval | IntervalTuple,
-    M: int = 6,
+    M: int = 10,
     s0: Float | None = None,
     periodic: bool = True,
     strategy: Strategy = DEFAULT_STRATEGY,
@@ -29,7 +29,7 @@ def hdaf_derivative_mpo(
         Whether the grid follows perioidic boundary conditions.
     M : int
         The order of the highest Hermite polynomial (must be an even integer).
-        Defaults to 6.
+        Defaults to 10.
     s0 : Float | None, default=None
         The width of the HDAF Gaussian weight. If not provided, a suitable
         width will be computed based on `M` and `dx`.
