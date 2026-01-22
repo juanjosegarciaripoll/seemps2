@@ -53,6 +53,7 @@ Methods for evolving quantum states under Hamiltonian dynamics.
    arnoldi
    runge_kutta
    crank_nicolson
+   split_step
    tebd_evolution
    tdvp
 
