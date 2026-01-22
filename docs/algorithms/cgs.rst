@@ -1,25 +1,67 @@
 .. _alg_cgs:
 
-*******************************
-Conjugate gradient descent
-*******************************
+*****************************
+Conjugate gradient (CGS)
+*****************************
 
 The conjugate gradient method solves systems of linear equations :math:`A \psi = b`
-where the operator :math:`A` (represented as an MPO) is positive-semidefinite.
-The algorithm iteratively minimizes the residual :math:`\|A \psi - b\|` until
-convergence is achieved.
+where the operator :math:`A` (represented as an MPO) is symmetric or Hermitian and
+positive-semidefinite. The algorithm iteratively minimizes the residual
+:math:`\|A \psi - b\|` until convergence is achieved.
 
-Given an MPS :math:`\psi_k` at iteration :math:`k`, the algorithm computes a search
-direction :math:`p_k` and finds the optimal step size :math:`\alpha` to minimize
+Mathematical formulation
+========================
+
+The conjugate gradient method seeks to minimize the quadratic form:
+
+.. math::
+    \mathrm{argmin}_{\mathbf{x}} \|A\mathbf{x} - \mathbf{b}\|^2
+
+Given an MPS :math:`\mathbf{x}_k` at iteration :math:`k`, the algorithm computes a search
+direction :math:`\mathbf{p}_k` and finds the optimal step size :math:`\alpha` to minimize
 the residual along that direction:
 
 .. math::
-    \psi_{k+1} = \psi_k + \alpha p_k
+    \mathbf{x}_{k+1} = \mathbf{x}_k + \alpha \mathbf{p}_k
 
-The conjugate gradient method is particularly efficient because it generates
-orthogonal search directions, guaranteeing convergence in at most :math:`n`
-iterations for an :math:`n`-dimensional problem (though in practice, with MPS
-truncation, approximate convergence is typically achieved much sooner).
+The step size is computed as:
+
+.. math::
+    \alpha = \frac{\|\mathbf{r}_k\|^2}{\langle \mathbf{p}_k | A | \mathbf{p}_k \rangle}
+
+where :math:`\mathbf{r}_k = \mathbf{b} - A\mathbf{x}_k` is the residual. The search
+direction is updated using:
+
+.. math::
+    \mathbf{p}_{k+1} = \mathbf{r}_{k+1} + \frac{\|\mathbf{r}_{k+1}\|^2}{\|\mathbf{r}_k\|^2} \mathbf{p}_k
+
+MPS implementation
+==================
+
+The power of working with the MPS BLAS is that the CGS implementation is almost
+indistinguishable from standard implementations using NumPy, except for the implicit
+:func:`~seemps.state.simplify` operations that keep the MPS bond dimension in check.
+
+Each iteration involves:
+
+1. Computing :math:`A \mathbf{p}` (MPO-MPS product)
+2. Linear combinations of MPS (addition and scalar multiplication)
+3. Simplification to control bond dimension growth
+
+The convergence criterion is :math:`\|\mathbf{r}\| < \epsilon \|\mathbf{b}\|` where
+:math:`\epsilon` is the user-specified tolerance.
+
+When to use CGS
+===============
+
+CGS is best suited for:
+
+- **Hermitian positive-definite operators**: The method requires :math:`A` to be
+  symmetric/Hermitian and positive-semidefinite for guaranteed convergence
+- **Well-conditioned systems**: Convergence rate depends on the condition number
+- **Moderate accuracy requirements**: For very high precision, consider :doc:`gmres` or :doc:`dmrg_solve`
+
+For non-Hermitian operators, use :doc:`bicgs` or :doc:`gmres` instead.
 
 Example
 =======
@@ -34,7 +76,7 @@ using the CGS solver with a finite-differences Laplacian:
     from seemps.operators.projectors import identity_mpo
     from seemps.analysis.mesh import RegularInterval
     from seemps.analysis.derivatives import finite_differences_mpo
-    from seemps.solve import cgs
+    from seemps.solve import cgs_solve
 
     # Define the interval and discretization
     n = 10  # qubits -> 2^10 = 1024 grid points
@@ -49,19 +91,19 @@ using the CGS solver with a finite-differences Laplacian:
     b = product_state(np.array([1, 0]), n)
 
     # Solve A @ x = b
-    x, residual = cgs(A, b, tolerance=1e-8)
+    x, residual = cgs_solve(A, b, tolerance=1e-8)
     print(f"Residual: {residual}")
 
 .. autosummary::
 
-    ~seemps.solve.cgs
+    ~seemps.solve.cgs_solve
 
 See also
 ========
 
-- :func:`~seemps.solve.bicgs_solve` - Biconjugate gradient stabilized method
-- :func:`~seemps.solve.gmres_solve` - Generalized minimal residual method
-- :func:`~seemps.solve.dmrg_solve` - DMRG-based solver for linear systems
+- :doc:`bicgs` - Biconjugate gradient stabilized method for non-Hermitian systems
+- :doc:`gmres` - Generalized minimal residual method using Krylov subspaces
+- :doc:`dmrg_solve` - DMRG-based solver with local tensor optimization
 
 
 

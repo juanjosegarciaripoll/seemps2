@@ -47,4 +47,5 @@ or periodic boundary conditions.
    seemps_analysis_differentiation
    seemps_analysis_integration
    seemps_analysis_interpolation
+   seemps_analysis_pde
    seemps_analysis_optimization

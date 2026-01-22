@@ -41,6 +41,9 @@ Methods for solving systems of linear equations :math:`A \psi = b`.
    :maxdepth: 1
 
    cgs
+   bicgs
+   gmres
+   dmrg_solve
 
 Time evolution
 ==============
