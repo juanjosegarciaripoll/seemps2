@@ -8,7 +8,7 @@ or quantized tensor trains (QTT).
 
 SeeMPS provides a complete linear and nonlinear algebra package that
 operates with vectors represented as MPS/TT and with matrices represented
-as matrix product operators (MPO). More precisely, the library includes
+as matrix product operators (MPO). More precisely, the library includes:
 - Vector and matrix operations
 - Essential tasks, such as MPS and MPO compression.
 - Solvers of linear equations `A x = b` with MPO (`A`) and MPS (`x`, `b`).
@@ -22,10 +22,10 @@ solutions. The first domain includes:
 - Emulation of quantum registers and variational quantum circuits
 
 The quantum-inspired subpackage includes:
-- Tools to represent n-dimensional functions as MPS including
+- Tools to represent n-dimensional functions as MPS, including:
   + Exact representations
   + Polynomial expansions
-  + Tensor cross interpolation algorithms
+  + Tensor cross-interpolation algorithms
 - Algorithms for differentiation, integration and interpolatoin
 - Algorithms to solve static and time-dependent PDEs in MPS/TT representation
 
@@ -56,8 +56,7 @@ arises from the following works on quantum-inspired algorithms for numerical ana
   https://arxiv.org/abs/2407.09609
   
 - *Pseudospectral method for solving PDEs using matrix product states*,
-  Jorge Gidi, Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll
-  https://arxiv.org/abs/2409.02916
+  Jorge Gidi, Paula García-Molina, Luca Tagliacozzo, Juan José García-Ripoll, Journal of Computational Physics, 539 (2025), https://doi.org/10.1016/j.jcp.2025.114228
 
 ## Usage
 
@@ -82,3 +81,4 @@ We also accept contributions as pull requests via GitHub.
 * Paula García Molina (Institute of Fundamental Physics,  IFF-CSIC, Spain)
 * Juan José Rodríguez Aldavero (Institute of Fundamental Physics, IFF-CSIC, Spain)
 * Jorge Gidi (Universidad de Concepción, Chile)
+
