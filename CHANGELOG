@@ -1,37 +1,43 @@
-Version 2.9.8
+Version 3.0.0
 =============
 
-* Improved creation of documentation for all exported objects.
+These are the changes with respect to the 2.*.* releases:
 
-* Added more detail in all algorithms, matching descriptions in
-  upcoming software manuscript.
+* Upgraded documentation.
 
-* Added new factory of MPS-encoded functions: `mps_sum_of_exponentials`
-  and `mps_heaviside`.
+* Rearchitected Cython core, with upgraded performance.
 
-* Introduced `QuantizedInterval` for regular intervals with `2**n` points.
+* SeeMPS is now installable via PyPI (`pip instal...`)
 
-* All MPS-encoded function factories now use `QuantizedInterval`.
+* The repository has been redesigned to comply with state-of-the-art
+  package definitions and development with `uv`.
 
-* Introduced `InteractionGraph` to construct arbitrarily complex
-  Hamiltonians into MPO or sparse matrix form.
+* Improved the engine to encode functions as MPS / MPO:
+  - Reorganized the description of intervals, meshes and quantization
+    spaces for functions.
+  - Upgraded and broader set of exactly constructible functions.
+  - Polynomial expansions over MPS / MPO representations of functions.
+  - Broad battery of tensor cross interpolation algorithms for loading.
 
-* MPOs and MPS can now be divided by a scalar.
+* Reorganized and improved MPO-based eigensolvers, which now include
+  DMRG, Arnoldi, power method and gradient descent.
 
-* Now it is possible to multiply `A @ B` when `A` and `B` are either
-  `MPO` or `MPOList`. This is not implemented for `MPOSum` to avoid
-  exponential blowup of operators.
+* Larger battery of solvers of linear systems: CGS, BICGS, GMRES and
+  DMRG based solvers.
 
-* Added `fourier_derivative_mpo` and `fourier_derivative` for QFT-based
-  differentiation of functions.
+* Completed the set of time evolution algorithms with more implicit
+  solvers (Crank-Nicolson, Radau), TDVP and Runge-Kutta solvers.
 
-* All derivative functions are in `seemps.analysis.derivatives`
-  Module `seemps.analysis.finite_differences` has been removed.
+* Upgraded toolbox for function differentiation: finite differences
+  and Fourier, are now supplemented by HDAF methods.
 
-* All derivative functions use a `QuantizedInterval`
+* Minor but important fixes: e.g., MPS/MPOs can be divided by scalars,
+  matrix multiplication `@` between MPO and MPOList are possible.
 
-* `smooth_finite_differences_mpo` has been renamed to `finite_differences_mpo`.
+* Rearchitected and extended the emulator of parameterized quantum
+  circuits, including multiqubit evolution with Hamiltonians, QAOA-type
+  variational circuits and other layers.
 
-Fixes
------
-* `finite_differences_interpolation` now accepts an `order` parameter.
+* The library has been tested in three works with applications in
+  PDE solution, function encoding and large-scale simulation of hard
+  stiff problems.
