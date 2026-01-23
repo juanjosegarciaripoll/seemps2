@@ -49,6 +49,7 @@ class PolynomialExpansion(ABC):
         Pair of coefficients (σ, μ) fixing the affine gauge of the basis via P_1(x) = σ x + μ.
     """
 
+    # NOTE: This hits a limitation of Python typing: subclasses cannot refine class attributes.
     orthogonality_domain: tuple[float, float] | None  # (a, b)
     affine_fix: tuple[float, float]  # (σ, μ)
 
