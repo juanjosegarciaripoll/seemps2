@@ -23,7 +23,7 @@ class TestChebyshevCoefficients(TestCase):
             ChebyshevExpansion.interpolate(np.exp, interpolated_nodes="else")  # type: ignore
 
     def test_interpolation_coefficients_exponential(self):
-        cheb_coeffs = ChebyshevExpansion.interpolate(np.exp, -1, 1, 15).coeffs
+        cheb_coeffs = ChebyshevExpansion.interpolate(np.exp, (-1, 1), 15).coefficients
         correct_coeffs = [
             1.266065877752008,
             1.130318207984970,
@@ -50,18 +50,18 @@ class TestChebyshevCoefficients(TestCase):
         domain = RegularInterval(-2, 2, 2**n)
         x = domain.to_vector()
 
-        order = ChebyshevExpansion.estimate_order(gaussian, a, b, tol=tolerance)
-        coeffs = ChebyshevExpansion.project(gaussian, a, b, order).coeffs
+        order = ChebyshevExpansion.estimate_order(gaussian, (a, b), tol=tolerance)
+        coeffs = ChebyshevExpansion.project(gaussian, (a, b), order).coefficients
         self.assertTrue(coeffs[-1] <= tolerance)
 
         expansion = ChebyshevExpansion(coeffs, (-2, 2))
-        mps = expansion.to_mps(initial=domain, strategy=NO_TRUNCATION)
+        mps = expansion.to_mps(argument=domain, strategy=NO_TRUNCATION)
         y_vec = gaussian(x)
         self.assertSimilar(mps, y_vec, atol=tolerance)
 
     def test_estimate_order_fails_when_max_order_is_exceeded(self):
         with self.assertRaises(ValueError):
-            ChebyshevExpansion.estimate_order(gaussian, -2, 2, max_order=10)
+            ChebyshevExpansion.estimate_order(gaussian, (-2, 2), max_order=10)
 
     def assert_similar_coefficients(
         self,
@@ -86,9 +86,13 @@ class TestChebyshevCoefficients(TestCase):
         (a, b) = domain
         func = lambda x: T(x)  # noqa: E731
         order_e = order + 1 if extrema_shift else order
-        zeros = ChebyshevExpansion.interpolate(func, a, b, order, "zeros").coeffs
-        extrema = ChebyshevExpansion.interpolate(func, a, b, order_e, "extrema").coeffs
-        proj = ChebyshevExpansion.project(func, a, b, order).coeffs
+        zeros = ChebyshevExpansion.interpolate(
+            func, (a, b), order, "zeros"
+        ).coefficients
+        extrema = ChebyshevExpansion.interpolate(
+            func, (a, b), order_e, "extrema"
+        ).coefficients
+        proj = ChebyshevExpansion.project(func, (a, b), order).coefficients
         self.assert_similar_coefficients(zeros, T, domain)
         self.assert_similar_coefficients(extrema, T, domain)
         self.assert_similar_coefficients(proj, T, domain)
@@ -120,14 +124,18 @@ class TestChebyshevCoefficients(TestCase):
     def test_chebyshev_coefficients_gaussian_derivative(self):
         f = lambda x: np.exp(-x * x)  # noqa: E731
         df = lambda x: -2 * x * np.exp(-x * x)  # noqa: E731
-        c_f = ChebyshevExpansion.interpolate(f, -1, 2, 22).deriv().coeffs
-        c_df = ChebyshevExpansion.interpolate(df, -1, 2, 22).coeffs
+        c_f = ChebyshevExpansion.interpolate(f, (-1, 2), 22).deriv().coefficients
+        c_df = ChebyshevExpansion.interpolate(df, (-1, 2), 22).coefficients
         self.assertSimilar(c_f, c_df[:-1])
-        c_f = ChebyshevExpansion.interpolate(f, -1, 2, 22, "extrema").deriv().coeffs
-        c_df = ChebyshevExpansion.interpolate(df, -1, 2, 22, "extrema").coeffs
+        c_f = (
+            ChebyshevExpansion.interpolate(f, (-1, 2), 22, "extrema")
+            .deriv()
+            .coefficients
+        )
+        c_df = ChebyshevExpansion.interpolate(df, (-1, 2), 22, "extrema").coefficients
         self.assertSimilar(c_f, c_df[:-1])
-        c_f = ChebyshevExpansion.project(f, -1, 2, 22).deriv().coeffs
-        c_df = ChebyshevExpansion.project(df, -1, 2, 22).coeffs
+        c_f = ChebyshevExpansion.project(f, (-1, 2), 22).deriv().coefficients
+        c_df = ChebyshevExpansion.project(df, (-1, 2), 22).coefficients
         self.assertSimilar(c_f, c_df[:-1])
 
     def test_chebyshev_coefficients_gaussian_integral(self):
@@ -135,14 +143,16 @@ class TestChebyshevCoefficients(TestCase):
         order = 22
         f = lambda x: np.exp(-x * x)  # noqa: E731
         F = lambda x: (np.sqrt(np.pi) / 2) * (erf(x) - erf(a))  # noqa: E731
-        c_f = ChebyshevExpansion.interpolate(f, a, b, order).integ(lbnd=a).coeffs
-        c_F = ChebyshevExpansion.interpolate(F, a, b, order).coeffs
+        c_f = (
+            ChebyshevExpansion.interpolate(f, (a, b), order).integ(lbnd=a).coefficients
+        )
+        c_F = ChebyshevExpansion.interpolate(F, (a, b), order).coefficients
         self.assertSimilar(c_f[:-1], c_F)
-        c_f = ChebyshevExpansion.interpolate(f, a, b, order, "extrema").integ(lbnd=a)
-        c_F = ChebyshevExpansion.interpolate(F, a, b, order, "extrema").coeffs
-        self.assertSimilar(c_f.coeffs[:-1], c_F)
-        c_f = ChebyshevExpansion.project(f, a, b, order).integ(lbnd=a).coeffs
-        c_F = ChebyshevExpansion.project(F, a, b, order).coeffs
+        c_f = ChebyshevExpansion.interpolate(f, (a, b), order, "extrema").integ(lbnd=a)
+        c_F = ChebyshevExpansion.interpolate(F, (a, b), order, "extrema").coefficients
+        self.assertSimilar(c_f.coefficients[:-1], c_F)
+        c_f = ChebyshevExpansion.project(f, (a, b), order).integ(lbnd=a).coefficients
+        c_F = ChebyshevExpansion.project(F, (a, b), order).coefficients
         self.assertSimilar(c_f[:-1], c_F)
 
 
@@ -153,9 +163,24 @@ class TestChebyshevMPS(TestCase):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
 
-        expansion = ChebyshevExpansion.interpolate(f, a, b, order)
-        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
-        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
+        expansion = ChebyshevExpansion.interpolate(f, (a, b), order)
+        mps_cheb_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(argument=interval, clenshaw=False)
+        self.assertSimilar(f(x), mps_cheb_clen)
+        self.assertSimilar(f(x), mps_cheb_poly)
+
+    def test_gaussian_1d_inside_approximation_domain(self):
+        # Test that any argument defined *within* the approximation domain is well approximated.
+        f = lambda x: np.exp(-(x**2))  # noqa: E731
+        approximation_domain = (-2, 3)
+        n, order = 5, 30
+
+        interval = RegularInterval(-1, 1, 2**n)  # Argument does not match domain
+        x = interval.to_vector()
+
+        expansion = ChebyshevExpansion.interpolate(f, approximation_domain, order)
+        mps_cheb_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(argument=interval, clenshaw=False)
         self.assertSimilar(f(x), mps_cheb_clen)
         self.assertSimilar(f(x), mps_cheb_poly)
 
@@ -166,9 +191,9 @@ class TestChebyshevMPS(TestCase):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
 
-        expansion = ChebyshevExpansion.interpolate(f, a, b, order).deriv(1)
-        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
-        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
+        expansion = ChebyshevExpansion.interpolate(f, (a, b), order).deriv(1)
+        mps_cheb_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(argument=interval, clenshaw=False)
         self.assertSimilar(df(x), mps_cheb_clen)
         self.assertSimilar(df(x), mps_cheb_poly)
 
@@ -178,9 +203,9 @@ class TestChebyshevMPS(TestCase):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
 
-        expansion = ChebyshevExpansion.interpolate(F, a, b, order)
-        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
-        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
+        expansion = ChebyshevExpansion.interpolate(F, (a, b), order)
+        mps_cheb_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(argument=interval, clenshaw=False)
         self.assertSimilar(F(x), mps_cheb_clen)
         self.assertSimilar(F(x), mps_cheb_poly)
 
@@ -191,9 +216,9 @@ class TestChebyshevMPS(TestCase):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
 
-        expansion = ChebyshevExpansion.interpolate(f, a, b, order).integ(1, lbnd=a)
-        mps_cheb_clen = expansion.to_mps(initial=interval, clenshaw=True)
-        mps_cheb_poly = expansion.to_mps(initial=interval, clenshaw=False)
+        expansion = ChebyshevExpansion.interpolate(f, (a, b), order).integ(1, lbnd=a)
+        mps_cheb_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        mps_cheb_poly = expansion.to_mps(argument=interval, clenshaw=False)
         self.assertSimilar(F(x), mps_cheb_clen)
         self.assertSimilar(F(x), mps_cheb_poly)
 
@@ -206,12 +231,12 @@ class TestChebyshevMPS(TestCase):
         mps_x_plus_y = mps_tensor_sum([mps_interval(iy), mps_interval(ix)])
 
         strategy = DEFAULT_STRATEGY.replace(tolerance=1e-20)
-        expansion = ChebyshevExpansion.interpolate(f, -1, 5, 30)
+        expansion = ChebyshevExpansion.interpolate(f, (-1, 5), 30)
         mps_cheb_clen = expansion.to_mps(
-            initial=mps_x_plus_y, strategy=strategy, clenshaw=True
+            argument=mps_x_plus_y, strategy=strategy, clenshaw=True
         )
         mps_cheb_poly = expansion.to_mps(
-            initial=mps_x_plus_y, strategy=strategy, clenshaw=False
+            argument=mps_x_plus_y, strategy=strategy, clenshaw=False
         )
 
         X, Y = np.meshgrid(ix.to_vector(), iy.to_vector())
@@ -230,7 +255,7 @@ class TestChebyshevMPO(TestCase):
         mpo_x = x_mpo(n, a, dx)
 
         f = lambda x: np.sin(-(x**2))  # noqa: E731
-        expansion = ChebyshevExpansion.interpolate(f, a, b, order=30)
+        expansion = ChebyshevExpansion.interpolate(f, (a, b), order=30)
         mpo_leg_clen = expansion.to_mpo(mpo_x, clenshaw=True)
         mpo_leg_poly = expansion.to_mpo(mpo_x, clenshaw=False)
 
@@ -251,9 +276,9 @@ class TestLegendreMPS(TestCase):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
 
-        expansion = LegendreExpansion.project(f, a, b, order)
-        mps_leg_clen = expansion.to_mps(initial=interval, clenshaw=True)
-        mps_leg_poly = expansion.to_mps(initial=interval, clenshaw=False)
+        expansion = LegendreExpansion.project(f, order, (a, b))
+        mps_leg_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        mps_leg_poly = expansion.to_mps(argument=interval, clenshaw=False)
 
         self.assertSimilar(f(x), mps_leg_clen)
         self.assertSimilar(f(x), mps_leg_poly)
@@ -267,14 +292,14 @@ class TestLegendreMPS(TestCase):
         mps_x_plus_y = mps_tensor_sum([mps_interval(iy), mps_interval(ix)])
 
         strategy = DEFAULT_STRATEGY.replace(tolerance=1e-20)
-        expansion = LegendreExpansion.project(f, -1, 5, 30)
+        expansion = LegendreExpansion.project(f, 30, (-1, 5))
         mps_leg_clen = expansion.to_mps(
-            initial=mps_x_plus_y,
+            argument=mps_x_plus_y,
             strategy=strategy,
             clenshaw=True,
         )
         mps_leg_poly = expansion.to_mps(
-            initial=mps_x_plus_y,
+            argument=mps_x_plus_y,
             strategy=strategy,
             clenshaw=False,
         )
@@ -295,7 +320,7 @@ class TestLegendreMPO(TestCase):
         mpo_x = x_mpo(n, a, dx)
 
         f = lambda x: np.sin(-(x**2))  # noqa: E731
-        expansion = LegendreExpansion.project(f, a, b, order=30)
+        expansion = LegendreExpansion.project(f, order=30, approximation_domain=(a, b))
         mpo_leg_clen = expansion.to_mpo(mpo_x, clenshaw=True)
         mpo_leg_poly = expansion.to_mpo(mpo_x, clenshaw=False)
 
@@ -317,8 +342,8 @@ class TestPowerExpansion(TestCase):
         fn = lambda x: sum(c * x**i for i, c in enumerate(coeffs))  # noqa: E731
         y = fn(x)
 
-        expansion = PowerExpansion(coeffs, (a, b))
-        mps = expansion.to_mps(initial=interval)
+        expansion = PowerExpansion(coeffs)
+        mps = expansion.to_mps(argument=interval)
         self.assertSimilar(y, mps)
 
     def test_mpo_expansion(self):
@@ -332,7 +357,7 @@ class TestPowerExpansion(TestCase):
         fn = lambda x: sum(c * x**i for i, c in enumerate(coeffs))  # noqa: E731
         y = fn(x)
 
-        expansion = PowerExpansion(coeffs, (a, b))
+        expansion = PowerExpansion(coeffs)
         mpo_x = x_mpo(n, a, dx)
         mpo_clen = expansion.to_mpo(mpo_x, clenshaw=True)
         mpo_poly = expansion.to_mpo(mpo_x, clenshaw=False)
