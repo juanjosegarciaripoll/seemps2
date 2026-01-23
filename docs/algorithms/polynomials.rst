@@ -79,14 +79,19 @@ Three-term recurrence
 Orthogonal polynomial expansions rely on three-term recurrence relations:
 
 .. math::
-    P_{k+1}(x) = (x - \alpha_k) P_k(x) - \beta_k P_{k-1}(x)
+    P_{k+1}(x) = (\alpha_k x + \beta_k) P_k(x) - \gamma_k P_{k-1}(x)
 
-which are evaluated using numerically stable Clenshaw formulas. The user provides
-the target function :math:`f` together with an initial MPS or MPO encoding the argument.
+which are evaluated using numerically stable Clenshaw formulas. To completely determine the basis, two additional
+coefficients determining the linear term and fixing affine translations are required:
 
-This expansion framework is easily extensible to any orthogonal polynomial family by
-subclassing :class:`~seemps.analysis.expansion.OrthogonalExpansion`, requiring only
-the three-term recurrence relation and the canonical domain of definition.
+.. math::
+    P_{1}(x) = \sigma x + \mu
+
+The user provides the target function :math:`f` together with an initial MPS or MPO encoding the argument.
+
+This expansion framework is easily extensible to any classical orthogonal polynomial family by
+subclassing :class:`~seemps.analysis.expansion.PolynomialExpansion`, requiring only
+the three-term recurrence relation, the affine fixing coefficients, and the orthogonality domain of the basis.
 
 Coefficient computation
 -----------------------
@@ -94,14 +99,13 @@ Coefficient computation
 All expansion objects can be constructed by providing the coefficients :math:`[c_0,c_1,...]`
 explicitly. Alternatively, the coefficients can be computed by projecting the target
 function onto the orthogonal basis through projection methods, which estimate a
-finite-order expansion of a scalar function over a given domain :math:`[a, b]` using
-numerical quadratures.
+finite-order expansion of a scalar function using numerical quadratures.
 
 Limitations
 -----------
 
-The applicability of this technique is limited by the regularity of the target function.
-Highly differentiable functions present favorable convergence rates, while functions
+The applicability of this technique is limited by the regularity of the target function and the properties of the basis.
+Generally, highly differentiable functions present favorable convergence rates, while functions
 with discontinuities or sharp features---such as Heaviside functions---are poorly
 approximated by polynomial expansions, requiring prohibitively large expansion orders.
 
@@ -124,14 +128,13 @@ a Chebyshev expansion::
     >>> mps_x = mps_interval(interval)
     >>> mps_xy = mps_tensor_sum([mps_x] * 2)
     >>> f = lambda x: np.exp(x)
-    >>> expansion = ChebyshevExpansion.project(f)
-    >>> mps_f = expansion.to_mps(initial=mps_xy)
+    >>> expansion = ChebyshevExpansion.project(f, (-1, 1))
+    >>> mps_f = expansion.to_mps(argument=mps_xy)
 
 .. autosummary::
 
     ~seemps.analysis.expansion.PolynomialExpansion
     ~seemps.analysis.expansion.PowerExpansion
-    ~seemps.analysis.expansion.OrthogonalExpansion
     ~seemps.analysis.expansion.ChebyshevExpansion
     ~seemps.analysis.expansion.LegendreExpansion
     ~seemps.analysis.expansion.ChebyshevExpansion.project

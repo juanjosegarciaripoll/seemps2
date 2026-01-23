@@ -1,9 +1,8 @@
-from .expansion import PowerExpansion, PolynomialExpansion, OrthogonalExpansion
+from .expansion import PowerExpansion, PolynomialExpansion
 from .chebyshev import ChebyshevExpansion
 from .legendre import LegendreExpansion
 
 __all__ = [
-    "OrthogonalExpansion",
     "PolynomialExpansion",
     "PowerExpansion",
     "ChebyshevExpansion",
