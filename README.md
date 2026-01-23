@@ -2,25 +2,45 @@
 
 ## Introduction
 
-SEEMPS is the second iteration of the SElf-Explaining Matrix-Product-State
-library.
+SeeMPS is a state of the art library for quantum-inspired algorithms
+based on matrix product states (MPS), also known as tensor trains (TT)
+or quantized tensor trains (QTT).
 
-The original library, still available [here](https://github.com/juanjosegarciaripoll/seemps)
-was a collection of Jupyter notebooks with a well documented implementation
-of matrix-product state algorithms.
+SeeMPS provides a complete linear and nonlinear algebra package that
+operates with vectors represented as MPS/TT and with matrices represented
+as matrix product operators (MPO). More precisely, the library includes
+- Vector and matrix operations
+- Essential tasks, such as MPS and MPO compression.
+- Solvers of linear equations `A x = b` with MPO (`A`) and MPS (`x`, `b`).
+- Eigensolvers
 
-The [current iteration](https://github.com/juanjosegarciaripoll/seemps2) aims to
-be more useable and have better and more standard documentation, while
-preserving the same degree of accessibility of the algorithms.
+This linear algebra package is used to implement both quantum and quantum-inspired
+solutions. The first domain includes:
+- Algorithms to construct Hamiltonians for many-body quantum systems
+- Search of ground and excited states
+- Simulation of time evolution
+- Emulation of quantum registers and variational quantum circuits
+
+The quantum-inspired subpackage includes:
+- Tools to represent n-dimensional functions as MPS including
+  + Exact representations
+  + Polynomial expansions
+  + Tensor cross interpolation algorithms
+- Algorithms for differentiation, integration and interpolatoin
+- Algorithms to solve static and time-dependent PDEs in MPS/TT representation
+
+These methods have shown exponential improvements over classical versions of the
+same tools thanks to the memory and time compression offered by the MPS formalism.
 
 ## Intended audience
 
-The library is thought out as introduction to the world of Matrix Product States
-and DMRG-inspired algorithms. Its main goal is not performance, but rapid
-prototyping and testing of ideas, providing a good playground before dwelling in
-more advanced (C++, Julia) versions of the algorithms.
+The library is a performant tool that is suitable for the design and evaluation of
+algorithms in the quantum many-body systems, quantum computing and quantum inspired
+numerical analysis. However, the library also allows users to quickly develop
+applications in all of these domains, using the tens of algorithms that are already
+provided.
 
-This said, the library as it stands has been used in some heavy-duty simulations
+The library as it stands has been used in some heavy-duty simulations
 involving tens and hundreds of qubits, and, in particular, its current iteration
 arises from the following works on quantum-inspired algorithms for numerical analysis:
 
@@ -42,77 +62,23 @@ arises from the following works on quantum-inspired algorithms for numerical ana
 ## Usage
 
 The library is developed in a mixture of Python 3 and Cython, with the support
-of Numpy, Scipy and h5py. Installation instructions are provided in
-[the documentation](https://seemps.readthedocs.io).
+of Numpy, Scipy and h5py. The library is provided in binary format for a selection
+of platforms and can be installed using
+```
+pip intall seemps
+```
+Other installation and development instructions are provided in
+[the documentation](https://seemps.readthedocs.io), together with extensive
+information about the algorithms. Examples are also provided in a
+[separate folder](https://github.com/juanjosegarciaripoll/seemps2/tree/main/examples)
+as well as in the documentation.
 
-Authors:
+Bugs and feature requests can be reported using [GitHub's issues](https://github.com/juanjosegarciaripoll/seemps2/issues).
+We also accept contributions as pull requests via GitHub.
 
-* Juan José García Ripoll (Institute of Fundamental Physics)
-* Paula García Molina (Institute of Fundamental Physics)
-* Juan José Rodríguez Aldavero (Institute of Fundamental Physics)
+# Authors and contributors
 
-Contributors:
-
-* Jorge Gidi
-
-## Development
-
-### Environment
-For optimal development the following is expected:
-- uv from Astral is installed
-- In Linux, if you wish to use a local version of Python, you might need
-  to install the `python-devel` package or equivalent one. This also
-  installs a C and C++ compilers.
-- In Windows, you need to install a Visual Studio C++ (Community Edition)
-  compiler to build SeeMPS.
-- A copy of Visual Code with the Python extensions installed plus some
-  additional recommended extensions:
-  + [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters)
-  + [Mypy Type Checker](https://marketplace.visualstudio.com/items?itemName=ms-python.mypy-type-checker)
-  + [Ruff support](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
-
-The environment is bootstrapped using
-```
-uv sync --dev
-```
-This installs both the SeeMPS library and libraries that it depends on,
-plus additional tools that are used for development:
-- ruff, for code linting
-- mypy and basedpyright, for type checking
-- coverage, for code coverage
-
-On top of this, please use
-```
-uv run scripts/make.py --install-hooks
-```
-to ensure type checkers and other tests are run before committing changes
-with git.
-
-### Testing
-The library contains a rather complete set of unittests under the `tests/`
-folder. The tests can be run using the standard `unittest` module, as in
-```
-uv run python -m unittest -v
-```
-
-The code coverage of the test suite exceeds 88%. To analyze test coverage
-you can open a terminal and run
-```
-uv run coverage run -m unittest -v && uv run coverage report
-```
-Alternatively, you can use
-```
-uv run coverage lcov
-```
-to create a coverage file that is interpreted by the "Coverage Gutters"
-Visual Code extension. There is a task (right-button option in the explorer)
-with the name "Run Tests with Coverage" that both runs the tests and
-automatically creates the reports using
-```
-uv run coverage run -m unittest -v && uv run coverage lcov
-```
-
-## TODOs
-- Update documentation.
-- Many functions are declared to accept Interval, when they actually can only
-  use RegularInterval or ChebyshevInterval
+* Juan José García Ripoll (Institute of Fundamental Physics, IFF-CSIC, Spain)
+* Paula García Molina (Institute of Fundamental Physics,  IFF-CSIC, Spain)
+* Juan José Rodríguez Aldavero (Institute of Fundamental Physics, IFF-CSIC, Spain)
+* Jorge Gidi (Universidad de Concepción, Chile)
