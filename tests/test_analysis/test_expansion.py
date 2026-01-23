@@ -276,7 +276,7 @@ class TestLegendreMPS(TestCase):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
 
-        expansion = LegendreExpansion.project(f, (a, b), order)
+        expansion = LegendreExpansion.project(f, order, (a, b))
         mps_leg_clen = expansion.to_mps(argument=interval, clenshaw=True)
         mps_leg_poly = expansion.to_mps(argument=interval, clenshaw=False)
 
@@ -292,7 +292,7 @@ class TestLegendreMPS(TestCase):
         mps_x_plus_y = mps_tensor_sum([mps_interval(iy), mps_interval(ix)])
 
         strategy = DEFAULT_STRATEGY.replace(tolerance=1e-20)
-        expansion = LegendreExpansion.project(f, (-1, 5), 30)
+        expansion = LegendreExpansion.project(f, 30, (-1, 5))
         mps_leg_clen = expansion.to_mps(
             argument=mps_x_plus_y,
             strategy=strategy,
@@ -320,7 +320,7 @@ class TestLegendreMPO(TestCase):
         mpo_x = x_mpo(n, a, dx)
 
         f = lambda x: np.sin(-(x**2))  # noqa: E731
-        expansion = LegendreExpansion.project(f, (a, b), order=30)
+        expansion = LegendreExpansion.project(f, order=30, approximation_domain=(a, b))
         mpo_leg_clen = expansion.to_mpo(mpo_x, clenshaw=True)
         mpo_leg_poly = expansion.to_mpo(mpo_x, clenshaw=False)
 

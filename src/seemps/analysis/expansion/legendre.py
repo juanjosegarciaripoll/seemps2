@@ -50,7 +50,10 @@ class LegendreExpansion(PolynomialExpansion):
 
     @classmethod
     def project(
-        cls, func: ScalarFunction, approximation_domain: tuple[float, float], order: int
+        cls,
+        func: ScalarFunction,
+        order: int,
+        approximation_domain: tuple[float, float] = (-1.0, 1.0),
     ) -> LegendreExpansion:
         """
         Project a scalar function onto the Legendre basis on the given approximation domain.

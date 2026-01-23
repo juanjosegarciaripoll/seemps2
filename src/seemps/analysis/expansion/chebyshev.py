@@ -54,7 +54,7 @@ class ChebyshevExpansion(PolynomialExpansion):
     def estimate_order(
         cls,
         func: ScalarFunction,
-        approximation_domain: tuple[float, float],
+        approximation_domain: tuple[float, float] = (-1.0, 1.0),
         tol: float = 100 * float(np.finfo(np.float64).eps),
         min_order: int = 2,
         max_order: int = 2**12,  # 4096
@@ -74,7 +74,7 @@ class ChebyshevExpansion(PolynomialExpansion):
     def project(
         cls,
         func: ScalarFunction,
-        approximation_domain: tuple[float, float],
+        approximation_domain: tuple[float, float] = (-1.0, 1.0),
         order: int | None = None,
     ) -> ChebyshevExpansion:
         """
@@ -102,7 +102,7 @@ class ChebyshevExpansion(PolynomialExpansion):
     def interpolate(
         cls,
         func: ScalarFunction,
-        approximation_domain: tuple[float, float],
+        approximation_domain: tuple[float, float] = (-1.0, 1.0),
         order: int | None = None,
         nodes: Literal["zeros", "extrema"] = "zeros",
     ) -> ChebyshevExpansion:
