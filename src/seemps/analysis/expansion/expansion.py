@@ -299,6 +299,7 @@ def _mpo_polynomial_expansion(
     d = len(c) - 1
     recurrences = [expansion.recurrence_coefficients(l) for l in range(d + 2)]
 
+    mpos: list[MPO | MPOList]
     if clenshaw:
         # Y_k = c_k I + (α_k X + β_k) y_{k+1} - γ_{k+1} Y_{k+2}
         logger("MPO Clenshaw evaluation started")
@@ -310,7 +311,7 @@ def _mpo_polynomial_expansion(
             _, _, γ_kp1 = recurrences[k + 1]
 
             weights = [c[k], α_k, -γ_kp1]
-            mpos: list[MPO | MPOList] = [I, MPOList([X, Y_kp1]), Y_kp2]
+            mpos = [I, MPOList([X, Y_kp1]), Y_kp2]
             if β_k != 0:
                 weights.append(β_k)
                 mpos.append(Y_kp1)
@@ -343,7 +344,7 @@ def _mpo_polynomial_expansion(
         for k in range(1, d):
             α_k, β_k, γ_k = recurrences[k]
             weights = [α_k, -γ_k]
-            mpos: list[MPO | MPOList] = [MPOList([X, P_k]), P_km1]
+            mpos = [MPOList([X, P_k]), P_km1]
             if β_k != 0:
                 weights.append(β_k)
                 mpos.append(P_k)

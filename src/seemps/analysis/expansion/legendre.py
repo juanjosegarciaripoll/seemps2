@@ -40,12 +40,12 @@ class LegendreExpansion(PolynomialExpansion):
 
     def rescale_mps(self, mps: MPS) -> MPS:
         orig = self.approximation_domain
-        dest: tuple[float, float] = self.orthogonality_domain  # type: ignore
+        dest: tuple[float, float] = self.orthogonality_domain  # pyright: ignore
         return mps_affine(mps, orig, dest)
 
     def rescale_mpo(self, mpo: MPO) -> MPO:
         orig = self.approximation_domain
-        dest: tuple[float, float] = self.orthogonality_domain  # type: ignore
+        dest: tuple[float, float] = self.orthogonality_domain  # pyright: ignore
         return mpo_affine(mpo, orig, dest)
 
     @classmethod
@@ -62,7 +62,7 @@ class LegendreExpansion(PolynomialExpansion):
         x, w = np.polynomial.legendre.leggauss(order)
         x_affine = array_affine(
             x,
-            orig=cls.orthogonality_domain,  # type: ignore
+            orig=cls.orthogonality_domain,  # pyright: ignore
             dest=approximation_domain,
         )
         P = np.vstack(
