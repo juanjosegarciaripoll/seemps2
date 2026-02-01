@@ -1,7 +1,6 @@
 from seemps.operators import MPO, MPOList, MPOSum
 from seemps.state import (
     MPSSum,
-    random_uniform_mps,
     DEFAULT_STRATEGY,
     NO_TRUNCATION,
     Simplification,
@@ -9,7 +8,6 @@ from seemps.state import (
     simplify,
 )
 from seemps.tools import σx, σy, σz
-
 from ..tools import SeeMPSTestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
@@ -85,7 +83,7 @@ class TestMPOSum(SeeMPSTestCase):
         self.assertSimilar(mposum.weights, [1.0, -1.0])
 
     def test_mposum_application_creates_mpssum(self):
-        state = random_uniform_mps(2, self.mpoA.size, D=10)
+        state = self.random_uniform_mps(2, self.mpoA.size, D=10)
 
         mposum = self.mpoA + self.mpoB
         newstate = mposum.apply(state, strategy=NO_TRUNCATION)
@@ -96,7 +94,7 @@ class TestMPOSum(SeeMPSTestCase):
         )
 
     def test_mposum_apply_can_simplify(self):
-        state = random_uniform_mps(2, self.mpoA.size, D=10)
+        state = self.random_uniform_mps(2, self.mpoA.size, D=10)
         mposum = self.mpoA + self.mpoB
         self.assertSimilar(
             mposum.apply(state, strategy=TEST_STRATEGY).to_vector(),
@@ -110,7 +108,7 @@ class TestMPOSum(SeeMPSTestCase):
 
     def test_mposum_application_works_on_mpssum(self):
         mposum = self.mpoA + self.mpoB
-        state = random_uniform_mps(2, self.mpoA.size, D=10)
+        state = self.random_uniform_mps(2, self.mpoA.size, D=10)
         combined_state = simplify(
             self.mpoA.apply(2 * state) + self.mpoB.apply(2 * state),
             strategy=DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL),
@@ -119,14 +117,14 @@ class TestMPOSum(SeeMPSTestCase):
         self.assertSimilar(mposum @ (state + state), combined_state)
 
     def test_mposum_join_real_mpos(self):
-        state = random_uniform_mps(2, self.mpoA.size, D=10)
+        state = self.random_uniform_mps(2, self.mpoA.size, D=10)
         mposum = self.mpoA + self.mpoB
         newstate = mposum @ state
         newstate_join = mposum.join() @ state
         self.assertSimilar(newstate.to_vector(), newstate_join.to_vector())
 
     def test_mposum_join_complex_mpos(self):
-        state = random_uniform_mps(2, self.mpoA.size, D=10)
+        state = self.random_uniform_mps(2, self.mpoA.size, D=10)
         mposum = self.mpoA + self.mpoD
         newstate = mposum @ state
         newstate_join = mposum.join() @ state
