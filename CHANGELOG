@@ -1,3 +1,13 @@
+Version 3.0.1
+=============
+* Rearchitected tests to always use preseeded RNG for better reproducibility.
+
+* Simplified the PolynomialExpansion class hierarchy to allow for other
+  expansions in the future.
+
+* Environment variable SEEMPS_DEBUG determines the debug level in SeeMPS's
+  routines. Now the logger outputs those messages to sys.stderr.
+
 Version 3.0.0
 =============
 

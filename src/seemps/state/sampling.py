@@ -1,12 +1,14 @@
 from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
-from numpy.random import Generator, default_rng
+from ..tools import DEFAULT_RNG
 from .mps import MPS
 from .canonical_mps import CanonicalMPS
 
 
-def sample_mps(mps: MPS, size: int = 1, rng: Generator = default_rng()) -> NDArray:
+def sample_mps(
+    mps: MPS, size: int = 1, rng: np.random.Generator = DEFAULT_RNG
+) -> NDArray:
     """Generate configurations by sampling a matrix-product state.
 
     This function samples quantum states according to the probability
@@ -28,6 +30,8 @@ def sample_mps(mps: MPS, size: int = 1, rng: Generator = default_rng()) -> NDArr
         Normalized matrix product state.
     size : int
         Number of samples to generate, defaults to 1.
+    rng : Generator, default=DEFAULT_RNG
+        Random number generator. Provide a seeded one for reproducibility.
 
     Returns
     -------

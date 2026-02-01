@@ -10,6 +10,7 @@ from seemps.cython import destructively_truncate_vector, _contract_last_and_firs
 from seemps.analysis.mesh import Mesh, mesh_to_mps_indices
 from seemps.analysis.cross import BlackBoxLoadMPS
 from seemps.typing import Vector, Matrix, Tensor3
+from ..tools import DEFAULT_RNG
 
 IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
 
@@ -188,10 +189,12 @@ def _samples_to_mesh_indices(samples: Matrix, mesh: Mesh) -> Matrix:
     return indices
 
 
-def _random_isometry(rows: int, cols: int) -> Matrix:
+def _random_isometry(
+    rows: int, cols: int, rng: np.random.Generator = DEFAULT_RNG
+) -> Matrix:
     if cols > rows:
         raise ValueError("cols must be <= rows")
-    A = np.random.randn(rows, cols)
+    A = rng.normal(size=(rows, cols))
     Q, _ = scipy.linalg.qr(A, mode="economic", overwrite_a=True, check_finite=False)
     return Q
 
