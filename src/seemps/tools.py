@@ -106,7 +106,7 @@ def log(*args: Any, debug_level: int = 1) -> None:
         Level of messages to log
     """
     if DEBUG and (DEBUG is True or DEBUG >= debug_level):
-        print(*args)
+        print(*args, file=sys.stderr)
 
 
 def random_isometry(N: int, M: int | None = None) -> DenseOperator:
