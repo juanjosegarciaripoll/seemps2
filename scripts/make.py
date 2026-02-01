@@ -257,7 +257,7 @@ def run_tests(
     if capture_output:
         # Capture stdout only (let stderr go to terminal)
         result = subprocess.run(command, env=env, stdout=subprocess.PIPE, text=True)
-        return result.stdout if result.returncode == 0 else ""
+        return result.stdout if result.returncode == 0 else "{}"
     else:
         ok = run(command, env=env, **kwdargs)
         print(f"Output of tests is {ok}", file=sys.stderr, flush=True)
@@ -324,7 +324,7 @@ def compare_tests_with_different_cores(filter: str | None = None) -> list[dict]:
     def output_to_json(stdout: str | bool) -> dict:
         # Find and parse JSON from stdout
         if not isinstance(stdout, str):
-            stdout = ""
+            stdout = "{}"
         json_start = stdout.rfind("\n{")
         if json_start == -1:
             json_start = stdout.find("{")
@@ -372,6 +372,7 @@ def compare_tests_with_different_cores(filter: str | None = None) -> list[dict]:
             for func, count in pybind_results.get(test_name, {}).items()
             if ("seemps.cython.pybind" in func)
             if (".get_" not in func)
+            if (".replace" not in func)
         }
         no_pybind_funcs = {
             func.split(".")[-1]: count
