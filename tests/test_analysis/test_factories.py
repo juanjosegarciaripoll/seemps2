@@ -8,10 +8,10 @@ from seemps.analysis.factories import (
     mps_interval,
 )
 from seemps.analysis.mesh import RegularInterval, ChebyshevInterval, QuantizedInterval
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMPSFactories(TestCase):
+class TestMPSFactories(SeeMPSTestCase):
     def test_mps_heaviside(self):
         interval = QuantizedInterval(0, 3, 2, endpoint_right=True)
         # x = [0, 1, 2, 3]

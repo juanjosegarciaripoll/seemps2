@@ -7,10 +7,10 @@ from seemps.register.circuit import (
     interpret_operator,
     qubo_mpo,
 )
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestHamiltonianEvolutionLayer(TestCase):
+class TestHamiltonianEvolutionLayer(SeeMPSTestCase):
     H: MPO
 
     def setUp(self) -> None:

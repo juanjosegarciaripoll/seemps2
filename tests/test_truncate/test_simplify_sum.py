@@ -10,7 +10,7 @@ from seemps.state.simplification import simplify_mps_sum
 from .. import tools
 
 
-class TestSimplifyMPSSum(tools.TestCase):
+class TestSimplifyMPSSum(tools.SeeMPSTestCase):
     def test_no_truncation(self):
         d = 2
         strategy = DEFAULT_STRATEGY.replace(

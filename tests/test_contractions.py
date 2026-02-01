@@ -1,10 +1,10 @@
-from .tools import TestCase
+from .tools import SeeMPSTestCase
 import numpy as np
 import seemps
 import seemps.cython
 
 
-class TestMPOTensorFold(TestCase):
+class TestMPOTensorFold(SeeMPSTestCase):
     def test_contract_A_B(self):
         A = self.rng.normal(size=(30, 2, 2, 30))
         B = self.rng.normal(size=(10, 2, 13))
@@ -16,7 +16,7 @@ class TestMPOTensorFold(TestCase):
         self.assertSimilar(exact_contraction, fast_contraction)
 
 
-class TestTwoSiteEvolutionFold(TestCase):
+class TestTwoSiteEvolutionFold(SeeMPSTestCase):
     def test_contract_U_A_B(self):
         A = self.rng.normal(size=(10, 2, 15))
         B = self.rng.normal(size=(15, 3, 13))
@@ -29,7 +29,7 @@ class TestTwoSiteEvolutionFold(TestCase):
         self.assertSimilar(exact_contraction, fast_contraction)
 
 
-class TestDMRGHamiltonianContraction(TestCase):
+class TestDMRGHamiltonianContraction(SeeMPSTestCase):
     def test_contract_A_B(self):
         from seemps.optimization.dmrg import DMRGMatrixOperator
 

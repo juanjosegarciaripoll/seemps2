@@ -1,10 +1,10 @@
 import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.register.transforms import mpo_weighted_shifts, mpo_shifts
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestShifts(TestCase):
+class TestShifts(SeeMPSTestCase):
     def shift_matrix(self, L: int, d: int, periodic: bool):
         S = sp.dok_array((L, L))
         for i in range(L):

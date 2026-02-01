@@ -1,11 +1,11 @@
 import numpy as np
-from .tools import TestCase, almostIdentity, run_over_random_uniform_mps
+from .tools import SeeMPSTestCase, almostIdentity, run_over_random_uniform_mps
 from seemps.state import CanonicalMPS, MPS
 from seemps.state.simplification import AntilinearForm
 from seemps.expectation import expectation1
 
 
-class TestLinearForm(TestCase):
+class TestLinearForm(SeeMPSTestCase):
     def test_canonical_env(self):
         #
         # When we pass two identical canonical form MPS to LinearForm, the

@@ -1,9 +1,9 @@
 import numpy as np
 from seemps.analysis.space import Space
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestSpace(TestCase):
+class TestSpace(SeeMPSTestCase):
     qubits = [[3], [3, 3], [2, 4, 3]]
 
     def test_space_three_qubits_open_1d(self):

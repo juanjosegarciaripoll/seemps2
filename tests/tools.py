@@ -1,10 +1,11 @@
+import os
+import sys
 import unittest
 import numpy as np
 import scipy.sparse as sp
 import seemps
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
 from seemps.typing import SparseOperator
-import os
 
 
 def identical_lists(l1, l2):
@@ -22,10 +23,26 @@ def identical_lists(l1, l2):
     return True
 
 
-class TestCase(unittest.TestCase):
+class SeeMPSTestCase(unittest.TestCase):
+    _test_profiling_enabled: bool = (
+        os.environ.get("SEEMPS_TEST_PROFILE", "off").lower() == "calls"
+    )
+
     def setUp(self):
         self.rng = np.random.default_rng(seed=0x1232388472)
         self.seemps_version = seemps.version.number
+        if self._test_profiling_enabled:
+            from .profiler import get_test_profiler_collector
+
+            collector = get_test_profiler_collector()
+            collector.start_test(self.id())
+
+    def tearDown(self):
+        if self._test_profiling_enabled:
+            from .profiler import get_test_profiler_collector
+
+            collector = get_test_profiler_collector()
+            collector.end_test()
 
     def assertEqualTensors(self, a, b) -> None:
         if not (

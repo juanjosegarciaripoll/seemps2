@@ -1,5 +1,5 @@
 import numpy as np
-from .tools import TestCase
+from .tools import SeeMPSTestCase
 from seemps.cython import (
     Strategy,
     Truncation,
@@ -8,7 +8,7 @@ from seemps.cython import (
 )
 
 
-class TestStrategy(TestCase):
+class TestStrategy(SeeMPSTestCase):
     def logarithmic_values(self):
         return np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
 

@@ -1,10 +1,10 @@
 from seemps.state import NO_TRUNCATION
 from seemps.operators import MPO
 from seemps.register.circuit import ParameterFreeMPO, interpret_operator
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMPOLayerCircuit(TestCase):
+class TestMPOLayerCircuit(SeeMPSTestCase):
     def setUp(self) -> None:
         super().setUp()
         sx = interpret_operator("SX")

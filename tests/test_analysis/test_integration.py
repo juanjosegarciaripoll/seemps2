@@ -18,10 +18,10 @@ from seemps.analysis.integration.mps_quadratures import (
     mps_fejer,
 )
 
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMPSQuadratures(TestCase):
+class TestMPSQuadratures(SeeMPSTestCase):
     def test_mps_trapezoidal(self):
         a, b, n = -1, 1, 3
         h = (b - a) / (2**n - 1)
@@ -64,7 +64,7 @@ class TestMPSQuadratures(TestCase):
         self.assertSimilar(vector_quad, mps_quad.to_vector())
 
 
-class TestMPSIntegration(TestCase):
+class TestMPSIntegration(SeeMPSTestCase):
     def setUp(self):
         self.a, self.b = -2, 2
         self.func = lambda x: np.exp(x)

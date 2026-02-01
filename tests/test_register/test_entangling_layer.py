@@ -1,10 +1,10 @@
 import numpy as np
 from seemps.state import MPS, CanonicalMPS
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.register.circuit import TwoQubitGatesLayer, interpret_operator
 
 
-class TestEntanglingLayerCircuit(TestCase):
+class TestEntanglingLayerCircuit(SeeMPSTestCase):
     CNOT = interpret_operator("CNOT")
     CZ = interpret_operator("CZ")
 

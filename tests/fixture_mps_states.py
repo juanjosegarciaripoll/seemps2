@@ -1,8 +1,8 @@
 import numpy as np
-from .tools import TestCase
+from .tools import SeeMPSTestCase
 
 
-class MPSStatesFixture(TestCase):
+class MPSStatesFixture(SeeMPSTestCase):
     def setUp(self):
         super().setUp()
         self.product_state = [

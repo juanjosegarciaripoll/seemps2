@@ -1,5 +1,5 @@
 import numpy as np
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.comptree import (
@@ -14,7 +14,7 @@ from seemps.analysis.comptree import (
 from seemps.analysis.comptree.branch import get_transitions
 
 
-class TestBranchNode(TestCase):
+class TestBranchNode(SeeMPSTestCase):
     def test_binning_reduces_image(self):
         x = np.linspace(0, 1, 200)
         node = BranchNode(lambda _, x_s: np.sin(100 * x_s), grid=x, binning_tol=1e-2)
@@ -36,7 +36,7 @@ class TestBranchNode(TestCase):
             self.assertEqual(images[1][k_out], x[s])
 
 
-class TestChainTree(TestCase):
+class TestChainTree(SeeMPSTestCase):
     def test_chain_tree_single_node(self):
         N = 50
         x = RegularInterval(-1.0, 1.0, N).to_vector()
@@ -77,7 +77,7 @@ class TestChainTree(TestCase):
         self.assertTrue(np.allclose(Θ_mps, Θ_dense, atol=1e-12))
 
 
-class TestBinaryTree(TestCase):
+class TestBinaryTree(SeeMPSTestCase):
     def test_binary_tree_asymmetric(self):
         N = 50
         x = RegularInterval(-1.0, 1.0, N).to_vector()

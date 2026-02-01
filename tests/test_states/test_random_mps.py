@@ -1,9 +1,9 @@
 import numpy as np
 from seemps.state import MPS, random_uniform_mps, random_mps
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestRandomUniformMPSStates(TestCase):
+class TestRandomUniformMPSStates(SeeMPSTestCase):
     def test_random_uniform_mps_produces_mps(self):
         mps = random_uniform_mps(2, 3)
         self.assertIsInstance(mps, MPS)
@@ -46,7 +46,7 @@ class TestRandomUniformMPSStates(TestCase):
         )
 
 
-class TestRandomMPSStates(TestCase):
+class TestRandomMPSStates(SeeMPSTestCase):
     def test_random_mps_produces_mps(self):
         mps = random_mps([2, 3, 2])
         self.assertIsInstance(mps, MPS)

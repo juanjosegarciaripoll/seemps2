@@ -1,10 +1,10 @@
 import numpy as np
 from scipy.linalg import expm
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.register import IsingQAOACircuit, interpret_operator, qubo_mpo
 
 
-class TestIsingQAOACircuit(TestCase):
+class TestIsingQAOACircuit(SeeMPSTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.J = np.asarray([[0, 1, 0], [1, 0, 2], [0, 2, 0]])

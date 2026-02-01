@@ -6,10 +6,10 @@ from seemps.cython import _contract_last_and_first
 from seemps.state import product_state, CanonicalMPS
 from seemps.operators import MPO
 from seemps.typing import DenseOperator
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestQuadraticForm(TestCase):
+class TestQuadraticForm(SeeMPSTestCase):
     Sz: DenseOperator = np.diag([1, -1])
     Sx: DenseOperator = np.array([[0, 1], [1, 0]])
 
@@ -80,7 +80,7 @@ class TestQuadraticForm(TestCase):
         self.assertAlmostEqual(expected, exact_expected)  # type: ignore
 
 
-class TestDMRG(TestCase):
+class TestDMRG(SeeMPSTestCase):
     Sz: DenseOperator = np.diag([1.0, -1.0])
     Sx: DenseOperator = np.array([[0.0, 1.0], [1.0, 0.0]])
 

@@ -4,7 +4,7 @@ from .. import tools
 from seemps.solve import bicgs_solve
 
 
-class TestBICGS(tools.TestCase):
+class TestBICGS(tools.SeeMPSTestCase):
     def test_basic_problems(self):
         for p in CGS_PROBLEMS:
             with self.subTest(msg=p.name):

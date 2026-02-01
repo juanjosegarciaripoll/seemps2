@@ -9,7 +9,7 @@ from seemps.state import (
 from .. import tools
 
 
-class TestSimplify(tools.TestCase):
+class TestSimplify(tools.SeeMPSTestCase):
     def test_no_truncation(self):
         d = 2
         strategy = DEFAULT_STRATEGY.replace(

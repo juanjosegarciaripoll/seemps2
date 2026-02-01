@@ -1,5 +1,5 @@
 import numpy as np
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.analysis.operators import (
     id_mpo,
     x_mpo,
@@ -10,7 +10,7 @@ from seemps.analysis.operators import (
 )
 
 
-class Test_analysis_operators(TestCase):
+class Test_analysis_operators(SeeMPSTestCase):
     n_qubits = 6
     N = 2**n_qubits
     L = 10

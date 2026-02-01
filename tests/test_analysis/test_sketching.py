@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.stats import norm
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 from seemps.state import DEFAULT_STRATEGY
 from seemps.analysis.mesh import RegularInterval, Mesh, mps_to_mesh_matrix
 from seemps.analysis.sketching import tt_rss, BlackBoxLoadMPS
 
 
-class TestTTRSS(TestCase):
+class TestTTRSS(SeeMPSTestCase):
     def test_1d_gaussian(self):
         n = 10
         N = 2**n

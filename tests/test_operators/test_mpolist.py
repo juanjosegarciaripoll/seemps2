@@ -8,12 +8,12 @@ from seemps.state import (
 )
 from seemps.operators import MPO, MPOList
 
-from ..tools import TestCase, contain_same_objects
+from ..tools import SeeMPSTestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-class TestMPOList(TestCase):
+class TestMPOList(SeeMPSTestCase):
     def test_mpolist_construction(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)

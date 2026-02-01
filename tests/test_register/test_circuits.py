@@ -1,9 +1,9 @@
 import numpy as np
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.register.circuit import interpret_operator
 
 
-class TestKnownOperators(TestCase):
+class TestKnownOperators(SeeMPSTestCase):
     def test_interpret_operator_is_case_insensitive(self):
         self.assertSimilar(interpret_operator("Sx"), interpret_operator("SX"))
 

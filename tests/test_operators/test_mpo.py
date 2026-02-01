@@ -7,12 +7,12 @@ from seemps.state import (
     Strategy,
 )
 from seemps.operators import MPO, MPOList
-from ..tools import TestCase, contain_different_objects, contain_same_objects
+from ..tools import SeeMPSTestCase, contain_different_objects, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-class TestMPO(TestCase):
+class TestMPO(SeeMPSTestCase):
     def test_initial_data_is_copied(self):
         data = [np.zeros((1, 2, 2, 1))] * 10
         A = MPO(data)

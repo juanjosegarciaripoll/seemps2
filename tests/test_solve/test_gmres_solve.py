@@ -4,7 +4,7 @@ from .. import tools
 from seemps.solve import gmres_solve
 
 
-class TestGMRES(tools.TestCase):
+class TestGMRES(tools.SeeMPSTestCase):
     def test_basic_problems(self):
         for p in GMRES_PROBLEMS:
             with self.subTest(msg=p.name):

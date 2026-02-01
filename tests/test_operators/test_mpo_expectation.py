@@ -4,10 +4,10 @@ from seemps.state import CanonicalMPS
 from seemps.operators import MPO
 from seemps.tools import σx, σy
 from seemps.qft import qft_mpo
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMPOExpectation(TestCase):
+class TestMPOExpectation(SeeMPSTestCase):
     def test_mpo_expectation_is_alias_for_mpo_expected(self):
         """Ensure expectation of a single local operator works."""
         H = MPO([σx.reshape(1, 2, 2, 1)])

@@ -1,10 +1,10 @@
 import numpy as np
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.register.circuit import VQECircuit, interpret_operator
 from scipy.linalg import expm
 
 
-class TestVQE(TestCase):
+class TestVQE(SeeMPSTestCase):
     Sy = interpret_operator("Sy")
     CNOT = interpret_operator("CNOT")
 

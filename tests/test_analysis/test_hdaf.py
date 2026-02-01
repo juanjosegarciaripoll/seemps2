@@ -1,4 +1,4 @@
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 import numpy as np
 from seemps.state import MPS
 from seemps.analysis.hdaf import hdaf_mpo
@@ -19,7 +19,7 @@ def gaussian_deriv2(x):
     return (x**2 - 1) * gaussian(x)
 
 
-class TestHDAF(TestCase):
+class TestHDAF(SeeMPSTestCase):
     def setUp(self) -> None:
         self.qubit_range = range(6, 10 + 1)
         self.space_domain = (-8, 8)

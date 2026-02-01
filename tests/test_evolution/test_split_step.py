@@ -1,10 +1,10 @@
 import numpy as np
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.state import MPS, CanonicalMPS, Strategy
 from seemps.evolution.hdaf import split_step
 
 
-class TestSplitStep(TestCase):
+class TestSplitStep(SeeMPSTestCase):
     def test_analytical_evolution(self):
         num_qubits = 8
         dx = 0.1

@@ -1,11 +1,11 @@
 import numpy as np
 from seemps.state import MPS
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.register.circuit import LocalRotationsLayer, interpret_operator
 from scipy.linalg import expm
 
 
-class TestLocalGateCircuits(TestCase):
+class TestLocalGateCircuits(SeeMPSTestCase):
     Sx = interpret_operator("Sx")
     Sy = interpret_operator("Sy")
     Sz = interpret_operator("Sz")

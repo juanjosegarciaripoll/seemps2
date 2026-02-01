@@ -1,7 +1,8 @@
 import os
+import sys
 
 if os.environ.get("SEEMPS_PYBIND", "off").lower() != "on":
-    print("CYTHON!")
+    print("CYTHON!", file=sys.stderr)
     from .core import (
         _begin_environment,
         _canonicalize,
@@ -32,7 +33,7 @@ if os.environ.get("SEEMPS_PYBIND", "off").lower() != "on":
         vdot,
     )
 else:
-    print("PYBIND!")
+    print("PYBIND!", file=sys.stderr)
     from .pybind import (
         _select_svd_driver,
         _destructive_svd,

@@ -2,10 +2,10 @@ import numpy as np
 from math import sqrt
 from seemps.state.sampling import sample_mps
 from seemps.state import product_state, CanonicalMPS
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestSampling(TestCase):
+class TestSampling(SeeMPSTestCase):
     def test_sample_mps_sizes(self):
         mps = product_state([1.0, 0.0], 10)
 

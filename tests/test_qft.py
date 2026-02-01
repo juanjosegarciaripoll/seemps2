@@ -2,10 +2,10 @@ from seemps.qft import qft, qft_flip, iqft, qft_nd_mpo, iqft_nd_mpo
 import numpy as np
 import numpy.fft
 from seemps.state import MPS
-from .tools import TestCase
+from .tools import SeeMPSTestCase
 
 
-class TestQFT(TestCase):
+class TestQFT(SeeMPSTestCase):
     @staticmethod
     def gaussian_mps(N):
         x = np.linspace(-4, 4, 2**N + 1)[:-1]

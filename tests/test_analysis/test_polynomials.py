@@ -3,10 +3,10 @@ from numpy.polynomial.polynomial import Polynomial
 from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION, CanonicalMPS
 from seemps.analysis.polynomials import _mps_x_tensor, mps_from_polynomial
 from seemps.analysis.mesh import RegularInterval, Interval
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMonomialsCollection(TestCase):
+class TestMonomialsCollection(SeeMPSTestCase):
     def assertContainsMonomials(self, L: int, mps: MPS, domain: Interval, first: bool):
         x = domain.to_vector()
         for m in range(L):
@@ -34,7 +34,7 @@ class TestMonomialsCollection(TestCase):
         self.assertContainsMonomials(L, xL_mps, domain, first=True)
 
 
-class TestPolynomialFunction(TestCase):
+class TestPolynomialFunction(SeeMPSTestCase):
     N = 5
     domain = RegularInterval(0, 1, 2**5, endpoint_right=True)
 

@@ -7,7 +7,7 @@ from seemps.expectation import (
     expectation2,
     product_expectation,
 )
-from ..tools import TestCase, run_over_random_uniform_mps
+from ..tools import SeeMPSTestCase, run_over_random_uniform_mps
 
 
 def bit2state(b):
@@ -17,7 +17,7 @@ def bit2state(b):
         return [1, 0]
 
 
-class TestExpectation(TestCase):
+class TestExpectation(SeeMPSTestCase):
     def test_scprod_is_antilinear_wrt_first_argument(self):
         a = -0.2 - 0.2j
         state1 = product_state([1, 0.3j], 3)

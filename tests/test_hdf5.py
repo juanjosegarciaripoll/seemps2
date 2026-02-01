@@ -3,11 +3,11 @@ import numpy as np
 import h5py  # type: ignore
 import seemps
 from seemps.operators import MPO
-from .tools import TestCase
+from .tools import SeeMPSTestCase
 import os
 
 
-class TestHDF5(TestCase):
+class TestHDF5(SeeMPSTestCase):
     filename = "test_hdf5.hdf5"
 
     def tearDown(self) -> None:

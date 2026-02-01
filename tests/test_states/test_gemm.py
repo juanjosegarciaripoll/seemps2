@@ -3,7 +3,7 @@ from seemps.cython import _gemm, GemmOrder
 from .. import tools
 
 
-class TestGEMM(tools.TestCase):
+class TestGEMM(tools.SeeMPSTestCase):
     def size_range(self, max_size: int = 6):
         for m in range(1, max_size):
             for k in range(1, max_size):

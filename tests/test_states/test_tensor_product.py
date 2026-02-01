@@ -6,10 +6,10 @@ from seemps.state import (
     DEFAULT_STRATEGY,
     NO_TRUNCATION,
 )
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMPSTensorProduct(TestCase):
+class TestMPSTensorProduct(SeeMPSTestCase):
     def setUp(self) -> None:
         v1 = np.array([1, -3j])
         v2 = np.array([-1, 0, -1])

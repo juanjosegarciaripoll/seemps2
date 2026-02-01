@@ -9,7 +9,7 @@ def diag_projector(ndx: int, d: int):
     return A
 
 
-class TestBasisProjector(tools.TestCase):
+class TestBasisProjector(tools.SeeMPSTestCase):
     def test_projector_rejects_out_of_bound_indices(self):
         with self.assertRaises(Exception):
             basis_states_projector_mpo([[0, 3]], [2, 2])

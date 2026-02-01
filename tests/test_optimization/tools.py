@@ -9,10 +9,10 @@ from seemps.operators import MPO
 from seemps.analysis.evolution import EvolutionResults
 from seemps.optimization.descent import OptimizeResults
 from seemps.typing import DenseOperator
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestItimeCase(TestCase):
+class TestItimeCase(SeeMPSTestCase):
     Sz: DenseOperator = np.diag([0.5, -0.5])
 
     def make_problem_and_solution(self, size: int) -> tuple[MPO, MPS]:
@@ -63,7 +63,7 @@ class TestItimeCase(TestCase):
         self.assertSimilar(norms, np.ones(len(norms)))
 
 
-class TestOptimizeCase(TestCase):
+class TestOptimizeCase(SeeMPSTestCase):
     Sz = np.diag([0.5, -0.5])
 
     @classmethod

@@ -2,10 +2,10 @@ from __future__ import annotations
 import numpy as np
 from seemps.tools import σx, mkron
 from seemps.hamiltonians import InteractionGraph
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestInteractionGraph(TestCase):
+class TestInteractionGraph(SeeMPSTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.sx = σx

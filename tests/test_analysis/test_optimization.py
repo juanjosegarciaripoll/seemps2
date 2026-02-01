@@ -9,14 +9,14 @@ from seemps.analysis.optimization import (
     _get_search_environments,
 )
 
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
 def _bits_to_int(bits: np.ndarray) -> int:
     return int("".join(str(x) for x in bits), 2)
 
 
-class TestBinarySearch(TestCase):
+class TestBinarySearch(SeeMPSTestCase):
     def _make_monotone_mps(self, f, a=-2, b=2, n=7):
         interval = RegularInterval(a, b, 2**n)
         x = interval.to_vector()
@@ -61,7 +61,7 @@ class TestBinarySearch(TestCase):
             self.assertEqual(idx, idx_ref)
 
 
-class TestMPSOptimization(TestCase):
+class TestMPSOptimization(SeeMPSTestCase):
     def test_optimize_mps_sin(self):
         mps = mps_sin((-2.0, 2.0, 6))
         y = mps.to_vector()

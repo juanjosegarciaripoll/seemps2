@@ -4,7 +4,7 @@ from .. import tools
 from seemps.solve.dmrg import dmrg_solve
 
 
-class TestDMRGSolve(tools.TestCase):
+class TestDMRGSolve(tools.SeeMPSTestCase):
     def test_basic_problems(self):
         for p in DMRG_PROBLEMS:
             with self.subTest(msg=p.name):

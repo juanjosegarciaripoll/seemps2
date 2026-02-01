@@ -159,4 +159,97 @@ def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
     sys.setprofile(CURRENT_PROFILER)
 
 
-__all__ = ["hook_our_profiler", "Profiler", "CURRENT_PROFILER"]
+class TestProfiler:
+    """
+    A lightweight profiler for tracking function call counts during tests.
+    Only tracks C functions from specified module prefixes.
+
+    Args:
+        module_prefixes: List of module prefixes to filter (e.g., ['seemps.cython']).
+    """
+
+    def __init__(self, module_prefixes: list[str] = ["seemps.cython"]):
+        self.module_prefixes = module_prefixes
+        self.call_counts: dict[str, int] = defaultdict(int)
+        self._active = False
+
+    def start(self):
+        """Start profiling."""
+        self.call_counts.clear()
+        self._active = True
+        sys.setprofile(self)
+
+    def stop(self) -> dict[str, int]:
+        """Stop profiling and return the collected call counts."""
+        sys.setprofile(None)
+        self._active = False
+        return dict(self.call_counts)
+
+    def __call__(self, _frame, event, arg):
+        """Profile callback - only tracks c_call events."""
+        if event == "c_call" and arg is not None:
+            module = getattr(arg, "__module__", None) or ""
+            if any(module.startswith(prefix) for prefix in self.module_prefixes):
+                func_name = getattr(arg, "__name__", str(arg))
+                qualified_name = getattr(arg, "__qualname__", func_name)
+                full_name = f"{module}.{qualified_name}"
+                self.call_counts[full_name] += 1
+
+
+class TestProfilerCollector:
+    """
+    Collects profiling results across multiple tests and outputs JSON at the end.
+    """
+
+    def __init__(self, module_prefixes: list[str] = ["seemps.cython"]):
+        self.profiler = TestProfiler(module_prefixes)
+        self.results: dict[str, dict[str, int]] = {}
+        self._registered_atexit = False
+
+    def start_test(self, test_name: str):
+        """Start profiling for a test."""
+        self._current_test = test_name
+        self.profiler.start()
+
+    def end_test(self):
+        """End profiling for the current test and store results."""
+        counts = self.profiler.stop()
+        if counts:  # Only store if there were any calls
+            self.results[self._current_test] = counts
+
+    def register_atexit(self):
+        """Register the JSON output handler to run at program exit."""
+        if not self._registered_atexit:
+            atexit.register(self.print_json)
+            self._registered_atexit = True
+
+    def print_json(self):
+        """Print the collected results as JSON."""
+        import json
+
+        if self.results:
+            print(json.dumps(self.results, indent=2, sort_keys=True))
+
+
+# Global instance for test profiling
+TEST_PROFILER_COLLECTOR: TestProfilerCollector | None = None
+
+
+def get_test_profiler_collector() -> TestProfilerCollector:
+    """Get or create the global TestProfilerCollector instance."""
+    global TEST_PROFILER_COLLECTOR
+    if TEST_PROFILER_COLLECTOR is None:
+        TEST_PROFILER_COLLECTOR = TestProfilerCollector()
+        TEST_PROFILER_COLLECTOR.register_atexit()
+    return TEST_PROFILER_COLLECTOR
+
+
+__all__ = [
+    "hook_our_profiler",
+    "Profiler",
+    "CURRENT_PROFILER",
+    "TestProfiler",
+    "TestProfilerCollector",
+    "TEST_PROFILER_COLLECTOR",
+    "get_test_profiler_collector",
+]

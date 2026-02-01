@@ -4,7 +4,7 @@ from seemps.state.schmidt import _vector2mps
 from .. import tools
 
 
-class TestMPSFromVector(tools.TestCase):
+class TestMPSFromVector(tools.SeeMPSTestCase):
     def join_tensors(self, state):
         w = np.ones((1, 1))
         for A in state:

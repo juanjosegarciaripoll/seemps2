@@ -10,12 +10,12 @@ from seemps.state import (
 )
 from seemps.tools import σx, σy, σz
 
-from ..tools import TestCase, contain_same_objects
+from ..tools import SeeMPSTestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-class TestMPOSum(TestCase):
+class TestMPOSum(SeeMPSTestCase):
     def setUp(self):
         super().setUp()
         self.mpoA = MPO([σx.reshape(1, 2, 2, 1)] * 10)

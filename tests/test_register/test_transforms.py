@@ -2,10 +2,10 @@ import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.state import MPS
 from seemps.register import qubo_mpo
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestAlgebraic(TestCase):
+class TestAlgebraic(SeeMPSTestCase):
     P1 = sp.diags([0.0, 1.0], 0)
     i2 = sp.eye(2, dtype=np.float64)
 

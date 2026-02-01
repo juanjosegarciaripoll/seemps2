@@ -13,11 +13,11 @@ from seemps.analysis.expansion import (
 from seemps.analysis.operators import x_mpo
 from seemps.typing import Vector
 
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from .tools_interpolation import gaussian
 
 
-class TestChebyshevCoefficients(TestCase):
+class TestChebyshevCoefficients(SeeMPSTestCase):
     def test_expansion_rejects_wrong_literal(self):
         with self.assertRaises(TypeError):
             ChebyshevExpansion.interpolate(np.exp, interpolated_nodes="else")  # type: ignore
@@ -156,7 +156,7 @@ class TestChebyshevCoefficients(TestCase):
         self.assertSimilar(c_f[:-1], c_F)
 
 
-class TestChebyshevMPS(TestCase):
+class TestChebyshevMPS(SeeMPSTestCase):
     def test_gaussian_1d(self):
         f = lambda x: np.exp(-(x**2))  # noqa: E731
         a, b, n, order = -1, 2, 5, 30
@@ -247,7 +247,7 @@ class TestChebyshevMPS(TestCase):
         self.assertSimilar(Z_ref, Z_poly)
 
 
-class TestChebyshevMPO(TestCase):
+class TestChebyshevMPO(SeeMPSTestCase):
     def test_gaussian_mpo(self):
         a, b, n = -1, 1, 5
         dx = (b - a) / 2**n
@@ -269,7 +269,7 @@ class TestChebyshevMPO(TestCase):
 # TODO: Refactor tests and combine by PolynomialExpansion
 
 
-class TestLegendreMPS(TestCase):
+class TestLegendreMPS(SeeMPSTestCase):
     def test_gaussian_1d(self):
         f = lambda x: np.exp(-(x**2))  # noqa: E731
         a, b, n, order = -1, 2, 5, 30
@@ -312,7 +312,7 @@ class TestLegendreMPS(TestCase):
         self.assertSimilar(Z_ref, Z_poly)
 
 
-class TestLegendreMPO(TestCase):
+class TestLegendreMPO(SeeMPSTestCase):
     def test_gaussian_mpo(self):
         a, b, n = -1, 1, 5
         dx = (b - a) / 2**n
@@ -331,7 +331,7 @@ class TestLegendreMPO(TestCase):
         self.assertSimilar(f(x), y_poly)
 
 
-class TestPowerExpansion(TestCase):
+class TestPowerExpansion(SeeMPSTestCase):
     def test_mps_expansion(self):
         a, b, n = -1, 1, 10
         interval = RegularInterval(a, b, 2**n, endpoint_right=True)
