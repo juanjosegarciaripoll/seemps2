@@ -1,12 +1,11 @@
 import numpy as np
-from .problems import DMRG_PROBLEMS
-from .. import tools
+from .problems import TestSolveProblems
 from seemps.solve.dmrg import dmrg_solve
 
 
-class TestDMRGSolve(tools.SeeMPSTestCase):
+class TestDMRGSolve(TestSolveProblems):
     def test_basic_problems(self):
-        for p in DMRG_PROBLEMS:
+        for p in self.DMRG_PROBLEMS:
             with self.subTest(msg=p.name):
                 x, r = dmrg_solve(
                     p.invertible_mpo,

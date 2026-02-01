@@ -1,12 +1,11 @@
 import numpy as np
-from .problems import CGS_PROBLEMS
-from .. import tools
+from .problems import TestSolveProblems
 from seemps.solve import bicgs_solve
 
 
-class TestBICGS(tools.SeeMPSTestCase):
+class TestBICGS(TestSolveProblems):
     def test_basic_problems(self):
-        for p in CGS_PROBLEMS:
+        for p in self.CGS_PROBLEMS:
             with self.subTest(msg=p.name):
                 x, r = bicgs_solve(
                     p.invertible_mpo,

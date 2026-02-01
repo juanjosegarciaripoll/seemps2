@@ -8,6 +8,7 @@ from seemps.analysis.polynomials import mps_from_polynomial
 from seemps.state import MPS
 from seemps.state.factories import random_mps
 from seemps.analysis.derivatives import finite_differences_mpo
+from ..tools import SeeMPSTestCase
 
 
 @dataclasses.dataclass
@@ -65,13 +66,14 @@ def make_Laplacian_problem(
     return MPOInverseProblem(label, mpo.join(), rhs_mps)
 
 
-CGS_PROBLEMS = [
-    make_identity_problem(2),
-    make_identity_problem(3),
-    make_complex_problem(3),
-    make_Laplacian_problem(3, [1.0]),
-]
-
-DMRG_PROBLEMS = CGS_PROBLEMS
-
-GMRES_PROBLEMS = CGS_PROBLEMS
+class TestSolveProblems(SeeMPSTestCase):
+    def __init__(self):
+        super().__init__()
+        self.CGS_PROBLEMS = [
+            make_identity_problem(2),
+            make_identity_problem(3),
+            make_complex_problem(3),
+            make_Laplacian_problem(3, [1.0]),
+        ]
+        self.DMRG_PROBLEMS = self.CGS_PROBLEMS
+        self.GMRES_PROBLEMS = self.CGS_PROBLEMS
