@@ -3,8 +3,12 @@ import unittest
 import numpy as np
 import scipy.sparse as sp
 import seemps
+import seemps.cython
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
 from seemps.typing import SparseOperator
+from seemps.tools import log
+
+log(f"SVD driver is {seemps.cython._get_svd_driver()}")
 
 
 def identical_lists(l1, l2):
