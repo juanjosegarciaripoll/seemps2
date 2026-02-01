@@ -371,6 +371,7 @@ def compare_tests_with_different_cores(filter: str | None = None) -> list[dict]:
             func.split(".")[-1]: count
             for func, count in pybind_results.get(test_name, {}).items()
             if ("seemps.cython.pybind" in func)
+            if (".get_" not in func)
         }
         no_pybind_funcs = {
             func.split(".")[-1]: count
