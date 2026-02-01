@@ -1,11 +1,5 @@
 import numpy as np
-from seemps.state import (
-    MPSSum,
-    DEFAULT_STRATEGY,
-    Simplification,
-    Truncation,
-    random_uniform_mps,
-)
+from seemps.state import MPSSum, DEFAULT_STRATEGY, Simplification, Truncation
 from seemps.state.simplification import simplify_mps_sum
 from .. import tools
 
@@ -17,9 +11,9 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
             method=Truncation.DO_NOT_TRUNCATE, simplify=Simplification.VARIATIONAL
         )
         for n in range(3, 9):
-            ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ1 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
-            ψ2 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
             a1 = np.random.randn()
             a2 = np.random.randn()
@@ -37,9 +31,9 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
             simplify=Simplification.VARIATIONAL, simplification_tolerance=tolerance
         )
         for n in range(3, 15):
-            ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ1 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
-            ψ2 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
             a1 = np.random.randn()
             a2 = np.random.randn()
@@ -57,9 +51,9 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
             strategy = DEFAULT_STRATEGY.replace(
                 simplify=Simplification.VARIATIONAL, max_bond_dimension=D
             )
-            ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ1 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
-            ψ2 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
             a1 = np.random.randn()
             a2 = np.random.randn()
@@ -72,9 +66,9 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
         strategy_0 = DEFAULT_STRATEGY.replace(simplify=Simplification.CANONICAL_FORM)
         strategy_1 = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
         for n in range(3, 9):
-            ψ1 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ1 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
-            ψ2 = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
             a1 = np.random.randn()
             a2 = np.random.randn()

@@ -3,7 +3,6 @@ from seemps.state import (
     DEFAULT_STRATEGY,
     Simplification,
     Truncation,
-    random_uniform_mps,
     scprod,
 )
 from seemps.operators import mpo_as_mps, simplify_mpo
@@ -18,7 +17,7 @@ class TestSimplify(tools.SeeMPSTestCase):
             method=Truncation.DO_NOT_TRUNCATE, simplify=Simplification.VARIATIONAL
         )
         for n in range(3, 9):
-            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ = simplify_mpo(mpo, strategy=strategy)
@@ -31,7 +30,7 @@ class TestSimplify(tools.SeeMPSTestCase):
             simplify=Simplification.VARIATIONAL, simplification_tolerance=tolerance
         )
         for n in range(3, 15):
-            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ = simplify_mpo(mpo, strategy=strategy)
@@ -46,7 +45,7 @@ class TestSimplify(tools.SeeMPSTestCase):
             strategy = DEFAULT_STRATEGY.replace(
                 simplify=Simplification.VARIATIONAL, max_bond_dimension=D
             )
-            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ = simplify_mpo(mpo, strategy=strategy)
@@ -58,7 +57,7 @@ class TestSimplify(tools.SeeMPSTestCase):
         strategy_0 = DEFAULT_STRATEGY.replace(simplify=Simplification.CANONICAL_FORM)
         strategy_1 = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
         for n in range(3, 9):
-            ψ = random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(2 * d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ0 = simplify_mpo(mpo, strategy=strategy_0)
