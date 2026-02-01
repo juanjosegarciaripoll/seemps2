@@ -1,5 +1,5 @@
 import numpy as np
-from ..tools import TestCase, random_uniform_mps
+from ..tools import SeeMPSTestCase
 from seemps.analysis.operators import (
     id_mpo,
     x_mpo,
@@ -10,7 +10,7 @@ from seemps.analysis.operators import (
 )
 
 
-class Test_analysis_operators(TestCase):
+class Test_analysis_operators(SeeMPSTestCase):
     n_qubits = 6
     N = 2**n_qubits
     L = 10
@@ -19,7 +19,10 @@ class Test_analysis_operators(TestCase):
     x = a + dx * np.arange(N)
     k = 2 * np.pi * np.arange(N) / L
     p = k - (np.arange(N) >= (N / 2)) * 2 * np.pi / dx
-    f = random_uniform_mps(2, n_qubits)
+
+    def setUp(self):
+        super().setUp()
+        self.f = self.random_uniform_mps(2, self.n_qubits)
 
     def test_id_mpo(self):
         self.assertSimilar(self.f, id_mpo(self.n_qubits) @ self.f)

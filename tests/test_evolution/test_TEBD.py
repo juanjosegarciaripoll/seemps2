@@ -11,11 +11,6 @@ from seemps.hamiltonians import HeisenbergHamiltonian
 from .problem import EvolutionTestCase
 
 
-def random_wavefunction(n):
-    ψ = np.random.rand(n) - np.float64(0.5)
-    return ψ / np.linalg.norm(ψ)
-
-
 class TestPairwiseUnitaries(EvolutionTestCase):
     def test_pairwise_unitaries_matrices(self):
         """Check that the nearest-neighbor unitary matrices are built properly."""

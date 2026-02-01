@@ -1,12 +1,7 @@
 import numpy as np
 from seemps.state import MPS, MPSSum
 from ..fixture_mps_states import MPSStatesFixture
-from ..tools import (
-    contain_same_objects,
-    contain_different_objects,
-    random_uniform_mps,
-    similar,
-)
+from ..tools import contain_same_objects, contain_different_objects, similar
 
 
 class TestMPS(MPSStatesFixture):
@@ -157,14 +152,14 @@ class TestMPSOperations(MPSStatesFixture):
         A = MPS(self.inhomogeneous_state)
         self.assertSimilar(A.to_vector() * A.to_vector(), (A * A).to_vector())
         with self.assertRaises(Exception):
-            random_uniform_mps(2, 3) * random_uniform_mps(3, 3)  # type: ignore
+            self.random_uniform_mps(2, 3) * self.random_uniform_mps(3, 3)  # type: ignore
 
     def test_mps_complex_conjugate(self):
         A = MPS(self.inhomogeneous_state)
         self.assertSimilar(A.to_vector().conj(), A.conj().to_vector())
 
     def test_mps_extend(self):
-        mps = random_uniform_mps(2, 5, D=5, truncate=False)
+        mps = self.random_uniform_mps(2, 5, D=5, truncate=False)
         new_mps = mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=3)
         self.assertTrue(mps[0] is new_mps[0])
         self.assertEqual(new_mps[1].shape, (5, 3, 5))
@@ -175,7 +170,7 @@ class TestMPSOperations(MPSStatesFixture):
         self.assertTrue(mps[4] is new_mps[6])
 
     def test_mps_extend_accepts_dimensions_list_with_proper_size(self):
-        mps = random_uniform_mps(2, 5, D=5, truncate=False)
+        mps = self.random_uniform_mps(2, 5, D=5, truncate=False)
         new_mps = mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=[5, 4])
         self.assertEqual(new_mps.physical_dimensions(), [2, 5, 2, 4, 2, 2, 2])
         with self.assertRaises(Exception):
@@ -184,6 +179,6 @@ class TestMPSOperations(MPSStatesFixture):
             mps.extend(7, sites=[0, 2, 4, 5, 6], dimensions=[5, 6, 8])
 
     def test_mps_extend_cannot_shrink_mps(self):
-        mps = random_uniform_mps(2, 5, D=5, truncate=False)
+        mps = self.random_uniform_mps(2, 5, D=5, truncate=False)
         with self.assertRaises(Exception):
             mps.extend(3)

@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.stats import norm
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 from seemps.state import DEFAULT_STRATEGY
 from seemps.analysis.mesh import RegularInterval, Mesh, mps_to_mesh_matrix
 from seemps.analysis.sketching import tt_rss, BlackBoxLoadMPS
 
 
-class TestTTRSS(TestCase):
+class TestTTRSS(SeeMPSTestCase):
     def test_1d_gaussian(self):
         n = 10
         N = 2**n
@@ -20,8 +20,7 @@ class TestTTRSS(TestCase):
         y_vec = f(x)
 
         num_samples = 100
-        rng = np.random.default_rng(0)
-        samples = rng.normal(loc, scale, num_samples).reshape(-1, 1)
+        samples = self.rng.normal(loc, scale, num_samples).reshape(-1, 1)
 
         mesh = Mesh([interval])
         map_matrix = mps_to_mesh_matrix([n])
@@ -45,8 +44,7 @@ class TestTTRSS(TestCase):
         z_vec = f(X, Y).reshape(-1)
 
         num_samples = 100
-        rng = np.random.default_rng(0)
-        samples = rng.normal(loc=0.0, scale=1.0, size=(num_samples, 2))
+        samples = self.rng.normal(loc=0.0, scale=1.0, size=(num_samples, 2))
 
         mesh = Mesh([interval, interval])
         map_matrix = mps_to_mesh_matrix([n, n])
@@ -79,8 +77,7 @@ class TestTTRSS(TestCase):
         z_vec = f(X, Y, Z).reshape(-1)
 
         num_samples = 1000
-        rng = np.random.default_rng(0)
-        samples = rng.multivariate_normal(μ, Σ, size=num_samples)
+        samples = self.rng.multivariate_normal(μ, Σ, size=num_samples)
 
         mesh = Mesh([interval] * 3)
         map_matrix = mps_to_mesh_matrix([n] * 3)

@@ -1,7 +1,6 @@
 import numpy as np
 from seemps.tools import σx, σy, σz
 from seemps.state import (
-    random_uniform_mps,
     DEFAULT_STRATEGY,
     NO_TRUNCATION,
     Simplification,
@@ -9,12 +8,12 @@ from seemps.state import (
 )
 from seemps.operators import MPO, MPOList
 
-from ..tools import TestCase, contain_same_objects
+from ..tools import SeeMPSTestCase, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-class TestMPOList(TestCase):
+class TestMPOList(SeeMPSTestCase):
     def test_mpolist_construction(self):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
@@ -42,7 +41,7 @@ class TestMPOList(TestCase):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         self.assertSimilar(UV.apply(state), V.apply(U.apply(state)))
         self.assertSimilar(UV @ state, V.apply(U.apply(state)))
         self.assertEqual(UV.size, U.size)
@@ -51,7 +50,7 @@ class TestMPOList(TestCase):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        mps = random_uniform_mps(2, 3, D=2)
+        mps = self.random_uniform_mps(2, 3)
         self.assertSimilar(
             UV.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
             (UV.to_matrix() @ mps.to_vector()),
@@ -68,7 +67,7 @@ class TestMPOList(TestCase):
         U = MPO([σx.reshape(1, 2, 2, 1)] * 3)
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         self.assertSimilar(UV.apply(state + state), V.apply(U.apply(2.0 * state)))
         self.assertSimilar(UV @ (state + state), V.apply(U.apply(2.0 * state)))
 
@@ -86,7 +85,7 @@ class TestMPOList(TestCase):
         V = MPO([σz.reshape(1, 2, 2, 1)] * 3)
         UV = MPOList([U, V], NO_TRUNCATION)
         self.assertSimilar(UV.to_matrix(), V.to_matrix() @ U.to_matrix())
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         self.assertSimilar(
             UV.apply(state).to_vector(),
             V.to_matrix() @ U.to_matrix() @ state.to_vector(),

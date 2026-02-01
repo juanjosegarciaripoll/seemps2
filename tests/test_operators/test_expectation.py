@@ -7,7 +7,7 @@ from seemps.expectation import (
     expectation2,
     product_expectation,
 )
-from ..tools import TestCase, run_over_random_uniform_mps, random_uniform_mps
+from ..tools import SeeMPSTestCase
 
 
 def bit2state(b):
@@ -17,7 +17,7 @@ def bit2state(b):
         return [1, 0]
 
 
-class TestExpectation(TestCase):
+class TestExpectation(SeeMPSTestCase):
     def test_scprod_is_antilinear_wrt_first_argument(self):
         a = -0.2 - 0.2j
         state1 = product_state([1, 0.3j], 3)
@@ -37,7 +37,7 @@ class TestExpectation(TestCase):
         # Test that scprod() can be used to project onto basis states
         for nbits in range(1, 8):
             # We create a random MPS
-            ψmps = seemps.state.random_uniform_mps(2, nbits, 2)
+            ψmps = self.random_uniform_mps(2, nbits, 2)
             ψwave = ψmps.to_vector()
 
             # We then create the basis of all states with well defined
@@ -76,7 +76,7 @@ class TestExpectation(TestCase):
         for nbits in range(1, 8):
             for _ in range(10):
                 # We create a random MPS
-                ψmps = seemps.state.random_uniform_mps(2, nbits, 2)
+                ψmps = self.random_uniform_mps(2, nbits, 2)
                 ψwave = ψmps.to_vector()
                 self.assertAlmostEqual(ψmps.norm_squared(), np.vdot(ψwave, ψwave))
 
@@ -107,12 +107,12 @@ class TestExpectation(TestCase):
                     )
                     self.assertAlmostEqual(desired / nrm2, ϕ.expectation1(O1, n) / nrm2)
 
-        run_over_random_uniform_mps(expected1_ok)
-        run_over_random_uniform_mps(lambda ϕ: expected1_ok(ϕ, canonical=True))
+        self.run_over_random_uniform_mps(expected1_ok)
+        self.run_over_random_uniform_mps(lambda ϕ: expected1_ok(ϕ, canonical=True))
 
     def test_expected1_density(self):
         def random_wavefunction(n):
-            ψ = np.random.rand(n) - 0.5
+            ψ = self.rng.normal(size=n) - 0.5
             return ψ / np.linalg.norm(ψ)
 
         #
@@ -161,11 +161,11 @@ class TestExpectation(TestCase):
                     desired / nrm2, ϕ.expectation2(O1, O2, n - 1) / nrm2
                 )
 
-        run_over_random_uniform_mps(expected2_ok)
-        run_over_random_uniform_mps(lambda ϕ: expected2_ok(ϕ, canonical=True))
+        self.run_over_random_uniform_mps(expected2_ok)
+        self.run_over_random_uniform_mps(lambda ϕ: expected2_ok(ϕ, canonical=True))
 
     def test_expectation2_with_same_site_is_product(self):
-        state = random_uniform_mps(2, 10, rng=self.rng)
+        state = self.random_uniform_mps(2, 10)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         self.assertAlmostEqual(state.expectation2(σz, σz, 1, 1), state.norm_squared())
@@ -174,7 +174,7 @@ class TestExpectation(TestCase):
         )
 
     def test_expectation2_sorts_site_indices(self):
-        state = random_uniform_mps(2, 10, rng=self.rng)
+        state = self.random_uniform_mps(2, 10)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         self.assertAlmostEqual(
@@ -182,7 +182,7 @@ class TestExpectation(TestCase):
         )
 
     def test_expectation2_over_separate_sites(self):
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         v = state.to_vector()
@@ -192,7 +192,7 @@ class TestExpectation(TestCase):
         )
 
     def test_product_expectation(self):
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         σz = np.array([[1, 0], [0, -1]])
         σx = np.array([[0, 1], [1, 0]])
         v = state.to_vector()
@@ -202,7 +202,7 @@ class TestExpectation(TestCase):
         )
 
     def test_product_expectation_checks_sizes(self):
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         σz = np.array([[1, 0], [0, -1]])
         with self.assertRaises(Exception):
             product_expectation(state, [σz] * 4)

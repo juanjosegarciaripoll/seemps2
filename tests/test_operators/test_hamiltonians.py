@@ -6,7 +6,7 @@ from seemps.hamiltonians import (
     ConstantNNHamiltonian,
     HeisenbergHamiltonian,
 )
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from math import sqrt
 
 i2 = np.eye(2)
@@ -16,7 +16,7 @@ Sz = np.array([[1, 0, 0], [0, 0, 0], [0, 0, -1]])
 Sy = -0.5j * (Sz @ Sx - Sx @ Sz)
 
 
-class TestConstantNNHamiltonian(TestCase):
+class TestConstantNNHamiltonian(SeeMPSTestCase):
     def assertSimilarMatrix(self, H: NNHamiltonian, M: np.ndarray) -> None:
         self.assertSimilar(H.to_matrix(), M)
         self.assertSimilar(H.to_mpo().to_matrix(), M)

@@ -3,12 +3,11 @@ import numpy as np
 import h5py  # type: ignore
 import seemps
 from seemps.operators import MPO
-from seemps.state import random_uniform_mps
-from .tools import TestCase
+from .tools import SeeMPSTestCase
 import os
 
 
-class TestHDF5(TestCase):
+class TestHDF5(SeeMPSTestCase):
     filename = "test_hdf5.hdf5"
 
     def tearDown(self) -> None:
@@ -18,7 +17,7 @@ class TestHDF5(TestCase):
 
     def test_hdf5_mps_attributes(self):
         with h5py.File(self.filename, "w") as file:
-            seemps.hdf5.write_mps(file, "M", random_uniform_mps(2, 3))
+            seemps.hdf5.write_mps(file, "M", self.random_uniform_mps(2, 3))
         with h5py.File(self.filename, "r") as file:
             g = file["M"]
             attrs = g.attrs
@@ -39,7 +38,7 @@ class TestHDF5(TestCase):
 
     def test_can_read_and_write_complex_mps_to_hdf5(self):
         """Test that a single MPS can be written to an HDF5 file"""
-        state = random_uniform_mps(2, 3, 2)
+        state = self.random_uniform_mps(2, 3, D=2)
         for i in range(len(state)):
             state[i] = state[i] * 1j
         with h5py.File(self.filename, "w") as file:
@@ -73,7 +72,7 @@ class TestHDF5(TestCase):
                 seemps.hdf5.read_mps(file, "B")
 
     def test_can_read_and_write_real_mps_to_hdf5(self):
-        state = random_uniform_mps(2, 3, 3)
+        state = self.random_uniform_mps(2, 3, D=3)
         with h5py.File(self.filename, "w") as file:
             seemps.hdf5.write_mps(file, "M", state)
 
@@ -96,7 +95,7 @@ class TestHDF5(TestCase):
     def test_can_extend_hdf5(self):
         """Test that a single MPS can be appended to an HDF5 file"""
         self.test_can_read_and_write_real_mps_to_hdf5()
-        aux = random_uniform_mps(2, 4)
+        aux = self.random_uniform_mps(2, 4)
         with h5py.File(self.filename, "r+") as file:
             seemps.hdf5.write_mps(file, "X", aux)
 

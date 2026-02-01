@@ -1,22 +1,15 @@
-from seemps.state import (
-    DEFAULT_STRATEGY,
-    Simplification,
-    Truncation,
-    random_uniform_mps,
-    scprod,
-    simplify,
-)
+from seemps.state import DEFAULT_STRATEGY, Simplification, Truncation, scprod, simplify
 from .. import tools
 
 
-class TestSimplify(tools.TestCase):
+class TestSimplify(tools.SeeMPSTestCase):
     def test_no_truncation(self):
         d = 2
         strategy = DEFAULT_STRATEGY.replace(
             method=Truncation.DO_NOT_TRUNCATE, simplify=Simplification.VARIATIONAL
         )
         for n in range(3, 9):
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             φ = simplify(ψ, strategy=strategy)
             self.assertSimilar(ψ.to_vector(), φ.to_vector())
@@ -28,7 +21,7 @@ class TestSimplify(tools.TestCase):
             simplify=Simplification.VARIATIONAL, simplification_tolerance=tolerance
         )
         for n in range(3, 15):
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             φ = simplify(ψ, strategy=strategy)
             err = 2 * abs(1.0 - scprod(ψ, φ).real / (ψ.norm() * φ.norm()))
@@ -41,7 +34,7 @@ class TestSimplify(tools.TestCase):
             strategy = DEFAULT_STRATEGY.replace(
                 simplify=Simplification.VARIATIONAL, max_bond_dimension=D
             )
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             φ = simplify(ψ, strategy=strategy)
             max_D_φ = max([max(t.shape) for t in φ])
@@ -52,7 +45,7 @@ class TestSimplify(tools.TestCase):
         strategy_0 = DEFAULT_STRATEGY.replace(simplify=Simplification.CANONICAL_FORM)
         strategy_1 = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
         for n in range(3, 9):
-            ψ = random_uniform_mps(d, n, D=int(2 ** (n / 2)))
+            ψ = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ = ψ * (1 / ψ.norm())
             φ0 = simplify(ψ, strategy=strategy_0)
             φ1 = simplify(ψ, strategy=strategy_1)

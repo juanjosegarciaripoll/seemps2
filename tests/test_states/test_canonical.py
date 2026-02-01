@@ -1,11 +1,6 @@
 import numpy as np
 from math import sqrt
-from seemps.state import (
-    DEFAULT_STRATEGY,
-    CanonicalMPS,
-    product_state,
-    random_uniform_mps,
-)
+from seemps.state import DEFAULT_STRATEGY, CanonicalMPS, product_state
 from seemps.state.canonical_mps import (
     _update_in_canonical_form_left,
     _update_in_canonical_form_right,
@@ -14,7 +9,6 @@ from seemps.state.canonical_mps import (
 from ..fixture_mps_states import MPSStatesFixture
 from ..tools import (
     approximateIsometry,
-    run_over_random_uniform_mps,
     similar,
     almostIdentity,
 )
@@ -43,8 +37,8 @@ class TestCanonicalForm(MPSStatesFixture):
                     _update_in_canonical_form_left(ξ._data, ξ[i], i, strategy)
                 self.assertTrue(approximateIsometry(ξ[i], -1))
 
-        run_over_random_uniform_mps(ok)
-        run_over_random_uniform_mps(lambda ψ: ok(ψ, normalization=True))
+        self.run_over_random_uniform_mps(ok)
+        self.run_over_random_uniform_mps(lambda ψ: ok(ψ, normalization=True))
 
     def test_canonicalize(self):
         #
@@ -71,7 +65,7 @@ class TestCanonicalForm(MPSStatesFixture):
                 #
                 self.assertSimilar(ξ.to_vector(), Ψ.to_vector())
 
-        run_over_random_uniform_mps(ok)
+        self.run_over_random_uniform_mps(ok)
 
     def test_canonical_mps(self):
         #
@@ -79,41 +73,45 @@ class TestCanonicalForm(MPSStatesFixture):
         # that is in canonical form and represents the same state, up to
         # a reasonable tolerance.
         #
-        def ok(Ψ):
-            for center in range(Ψ.size):
-                ξ = CanonicalMPS(Ψ, center=center)
+        def ok(mps_state):
+            for center in range(mps_state.size):
+                canonical_state = CanonicalMPS(mps_state, center=center)
                 #
                 # All sites to the left and to the right are isometries
                 #
                 for i in range(center):
-                    self.assertTrue(approximateIsometry(ξ[i], +1))
-                for i in range(center + 1, ξ.size):
-                    self.assertTrue(approximateIsometry(ξ[i], -1))
+                    self.assertTrue(approximateIsometry(canonical_state[i], +1))
+                for i in range(center + 1, canonical_state.size):
+                    self.assertTrue(approximateIsometry(canonical_state[i], -1))
                 #
                 # Both states produce the same wavefunction
                 #
-                self.assertTrue(similar(ξ.to_vector(), Ψ.to_vector()))
+                self.assertTrue(
+                    similar(canonical_state.to_vector(), mps_state.to_vector())
+                )
                 #
                 # The norm is correct
                 #
-                self.assertAlmostEqual(ξ.norm_squared() / Ψ.norm_squared(), 1.0)
+                self.assertAlmostEqual(
+                    canonical_state.norm_squared() / mps_state.norm_squared(), 1.0
+                )
                 #
                 # Local observables give the same
                 #
                 O = np.array([[0, 0], [0, 1]])
-                nrm2 = ξ.norm_squared()
-                self.assertAlmostEqual(
-                    ξ.expectation1(O, center) / nrm2, Ψ.expectation1(O, center) / nrm2
-                )
+                nrm2 = canonical_state.norm_squared()
+                mps_expectation = mps_state.expectation1(O, center) / nrm2
+                canonical_expectation = canonical_state.expectation1(O, center) / nrm2
+                self.assertAlmostEqual(canonical_expectation, mps_expectation)
                 #
                 # The canonical form is the same when we use the
                 # corresponding negative indices of 'center'
                 #
-                χ = CanonicalMPS(Ψ, center=center - Ψ.size)
-                for i in range(Ψ.size):
-                    self.assertTrue(similar(ξ[i], χ[i]))
+                χ = CanonicalMPS(mps_state, center=center - mps_state.size)
+                for i in range(mps_state.size):
+                    self.assertTrue(similar(canonical_state[i], χ[i]))
 
-        run_over_random_uniform_mps(ok)
+        self.run_over_random_uniform_mps(ok)
 
     def test_environments(self):
         #
@@ -128,7 +126,7 @@ class TestCanonicalForm(MPSStatesFixture):
                 self.assertTrue(almostIdentity(Lenv))
                 self.assertTrue(almostIdentity(Renv))
 
-        run_over_random_uniform_mps(ok)
+        self.run_over_random_uniform_mps(ok)
 
     def test_canonical_mps_normalization(self):
         #
@@ -145,7 +143,7 @@ class TestCanonicalForm(MPSStatesFixture):
                     similar(ξ1.to_vector() / sqrt(ξ1.norm_squared()), ξ2.to_vector())
                 )
 
-        run_over_random_uniform_mps(ok)
+        self.run_over_random_uniform_mps(ok)
 
     def test_canonical_mps_copy(self):
         #
@@ -161,10 +159,10 @@ class TestCanonicalForm(MPSStatesFixture):
                 for i in range(ξ.size):
                     self.assertTrue(np.all(np.equal(ξ[i], ψ[i])))
 
-        run_over_random_uniform_mps(ok)
+        self.run_over_random_uniform_mps(ok)
 
     def test_canonical_complains_if_center_out_of_bounds(self):
-        mps = random_uniform_mps(2, 10, rng=self.rng)
+        mps = self.random_uniform_mps(2, 10)
         with self.assertRaises(Exception):
             CanonicalMPS(mps, center=10)
         with self.assertRaises(Exception):

@@ -8,7 +8,7 @@ from seemps.analysis.mesh import QuantizedInterval
 from .. import tools
 
 
-class TestFourierDerivative(tools.TestCase):
+class TestFourierDerivative(tools.SeeMPSTestCase):
     def setUp(self) -> None:
         self.interval = interval = QuantizedInterval(0, 2 * np.pi, qubits=2)
         self.exp1j = mps_exponential(interval, 1j)

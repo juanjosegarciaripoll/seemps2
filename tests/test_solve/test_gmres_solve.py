@@ -1,12 +1,11 @@
 import numpy as np
-from .problems import GMRES_PROBLEMS
-from .. import tools
+from .problems import TestSolveProblems
 from seemps.solve import gmres_solve
 
 
-class TestGMRES(tools.TestCase):
+class TestGMRES(TestSolveProblems):
     def test_basic_problems(self):
-        for p in GMRES_PROBLEMS:
+        for p in self.GMRES_PROBLEMS:
             with self.subTest(msg=p.name):
                 x, r = gmres_solve(
                     p.invertible_mpo,

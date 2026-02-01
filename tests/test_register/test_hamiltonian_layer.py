@@ -7,10 +7,10 @@ from seemps.register.circuit import (
     interpret_operator,
     qubo_mpo,
 )
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestHamiltonianEvolutionLayer(TestCase):
+class TestHamiltonianEvolutionLayer(SeeMPSTestCase):
     H: MPO
 
     def setUp(self) -> None:
@@ -33,7 +33,7 @@ class TestHamiltonianEvolutionLayer(TestCase):
             HamiltonianEvolutionLayer(H)
 
     def test_zero_hamiltonian_layer_equal_to_exponential(self):
-        a = self.random_uniform_mps(2, self.Hzero.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.Hzero.size, truncate=True, normalize=True)
         U = HamiltonianEvolutionLayer(self.Hzero)
         c = U.apply_inplace(a.copy())
         self.assertSimilar(
@@ -42,7 +42,7 @@ class TestHamiltonianEvolutionLayer(TestCase):
         )
 
     def test_hamiltonian_layer_equal_to_exponential(self):
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = HamiltonianEvolutionLayer(self.H)
         c = U.apply_inplace(a.copy())
         self.assertSimilar(
@@ -51,7 +51,7 @@ class TestHamiltonianEvolutionLayer(TestCase):
         )
 
     def test_hamiltonian_layer_users_parameters(self):
-        a = self.random_uniform_mps(2, self.H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, self.H.size, truncate=True, normalize=True)
         U = HamiltonianEvolutionLayer(self.H)
         g = 0.23
         c = U.apply_inplace(a.copy(), parameters=[g])
@@ -64,7 +64,7 @@ class TestHamiltonianEvolutionLayer(TestCase):
         J = np.asarray([[0, 1, 0], [1, 0, 2], [0, 2, 0]])
         H = qubo_mpo(J, None)
         parameters = [1.0]
-        a = self.random_uniform_mps(2, H.size, truncate=True, normalize=True)
+        a = self.random_uniform_canonical_mps(2, H.size, truncate=True, normalize=True)
         U = HamiltonianEvolutionLayer(H)
         c = U.apply_inplace(a.copy(), parameters)
         self.assertSimilar(

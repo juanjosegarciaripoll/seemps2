@@ -2,10 +2,10 @@ import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.state import MPS
 from seemps.register import qubo_mpo
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestAlgebraic(TestCase):
+class TestAlgebraic(SeeMPSTestCase):
     P1 = sp.diags([0.0, 1.0], 0)
     i2 = sp.eye(2, dtype=np.float64)
 
@@ -29,27 +29,24 @@ class TestAlgebraic(TestCase):
         )
 
     def test_qubo_magnetic_field(self):
-        np.random.seed(1022)
         for N in range(1, 10):
-            h = np.random.rand(N) - 0.5
+            h = self.rng.random(size=N) - 0.5
             self.assertSimilar(qubo_mpo(h=h).to_matrix(), self.linear_operator(h))
 
     def test_qubo_quadratic(self):
-        np.random.seed(1022)
         for N in range(1, 10):
-            J = np.random.rand(N, N) - 0.5
+            J = self.rng.random(size=(N, N)) - 0.5
             self.assertSimilar(qubo_mpo(J=J).to_matrix(), self.quadratic_operator(J))
 
     def test_product(self):
-        np.random.seed(1034)
         for N in range(1, 10):
-            ψ = np.random.rand(2**N, 2) - 0.5
+            ψ = self.rng.random(size=(2**N, 2)) - 0.5
             ψ = ψ[:, 0] + 1j * ψ[:, 1]
             ψ /= np.linalg.norm(ψ)
             ψmps = MPS.from_vector(ψ, [2] * N)
             ψ = ψmps.to_vector()
 
-            ξ = np.random.rand(2**N, 2) - 0.5
+            ξ = self.rng.random(size=(2**N, 2)) - 0.5
             ξ = ξ[:, 0] + 1j * ξ[:, 1]
             ξ /= np.linalg.norm(ξ)
             ξmps = MPS.from_vector(ξ, [2] * N)

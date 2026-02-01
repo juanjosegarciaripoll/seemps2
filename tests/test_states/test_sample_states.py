@@ -1,11 +1,11 @@
 import numpy as np
 from math import sqrt
 from seemps.state.factories import graph_state, GHZ, product_state, W, AKLT, mps_ones
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
 # TODO: Is this file redundant or better than test_sampling.py
-class TestSampleStates(TestCase):
+class TestSampleStates(SeeMPSTestCase):
     def test_product_state(self):
         a = np.array([1.0, 7.0])
         b = np.array([0.0, 1.0, 3.0])

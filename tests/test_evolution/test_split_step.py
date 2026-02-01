@@ -1,10 +1,10 @@
 import numpy as np
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from seemps.state import MPS, CanonicalMPS, Strategy
 from seemps.evolution.hdaf import split_step
 
 
-class TestSplitStep(TestCase):
+class TestSplitStep(SeeMPSTestCase):
     def test_analytical_evolution(self):
         num_qubits = 8
         dx = 0.1
@@ -37,7 +37,8 @@ class TestSplitStep(TestCase):
             strategy=strategy,
             itime=False,
         )
-        assert isinstance(final_state, MPS)
+        assert isinstance(final_state, CanonicalMPS)
+        self.assertIsInstance(final_state, CanonicalMPS)
 
         # Analytical solution
         A0 = 1.0 / (sigma0**2)
@@ -89,6 +90,7 @@ class TestSplitStep(TestCase):
             itime=True,
         )
         assert isinstance(final_state, CanonicalMPS)
+        self.assertIsInstance(final_state, CanonicalMPS)
 
         final_state = final_state.normalize_inplace()
         overlap = abs(final_state.to_vector() @ gs_mps.to_vector())

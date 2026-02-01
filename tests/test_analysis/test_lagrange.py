@@ -11,7 +11,7 @@ from seemps.analysis.lagrange import (
 )
 
 from .tools_analysis import reorder_tensor
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
 def gaussian_setup(dim: int) -> tuple[Callable, Mesh]:
@@ -29,7 +29,7 @@ def gaussian_setup(dim: int) -> tuple[Callable, Mesh]:
     return func, domain
 
 
-class LagrangeTests(TestCase):
+class LagrangeTests(SeeMPSTestCase):
     @classmethod
     def setUpClass(cls):
         if cls is LagrangeTests:

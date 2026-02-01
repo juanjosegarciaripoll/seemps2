@@ -3,7 +3,7 @@ from seemps.state.schmidt import _destructive_svd
 from .. import tools
 
 
-class TestSVD(tools.TestCase):
+class TestSVD(tools.SeeMPSTestCase):
     def size_iterator(self, max_size: int = 6):
         for m in range(1, max_size):
             for n in range(1, max_size):

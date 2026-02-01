@@ -22,7 +22,7 @@ from seemps.analysis.cross.cross import maxvol_square, CrossResults
 from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
 from seemps.operators import mps_as_mpo
 from .tools_analysis import reorder_tensor
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
 def gaussian_setup_mps(dims, n=5, a=-1, b=1):
@@ -57,7 +57,7 @@ def gaussian_setup_1d_mpo(is_diagonal, n=5, a=-1, b=1):
     return func, vec_x, mesh, mps_identity
 
 
-class CrossTests(TestCase):
+class CrossTests(SeeMPSTestCase):
     @classmethod
     def setUpClass(cls):
         if cls is CrossTests:
@@ -158,15 +158,14 @@ class TestCrossGreedy(CrossTests):
         )
 
 
-class TestSkeleton(TestCase):
-    @staticmethod
-    def random_matrix(m=1000, n=1000, r=5):
+class TestSkeleton(SeeMPSTestCase):
+    def random_matrix(self, m=1000, n=1000, r=5):
         """Computes a m x n random matrix of rank r"""
-        return np.dot(np.random.rand(m, r), np.random.rand(r, n))
+        return np.dot(self.rng.normal(size=(m, r)), self.rng.normal(size=(r, n)))
 
     def test_maxvol_square(self):
         A = self.random_matrix()
-        J = np.random.choice(A.shape[1], 5, replace=False)
+        J = self.rng.choice(A.shape[1], 5, replace=False)
         I = 0  # unused, to keep typechecker happy
         for _ in range(1):
             C = A[:, J]
@@ -178,7 +177,7 @@ class TestSkeleton(TestCase):
 
     def test_maxvol_rectangular(self):
         A = self.random_matrix()
-        J = np.random.choice(A.shape[1], 1, replace=False)
+        J = self.rng.choice(A.shape[1], 1, replace=False)
         I = 0  # unused, to keep typechecker happy
         for _ in range(2):
             C = A[:, J]

@@ -7,7 +7,7 @@ from seemps.analysis.interpolation import (
 )
 from seemps.analysis.space import Space
 from seemps.state import DEFAULT_STRATEGY, MPS, Simplification
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 from .tools_interpolation import (
     gaussian_tensor,
     fourier_interpolation_vector,
@@ -17,7 +17,7 @@ from .tools_interpolation import (
 )
 
 
-class TestInterpolation(TestCase):
+class TestInterpolation(SeeMPSTestCase):
     strategy = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
     def test_fourier_interpolation_1D(self):

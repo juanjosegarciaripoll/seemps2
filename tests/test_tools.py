@@ -1,10 +1,10 @@
 import numpy as np
 from seemps.tools import random_isometry, random_Pauli
-from .tools import TestCase, almostIsometry, almostIdentity
+from .tools import SeeMPSTestCase, almostIsometry, almostIdentity
 import os
 
 
-class TestTools(TestCase):
+class TestTools(SeeMPSTestCase):
     def test_random_isometry(self):
         for N in range(1, 10):
             for M in range(1, 10):

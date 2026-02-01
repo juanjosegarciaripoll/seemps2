@@ -3,7 +3,7 @@ from seemps.state.array import TensorArray
 from .. import tools
 
 
-class TestTensorArray(tools.TestCase):
+class TestTensorArray(tools.SeeMPSTestCase):
     def test_tensor_array_requires_list(self):
         with self.assertRaises(Exception):
             TensorArray()  # type: ignore

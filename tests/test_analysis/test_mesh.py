@@ -8,10 +8,10 @@ from seemps.analysis.mesh import (
     mps_to_mesh_matrix,
     interleaving_permutation,
 )
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestIntervals(TestCase):
+class TestIntervals(SeeMPSTestCase):
     def test_regular_closed_interval_constructor(self):
         I = RegularInterval(0, 1, 3, endpoint_right=True)
         self.assertEqual(I.start, 0)
@@ -109,7 +109,7 @@ class TestIntervals(TestCase):
         self.assertAlmostEqual(I[1], f(sqrt(2.0) / 2.0))
 
 
-class TestMesh(TestCase):
+class TestMesh(SeeMPSTestCase):
     def test_mesh_constructor_1d(self):
         I0 = RegularInterval(0, 1, 3, endpoint_right=True)
         m = Mesh([I0])

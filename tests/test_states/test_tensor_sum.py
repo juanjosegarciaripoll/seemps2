@@ -1,9 +1,9 @@
 import numpy as np
 from seemps.state import NO_TRUNCATION, mps_tensor_sum
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestMPSOperations(TestCase):
+class TestMPSOperations(SeeMPSTestCase):
     def test_tensor_sum_one_site(self):
         A = self.random_mps([2, 3, 4])
         B = mps_tensor_sum([A], mps_order="A", strategy=None)

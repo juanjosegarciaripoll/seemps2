@@ -3,13 +3,13 @@ import scipy.sparse.linalg  # type: ignore
 from seemps.optimization.dmrg import QuadraticForm, dmrg
 from seemps.hamiltonians import ConstantTIHamiltonian, HeisenbergHamiltonian
 from seemps.cython import _contract_last_and_first
-from seemps.state import random_uniform_mps, product_state, CanonicalMPS
+from seemps.state import product_state, CanonicalMPS
 from seemps.operators import MPO
 from seemps.typing import DenseOperator
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class TestQuadraticForm(TestCase):
+class TestQuadraticForm(SeeMPSTestCase):
     Sz: DenseOperator = np.diag([1, -1])
     Sx: DenseOperator = np.array([[0, 1], [1, 0]])
 
@@ -18,20 +18,20 @@ class TestQuadraticForm(TestCase):
 
     def test_quadratic_form_checks_mpo_size(self):
         mpo = MPO([np.ones((1, 2, 2, 1))] * 3)
-        mps = random_uniform_mps(2, 4, rng=self.rng)
+        mps = self.random_uniform_mps(2, 4)
         with self.assertRaises(Exception):
             QuadraticForm(mpo, mps)  # type: ignore
 
     def test_quadratic_form_checks_mpo_dimensions(self):
         mpo = MPO([np.ones((1, 2, 2, 1))] * 3)
-        mps = random_uniform_mps(3, 3, rng=self.rng)
+        mps = self.random_uniform_mps(3, 3)
         with self.assertRaises(Exception):
             QuadraticForm(mpo, mps)  # type: ignore
 
     def test_quadratic_form_two_sites(self):
         H = ConstantTIHamiltonian(size=2, interaction=np.kron(self.Sz, self.Sx))
         Hmpo = H.to_mpo()
-        state = CanonicalMPS(random_uniform_mps(2, 2, D=2, rng=self.rng), center=0)
+        state = CanonicalMPS(self.random_uniform_mps(2, 2, D=2), center=0)
 
         Q = QuadraticForm(Hmpo, state, start=0)
         Hop = Q.two_site_Hamiltonian(0)
@@ -50,7 +50,7 @@ class TestQuadraticForm(TestCase):
     def test_quadratic_form_three_sites_start_zero(self):
         H = ConstantTIHamiltonian(size=3, interaction=np.kron(self.Sz, self.Sx))
         Hmpo = H.to_mpo()
-        state = CanonicalMPS(random_uniform_mps(2, 3, D=2, rng=self.rng), center=0)
+        state = CanonicalMPS(self.random_uniform_mps(2, 3, D=2), center=0)
 
         Q = QuadraticForm(Hmpo, state, start=0)
         Hop = Q.two_site_Hamiltonian(0)
@@ -66,7 +66,7 @@ class TestQuadraticForm(TestCase):
     def test_quadratic_form_three_sites_start_one(self):
         H = ConstantTIHamiltonian(size=3, interaction=np.kron(self.Sz, self.Sx))
         Hmpo = H.to_mpo()
-        state = CanonicalMPS(random_uniform_mps(2, 3, D=2, rng=self.rng), center=0)
+        state = CanonicalMPS(self.random_uniform_mps(2, 3, D=2), center=0)
 
         Q = QuadraticForm(Hmpo, state, start=1)
         Hop = Q.two_site_Hamiltonian(1)
@@ -80,7 +80,7 @@ class TestQuadraticForm(TestCase):
         self.assertAlmostEqual(expected, exact_expected)  # type: ignore
 
 
-class TestDMRG(TestCase):
+class TestDMRG(SeeMPSTestCase):
     Sz: DenseOperator = np.diag([1.0, -1.0])
     Sx: DenseOperator = np.array([[0.0, 1.0], [1.0, 0.0]])
 

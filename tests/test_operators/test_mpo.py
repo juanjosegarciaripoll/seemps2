@@ -1,19 +1,18 @@
 import numpy as np
 from seemps.tools import σx, σy, σz
 from seemps.state import (
-    random_uniform_mps,
     MPSSum,
     DEFAULT_STRATEGY,
     Simplification,
     Strategy,
 )
 from seemps.operators import MPO, MPOList
-from ..tools import TestCase, contain_different_objects, contain_same_objects
+from ..tools import SeeMPSTestCase, contain_different_objects, contain_same_objects
 
 TEST_STRATEGY = DEFAULT_STRATEGY.replace(simplify=Simplification.VARIATIONAL)
 
 
-class TestMPO(TestCase):
+class TestMPO(SeeMPSTestCase):
     def test_initial_data_is_copied(self):
         data = [np.zeros((1, 2, 2, 1))] * 10
         A = MPO(data)
@@ -36,7 +35,7 @@ class TestMPO(TestCase):
 
     def test_mpo_rejects_multiplication_by_non_numbers(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
-        state = random_uniform_mps(2, 3, rng=self.rng)
+        state = self.random_uniform_mps(2, 3)
         with self.assertRaises(Exception):
             mpo * state  # type: ignore
         with self.assertRaises(Exception):
@@ -44,7 +43,7 @@ class TestMPO(TestCase):
 
     def test_mpo_apply_is_matrix_multiplication(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
-        mps = random_uniform_mps(2, mpo.size, D=2)
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
         self.assertSimilar((mpo @ mps).to_vector(), (mpo.to_matrix() @ mps.to_vector()))
         self.assertSimilar(
             mpo.apply(mps).to_vector(), (mpo.to_matrix() @ mps.to_vector())
@@ -52,7 +51,7 @@ class TestMPO(TestCase):
 
     def test_mpo_apply_can_simplify(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
-        mps = random_uniform_mps(2, mpo.size, D=2)
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
         self.assertSimilar(
             mpo.apply(mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
             (mpo.to_matrix() @ mps.to_vector()),
@@ -65,7 +64,7 @@ class TestMPO(TestCase):
 
     def test_mpo_apply_works_on_mpssum(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
-        mps = random_uniform_mps(2, mpo.size, D=2)
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
         self.assertIsInstance(mpo.apply(mps + mps, simplify=False), MPSSum)
         self.assertSimilar(
             mpo.apply(mps + mps, simplify=True, strategy=TEST_STRATEGY).to_vector(),
@@ -80,7 +79,7 @@ class TestMPO(TestCase):
             mpo @ [np.zeros((1, 2, 1))]  # type: ignore
 
     def test_mpo_extend(self):
-        mpo = random_uniform_mps(2, 5, D=5, truncate=False)
+        mpo = self.random_uniform_mps(2, 5, D=5, truncate=False)
         new_mpo = mpo.extend(7, sites=[0, 2, 4, 5, 6], dimensions=3)
         self.assertTrue(mpo[0] is new_mpo[0])
         self.assertEqual(new_mpo[1].shape, (5, 3, 5))
@@ -106,7 +105,7 @@ class TestMPO(TestCase):
 
     def test_mpo_pow_returns_mpolist(self):
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5)
-        mps = random_uniform_mps(2, mpo.size, D=2)
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
         self.assertIsInstance(mpo**2, MPOList)
         self.assertSimilar((mpo**2) @ mps, MPOList([mpo, mpo]) @ mps)
 

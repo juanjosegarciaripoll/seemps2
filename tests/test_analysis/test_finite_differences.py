@@ -6,7 +6,7 @@ from seemps.analysis.mesh import QuantizedInterval
 from .. import tools
 
 
-class TestFiniteDifferences(tools.TestCase):
+class TestFiniteDifferences(tools.SeeMPSTestCase):
     interval = QuantizedInterval(-1, 1, qubits=2)
 
     def Down(self, nqubits: int, periodic: bool = False) -> csr_matrix:

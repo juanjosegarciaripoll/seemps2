@@ -8,14 +8,14 @@ from seemps.state import product_state, MPS, DEFAULT_STRATEGY, Strategy
 from seemps.operators import MPO
 from seemps.hamiltonians import HeisenbergHamiltonian
 from seemps.evolution import ODECallback, TimeSpan
-from ..tools import TestCase
+from ..tools import SeeMPSTestCase
 
 
-class EvolutionTestCase(TestCase):
+class EvolutionTestCase(SeeMPSTestCase):
     Heisenberg2 = 0.25 * (np.kron(σx, σx) + np.kron(σy, σy) + np.kron(σz, σz))
 
     def random_initial_state(self, size: int) -> MPS:
-        states = np.random.randn(size, 2) + 1j * np.random.randn(size, 2)
+        states = self.rng.normal(size=(size, 2)) + 1j * self.rng.normal(size=(size, 2))
         for n in range(size):
             states[n, :] /= np.linalg.norm(states[n, :])
         return product_state(states)
