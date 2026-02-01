@@ -4,23 +4,28 @@ import time
 import atexit
 from collections import defaultdict
 
+CURRENT_PROFILER: "Profiler | None" = None
 
-def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
+
+class Profiler:
     """
-    A simple profiler that starts immediately and prints a report at program exit.
-    Call this function once at module import time to enable profiling.
+    A simple profiler that tracks function calls and timing.
 
     Args:
         module_prefixes: List of module prefixes to filter (e.g., ['seemps']).
                         Only functions from these modules will be shown.
     """
-    stats = defaultdict(lambda: {"calls": 0, "time": 0.0})
-    call_stack = []
-    file_prefixes = [module.replace(".", "/") for module in module_prefixes]
 
-    def get_class_name(frame) -> str:
+    def __init__(self, module_prefixes: list[str] = ["seemps"]):
+        self.module_prefixes = module_prefixes
+        self.file_prefixes = [module.replace(".", "/") for module in module_prefixes]
+        self.stats: dict[str, dict[str, float | int]] = defaultdict(
+            lambda: {"calls": 0, "time": 0.0}
+        )
+        self.call_stack: list[tuple] = []
+
+    def get_class_name(self, frame) -> str:
         """Try to extract the class name from a method's frame."""
-        # Check for 'self' (instance method) or 'cls' (class method)
         local_vars = frame.f_locals
         for var_name in ("self", "cls"):
             if var_name in local_vars:
@@ -28,20 +33,17 @@ def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
                 if var_name == "self":
                     return type(obj).__name__
                 else:
-                    # cls is the class itself
                     return obj.__name__ if hasattr(obj, "__name__") else str(obj)
         return ""
 
-    def format_func_name_from_code(code, frame) -> tuple[str, bool]:
+    def format_func_name_from_code(self, code, frame) -> tuple[str, bool]:
         """Format function name from code object and return (name, should_include)."""
         filename = code.co_filename
         func_name = code.co_name
         lineno = code.co_firstlineno
 
-        # Try to get module name from frame globals
         module_name = frame.f_globals.get("__name__", "")
 
-        # Convert to relative path from "src"
         rel_filename = filename
         try:
             if "~" not in filename:
@@ -49,16 +51,14 @@ def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
         except (ValueError, TypeError):
             pass
 
-        # Check if function matches module filter using module name and file path
-        if module_prefixes:
+        if self.module_prefixes:
             matches = any(
-                module_name.startswith(prefix) for prefix in module_prefixes
-            ) or any(subpath in rel_filename for subpath in file_prefixes)
+                module_name.startswith(prefix) for prefix in self.module_prefixes
+            ) or any(subpath in rel_filename for subpath in self.file_prefixes)
             if not matches:
                 return "", False
 
-        # Try to get class name for methods
-        class_name = get_class_name(frame)
+        class_name = self.get_class_name(frame)
         if class_name:
             qualified_name = f"{class_name}.{func_name}"
         else:
@@ -66,36 +66,30 @@ def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
         if qualified_name.startswith("pybind11_detail"):
             qualified_name.split(".")[-1]
 
-        # Format the function location
         if "~" in rel_filename:
             func_location = qualified_name
         else:
             func_location = f"{rel_filename}:{lineno}({qualified_name})"
 
-        # Exclude <method entries
         if "<method" in func_location:
             return "", False
 
         return func_location, True
 
-    def format_c_func_name(c_func, frame) -> tuple[str, bool]:
+    def format_c_func_name(self, c_func) -> tuple[str, bool]:
         """Format C function (built-in, Cython) name and return (name, should_include)."""
-        # Get module from the C function
         module = getattr(c_func, "__module__", None) or ""
         func_name = getattr(c_func, "__name__", str(c_func))
 
-        # Try to get qualified name (includes class for methods)
         qualified_name = getattr(c_func, "__qualified_name__", func_name)
         if qualified_name.startswith("pybind11_detail"):
             qualified_name.split(".")[-1]
 
-        # Check if function matches module filter
-        if module_prefixes:
-            matches = any(module.startswith(prefix) for prefix in module_prefixes)
+        if self.module_prefixes:
+            matches = any(module.startswith(prefix) for prefix in self.module_prefixes)
             if not matches:
                 return "", False
 
-        # Format as module:qualified_name for C functions
         if module:
             func_location = f"{module}:({qualified_name})"
         else:
@@ -103,40 +97,41 @@ def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
 
         return func_location, True
 
-    def profile_callback(frame, event, arg):
+    def __call__(self, frame, event, arg):
+        """Profile callback - compatible with sys.setprofile()."""
         current_time = time.perf_counter()
         match event:
             case "call":
-                call_stack.append((frame, event, current_time, None))
+                self.call_stack.append((frame, event, current_time, None))
             case "c_call":
-                # arg is the C function being called
-                call_stack.append((frame, event, current_time, arg))
+                self.call_stack.append((frame, event, current_time, arg))
             case "return":
-                if call_stack:
-                    call_frame, call_event, start_time, _ = call_stack.pop()
+                if self.call_stack:
+                    call_frame, call_event, start_time, _ = self.call_stack.pop()
                     if call_frame is frame and call_event == "call":
                         code = frame.f_code
-                        func_name, should_include = format_func_name_from_code(
+                        func_name, should_include = self.format_func_name_from_code(
                             code, frame
                         )
                         if should_include:
                             elapsed = current_time - start_time
-                            stats[func_name]["calls"] += 1
-                            stats[func_name]["time"] += elapsed
+                            self.stats[func_name]["calls"] += 1
+                            self.stats[func_name]["time"] += elapsed
             case "c_return" | "c_exception":
-                if call_stack:
-                    call_frame, call_event, start_time, c_func = call_stack.pop()
+                if self.call_stack:
+                    call_frame, call_event, start_time, c_func = self.call_stack.pop()
                     if call_frame is frame and call_event == "c_call" and c_func:
-                        func_name, should_include = format_c_func_name(c_func, frame)
+                        func_name, should_include = self.format_c_func_name(c_func)
                         if should_include:
                             elapsed = current_time - start_time
-                            stats[func_name]["calls"] += 1
-                            stats[func_name]["time"] += elapsed
+                            self.stats[func_name]["calls"] += 1
+                            self.stats[func_name]["time"] += elapsed
 
-    def print_report():
+    def print_report(self):
+        """Print the profiling report and disable profiling."""
         sys.setprofile(None)
-        if stats:
-            sorted_stats = sorted(stats.items(), key=lambda x: x[0])
+        if self.stats:
+            sorted_stats = sorted(self.stats.items(), key=lambda x: x[0])
             print(
                 f"\n{'ncalls':<15} {'tottime(ms)':<15} {'ms/call':<15} {'filename:lineno(function)'}"
             )
@@ -148,8 +143,20 @@ def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
                     f"{data['calls']:<15} {time_ms:<15.3f} {ms_per_call:<15.3f} {name}"
                 )
 
-    atexit.register(print_report)
-    sys.setprofile(profile_callback)
+
+def hook_our_profiler(module_prefixes: list[str] = ["seemps"]):
+    """
+    A simple profiler that starts immediately and prints a report at program exit.
+    Call this function once at module import time to enable profiling.
+
+    Args:
+        module_prefixes: List of module prefixes to filter (e.g., ['seemps']).
+                        Only functions from these modules will be shown.
+    """
+    global CURRENT_PROFILER
+    CURRENT_PROFILER = Profiler(module_prefixes)
+    atexit.register(CURRENT_PROFILER.print_report)
+    sys.setprofile(CURRENT_PROFILER)
 
 
-__all__ = ["hook_our_profiler"]
+__all__ = ["hook_our_profiler", "Profiler", "CURRENT_PROFILER"]

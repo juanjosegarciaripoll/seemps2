@@ -177,7 +177,7 @@ def run_over_random_uniform_mps(function, d=2, N=10, D=10, repeats=10):
             function(seemps.state.random_uniform_mps(d, N, D))
 
 
-if os.environ.get("SEEMPS_CPROFILE", "off").lower() == "on":
+if os.environ.get("SEEMPS_TEST_PROFILE", "off").lower() == "on":
     from .profiler import hook_our_profiler
 
     hook_our_profiler()
