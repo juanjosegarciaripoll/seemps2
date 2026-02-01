@@ -4,7 +4,7 @@ import numpy as np
 from typing import TypeAlias
 from collections.abc import Sequence
 from .mpo import MPO
-from ..state import Strategy, DEFAULT_STRATEGY, NO_TRUNCATION
+from ..state import MPS, Strategy, DEFAULT_STRATEGY, NO_TRUNCATION
 
 
 def identity_mpo(dimensions: Sequence[int], strategy: Strategy = NO_TRUNCATION) -> MPO:

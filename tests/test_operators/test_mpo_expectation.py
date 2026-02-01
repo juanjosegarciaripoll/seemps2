@@ -1,6 +1,5 @@
 import numpy as np
 from seemps.expectation import mpo_expectation
-from seemps.state import CanonicalMPS
 from seemps.operators import MPO
 from seemps.tools import σx, σy
 from seemps.qft import qft_mpo
