@@ -1,8 +1,10 @@
+import os
 import unittest
 import numpy as np
 import scipy.sparse as sp
 import seemps
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
+from seemps.operators import MPO, MPOSum, MPOList
 from seemps.typing import SparseOperator
 
 
@@ -21,10 +23,26 @@ def identical_lists(l1, l2):
     return True
 
 
-class TestCase(unittest.TestCase):
+class SeeMPSTestCase(unittest.TestCase):
+    _test_profiling_enabled: bool = (
+        os.environ.get("SEEMPS_TEST_PROFILE", "off").lower() == "calls"
+    )
+
     def setUp(self):
         self.rng = np.random.default_rng(seed=0x1232388472)
         self.seemps_version = seemps.version.number
+        if self._test_profiling_enabled:
+            from .profiler import get_test_profiler_collector
+
+            collector = get_test_profiler_collector()
+            collector.start_test(self.id())
+
+    def tearDown(self):
+        if self._test_profiling_enabled:
+            from .profiler import get_test_profiler_collector
+
+            collector = get_test_profiler_collector()
+            collector.end_test()
 
     def assertEqualTensors(self, a, b) -> None:
         if not (
@@ -38,14 +56,18 @@ class TestCase(unittest.TestCase):
     def assertSimilar(self, A, B, **kwdargs) -> None:
         if sp.issparse(A):
             A = A.toarray()  # type: ignore
-        elif isinstance(A, MPS) or isinstance(A, MPSSum):
+        elif isinstance(A, (MPS, MPSSum)):
             A = A.to_vector()
+        elif isinstance(A, (MPO, MPOSum, MPOList)):
+            A = A.to_matrix()
         else:
             A = np.asarray(A)
         if sp.issparse(B):
             B = B.toarray()  # type: ignore
-        elif isinstance(B, MPS):
+        elif isinstance(B, (MPS, MPSSum)):
             B = B.to_vector()
+        elif isinstance(B, (MPO, MPOSum, MPOList)):
+            B = B.to_matrix()
         else:
             B = np.asarray(B)
         if A.ndim != B.ndim or A.shape != B.shape:
@@ -79,11 +101,29 @@ class TestCase(unittest.TestCase):
         if not almostIdentity(A, **kwdargs):
             raise self.failureException(f"Object not close to identity:\nA={A}")
 
-    def random_uniform_mps(
-        self, d: int, size: int, truncate: bool = False, **kwdargs
+    def random_uniform_canonical_mps(
+        self,
+        d: int,
+        size: int,
+        D: int = 1,
+        truncate: bool = False,
+        complex: bool = False,
+        **kwdargs,
     ) -> CanonicalMPS:
         return CanonicalMPS(
-            random_uniform_mps(d, size, truncate=truncate, rng=self.rng), **kwdargs
+            self.random_uniform_mps(d, size, D, truncate, complex), **kwdargs
+        )
+
+    def random_uniform_mps(
+        self,
+        d: int,
+        size: int,
+        D: int = 1,
+        truncate: bool = False,
+        complex: bool = False,
+    ) -> MPS:
+        return random_uniform_mps(
+            d, size, D=D, truncate=truncate, complex=complex, rng=self.rng
         )
 
     def random_mps(
@@ -105,6 +145,11 @@ class TestCase(unittest.TestCase):
     def assertSimilarMPS(self, a, b):
         if (a.size != b.size) or not similar(a.to_vector(), b.to_vector()):
             raise AssertionError("Different objects:\na = {a}\nb = {b}")
+
+    def run_over_random_uniform_mps(self, function, d=2, N=10, D=10, repeats=10):
+        for _ in range(1, N + 1):
+            for _ in range(repeats):
+                function(self.random_uniform_mps(d, N, D))
 
 
 def similar(A, B, **kwdargs):
@@ -152,7 +197,7 @@ def contain_same_objects(A, B):
     return all(a is b for a, b in zip(A, B))
 
 
-def run_over_random_uniform_mps(function, d=2, N=10, D=10, repeats=10):
-    for _ in range(1, N + 1):
-        for _ in range(repeats):
-            function(seemps.state.random_uniform_mps(d, N, D))
+if os.environ.get("SEEMPS_TEST_PROFILE", "off").lower() == "on":
+    from .profiler import hook_our_profiler
+
+    hook_our_profiler()
