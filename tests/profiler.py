@@ -228,7 +228,7 @@ class TestProfilerCollector:
         import json
 
         if self.results:
-            print(json.dumps(self.results, indent=2, sort_keys=True))
+            print(json.dumps(self.results, indent=2, sort_keys=True), file=sys.stdout)
 
 
 # Global instance for test profiling

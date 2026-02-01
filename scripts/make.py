@@ -210,36 +210,61 @@ def run_tests(
     coverage=False,
     cProfile: bool = False,
     filter: str | None = None,
+    test_profiler: bool = False,
+    capture_output: bool = False,
     **kwdargs,
-) -> bool:
+) -> bool | str:
+    """
+    Run unit tests with various profiling options.
+
+    Args:
+        verbose: Enable verbose test output
+        coverage: Enable coverage reporting
+        cProfile: Enable cProfile profiling
+        filter: Test filter pattern
+        test_profile: If True, enable SEEMPS_TEST_PROFILE=calls and return
+                     the collected call counts as a dict instead of bool
+
+    Returns:
+        If test_profile is False: bool indicating success
+        If test_profile is True: dict mapping test names to function call counts
+    """
     if use_sanitizer != "no":
         env = os.environ.copy()
         env["LD_PRELOAD"] = asan_library() + " " + cpp_library()
         print(f"LD_PRELOAD={env['LD_PRELOAD']}")
     else:
-        env = None
-
+        env = os.environ.copy() if test_profiler else None
     profile_filename = ""
     command = valgrind + uv_run + python
+    if test_profiler:
+        env = env or os.environ.copy()
+        env["SEEMPS_TEST_PROFILE"] = "calls"
     if cProfile:
         profile_fd, profile_filename = tempfile.mkstemp(suffix=".prof")
         os.close(profile_fd)
         command += ["-m", "cProfile", "-o", profile_filename]
     command += ["-m", "unittest", "-f"]
     if filter:
-        if len(filter) == 1:
+        if isinstance(filter, list) and len(filter) == 1:
             filter = filter[0]
-        else:
+        elif isinstance(filter, list):
             filter = r"\(" + "|".join(filter) + r"\)"
         command.extend(["-k", filter])
     if verbose:
         command.append("-v")
-    ok = run(command, env=env, **kwdargs)
-    print(f"Output of tests is {ok}", file=sys.stderr, flush=True)
-    if cProfile and ok:
-        print(cProfile_list(profile_filename, module_prefixes=["seemps"]))
-        os.unlink(profile_filename)
-    return ok
+
+    if capture_output:
+        # Capture stdout only (let stderr go to terminal)
+        result = subprocess.run(command, env=env, stdout=subprocess.PIPE, text=True)
+        return result.stdout if result.returncode == 0 else ""
+    else:
+        ok = run(command, env=env, **kwdargs)
+        print(f"Output of tests is {ok}", file=sys.stderr, flush=True)
+        if cProfile and ok:
+            print(cProfile_list(profile_filename, module_prefixes=["seemps"]))
+            os.unlink(profile_filename)
+        return ok
 
 
 def code_coverage_report() -> bool:
@@ -277,9 +302,127 @@ def darglint() -> bool:
     return run(uv_run + ["darglint", "src/seemps"])
 
 
+def compare_tests_with_different_cores(filter: str | None = None) -> list[dict]:
+    """
+    Run tests with and without SEEMPS_PYBIND and compare function call counts.
+
+    Returns:
+        List of discrepancies, each containing:
+        - test_name: Name of the test
+        - function: Name of the function
+        - pybind_calls: Number of calls with PYBIND
+        - no_pybind_calls: Number of calls without PYBIND
+    """
+    import json
+
+    def rename_core_functions(data: str) -> str:
+        return data.replace(
+            "pybind11_detail_function_record_v1_system_libstdcpp_gxx_abi_1xxx_use_cxx11_abi_1.",
+            "",
+        )
+
+    def output_to_json(stdout: str | bool) -> dict:
+        # Find and parse JSON from stdout
+        if not isinstance(stdout, str):
+            stdout = ""
+        json_start = stdout.rfind("\n{")
+        if json_start == -1:
+            json_start = stdout.find("{")
+        if json_start != -1:
+            json_str = rename_core_functions(stdout[json_start:].strip())
+            try:
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                raise Exception(f"Failed to parse JSON: {e}")
+        else:
+            raise Exception("No JSON output found in test results")
+
+    # Save and restore SEEMPS_PYBIND state
+    original_pybind = os.environ.get("SEEMPS_PYBIND")
+
+    # Run tests with PYBIND=ON
+    print("Running tests with SEEMPS_PYBIND=ON...", file=sys.stderr, flush=True)
+    os.environ["SEEMPS_PYBIND"] = "ON"
+    pybind_results = output_to_json(
+        run_tests(filter=filter, test_profiler=True, capture_output=True)
+    )
+    assert isinstance(pybind_results, dict)
+
+    # Run tests without PYBIND
+    print("Running tests with SEEMPS_PYBIND=OFF...", file=sys.stderr, flush=True)
+    if "SEEMPS_PYBIND" in os.environ:
+        del os.environ["SEEMPS_PYBIND"]
+    no_pybind_results = output_to_json(
+        run_tests(filter=filter, test_profiler=True, capture_output=True)
+    )
+    assert isinstance(no_pybind_results, dict)
+
+    # Restore original state
+    if original_pybind is not None:
+        os.environ["SEEMPS_PYBIND"] = original_pybind
+
+    discrepancies: list[dict] = []
+
+    # Get all test names from both runs
+    all_tests = set(pybind_results.keys()) | set(no_pybind_results.keys())
+
+    for test_name in sorted(all_tests):
+        pybind_funcs = {
+            func.split(".")[-1]: count
+            for func, count in pybind_results.get(test_name, {}).items()
+            if ("seemps.cython.pybind" in func)
+        }
+        no_pybind_funcs = {
+            func.split(".")[-1]: count
+            for func, count in no_pybind_results.get(test_name, {}).items()
+            if ("seemps.cython.core" in func)
+        }
+
+        # Get all function names for this test
+        all_funcs = set(pybind_funcs.keys()) | set(no_pybind_funcs.keys())
+
+        for func_name in sorted(all_funcs):
+            pybind_calls = pybind_funcs.get(func_name, 0)
+            no_pybind_calls = no_pybind_funcs.get(func_name, 0)
+
+            if pybind_calls != no_pybind_calls:
+                discrepancies.append(
+                    {
+                        "test_name": test_name,
+                        "function": func_name,
+                        "pybind_calls": pybind_calls,
+                        "no_pybind_calls": no_pybind_calls,
+                    }
+                )
+
+    # Print summary
+    print("\n" + "=" * 80)
+    print("COMPARISON RESULTS: SEEMPS_PYBIND=ON vs OFF")
+    print("=" * 80)
+
+    if not discrepancies:
+        print("\nNo discrepancies found! All function call counts match.")
+    else:
+        print(f"\nFound {len(discrepancies)} discrepancies:\n")
+        print(f"{'Function':<40} {'PYBIND':<10} {'No PYBIND':<10}")
+        print("-" * 110)
+
+        current_test = None
+        for d in discrepancies:
+            test_display = d["test_name"] if d["test_name"] != current_test else ""
+            current_test = d["test_name"]
+            print(test_display)
+            print(
+                f"  {d['function']:<38} {d['pybind_calls']:<10} {d['no_pybind_calls']:<10}"
+            )
+
+    print("\n" + "=" * 80)
+    return discrepancies
+
+
 def check(verbose: bool = False, filter: str | None = None) -> bool:
     return (
-        run_tests(filter=filter) and mypy() and ruff() and basedpyright()
+        bool(run_tests(filter=filter)) and mypy() and ruff() and basedpyright()
         # and pydocstyle()
         # and darglint()
     )
@@ -329,6 +472,9 @@ parser.add_argument("--verbose", action="store_true", help="Verbose mode")
 parser.add_argument("--tests", action="store_true", help="Run unit tests")
 parser.add_argument("--filter", nargs=1, help="Regular expression to select tests")
 parser.add_argument("--cProfile", action="store_true", help="Run tests with cProfile")
+parser.add_argument(
+    "--compare-test", action="store_true", help="Compare unit tests with cores"
+)
 parser.add_argument("--pyright", action="store_true", help="Run pyright")
 parser.add_argument("--ruff", action="store_true", help="Run ruff")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
@@ -375,6 +521,8 @@ if args.build:
 if args.install:
     if not install():
         raise Exception("Install failed")
+if args.compare_test:
+    compare_tests_with_different_cores(filter=args.filter)
 if args.docs:
     build_documentation()
 if args.check:
