@@ -31,6 +31,9 @@ def _select_svd_driver(name: str):
     else:
         raise Exception(f"Invalid LAPACK SVD driver name: {name}")
 
+def _get_svd_driver() -> str:
+    return "gesdd" if __use_gesdd else "gesvd"
+
 # TODO: Allow selecting other drivers
 cdef tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray] __svd(cnp.ndarray A):
     global __use_gesdd

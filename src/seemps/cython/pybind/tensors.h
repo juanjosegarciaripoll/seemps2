@@ -85,6 +85,7 @@ svd(py::object A)
 }
 
 void _select_svd_driver(std::string which);
+const char* _get_svd_driver();
 
 void load_scipy_wrappers();
 

@@ -69,6 +69,7 @@ PYBIND11_MODULE(pybind, m)
   m.def("_destructive_svd", &destructive_svd);
 
   m.def("_select_svd_driver", &_select_svd_driver);
+  m.def("_get_svd_driver", &_get_svd_driver);
 
   m.attr("STATUS") = OK_LOADED;
 

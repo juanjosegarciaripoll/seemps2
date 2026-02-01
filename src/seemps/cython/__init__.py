@@ -20,6 +20,7 @@ if os.environ.get("SEEMPS_PYBIND", "off").lower() != "on":
         _end_environment,
         _join_environments,
         _select_svd_driver,
+        _get_svd_driver,
         DEFAULT_STRATEGY,
         DEFAULT_TOLERANCE,
         destructively_truncate_vector,
@@ -36,6 +37,7 @@ else:
     print("PYBIND!", file=sys.stderr)
     from .pybind import (
         _select_svd_driver,
+        _get_svd_driver,
         _destructive_svd,
         _begin_environment,
         _update_left_environment,
@@ -78,6 +80,7 @@ __all__ = [
     "_right_orth_2site",
     "_recanonicalize",
     "_select_svd_driver",
+    "_get_svd_driver",
     "_update_in_canonical_form_right",
     "_update_in_canonical_form_left",
     "_update_left_environment",

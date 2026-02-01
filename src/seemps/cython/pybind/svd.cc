@@ -41,6 +41,12 @@ _select_svd_driver(std::string which)
     }
 }
 
+const char*
+_get_svd_driver()
+{
+  return _use_gesdd ? "gesdd" : "gesvd";
+}
+
 static inline py::object
 _coerce_to_supported_svd_type(py::object A)
 {
