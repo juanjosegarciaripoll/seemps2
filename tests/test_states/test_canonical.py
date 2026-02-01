@@ -162,7 +162,7 @@ class TestCanonicalForm(MPSStatesFixture):
         self.run_over_random_uniform_mps(ok)
 
     def test_canonical_complains_if_center_out_of_bounds(self):
-        mps = self.random_uniform_mps(2, 10, rng=self.rng)
+        mps = self.random_uniform_mps(2, 10)
         with self.assertRaises(Exception):
             CanonicalMPS(mps, center=10)
         with self.assertRaises(Exception):
