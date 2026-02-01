@@ -6,7 +6,7 @@ import functools
 from typing import Callable, TypeAlias
 
 from ...state import MPS
-from ...tools import make_logger
+from ...tools import make_logger, SEED
 from ...typing import Vector, Matrix, Tensor3, Tensor4, Natural
 from ..evaluation import random_mps_indices, evaluate_mps
 from .black_box import BlackBox
@@ -51,7 +51,7 @@ class CrossStrategy:
     max_time: float | None = None
     max_evals: Natural | None = None
     rng: np.random.Generator = dataclasses.field(
-        default_factory=lambda: np.random.default_rng()
+        default_factory=lambda: np.random.default_rng(SEED)
     )
     """
     Dataclass containing the base parameters for TCI.
@@ -74,7 +74,7 @@ class CrossStrategy:
         Maximum computation time allowed.
     max_evals : Natural | None, default=None
         Maximum number of evaluations allowed.
-    rng : np.random.Generator, default=np.random.default_rng()
+    rng : np.random.Generator, default=`numpy.random.default_rng(seemps.tools.SEED)`
         Random number generator used to initialize the algorithm and sample the error.
     """
 

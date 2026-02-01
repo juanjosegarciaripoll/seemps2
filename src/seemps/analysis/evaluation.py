@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from ..tools import DEFAULT_RNG
 from ..state import MPS
 from ..typing import Vector, Matrix
 
@@ -34,7 +35,7 @@ def random_mps_indices(
     physical_dimensions: list[int],
     num_indices: int = 1000,
     allowed_indices: list[int] | None = None,
-    rng: np.random.Generator = np.random.default_rng(),
+    rng: np.random.Generator = DEFAULT_RNG,
 ) -> Vector:
     """
     Generates random indices for sampling a MPS.
@@ -47,9 +48,9 @@ def random_mps_indices(
         The number of random indices to generate.
     allowed_indices : list[int], optional
         An optional list with allowed values for the random indices.
-    rng : np.random.Generator, default=`numpy.random.default_rng()`
-        The random number generator to be used. If None, uses Numpy's
-        default random number generator without any predefined seed.
+    rng : np.random.Generator, default=`seemps.tools.DEFAULT_RNG`
+        The random number generator to be used. If None, uses SeeMPS
+        common, preseeded generator.
 
     Returns
     -------

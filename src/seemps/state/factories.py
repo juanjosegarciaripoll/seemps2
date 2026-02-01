@@ -2,6 +2,8 @@ from __future__ import annotations
 from math import sqrt
 import numpy as np
 from collections.abc import Iterable
+
+from ..tools import DEFAULT_RNG
 from ..typing import VectorLike, Tensor3
 from ..cython import _contract_last_and_first
 from .mps import MPS
@@ -139,7 +141,7 @@ def random_uniform_mps(
     D: int = 1,
     truncate: bool = True,
     complex: bool = False,
-    rng: np.random.Generator | None = None,
+    rng: np.random.Generator = DEFAULT_RNG,
 ) -> MPS:
     """Create a random state with `N` elements of dimension `d` and bond
     dimension `D`.
@@ -156,7 +158,7 @@ def random_uniform_mps(
         Do not reach `D` for tensors that do not require it.
     complex : bool, default = False
         If true, return states with complex wavefunctions.
-    rng : np.random.Generator, default = np.random.default_rng()
+    rng : np.random.Generator, default = `seemps.tools.DEFAULT_RNG`
         Random number generator used to create the state. Provide a seeded
         generator to ensure reproducibility
 
@@ -173,7 +175,7 @@ def random_mps(
     D: int = 1,
     truncate: bool = True,
     complex: bool = False,
-    rng: np.random.Generator | None = None,
+    rng: np.random.Generator = DEFAULT_RNG,
 ) -> MPS:
     """Create a random state with `N` elements of dimension `d` and bond
     dimension `D`.
@@ -188,7 +190,7 @@ def random_mps(
         Do not reach `D` for tensors that do not require it.
     complex : bool, default = False
         If true, return states with complex wavefunctions.
-    rng : np.random.Generator, default = np.random.default_rng()
+    rng : np.random.Generator, default = `seemps.tools.DEFAULT_RNG`
         Random number generator used to create the state. Provide a seeded
         generator to ensure reproducibility
 
@@ -199,8 +201,6 @@ def random_mps(
     """
     N = len(dimensions)
     mps: list[np.ndarray] = [np.ndarray(())] * N
-    if rng is None:
-        rng = np.random.default_rng()
     DR = 1
     if N > 60:
         truncate = False
