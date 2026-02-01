@@ -65,6 +65,46 @@ The DMRG in SeeMPS implements this variant of the algorithm, sweeping over
 pairs of sites---e.g., (1,2), then (2,3), then (3,4), and so on---back and forth
 until the energy and the state converge.
 
+Example
+=======
+
+The following example computes the ground state of a transverse-field Ising model:
+
+.. math::
+    H = \sum_{i=1}^{N-1} \sigma^z_i \sigma^z_{i+1} + h \sum_i \sigma^x_i
+
+.. code-block:: python
+
+    import numpy as np
+    from seemps.hamiltonians import ConstantTIHamiltonian
+    from seemps.optimization import dmrg
+    from seemps.state import product_state
+
+    # Define the Hamiltonian
+    N = 20
+    h = 0.5
+    sx = np.array([[0, 1], [1, 0]])
+    sz = np.array([[1, 0], [0, -1]])
+    H = ConstantTIHamiltonian(
+        size=N,
+        interaction=np.kron(sz, sz),
+        local_term=h * sx
+    )
+
+    # Initial guess: product state with all spins in +x direction
+    guess = product_state(np.ones(2) / np.sqrt(2), N)
+
+    # Run DMRG
+    result = dmrg(H, guess=guess)
+    print(f"Ground state energy: {result.energy}")
+
 .. autosummary::
 
     ~seemps.optimization.dmrg
+
+See also
+========
+
+- :doc:`gradient_descent` - A simpler optimization algorithm for finding ground states
+- :doc:`arnoldi` - Krylov-based optimization using an expanded basis
+- :func:`~seemps.solve.dmrg_solve` - DMRG-based solver for systems of linear equations

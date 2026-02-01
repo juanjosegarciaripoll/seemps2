@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seemps"
-version = "2.9.7"
+version = "3.0.0"
 description = "Matrix Product State library for quantum simulation and numerical analysis"
 readme = "README.md"
 license = "MIT"
@@ -12,18 +12,21 @@ license-files = ["LICENSE"]
 authors = [
     {name = "Juan José García Ripoll", email = "juanjose.garciaripoll@gmail.com"},
     {name = "Paula García Molina"},
-    {name = "Juan José Rodríguez aldavero"},
+    {name = "Juan José Rodríguez Aldavero"},
+    {name = "Jorge Gidi"},
 ]
 maintainers = [
     {name = "Juan José García Ripoll", email = "juanjose.garciaripoll@gmail.com"},
 ]
 keywords = [
-    "quantum-computing",
-    "matrix-product-states",
-    "tensor-networks",
+    "matrix product states",
+    "tensor networks",
     "dmrg",
+    "tensor trains",
+    "quantized tensor trains",
     "numerical-analysis",
     "quantum-simulation",
+    "quantum-computing",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

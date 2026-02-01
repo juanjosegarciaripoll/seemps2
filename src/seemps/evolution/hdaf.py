@@ -21,7 +21,7 @@ def split_step(
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    hdaf_order: int = 30,
+    hdaf_order: int = 10,
     itime: bool = False,
 ) -> MPS | list[Any]:
     """
@@ -50,7 +50,7 @@ def split_step(
         Truncation strategy for MPS simplification.
     callback : ODECallback | None
         Function called after each step.
-    hdaf_order : int, default=30
+    hdaf_order : int, default=10
         Order of the HDAF approximation for the kinetic propagator.
     itime : bool, default=False
         Whether to perform imaginary time evolution.

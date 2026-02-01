@@ -26,12 +26,12 @@ This leads to the generalized eigenvalue equation
 .. math::
   A \boldsymbol{v} = \lambda N \boldsymbol{v},
 
-where the minimum eigenvalue :math:`\lambda = E(\boldsymbol{v})` gives the optimal energy for the $k$-th step, and the associated direction
+where the minimum eigenvalue :math:`\lambda = E(\boldsymbol{v})` gives the optimal energy for the :math:`k`-th step, and the associated direction
 :math:`\mathbf{v}` provides the steepest descent on the plane.
 
-This procedure could be enhanced with additional approaches. We introdce a specific restart method,
-which halts the expansion of the Krylov basis when either the maximum desired size $n_v$ is attained, or when the condition number of
-the scalar product matrix $N$ exceeds a certain threshold. This occurs when there is a risk of adding a vector that is linearly dependent
+This procedure could be enhanced with additional approaches. We introduce a specific restart method,
+which halts the expansion of the Krylov basis when either the maximum desired size :math:`n_v` is attained, or when the condition number of
+the scalar product matrix :math:`N` exceeds a certain threshold. This occurs when there is a risk of adding a vector that is linearly dependent
 on the previous ones. In such a scenario, we can solve the generalized eigenvalue problem to obtain
 the next best estimate in a smaller basis. Another approach to enhance the convergence of eigenvalues is to extrapolate the next vector
 based on previous estimates, using the formula :math:`|{\xi_{k+1}}\rangle=(1-\gamma)|{\psi_{k+1}}\rangle+|{\psi_k}\rangle`, with the
@@ -42,10 +42,38 @@ The rule in :ref:`alg_descent` is a particular case of the Arnoldi iteration wit
 
 Ref. :cite:t:`GarciaMolina2024` presents this algorithm and its implementation for global optimization problems. It is also suitable for evolution problems.
 
+Time evolution
+==============
+
+The Arnoldi method can also be used for time evolution by computing the action of the
+matrix exponential :math:`\exp(-i H \delta t)` on the state. Instead of solving an eigenvalue
+problem, the Krylov basis is used to approximate the exponential:
+
+.. math::
+    \psi(t + \delta t) = \exp(-i H \delta t) \psi(t) \approx \sum_{i=0}^{L-1} c_i H^i \psi(t)
+
+where the coefficients :math:`c_i` are obtained by projecting the exponential onto the
+Krylov subspace. This approach is particularly effective when the Hamiltonian has a
+large spectral range, as the Krylov subspace naturally adapts to capture the relevant
+dynamics.
+
+The Arnoldi time evolution method preserves unitarity within the Krylov subspace and
+can be more efficient than Taylor or Chebyshev expansions for certain problems,
+especially when high accuracy is required over short time intervals.
+
 .. autosummary::
 
     ~seemps.optimization.arnoldi
     ~seemps.evolution.arnoldi
+
+See also
+========
+
+- :doc:`gradient_descent` - A special case of Arnoldi with a Krylov basis of size 2
+- :doc:`dmrg` - An alternative optimization algorithm based on local tensor updates
+- :doc:`runge_kutta` - Explicit time evolution methods
+- :doc:`tdvp` - Time-dependent variational principle
+- :doc:`crank_nicolson` - Implicit time evolution methods
 
 
 

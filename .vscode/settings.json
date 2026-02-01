@@ -59,6 +59,6 @@
     "python.testing.unittestArgs": [
         "-v"
     ],
-    "python.testing.unittestEnabled": true
-
+    "python.testing.unittestEnabled": true,
+    "python-envs.pythonProjects": []
 }

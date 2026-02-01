@@ -12,13 +12,13 @@ identity. In SeeMPS we call those states being in "canonical form" and have
 a special class :class:`CanonicalMPS` for them.
 
 Assume we have a state :math:`\psi` in canonical form with respect to the
-`n`-th site. This state can be written as
+:math:`n`-th site. This state can be written as
 
 .. math::
     |\psi\rangle = A_{\alpha_n,i_n,\alpha_{n+1}}\ket{\alpha_n}\ket{i_n}\ket{\alpha_{n+1}}
 
 where the quantum states :math:`\ket{\alpha_{n}}` and :math:`\ket{\alpha_{n+1}}`
-enclose all subsystems to the left (`j < i`) or to the right (`j > i`).
+enclose all subsystems to the left (:math:`j < n`) or to the right (:math:`j > n`).
 Because the state is in canonical form, these "environment" states satisfy
 orthogonalitiy relations
 

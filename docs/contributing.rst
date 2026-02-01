@@ -32,7 +32,7 @@ SeeMPS is developed in Python and Cython, with the help of some recommended tool
 
 - The source control tool `git`
 
-- `Astral's uv <hhttps://docs.astral.sh/uv>`_ project manager.
+- `Astral's uv <https://docs.astral.sh/uv>`_ project manager.
 
 - A C/C++ compiler to process sections of SeeMPS that are compiled natively with Cython.
 
@@ -98,12 +98,12 @@ These are, in order, the unit tests that verify all functions, two type checkers
 Documentation
 -------------
 
-The documentation is automatically built for every release by `readthedocs <https://seemps.readthedocs.io>`_. However, it is recommended thatyou build this documentation locally, when developing new code::
+The documentation is automatically built for every release by `readthedocs <https://seemps.readthedocs.io>`_. However, it is recommended that you build this documentation locally, when developing new code::
 
     uv sync --group doc
     uv run scripts/make.py --doc
 
-This will ensure that the documentation is consistent and you have not removed some function that is referenced there. As a bonus, it will provide you with a local copy of alldocs under the `_site` folder, which you can open using, for instance::
+This will ensure that the documentation is consistent and you have not removed some function that is referenced there. As a bonus, it will provide you with a local copy of all docs under the `_site` folder, which you can open using, for instance::
 
     firefox _site/index.html
 

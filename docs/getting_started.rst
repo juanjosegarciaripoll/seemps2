@@ -12,7 +12,7 @@ The SeeMPS library can be installed directly using pip::
 
 Note that, since we do not provide binaries for all Python versions and all platforms, you might at some point need to have a C++ compiler available, if `pip` or `uv` finds that it has to compile SeeMPS from sources (see :ref:`the development environment instructions <environment>` for more details).
 
-More generally, we recommend that you use `Astral's uv <https://docs.astral.sh/uv>` to manage any Python project you create. In that case, you simply need to list SeeMPS as a requirement for your project::
+More generally, we recommend that you use `Astral's uv <https://docs.astral.sh/uv>`_ to manage any Python project you create. In that case, you simply need to list SeeMPS as a requirement for your project::
 
   uv add seemps
 

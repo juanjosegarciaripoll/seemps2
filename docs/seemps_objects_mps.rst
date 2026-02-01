@@ -8,7 +8,7 @@ The matrix-product state is an efficient representation of composite quantum
 systems that reconstructs the total wavefunction from the contraction of
 three-legged tensors.
 
-If :math:`\Psi` is a quantum state with `N` components, a MPS representation
+If :math:`\Psi` is a quantum state with :math:`N` components, a MPS representation
 would look as follows
 
 .. math::
@@ -22,7 +22,7 @@ would look as follows
 
 Here, the :math:`i_n` are indices labelling the quantum states of the respective
 subsystems, while the :math:`\alpha_n` are integer indices connecting
-(correlating) neigboring quantum systems. The former are usually labeled the
+(correlating) neighboring quantum systems. The former are usually labeled the
 "physical" indices, while the latter are declared "virtual" indices.
 
 .. image:: pictures/mps-tensor.drawio.svg
@@ -84,8 +84,8 @@ of local operators such as
 
 As sketched below, the expectation value is recovered from the contraction of
 a quasi-1D structure, with a contraction cost :math:`O(N D^4)` that is linear
-in the number of components, and polynomial on the bond dimension `D` and the
-physical dimension `d` of each tensor.
+in the number of components, and polynomial on the bond dimension :math:`D` and the
+physical dimension :math:`d` of each tensor.
 
 .. image:: pictures/mps-expectation.drawio.svg
     :width: 400

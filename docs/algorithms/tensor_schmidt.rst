@@ -18,7 +18,7 @@ basis:
 
 such that :math:`\langle\phi_k|\phi_j\rangle=\delta_{jk}` and
 :math:`\langle\xi_k|\xi_j\rangle=\delta_{jk}`, with non-negative Schmidt
-weights $s_k\geq 0$.
+weights :math:`s_k\geq 0`.
 
 From a tensor's perspective, what we have achieved is a decomposition of the
 form
@@ -26,11 +26,11 @@ form
 .. math::
     \psi_{ij} = \sum_k \phi_{ki} s_k \xi_{kj}
 
-If the number of Schmidt vectors `d` is small, this decomposition is advantageous.
+If the number of Schmidt vectors :math:`d` is small, this decomposition is advantageous.
 This may be the case also when the weights :math:`|s_k|^2` are small enough that
 they can be dropped above a certain size.
 
-How are the Schmidt vectors computed?  The orthogonal basis for the `i` and `j`
+How are the Schmidt vectors computed?  The orthogonal basis for the :math:`i` and :math:`j`
 subsystems are actually the eigenstates of the reduced density matrices.
 For instance
 
