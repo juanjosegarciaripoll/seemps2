@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 from math import cos, sin, sqrt
 import numpy as np
 import scipy.sparse as sp
@@ -64,11 +65,11 @@ class VerboseLogger(Logger):
         super().__enter__()
         return self
 
-    def __call__(self, *args: Any, **kwdargs: Any):
+    def __call__(self, *args: Any, file=sys.stderr, **kwdargs: Any):
         if self.active:
             txt = " ".join([str(a) for a in args])
             txt = " ".join([PREFIX + a for a in txt.split("\n")])
-            print(txt, **kwdargs)
+            print(txt, file=file, **kwdargs)
 
     def __exit__(self, exc_type, exc_value, traceback):  # pyright: ignore[reportMissingParameterType]
         self.close()
@@ -106,7 +107,7 @@ def log(*args: Any, debug_level: int = 1) -> None:
         Level of messages to log
     """
     if DEBUG and (DEBUG is True or DEBUG >= debug_level):
-        print(*args)
+        print(*args, file=sys.stderr)
 
 
 def random_isometry(
