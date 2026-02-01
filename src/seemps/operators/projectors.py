@@ -1,10 +1,9 @@
 from __future__ import annotations
-
 import numpy as np
 from typing import TypeAlias
 from collections.abc import Sequence
 from .mpo import MPO
-from ..state import Strategy, DEFAULT_STRATEGY, NO_TRUNCATION
+from ..state import MPS, Strategy, DEFAULT_STRATEGY, NO_TRUNCATION
 
 
 def identity_mpo(dimensions: Sequence[int], strategy: Strategy = NO_TRUNCATION) -> MPO:
@@ -21,6 +20,16 @@ values in the sequence include
 - A tuple of one or more `int`, representing multiple basis states
 - A `ALL_STATES` object representing all basis states.
 """
+
+
+def diagonal_mpo_from_mps(mps: MPS, strategy: Strategy = DEFAULT_STRATEGY) -> MPO:
+    """Return an MPO that is equivalent to Hadamard multiplication by the MPS."""
+    tensors = []
+    for A in mps:
+        a, i, b = A.shape
+        tensors.append(A.reshape(a, i, 1, b) * np.eye(i, i).reshape(1, i, i, 1))
+    return MPO(tensors, strategy)
+
 
 ALL_STATES: tuple = tuple()
 

@@ -14,7 +14,6 @@ class TestQFT(SeeMPSTestCase):
         return MPS.from_vector(ψ, [2] * N), ψ
 
     def test_qft_is_fft(self):
-        np.random.seed(1022)
         for N in range(4, 10):
             ψmps, ψ = self.gaussian_mps(N)
             self.assertSimilar(
@@ -22,13 +21,11 @@ class TestQFT(SeeMPSTestCase):
             )
 
     def test_iqft_is_fft(self):
-        np.random.seed(1022)
         for N in range(4, 10):
             ψmps, ψ = self.gaussian_mps(N)
             self.assertSimilar(qft_flip(iqft(ψmps)), numpy.fft.ifft(ψ, norm="ortho"))
 
     def test_qft_nd_vs_qft_flip(self):
-        np.random.seed(1022)
         for N in range(4, 10):
             ψmps, _ = self.gaussian_mps(N)
             ξmps1 = qft_nd_mpo(list(range(N - 1, -1, -1))).apply(qft_flip(ψmps))
@@ -36,13 +33,11 @@ class TestQFT(SeeMPSTestCase):
             self.assertSimilar(ξmps1, ξmps2)
 
     def test_qft_nd_is_qft(self):
-        np.random.seed(1022)
         for N in range(4, 10):
             ψmps, _ = self.gaussian_mps(N)
             self.assertSimilar(qft(ψmps), qft_nd_mpo(list(range(N)), N).apply(ψmps))
 
     def test_iqft_nd_is_iqft(self):
-        np.random.seed(1022)
         for N in range(4, 10):
             ψmps, _ = self.gaussian_mps(N)
             self.assertSimilar(iqft(ψmps), iqft_nd_mpo(list(range(N)), N).apply(ψmps))

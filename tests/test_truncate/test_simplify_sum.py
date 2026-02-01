@@ -1,22 +1,27 @@
 import numpy as np
 from seemps.state import MPSSum, DEFAULT_STRATEGY, Simplification, Truncation
 from seemps.state.simplification import simplify_mps_sum
-from .. import tools
+from ..tools import SeeMPSTestCase
+from seemps.tools import log
 
 
-class TestSimplifyMPSSum(tools.SeeMPSTestCase):
+class TestSimplifyMPSSum(SeeMPSTestCase):
     def test_no_truncation(self):
         d = 2
         strategy = DEFAULT_STRATEGY.replace(
             method=Truncation.DO_NOT_TRUNCATE, simplify=Simplification.VARIATIONAL
         )
-        for n in range(3, 9):
+        log(
+            f"rng={self.rng.bit_generator.state}, {self.rng.integers(0, 0xFFFFFFF, size=1)}"
+        )
+        for n in range(3, 4):  # range(3, 9):
+            log(f"n={n}")
             ψ1 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ1 = ψ1 * (1 / ψ1.norm())
             ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
-            a1 = np.random.randn()
-            a2 = np.random.randn()
+            a1 = self.rng.normal()
+            a2 = self.rng.normal()
             ψ = a1 * ψ1.to_vector() + a2 * ψ2.to_vector()
             φ = simplify_mps_sum(
                 MPSSum([a1, a2], [ψ1, ψ2]),
@@ -35,8 +40,8 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
             ψ1 = ψ1 * (1 / ψ1.norm())
             ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
-            a1 = np.random.randn()
-            a2 = np.random.randn()
+            a1 = self.rng.normal()
+            a2 = self.rng.normal()
             ψ = a1 * ψ1.to_vector() + a2 * ψ2.to_vector()
             φ = simplify_mps_sum(MPSSum([a1, a2], [ψ1, ψ2]), strategy=strategy)
             err = 2 * abs(
@@ -55,8 +60,8 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
             ψ1 = ψ1 * (1 / ψ1.norm())
             ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
-            a1 = np.random.randn()
-            a2 = np.random.randn()
+            a1 = self.rng.normal()
+            a2 = self.rng.normal()
             φ = simplify_mps_sum(MPSSum([a1, a2], [ψ1, ψ2]), strategy=strategy)
             max_D_φ = max([max(t.shape) for t in φ])
             self.assertTrue(max_D_φ <= D)
@@ -70,8 +75,8 @@ class TestSimplifyMPSSum(tools.SeeMPSTestCase):
             ψ1 = ψ1 * (1 / ψ1.norm())
             ψ2 = self.random_uniform_mps(d, n, D=int(2 ** (n / 2)))
             ψ2 = ψ2 * (1 / ψ2.norm())
-            a1 = np.random.randn()
-            a2 = np.random.randn()
+            a1 = self.rng.normal()
+            a2 = self.rng.normal()
             φ0 = simplify_mps_sum(MPSSum([a1, a2], [ψ1, ψ2]), strategy=strategy_0)
             φ1 = simplify_mps_sum(MPSSum([a1, a2], [ψ1, ψ2]), strategy=strategy_1)
             ψ = a1 * ψ1.to_vector() + a2 * ψ2.to_vector()

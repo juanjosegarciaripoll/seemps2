@@ -112,7 +112,7 @@ class TestExpectation(SeeMPSTestCase):
 
     def test_expected1_density(self):
         def random_wavefunction(n):
-            ψ = np.random.rand(n) - 0.5
+            ψ = self.rng.normal(size=n) - 0.5
             return ψ / np.linalg.norm(ψ)
 
         #

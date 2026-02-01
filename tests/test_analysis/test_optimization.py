@@ -29,8 +29,7 @@ class TestBinarySearch(SeeMPSTestCase):
         a, b, n = -1, 1, 10
         mps, _, y = self._make_monotone_mps(f, a, b, n)
 
-        rng = np.random.default_rng(42)
-        thresholds = rng.uniform(a, b, size=10)
+        thresholds = self.rng.uniform(a, b, size=10)
         for t in thresholds:
             envs = _get_search_environments(mps)
             bits_cached = binary_search_mps(mps, t, search_environments=envs)
@@ -46,8 +45,7 @@ class TestBinarySearch(SeeMPSTestCase):
         a, b, n = -1, 1, 10
         mps, _, y = self._make_monotone_mps(f, a, b, n)
 
-        rng = np.random.default_rng(42)
-        thresholds = rng.uniform(a, b, size=10)
+        thresholds = self.rng.uniform(a, b, size=10)
         for t in thresholds:
             envs = _get_search_environments(mps)
             bits_cached = binary_search_mps(

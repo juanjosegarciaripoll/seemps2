@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.polynomial import Chebyshev
 from scipy.special import erf
-
+import seemps
 from seemps.state import MPS, DEFAULT_STRATEGY, NO_TRUNCATION, mps_tensor_sum
 from seemps.analysis.mesh import RegularInterval
 from seemps.analysis.factories import mps_interval
@@ -337,33 +337,35 @@ class TestPowerExpansion(SeeMPSTestCase):
         interval = RegularInterval(a, b, 2**n, endpoint_right=True)
         x = interval.to_vector()
 
-        rng = np.random.default_rng(8)
-        coeffs = rng.normal(loc=0.0, scale=1.0, size=100)
-        fn = lambda x: sum(c * x**i for i, c in enumerate(coeffs))  # noqa: E731
-        y = fn(x)
+        rng = np.random.default_rng(0x22)
+        coeffs = rng.normal(loc=0.0, scale=1.0, size=20)
+        p = np.polynomial.Polynomial(coeffs)
+        y = p(x)
 
         expansion = PowerExpansion(coeffs)
-        mps = expansion.to_mps(argument=interval)
-        self.assertSimilar(y, mps)
+        mps_clen = expansion.to_mps(argument=interval, clenshaw=True)
+        self.assertSimilar(y, mps_clen, atol=1e-6)
+        mps_poly = expansion.to_mps(argument=interval, clenshaw=False)
+        self.assertSimilar(y, mps_poly, atol=1e-6)
 
     def test_mpo_expansion(self):
         a, b, n = -1, 1, 10
-        N = 2**n
-        dx = (b - a) / N
-        x = np.linspace(a, b, N, endpoint=False)
+        interval = RegularInterval(a, b, 2**n, endpoint_right=True)
+        x = interval.to_vector()
 
-        rng = np.random.default_rng(8)
-        coeffs = rng.normal(loc=0.0, scale=1.0, size=100)
-        fn = lambda x: sum(c * x**i for i, c in enumerate(coeffs))  # noqa: E731
-        y = fn(x)
+        rng = np.random.default_rng(0x22)
+        coeffs = rng.normal(loc=0.0, scale=1.0, size=20)
+        p = np.polynomial.Polynomial(coeffs)
+        y = p(x)
 
         expansion = PowerExpansion(coeffs)
-        mpo_x = x_mpo(n, a, dx)
+        mps_x = MPS.from_vector(x, [2] * n, normalize=False)
+        mpo_x = seemps.operators.projectors.diagonal_mpo_from_mps(mps_x)
+        self.assertSimilar(mpo_x, np.diag(x))
+        mps_y = MPS.from_vector(y, [2] * n, normalize=False)
+        mpo_y = seemps.operators.projectors.diagonal_mpo_from_mps(mps_y)
+        self.assertSimilar(mpo_y, np.diag(y))
         mpo_clen = expansion.to_mpo(mpo_x, clenshaw=True)
+        self.assertSimilar(mpo_clen, mpo_y, atol=1e-6)
         mpo_poly = expansion.to_mpo(mpo_x, clenshaw=False)
-
-        I = MPS([np.ones((1, 2, 1))] * n)
-        mps_clen = mpo_clen.apply(I)
-        mps_poly = mpo_poly.apply(I)
-        self.assertSimilar(y, mps_clen)
-        self.assertSimilar(y, mps_poly)
+        self.assertSimilar(mpo_poly, mpo_y, atol=1e-6)

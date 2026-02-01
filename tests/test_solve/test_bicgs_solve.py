@@ -14,7 +14,7 @@ class TestBICGS(TestSolveProblems):
                     atol=p.tolerance,
                     rtol=0.0,
                 )
-                self.assertTrue(r < p.tolerance)
+                self.assertTrue(r < p.tolerance * p.get_rhs().norm())
                 exact_x = np.linalg.solve(
                     p.invertible_mpo.to_matrix(), p.get_rhs().to_vector()
                 )

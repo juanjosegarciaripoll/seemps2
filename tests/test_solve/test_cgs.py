@@ -13,7 +13,7 @@ class TestCGS(TestSolveProblems):
                     guess=p.get_rhs(),
                     tolerance=p.tolerance,
                 )
-                self.assertTrue(r < p.tolerance)
+                self.assertTrue(r < p.tolerance * p.get_rhs().norm())
                 exact_x = np.linalg.solve(
                     p.invertible_mpo.to_matrix(), p.get_rhs().to_vector()
                 )

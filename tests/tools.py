@@ -5,6 +5,7 @@ import scipy.sparse as sp
 import seemps
 import seemps.cython
 from seemps.state import MPS, CanonicalMPS, MPSSum, random_uniform_mps, random_mps
+from seemps.operators import MPO, MPOSum, MPOList
 from seemps.typing import SparseOperator
 from seemps.tools import log
 
@@ -59,14 +60,18 @@ class SeeMPSTestCase(unittest.TestCase):
     def assertSimilar(self, A, B, **kwdargs) -> None:
         if sp.issparse(A):
             A = A.toarray()  # type: ignore
-        elif isinstance(A, MPS) or isinstance(A, MPSSum):
+        elif isinstance(A, (MPS, MPSSum)):
             A = A.to_vector()
+        elif isinstance(A, (MPO, MPOSum, MPOList)):
+            A = A.to_matrix()
         else:
             A = np.asarray(A)
         if sp.issparse(B):
             B = B.toarray()  # type: ignore
-        elif isinstance(B, MPS):
+        elif isinstance(B, (MPS, MPSSum)):
             B = B.to_vector()
+        elif isinstance(B, (MPO, MPOSum, MPOList)):
+            B = B.to_matrix()
         else:
             B = np.asarray(B)
         if A.ndim != B.ndim or A.shape != B.shape:
