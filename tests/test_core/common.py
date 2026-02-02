@@ -1,7 +1,11 @@
 from typing import Any, cast
 import pickle
 import numpy as np
+import seemps
+import seemps.cython.core
+import seemps.cython.pybind
 from ..tools import SeeMPSTestCase
+import itertools
 
 FAILED_TEST_FILE_NAME = "failed_tests.pkl"
 LOADED_FAILED_TESTS: dict[str, Any] | None = None
@@ -11,6 +15,12 @@ SAVED_FILE_TESTS: dict[str, Any] = {}
 class CoreComparisonTestCase(SeeMPSTestCase):
     test_name: str
     test_args: Any
+    stategies: list[
+        tuple[seemps.cython.core.Strategy, seemps.cython.pybind.Strategy]
+    ] = [
+        (seemps.cython.core.NO_TRUNCATION, seemps.cython.pybind.NO_TRUNCATION),
+        (seemps.cython.core.DEFAULT_STRATEGY, seemps.cython.pybind.DEFAULT_STRATEGY),
+    ]
 
     def _maybe_load_failed_tests(self) -> dict[str, Any]:
         global LOADED_FAILED_TESTS
@@ -71,4 +81,32 @@ class CoreComparisonTestCase(SeeMPSTestCase):
                 for cols in range(1, max_cols + 1)
                 for copies in range(10)
             ]
+        return self.test_args
+
+    def make_real_tensors(
+        self, max_sizes: tuple[int, ...], dtype: Any = np.float64
+    ) -> list[tuple[tuple[int, ...], np.ndarray]]:
+        """Generate a list of random real tensors for testing."""
+        if self.test_args is None:
+            self.test_args = []
+            for sizes in itertools.product(
+                *(range(1, max_size + 1) for max_size in max_sizes)
+            ):
+                tensor = self.rng.normal(size=sizes).astype(dtype)
+                self.test_args.append((sizes, tensor))
+        return self.test_args
+
+    def make_complex_tensors(
+        self, max_sizes: tuple[int, ...], dtype: Any = np.complex128
+    ) -> list[tuple[tuple[int, ...], np.ndarray]]:
+        """Generate a list of random complex tensors for testing."""
+        if self.test_args is None:
+            self.test_args = []
+            for sizes in itertools.product(
+                *(range(1, max_size + 1) for max_size in max_sizes)
+            ):
+                tensor = (
+                    self.rng.normal(size=sizes) + 1j * self.rng.normal(size=sizes)
+                ).astype(dtype)
+                self.test_args.append((sizes, tensor))
         return self.test_args
