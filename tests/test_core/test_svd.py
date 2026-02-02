@@ -19,8 +19,10 @@ class TestGESDD(CoreComparisonTestCase):
 
         for rows, cols, A in self.make_double_arrays(self.max_rows, self.max_cols):
             with self.subTest(rows=rows, cols=cols):
-                U1, S1, VT1 = seemps.cython.core._destructive_svd(A.copy())
-                U2, S2, VT2 = seemps.cython.pybind._destructive_svd(A.copy())
+                Acython = A.copy()
+                Apybind = A.copy()
+                U1, S1, VT1 = seemps.cython.core._destructive_svd(Acython)
+                U2, S2, VT2 = seemps.cython.pybind._destructive_svd(Apybind)
 
                 self.assertEqual(U1.dtype, np.float64)
                 self.assertEqual(S1.dtype, np.float64)
@@ -31,14 +33,17 @@ class TestGESDD(CoreComparisonTestCase):
                 np.testing.assert_array_equal(U1, U2)
                 np.testing.assert_array_equal(S1, S2)
                 np.testing.assert_array_equal(VT1, VT2)
+                np.testing.assert_array_equal(Acython, Apybind)
 
     def test_destructive_svd_complex_are_same(self):
         """Test that the Cython and Pybind destructive SVD give the same results."""
 
         for rows, cols, A in self.make_complex_arrays(self.max_rows, self.max_cols):
             with self.subTest(rows=rows, cols=cols):
-                U1, S1, VT1 = seemps.cython.core._destructive_svd(A.copy())
-                U2, S2, VT2 = seemps.cython.pybind._destructive_svd(A.copy())
+                Acython = A.copy()
+                Apybind = A.copy()
+                U1, S1, VT1 = seemps.cython.core._destructive_svd(Acython)
+                U2, S2, VT2 = seemps.cython.pybind._destructive_svd(Apybind)
 
                 self.assertEqual(U1.dtype, np.complex128)
                 self.assertEqual(S1.dtype, np.float64)
@@ -49,6 +54,7 @@ class TestGESDD(CoreComparisonTestCase):
                 np.testing.assert_array_equal(U1, U2)
                 np.testing.assert_array_equal(S1, S2)
                 np.testing.assert_array_equal(VT1, VT2)
+                np.testing.assert_array_equal(Acython, Apybind)
 
     def test_destructive_svd_other_real_types_are_same(self):
         """Test that the Cython and Pybind destructive SVD give the same results."""
