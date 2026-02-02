@@ -11,6 +11,7 @@ from . import (
     test_evolution,
     test_operators,
     test_analysis,
+    test_core,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "test_evolution",
     "test_operators",
     "test_analysis",
+    "test_core",
 ]
