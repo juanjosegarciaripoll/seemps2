@@ -3,6 +3,9 @@ import sys
 import time
 import atexit
 from collections import defaultdict
+from typing import TypeAlias
+
+ProfilerStats: TypeAlias = dict[str, float]
 
 CURRENT_PROFILER: "Profiler | None" = None
 
@@ -15,6 +18,11 @@ class Profiler:
         module_prefixes: List of module prefixes to filter (e.g., ['seemps']).
                         Only functions from these modules will be shown.
     """
+
+    module_prefixes: list[str]
+    file_prefixes: list[str]
+    stats: dict[str, dict[str, float | int]]
+    call_stack: list[tuple]
 
     def __init__(self, module_prefixes: list[str] = ["seemps"]):
         self.module_prefixes = module_prefixes

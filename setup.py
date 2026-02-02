@@ -4,15 +4,20 @@ import glob
 import numpy as np
 import sys
 import os
+from Cython.Build import cythonize  # type: ignore
+import Cython.Compiler.Options  # type: ignore
+
+# Note:
+# Sort input source files if you glob sources to ensure bit - for - bit
+# reproducible builds (https://github.com/pybind/python_example/pull/53)
+from pybind11.setup_helpers import Pybind11Extension, ParallelCompile
 
 # This flag controls whether we build the library with bounds checks and
 # other safety measures. Useful when testing where a code breaks down;
 # but bad for production performance
 debug_library = "SEEMPS_DEBUG" in os.environ
 extra_compile_args = []
-extra_link_args = []
-from Cython.Build import cythonize  # type: ignore
-import Cython.Compiler.Options  # type: ignore
+extra_link_args: list[str] = []
 
 # See https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html
 # for a deeper explanation of the choices here
@@ -67,12 +72,6 @@ extensions = [
     )
     for name, file in zip(extension_names, cython_files)
 ]
-
-#
-# Note:
-# Sort input source files if you glob sources to ensure bit - for - bit
-# reproducible builds(https: // github.com/pybind/python_example/pull/53)
-from pybind11.setup_helpers import Pybind11Extension, ParallelCompile
 
 # Optional multithreaded build
 ParallelCompile("NPY_NUM_BUILD_JOBS").install()
