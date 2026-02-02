@@ -50,13 +50,23 @@ class CoreComparisonTestCase(SeeMPSTestCase):
                     SAVED_FILE_TESTS[self.test_name] = self.test_args
         return super().tearDown()
 
+    def random_tensor(self, shape, dtype: Any = np.float64) -> np.ndarray:
+        """Generate a random tensor with the given shape and dtype."""
+        if np.issubdtype(dtype, np.complexfloating):
+            tensor = (
+                self.rng.normal(size=shape) + 1j * self.rng.normal(size=shape)
+            ).astype(dtype)
+        else:
+            tensor = self.rng.normal(size=shape).astype(dtype)
+        return tensor
+
     def make_double_arrays(
         self, max_rows: int = 30, max_cols: int = 30, dtype: Any = np.float64
     ) -> list[tuple[int, int, np.ndarray]]:
         """Generate a list of random double arrays for testing."""
         if self.test_args is None:
             self.test_args = [
-                (rows, cols, self.rng.normal(size=(rows, cols)).astype(dtype))
+                (rows, cols, self.random_tensor((rows, cols), dtype))
                 for rows in range(1, max_rows + 1)
                 for cols in range(1, max_cols + 1)
                 for copies in range(10)
@@ -72,10 +82,7 @@ class CoreComparisonTestCase(SeeMPSTestCase):
                 (
                     rows,
                     cols,
-                    (
-                        self.rng.normal(size=(rows, cols))
-                        + 1j * self.rng.normal(size=(rows, cols))
-                    ).astype(dtype),
+                    self.random_tensor((rows, cols), dtype),
                 )
                 for rows in range(1, max_rows + 1)
                 for cols in range(1, max_cols + 1)
@@ -92,7 +99,7 @@ class CoreComparisonTestCase(SeeMPSTestCase):
             for sizes in itertools.product(
                 *(range(1, max_size + 1) for max_size in max_sizes)
             ):
-                tensor = self.rng.normal(size=sizes).astype(dtype)
+                tensor = self.random_tensor(sizes, dtype)
                 self.test_args.append((sizes, tensor))
         return self.test_args
 
@@ -105,8 +112,6 @@ class CoreComparisonTestCase(SeeMPSTestCase):
             for sizes in itertools.product(
                 *(range(1, max_size + 1) for max_size in max_sizes)
             ):
-                tensor = (
-                    self.rng.normal(size=sizes) + 1j * self.rng.normal(size=sizes)
-                ).astype(dtype)
+                tensor = self.random_tensor(sizes, dtype)
                 self.test_args.append((sizes, tensor))
         return self.test_args
