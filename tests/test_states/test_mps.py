@@ -70,13 +70,13 @@ class TestMPSOperations(MPSStatesFixture):
     def test_norm_returns_wavefunction_norm(self):
         self.assertAlmostEqual(
             MPS(self.inhomogeneous_state).norm(),
-            np.linalg.norm(self.inhomogeneous_state_wavefunction),
+            float(np.linalg.norm(self.inhomogeneous_state_wavefunction)),
         )
 
     def test_norm_squared_returns_wavefunction_norm_squared(self):
         self.assertAlmostEqual(
             MPS(self.inhomogeneous_state).norm_squared(),
-            np.linalg.norm(self.inhomogeneous_state_wavefunction) ** 2,
+            float(np.linalg.norm(self.inhomogeneous_state_wavefunction)) ** 2,
         )
 
     def test_adding_mps_creates_mps_list(self):

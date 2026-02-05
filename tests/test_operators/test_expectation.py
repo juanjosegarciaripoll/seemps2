@@ -44,11 +44,11 @@ class TestExpectation(SeeMPSTestCase):
             # values of the qubits
             conf = np.arange(0, 2**nbits, dtype=np.uint8)
             conf = np.reshape(conf, (2**nbits, 1))
-            conf = np.unpackbits(conf, axis=1)
+            conf_bool = np.unpackbits(conf, axis=1)
 
             # Finally, we loop over the basis states, verifying that the
             # scalar product is the projection onto the state
-            for n, bits in enumerate(conf):
+            for n, bits in enumerate(conf_bool):
                 proj = ψwave[n]
                 ϕmps = seemps.state.product_state(map(bit2state, bits[-nbits:]))
                 self.assertAlmostEqual(proj, scprod(ϕmps, ψmps))

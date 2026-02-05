@@ -148,9 +148,13 @@ class TestChebyshevCoefficients(SeeMPSTestCase):
         )
         c_F = ChebyshevExpansion.interpolate(F, (a, b), order).coefficients
         self.assertSimilar(c_f[:-1], c_F)
-        c_f = ChebyshevExpansion.interpolate(f, (a, b), order, "extrema").integ(lbnd=a)
+        c_f = (
+            ChebyshevExpansion.interpolate(f, (a, b), order, "extrema")
+            .integ(lbnd=a)
+            .coefficients[:-1]
+        )
         c_F = ChebyshevExpansion.interpolate(F, (a, b), order, "extrema").coefficients
-        self.assertSimilar(c_f.coefficients[:-1], c_F)
+        self.assertSimilar(c_f, c_F)
         c_f = ChebyshevExpansion.project(f, (a, b), order).integ(lbnd=a).coefficients
         c_F = ChebyshevExpansion.project(F, (a, b), order).coefficients
         self.assertSimilar(c_f[:-1], c_F)

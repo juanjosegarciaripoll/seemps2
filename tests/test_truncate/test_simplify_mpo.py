@@ -34,8 +34,8 @@ class TestSimplify(tools.SeeMPSTestCase):
             ψ = ψ * (1 / ψ.norm())
             mpo = MPO([t.reshape(t.shape[0], d, d, t.shape[-1]) for t in ψ._data])
             φ = simplify_mpo(mpo, strategy=strategy)
-            φ = mpo_as_mps(φ)
-            err = 2 * abs(1.0 - scprod(ψ, φ).real / (ψ.norm() * φ.norm()))
+            φmps = mpo_as_mps(φ)
+            err = 2 * abs(1.0 - scprod(ψ, φmps).real / (ψ.norm() * φmps.norm()))
             self.assertTrue(err < tolerance)
 
     def test_max_bond_dimensions(self):
