@@ -10,7 +10,7 @@ import Cython.Compiler.Options  # type: ignore
 # Note:
 # Sort input source files if you glob sources to ensure bit - for - bit
 # reproducible builds (https://github.com/pybind/python_example/pull/53)
-from pybind11.setup_helpers import Pybind11Extension, ParallelCompile
+from pybind11.setup_helpers import Pybind11Extension, ParallelCompile  # pyright: ignore[reportMissingImports, reportUnusedImport]
 
 # This flag controls whether we build the library with bounds checks and
 # other safety measures. Useful when testing where a code breaks down;

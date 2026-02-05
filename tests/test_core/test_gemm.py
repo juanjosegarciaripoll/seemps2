@@ -1,4 +1,3 @@
-from termios import CR3
 import numpy as np
 from typing import Any
 import seemps.cython.core as core

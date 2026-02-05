@@ -229,6 +229,7 @@ def run_tests(
         If test_profile is False: bool indicating success
         If test_profile is True: dict mapping test names to function call counts
     """
+    env: dict[str, str] | None
     if use_sanitizer != "no":
         env = os.environ.copy()
         env["LD_PRELOAD"] = asan_library() + " " + cpp_library()
