@@ -1,6 +1,5 @@
 from __future__ import annotations
 import numpy as np
-
 from ...state import MPS
 from ...operators import MPO
 from ...typing import Vector
@@ -8,6 +7,8 @@ from ..mesh import array_affine
 from ..factories import mps_affine
 from ..operators import mpo_affine
 from .expansion import PolynomialExpansion, ScalarFunction
+
+LEGENDRE_ORTHOGONALITY_DOMAIN = (-1.0, 1.0)
 
 
 class LegendreExpansion(PolynomialExpansion):
@@ -22,12 +23,14 @@ class LegendreExpansion(PolynomialExpansion):
     See https://en.wikipedia.org/wiki/Legendre_polynomials for more information.
     """
 
-    orthogonality_domain = (-1.0, 1.0)
-    affine_fix = (1.0, 0.0)
+    approximation_domain: tuple[float, float]
 
     def __init__(self, coefficients: Vector, approximation_domain: tuple[float, float]):
+        super().__init__(
+            coefficients=coefficients,
+            orthogonality_domain=LEGENDRE_ORTHOGONALITY_DOMAIN,
+        )
         self.approximation_domain = approximation_domain
-        super().__init__(coefficients)
 
     def recurrence_coefficients(self, k: int) -> tuple[float, float, float]:
         """
@@ -40,12 +43,12 @@ class LegendreExpansion(PolynomialExpansion):
 
     def rescale_mps(self, mps: MPS) -> MPS:
         orig = self.approximation_domain
-        dest: tuple[float, float] = self.orthogonality_domain  # pyright: ignore
+        dest = self.orthogonality_domain
         return mps_affine(mps, orig, dest)
 
     def rescale_mpo(self, mpo: MPO) -> MPO:
         orig = self.approximation_domain
-        dest: tuple[float, float] = self.orthogonality_domain  # pyright: ignore
+        dest = self.orthogonality_domain
         return mpo_affine(mpo, orig, dest)
 
     @classmethod
@@ -65,7 +68,7 @@ class LegendreExpansion(PolynomialExpansion):
         x, w = np.polynomial.legendre.leggauss(order)
         x_affine = array_affine(
             x,
-            orig=cls.orthogonality_domain,  # pyright: ignore
+            orig=LEGENDRE_ORTHOGONALITY_DOMAIN,
             dest=approximation_domain,
         )
         P = np.vstack(

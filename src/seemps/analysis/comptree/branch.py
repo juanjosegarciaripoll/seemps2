@@ -8,6 +8,12 @@ from .sparse_mps import SparseCore
 
 
 class BranchNode:
+    func: Callable
+    grid: Vector
+    binning_tol: float | None
+    max_rank: int | None
+    N: int
+
     def __init__(
         self,
         func: Callable,
@@ -56,7 +62,7 @@ class BranchNode:
     @overload
     def evaluate(self, x_in: np.ndarray | None, s: np.ndarray) -> np.ndarray | None: ...
 
-    def evaluate(self, x_in, s):
+    def evaluate(self, x_in: float | np.ndarray | None, s: int | np.ndarray):
         if x_in is None:
             return None
         x_s = self.grid[s]

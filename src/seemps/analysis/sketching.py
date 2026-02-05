@@ -31,6 +31,12 @@ class SketchedCross:
         and used to form the recursive prefix/suffix multi-index sets.
     """
 
+    black_box: BlackBoxLoadMPS
+    sites: int
+    I_l: list  # TODO: This type needs to be more precise
+    I_s: list
+    I_r: list
+
     def __init__(self, black_box: BlackBoxLoadMPS, samples: Matrix):
         self.black_box = black_box
         self.sites = len(black_box.physical_dimensions)

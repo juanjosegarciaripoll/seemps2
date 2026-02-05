@@ -2,7 +2,6 @@ from __future__ import annotations
 import numpy as np
 from typing import Callable, overload
 import dataclasses
-
 from ...tools import make_logger, Logger
 from ...typing import Vector, Matrix
 from .branch import (
@@ -24,6 +23,10 @@ class ChainRoot:
     The length of the discretization grid determines the physical dimension of the corresponding MPS core.
     """
 
+    func: Callable
+    grid: Vector
+    N: int
+
     def __init__(self, func: Callable, grid: Vector):
         self.func = func
         self.grid = grid
@@ -35,7 +38,9 @@ class ChainRoot:
     @overload
     def evaluate(self, x_L: np.ndarray | None, s: np.ndarray) -> np.ndarray: ...
 
-    def evaluate(self, x_L, s):
+    def evaluate(
+        self, x_L: float | np.ndarray | None, s: int | np.ndarray
+    ) -> np.ndarray | float:
         if x_L is None:
             return 0
         x_s = self.grid[s]

@@ -264,10 +264,10 @@ def check_convergence(
     with make_logger(2) as logger:
         logger(
             f"Iteration (half-sweep): {half_sweep:3}/{iter_max}, "
-            f"error: {trajectories['errors'][-1]:1.15e}/{cross_strategy.tol:.2e}, "
-            f"maxbond: {maxbond:3}/{bond_max}, "
-            f"time: {time:8.6f}/{cross_strategy.max_time}, "
-            f"evals: {evals:8}/{cross_strategy.max_evals}."
+            + f"error: {trajectories['errors'][-1]:1.15e}/{cross_strategy.tol:.2e}, "
+            + f"maxbond: {maxbond:3}/{bond_max}, "
+            + f"time: {time:8.6f}/{cross_strategy.max_time}, "
+            + f"evals: {evals:8}/{cross_strategy.max_evals}."
         )
 
         if half_sweep < iter_min or maxbond < bond_min:

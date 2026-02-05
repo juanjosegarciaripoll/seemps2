@@ -127,7 +127,7 @@ def quadrature_mesh_to_mps(
     map_matrix: Matrix | None = None,
     physical_dimensions: list | None = None,
     cross_strategy: CrossStrategyMaxvol = CrossStrategyMaxvol(),
-    **kwargs,
+    initial_points: Matrix | None = None,
 ) -> MPS:
     """
     Constructs the MPS representation of a multidimensional quadrature mesh using TCI.
@@ -137,10 +137,11 @@ def quadrature_mesh_to_mps(
     multidimensional quadrature operator and approximated in MPS form using tensor
     cross-interpolation with the specified strategy.
     """
+
+    def product(q: np.ndarray) -> np.ndarray | float:
+        return np.prod(q, axis=0)
+
     black_box = BlackBoxLoadMPS(
-        lambda q: np.prod(q, axis=0),
-        quadrature_mesh,
-        map_matrix,
-        physical_dimensions,
+        product, quadrature_mesh, map_matrix, physical_dimensions
     )
-    return cross_interpolation(black_box, cross_strategy, **kwargs).mps
+    return cross_interpolation(black_box, cross_strategy, initial_points).mps

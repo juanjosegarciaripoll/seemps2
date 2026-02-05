@@ -5,11 +5,10 @@ import scipy.sparse
 import functools
 from scipy.sparse import dok_array, csr_array
 from typing import Callable
-
 from ..state import MPS, Strategy, DEFAULT_STRATEGY, simplify
 from ..state.schmidt import _destructive_svd
 from ..cython import _contract_last_and_first, destructively_truncate_vector
-from ..typing import Tensor3, MPSOrder
+from ..typing import Tensor3, MPSOrder, Vector
 from .mesh import Interval, ArrayInterval, Mesh, array_affine
 
 
@@ -189,6 +188,16 @@ def _validate_mesh(mesh: Mesh):
 class LagrangeBuilder:
     """Auxiliar class used to build the tensors required for MPS Lagrange interpolation."""
 
+    d: int
+    m: int
+    D: int
+    c: Vector
+    angular_grid: Vector
+    extended_grid: Vector
+    den: Vector
+    log_den: Vector
+    sign_den: Vector
+
     def __init__(
         self,
         order: int,
@@ -205,6 +214,8 @@ class LagrangeBuilder:
             self.extended_grid = np.array(
                 [(i * np.pi) / self.d for i in range(-self.d, 2 * self.d + 1)]
             )
+        else:
+            self.extended_grid = self.angular_grid
         # Precompute cardinal terms
         self.den = self.c[:, np.newaxis] - self.c
         np.fill_diagonal(self.den, 1)

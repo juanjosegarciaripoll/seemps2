@@ -88,7 +88,7 @@ def split_step(
     dt = (stop - start) / steps
 
     # Potential Propagator exp(-factor * V(x) * dt / 2)
-    def propagator_func(x):
+    def propagator_func(x: np.ndarray) -> np.ndarray:
         return np.exp(-factor * potential_func(x) * dt / 2)
 
     physical_dimensions = [2] * num_qubits
