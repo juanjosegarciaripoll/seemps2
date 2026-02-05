@@ -11,6 +11,8 @@ from ..factories import mps_affine
 from ..operators import mpo_affine
 from .expansion import PolynomialExpansion, ScalarFunction
 
+CHEBYSHEV_ORTHOGONALITY_DOMAIN = (-1.0, 1.0)
+
 
 class ChebyshevExpansion(PolynomialExpansion):
     r"""
@@ -24,12 +26,14 @@ class ChebyshevExpansion(PolynomialExpansion):
     See https://en.wikipedia.org/wiki/Chebyshev_polynomials for more information.
     """
 
-    orthogonality_domain = (-1.0, 1.0)
-    affine_fix = (1.0, 0.0)
+    approximation_domain: tuple[float, float]
 
     def __init__(self, coefficients: Vector, approximation_domain: tuple[float, float]):
         self.approximation_domain = approximation_domain
-        super().__init__(coefficients)
+        super().__init__(
+            coefficients=coefficients,
+            orthogonality_domain=CHEBYSHEV_ORTHOGONALITY_DOMAIN,
+        )
 
     def recurrence_coefficients(self, k: int) -> tuple[float, float, float]:
         """
@@ -42,12 +46,12 @@ class ChebyshevExpansion(PolynomialExpansion):
 
     def rescale_mps(self, mps: MPS) -> MPS:
         orig = self.approximation_domain
-        dest: tuple[float, float] = self.orthogonality_domain  # pyright: ignore
+        dest = self.orthogonality_domain
         return mps_affine(mps, orig, dest)
 
     def rescale_mpo(self, mpo: MPO) -> MPO:
         orig = self.approximation_domain
-        dest: tuple[float, float] = self.orthogonality_domain  # pyright: ignore
+        dest = self.orthogonality_domain
         return mpo_affine(mpo, orig, dest)
 
     @classmethod
@@ -89,7 +93,7 @@ class ChebyshevExpansion(PolynomialExpansion):
         x = np.cos(np.pi * np.arange(1, 2 * order, 2) / (2.0 * order))
         x_affine = array_affine(
             x,
-            orig=cls.orthogonality_domain,  # pyright: ignore
+            orig=CHEBYSHEV_ORTHOGONALITY_DOMAIN,
             dest=approximation_domain,
         )
         w = np.ones(order) * (np.pi / order)

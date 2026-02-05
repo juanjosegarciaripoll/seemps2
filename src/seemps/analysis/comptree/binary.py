@@ -24,6 +24,10 @@ class BinaryRoot:
     The length of the discretization grid determines the physical dimension of the corresponding MPS core.
     """
 
+    func: Callable
+    grid: Vector
+    N: int
+
     def __init__(self, func: Callable, grid: Vector):
         self.func = func
         self.grid = grid
@@ -37,7 +41,12 @@ class BinaryRoot:
         self, x_L: np.ndarray | None, s: np.ndarray, x_R: np.ndarray | None
     ) -> np.ndarray: ...
 
-    def evaluate(self, x_L, s, x_R):
+    def evaluate(
+        self,
+        x_L: float | np.ndarray | None,
+        s: np.ndarray | int,
+        x_R: float | np.ndarray | None,
+    ):
         if x_L is None or x_R is None:
             return 0
         x_s = self.grid[s]

@@ -5,7 +5,7 @@ from collections.abc import Sequence, Iterator
 from typing import TypeAlias, overload
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
-from ..typing import Vector, Matrix
+from ..typing import Vector, Matrix, VectorLike
 
 
 class Interval(ABC):
@@ -214,10 +214,13 @@ class ChebyshevInterval(Interval):
 class ArrayInterval(Interval):
     """Wrapper class that allows passing an explicit 1D array of values as an Interval."""
 
-    def __init__(self, array: np.ndarray):
+    values: Vector
+
+    def __init__(self, array: VectorLike):
+        array = np.asarray(array, float)
         if array.ndim != 1:
             raise ValueError("ArrayInterval requires a 1D array of floats")
-        self.values = np.asarray(array, float)
+        self.values = array
         super().__init__(self.values[0], self.values[-1], len(self.values))
 
     @overload
@@ -338,6 +341,8 @@ def array_affine(
     """
     Performs an affine transformation of a given `array` as u = a*x + b from orig=(x0, x1) to dest=(u0, u1).
     """
+    if orig == dest:
+        return array
     x0, x1 = orig
     u0, u1 = dest
     a = (u1 - u0) / (x1 - x0)

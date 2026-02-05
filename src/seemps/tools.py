@@ -3,7 +3,7 @@ import sys
 from math import cos, sin, sqrt
 import numpy as np
 import scipy.sparse as sp
-from typing import Any
+from typing import Any, TextIO
 from .typing import DenseOperator, Operator
 import os
 
@@ -67,7 +67,7 @@ class VerboseLogger(Logger):
         super().__enter__()
         return self
 
-    def __call__(self, *args: Any, file=sys.stderr, **kwdargs: Any):
+    def __call__(self, *args: Any, file: TextIO = sys.stderr, **kwdargs: Any):
         if self.active:
             txt = " ".join([str(a) for a in args])
             txt = " ".join([PREFIX + a for a in txt.split("\n")])

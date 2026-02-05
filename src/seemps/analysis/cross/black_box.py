@@ -166,6 +166,8 @@ class BlackBoxLoadMPO(BlackBox):
     base_mpo: int
     is_diagonal: bool
     map_matrix: np.ndarray
+    sites: int
+    allowed_indices: list[int] | None
 
     # TODO: Generalize for multivariate MPOs.
     # TODO: Generalize for rectangular MPOs (distinct input and output physical dimensions).

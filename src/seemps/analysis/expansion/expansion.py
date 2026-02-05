@@ -2,7 +2,6 @@ from __future__ import annotations
 import numpy as np
 from typing import Callable
 from abc import ABC, abstractmethod
-
 from ...state import MPS, MPSSum, CanonicalMPS, Strategy, DEFAULT_STRATEGY, simplify
 from ...operators import MPO, MPOList, MPOSum, simplify_mpo
 from ...typing import Vector
@@ -41,7 +40,7 @@ class PolynomialExpansion(ABC):
     ----------
     coefficients : Vector
         Expansion coefficients {c_k} of f(x) in the chosen polynomial basis.
-    orthogonality_domain : tuple[float, float] or None
+    orthogonality_domain : tuple[float, float]
         Real interval on which the basis is orthogonal.
         For example, (-1, 1) for Chebyshev or Legendre, and (-∞, ∞) for Hermite.
         Set to None for non-orthogonal bases, such as the monomial basis.
@@ -49,12 +48,20 @@ class PolynomialExpansion(ABC):
         Pair of coefficients (σ, μ) fixing the affine gauge of the basis via P_1(x) = σ x + μ.
     """
 
+    coefficients: Vector
     # NOTE: This hits a limitation of Python typing: subclasses cannot refine class attributes.
-    orthogonality_domain: tuple[float, float] | None  # (a, b)
+    orthogonality_domain: tuple[float, float]  # (a, b)
     affine_fix: tuple[float, float]  # (σ, μ)
 
-    def __init__(self, coefficients: Vector):
+    def __init__(
+        self,
+        coefficients: Vector,
+        orthogonality_domain: tuple[float, float],
+        affine_fix: tuple[float, float] = (1.0, 0.0),
+    ):
         self.coefficients = coefficients
+        self.orthogonality_domain = orthogonality_domain
+        self.affine_fix = affine_fix
 
     @abstractmethod
     def recurrence_coefficients(self, k: int) -> tuple[float, float, float]:
@@ -172,8 +179,10 @@ class PowerExpansion(PolynomialExpansion):
     tensor-network form.
     """
 
-    orthogonality_domain = None
-    affine_fix = (1.0, 0.0)
+    def __init__(self, coefficients: Vector):
+        super().__init__(
+            coefficients=coefficients, orthogonality_domain=(-np.inf, np.inf)
+        )
 
     def recurrence_coefficients(self, k: int) -> tuple[float, float, float]:
         return (1.0, 0.0, 0.0)
