@@ -2,14 +2,14 @@ from setuptools import setup, Extension  # type: ignore
 import glob
 import numpy as np
 import sys
+from Cython.Build import cythonize  # type: ignore
+import Cython.Compiler.Options  # type: ignore
 
 # This flag controls whether we build the library with bounds checks and
 # other safety measures. Useful when testing where a code breaks down;
 # but bad for production performance
 debug_library = False
 extra_compile_args = []
-from Cython.Build import cythonize  # type: ignore
-import Cython.Compiler.Options  # type: ignore
 
 # See https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html
 # for a deeper explanation of the choices here

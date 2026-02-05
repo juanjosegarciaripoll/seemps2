@@ -33,7 +33,7 @@ class TestLocalGateCircuits(SeeMPSTestCase):
             LocalRotationsLayer(3, "CNOT")
 
     def test_local_gates_apply_in_place_only_modifies_canonical_mps(self):
-        a = self.random_uniform_canonical_mps(2, 1, truncate=True, normalize=True)
+        a: MPS = self.random_uniform_canonical_mps(2, 1, truncate=True, normalize=True)
         U = LocalRotationsLayer(1, "Sx", default_parameters=[0.35])
         b = U.apply_inplace(a)
         self.assertTrue(a is b)

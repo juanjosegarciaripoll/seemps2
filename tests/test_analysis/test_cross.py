@@ -3,6 +3,7 @@ from abc import abstractmethod
 import unittest
 from numpy.typing import NDArray
 from seemps.state import MPS
+from seemps.typing import Matrix
 from seemps.analysis.mesh import (
     Mesh,
     RegularInterval,
@@ -150,12 +151,8 @@ class TestCrossDMRG(CrossTests):
 
 class TestCrossGreedy(CrossTests):
     def cross_method(self, function, *args, **kwdargs):
-        return cross_greedy(
-            function,
-            *args,
-            cross_strategy=CrossStrategyGreedy(),
-            **kwdargs,
-        )
+        kwdargs["cross_strategy"] = CrossStrategyGreedy()
+        return cross_greedy(function, *args, **kwdargs)
 
 
 class TestSkeleton(SeeMPSTestCase):
@@ -166,7 +163,7 @@ class TestSkeleton(SeeMPSTestCase):
     def test_maxvol_square(self):
         A = self.random_matrix()
         J = self.rng.choice(A.shape[1], 5, replace=False)
-        I = 0  # unused, to keep typechecker happy
+        I: int | Matrix = 0
         for _ in range(1):
             C = A[:, J]
             I, _ = maxvol_square(C)
@@ -178,7 +175,7 @@ class TestSkeleton(SeeMPSTestCase):
     def test_maxvol_rectangular(self):
         A = self.random_matrix()
         J = self.rng.choice(A.shape[1], 1, replace=False)
-        I = 0  # unused, to keep typechecker happy
+        I: int | Matrix = 0
         for _ in range(2):
             C = A[:, J]
             I, _ = maxvol_rectangular(C, rank_kick=(0, 1))

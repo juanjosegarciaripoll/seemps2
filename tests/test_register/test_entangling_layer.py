@@ -13,7 +13,7 @@ class TestEntanglingLayerCircuit(SeeMPSTestCase):
             TwoQubitGatesLayer(2, "Sx")
 
     def test_entangling_layer_apply_in_place_only_modifies_canonical_mps(self):
-        a = self.random_uniform_canonical_mps(2, 2, truncate=True, normalize=True)
+        a: MPS = self.random_uniform_canonical_mps(2, 2, truncate=True, normalize=True)
         U = TwoQubitGatesLayer(2, "CNOT")
         b = U.apply_inplace(a)
         self.assertTrue(a is b)
@@ -22,7 +22,7 @@ class TestEntanglingLayerCircuit(SeeMPSTestCase):
         self.assertFalse(b is a)
 
     def test_local_gates_matmul_works(self):
-        a = self.random_uniform_canonical_mps(2, 2, truncate=True, normalize=True)
+        a: MPS = self.random_uniform_canonical_mps(2, 2, truncate=True, normalize=True)
         U = TwoQubitGatesLayer(2, "CNOT")
         b = a.copy()
         c = U.apply_inplace(a)

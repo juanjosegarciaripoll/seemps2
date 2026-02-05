@@ -109,12 +109,12 @@ class TestMPSSum(MPSStatesFixture):
         A = MPS(self.product_state)
         B = MPS(self.product_state.copy())
         C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join()
-        for i, A in enumerate(C):
+        for i, Ai in enumerate(C):
             if i > 0:
-                self.assertEqual(A.shape[0], 2)
+                self.assertEqual(Ai.shape[0], 2)
             if i < C.size - 1:
-                self.assertEqual(A.shape[2], 2)
-            self.assertEqual(A.shape[1], 2)
+                self.assertEqual(Ai.shape[2], 2)
+            self.assertEqual(Ai.shape[1], 2)
 
     def test_mpssum_join_produces_sum(self):
         A = MPS(self.product_state)
