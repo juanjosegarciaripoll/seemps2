@@ -84,7 +84,7 @@ class GemmData
 
 public:
   const py::object A, B;
-  int m, k, lda, kb, n, ldb;
+  int m, k, kb, n;
   char Aorder, Border;
 
   GemmData(const py::object& oA, Gemm AT, const py::object& oB, Gemm BT)
@@ -93,8 +93,7 @@ public:
         m{ static_cast<int>(array_dim(A, 1)) },
         k{ static_cast<int>(array_dim(A, 0)) },
         kb{ static_cast<int>(array_dim(B, 1)) },
-        n{ static_cast<int>(array_dim(B, 0)) },
-        ldb{ blas_matrix_leading_dimension(B) }, Aorder{ orders[AT] },
+        n{ static_cast<int>(array_dim(B, 0)) }, Aorder{ orders[AT] },
         Border{ orders[BT] }
   {
     if (AT != Gemm::GEMM_NORMAL)
@@ -119,6 +118,17 @@ public:
     double alpha = 1.0;
     double beta = 0.0;
     int lda = blas_matrix_leading_dimension_from_type<double>(A);
+    int ldb = blas_matrix_leading_dimension_from_type<double>(B);
+#if 0
+    std::cerr << "A(" << array_dim(A, 1) << "," << array_dim(A, 0) << ") B("
+              << array_dim(B, 1) << "," << array_dim(B, 0) << ")\n";
+    std::cerr << "A(" << array_stride(A, 1) << "," << array_stride(A, 0)
+              << ") B(" << array_stride(B, 1) << "," << array_stride(B, 0)
+              << ")\n";
+    std::cerr << "Aorder=" << Aorder << " Border=" << Border << " m=" << m
+              << " n=" << n << " k=" << k << " kb=" << kb << " lda=" << lda
+              << " ldb=" << ldb << std::endl;
+#endif
     dgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha, array_data<double>(A), &lda,
               array_data<double>(B), &ldb, &beta, array_data<double>(C), &m);
     return C;
@@ -131,6 +141,7 @@ public:
     std::complex<double> alpha = 1.0;
     std::complex<double> beta = 0.0;
     int lda = blas_matrix_leading_dimension_from_type<std::complex<double>>(A);
+    int ldb = blas_matrix_leading_dimension_from_type<std::complex<double>>(B);
     zgemm_ptr(&Aorder, &Border, &m, &n, &k, &alpha,
               array_data<std::complex<double>>(A), &lda,
               array_data<std::complex<double>>(B), &ldb, &beta,

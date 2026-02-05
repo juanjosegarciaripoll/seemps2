@@ -261,12 +261,19 @@ template <typename number>
 inline int
 blas_matrix_leading_dimension_from_type(const py::object& A)
 {
-  return static_cast<int>(array_stride(A, 0) / sizeof(number));
+  // Numpy may lie about the strides and set
+  // array_stride(A, 0) to a non-canonical value
+  // when array_dim(A, 1) is 1. In that case, we should ignore the stride and
+  // return the number of rows as the leading dimension.
+  return std::max(static_cast<int>(array_stride(A, 0) / sizeof(number)),
+                  static_cast<int>(array_dim(A, 1)));
 }
+
 inline int
 blas_matrix_leading_dimension(const py::object& A)
 {
-  return static_cast<int>(array_stride(A, 0) / array_item_size(A));
+  return std::max(static_cast<int>(array_stride(A, 0) / array_item_size(A)),
+                  static_cast<int>(array_dim(A, 1)));
 }
 
 inline py::object
