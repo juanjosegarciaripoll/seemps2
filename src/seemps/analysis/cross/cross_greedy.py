@@ -1,26 +1,19 @@
 from __future__ import annotations
-
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from collections import defaultdict
-from time import perf_counter
-from typing import Callable, Any
-
 from ...state import MPS
 from ...cython import _contract_last_and_first
 from ...typing import Vector, Matrix, Tensor3
-from ...tools import make_logger
 from .black_box import BlackBox
 from .cross import (
     CrossStrategy,
     CrossInterpolation,
-    CrossError,
     CrossResults,
-    check_convergence,
     IndexSlice,
     IndexMatrix,
     IndexVector,
+    cross_interpolation,
 )
 
 
@@ -44,21 +37,28 @@ class CrossStrategyGreedy(CrossStrategy):
         Number of initial random points used to initialize each partial search.
     """
 
-    @property
-    def algorithm(self) -> Callable:
-        return cross_greedy
+    def make_interpolator(
+        self, black_box: BlackBox, initial_points: Matrix | None = None
+    ) -> CrossInterpolation:
+        return CrossInterpolationGreedy(self, black_box, initial_points)
 
 
 class CrossInterpolationGreedy(CrossInterpolation):
-    mps: MPS
+    strategy: CrossStrategyGreedy
     fibers: list[Tensor3]
     list_Q3: list[Tensor3]
     list_R: list[Matrix]
     J_l: list
     J_g: list
 
-    def __init__(self, black_box: BlackBox, initial_points: Matrix | None):
-        super().__init__(black_box, initial_points)
+    def __init__(
+        self,
+        strategy: CrossStrategyGreedy,
+        black_box: BlackBox,
+        initial_points: Matrix | None,
+    ):
+        super().__init__(black_box, initial_points, two_site_algorithm=True)
+        self.strategy = strategy
 
         self.fibers = [self.sample_fiber(k) for k in range(self.sites)]
         self.list_Q3 = []  # Q factors of the QR decomposition of a fiber.
@@ -168,11 +168,58 @@ class CrossInterpolationGreedy(CrossInterpolation):
         G = _contract_last_and_first(Q, P)
         return G.reshape(r_l, r_s, r_g)
 
+    def update(self, k: int, left_to_right: bool) -> None:
+        cross_strategy = self.strategy
+        max_pivots = self.black_box.physical_dimensions[k] ** (
+            1 + min(k, self.sites - (k + 2))
+        )
+        if len(self.I_g[k]) >= max_pivots or len(self.I_l[k + 1]) >= max_pivots:
+            return
+
+        j_l_random = cross_strategy.rng.integers(
+            low=0,
+            high=len(self.I_l[k]) * len(self.I_s[k]),
+            size=cross_strategy.initial_points,
+        )
+        j_g_random = cross_strategy.rng.integers(
+            low=0,
+            high=len(self.I_s[k + 1]) * len(self.I_g[k + 1]),
+            size=cross_strategy.initial_points,
+        )
+        A_random = self.sample_superblock(k, j_l=j_l_random, j_g=j_g_random)
+        B_random = self.sample_skeleton(k, j_l=j_l_random, j_g=j_g_random)
+        diff = np.abs(A_random - B_random)
+        i, j = np.unravel_index(np.argmax(diff), A_random.shape)
+        j_l, j_g = j_l_random[i], j_g_random[j]
+
+        c_A = c_B = r_A = r_B = np.empty(0)
+        for iter in range(cross_strategy.range_iters[1]):
+            # Traverse column residual
+            c_A = self.sample_superblock(k, j_g=j_g).reshape(-1)
+            c_B = self.sample_skeleton(k, j_g=j_g)
+            new_j_l = np.argmax(np.abs(c_A - c_B))
+            if new_j_l == j_l and iter > 0:
+                break
+            j_l = new_j_l
+
+            # Traverse row residual
+            r_A = self.sample_superblock(k, j_l=j_l).reshape(-1)
+            r_B = self.sample_skeleton(k, j_l=j_l)
+            new_j_g = np.argmax(np.abs(r_A - r_B))
+            if new_j_g == j_g:
+                break
+            j_g = new_j_g
+
+        pivot_error = np.abs(c_A[j_l] - c_B[j_l])
+        if pivot_error >= cross_strategy.pivot_tol:
+            self.update_indices(k, j_l=j_l, j_g=j_g)
+            self.update_tensors(k, row=r_A, column=c_A)
+
 
 def cross_greedy(
     black_box: BlackBox,
-    cross_strategy: CrossStrategyGreedy = CrossStrategyGreedy(),
     initial_points: Matrix | None = None,
+    cross_strategy: CrossStrategyGreedy = CrossStrategyGreedy(),
 ) -> CrossResults:
     """
     Computes the MPS representation of a black-box function using the tensor cross-approximation (TCI)
@@ -183,11 +230,11 @@ def cross_greedy(
     ----------
     black_box : BlackBox
         The black box to approximate as a MPS.
-    cross_strategy : CrossStrategy, default=CrossStrategy()
-        A dataclass containing the parameters of the algorithm.
     initial_points : np.ndarray, optional
         A collection of initial points used to initialize the algorithm.
         If None, an initial point at the origin is used.
+    cross_strategy : CrossStrategy, default=CrossStrategy()
+        A dataclass containing the parameters of the algorithm.
 
     Returns
     -------
@@ -195,103 +242,4 @@ def cross_greedy(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = CrossInterpolationGreedy(black_box, initial_points)
-    error_calculator = CrossError(cross_strategy)
-
-    converged = False
-    trajectories: defaultdict[str, list[Any]] = defaultdict(list)
-    for i in range(cross_strategy.range_iters[1] // 2):
-        # Left-to-right half sweep
-        tick = perf_counter()
-        for k in range(cross.sites - 1):
-            _update_cross(cross, k, cross_strategy)
-        time_ltr = perf_counter() - tick
-
-        # Update trajectories
-        trajectories["errors"].append(error_calculator.sample_error(cross))
-        trajectories["bonds"].append(cross.mps.bond_dimensions())
-        trajectories["times"].append(time_ltr)
-        trajectories["evals"].append(cross.black_box.evals)
-
-        # Evaluate convergence
-        if converged := check_convergence(2 * i + 1, trajectories, cross_strategy):
-            break
-
-        # Right-to-left half sweep
-        tick = perf_counter()
-        for k in reversed(range(cross.sites - 1)):
-            _update_cross(cross, k, cross_strategy)
-        time_rtl = perf_counter() - tick
-
-        # Update trajectories
-        trajectories["errors"].append(error_calculator.sample_error(cross))
-        trajectories["bonds"].append(cross.mps.bond_dimensions())
-        trajectories["times"].append(time_rtl)
-        trajectories["evals"].append(cross.black_box.evals)
-
-        # Evaluate convergence
-        if converged := check_convergence(2 * i + 2, trajectories, cross_strategy):
-            break
-
-    if not converged:
-        with make_logger(2) as logger:
-            logger("Maximum number of iterations reached")
-
-    return CrossResults(
-        mps=cross.mps,
-        errors=np.array(trajectories["errors"]),
-        bonds=np.array(trajectories["bonds"]),
-        times=np.array(trajectories["times"]),
-        evals=np.array(trajectories["evals"]),
-    )
-
-
-def _update_cross(
-    cross: CrossInterpolationGreedy,
-    k: int,
-    cross_strategy: CrossStrategyGreedy,
-) -> None:
-    max_pivots = cross.black_box.physical_dimensions[k] ** (
-        1 + min(k, cross.sites - (k + 2))
-    )
-    if len(cross.I_g[k]) >= max_pivots or len(cross.I_l[k + 1]) >= max_pivots:
-        return
-
-    j_l_random = cross_strategy.rng.integers(
-        low=0,
-        high=len(cross.I_l[k]) * len(cross.I_s[k]),
-        size=cross_strategy.initial_points,
-    )
-    j_g_random = cross_strategy.rng.integers(
-        low=0,
-        high=len(cross.I_s[k + 1]) * len(cross.I_g[k + 1]),
-        size=cross_strategy.initial_points,
-    )
-    A_random = cross.sample_superblock(k, j_l=j_l_random, j_g=j_g_random)
-    B_random = cross.sample_skeleton(k, j_l=j_l_random, j_g=j_g_random)
-    diff = np.abs(A_random - B_random)
-    i, j = np.unravel_index(np.argmax(diff), A_random.shape)
-    j_l, j_g = j_l_random[i], j_g_random[j]
-
-    c_A = c_B = r_A = r_B = np.empty(0)
-    for iter in range(cross_strategy.range_iters[1]):
-        # Traverse column residual
-        c_A = cross.sample_superblock(k, j_g=j_g).reshape(-1)
-        c_B = cross.sample_skeleton(k, j_g=j_g)
-        new_j_l = np.argmax(np.abs(c_A - c_B))
-        if new_j_l == j_l and iter > 0:
-            break
-        j_l = new_j_l
-
-        # Traverse row residual
-        r_A = cross.sample_superblock(k, j_l=j_l).reshape(-1)
-        r_B = cross.sample_skeleton(k, j_l=j_l)
-        new_j_g = np.argmax(np.abs(r_A - r_B))
-        if new_j_g == j_g:
-            break
-        j_g = new_j_g
-
-    pivot_error = np.abs(c_A[j_l] - c_B[j_l])
-    if pivot_error >= cross_strategy.pivot_tol:
-        cross.update_indices(k, j_l=j_l, j_g=j_g)
-        cross.update_tensors(k, row=r_A, column=c_A)
+    return cross_interpolation(cross_strategy, black_box, initial_points)

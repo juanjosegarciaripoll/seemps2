@@ -144,4 +144,4 @@ def quadrature_mesh_to_mps(
     black_box = BlackBoxLoadMPS(
         product, quadrature_mesh, map_matrix, physical_dimensions
     )
-    return cross_interpolation(black_box, cross_strategy, initial_points).mps
+    return cross_interpolation(cross_strategy, black_box, initial_points).mps
