@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, cast
 
 from ...state import MPS
 from ...cython import _contract_last_and_first
@@ -45,6 +45,11 @@ class CrossStrategyGreedy(CrossStrategy):
     @property
     def algorithm(self) -> Callable:
         return cross_greedy
+
+    def make_interpolator(
+        self, black_box: BlackBox, initial_points: Matrix | None = None
+    ) -> CrossInterpolation:
+        return CrossInterpolationGreedy(black_box, initial_points)
 
 
 class CrossInterpolationGreedy(CrossInterpolation):
@@ -192,7 +197,10 @@ def cross_greedy(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = CrossInterpolationGreedy(black_box, initial_points)
+    cross = cast(
+        CrossInterpolationGreedy,
+        cross_strategy.make_interpolator(black_box, initial_points),
+    )
     error_calculator = CrossError(cross_strategy)
 
     converged = False

@@ -44,6 +44,11 @@ class CrossStrategyMaxvol(CrossStrategy):
     def algorithm(self) -> Callable:
         return cross_maxvol
 
+    def make_interpolator(
+        self, black_box: BlackBox, initial_points: Matrix | None = None
+    ) -> CrossInterpolation:
+        return CrossInterpolation(black_box, initial_points)
+
 
 def cross_maxvol(
     black_box: BlackBox,
@@ -71,7 +76,7 @@ def cross_maxvol(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = CrossInterpolation(black_box, initial_points)
+    cross = cross_strategy.make_interpolator(black_box, initial_points)
     error_calculator = CrossError(cross_strategy)
 
     converged = False

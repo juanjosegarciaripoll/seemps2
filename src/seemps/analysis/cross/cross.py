@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import abstractmethod
 from collections.abc import Sequence
 from time import perf_counter
 import numpy as np
@@ -88,6 +89,12 @@ class CrossStrategy:
     @property
     def algorithm(self) -> Callable:
         raise NotImplementedError("Subclasses must override 'algorithm'")
+
+    @abstractmethod
+    def make_interpolator(
+        self, black_box: BlackBox, initial_points: Matrix | None = None
+    ) -> CrossInterpolation:
+        pass
 
 
 IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
