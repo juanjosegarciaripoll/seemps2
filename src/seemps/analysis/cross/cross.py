@@ -6,7 +6,7 @@ import functools
 from typing import Callable, TypeAlias
 
 from ...state import MPS
-from ...tools import make_logger, SEED
+from ...tools import make_logger, SEED, Logger
 from ...typing import Vector, Matrix, Tensor3, Tensor4, Natural
 from ..evaluation import random_mps_indices, evaluate_mps
 from .black_box import BlackBox
@@ -249,8 +249,8 @@ class CrossError:
         return error / self.norm if self.error_relative else error
 
 
-def check_convergence(
-    half_sweep: int, trajectories: dict, cross_strategy: CrossStrategy
+def check_tci_convergence(
+    logger: Logger, half_sweep: int, trajectories: dict, cross_strategy: CrossStrategy
 ) -> bool:
     """Checks the convergence of TCI from its trajectories and logs the results for each iteration."""
     iter_min, iter_max = cross_strategy.range_iters
@@ -261,35 +261,34 @@ def check_convergence(
     evals = trajectories["evals"][-1]
     error = trajectories["errors"][-1]
 
-    with make_logger(2) as logger:
-        logger(
-            f"Iteration (half-sweep): {half_sweep:3}/{iter_max}, "
-            + f"error: {trajectories['errors'][-1]:1.15e}/{cross_strategy.tol:.2e}, "
-            + f"maxbond: {maxbond:3}/{bond_max}, "
-            + f"time: {time:8.6f}/{cross_strategy.max_time}, "
-            + f"evals: {evals:8}/{cross_strategy.max_evals}."
-        )
+    logger(
+        f"Iteration (half-sweep): {half_sweep:3}/{iter_max}, "
+        + f"error: {trajectories['errors'][-1]:1.15e}/{cross_strategy.tol:.2e}, "
+        + f"maxbond: {maxbond:3}/{bond_max}, "
+        + f"time: {time:8.6f}/{cross_strategy.max_time}, "
+        + f"evals: {evals:8}/{cross_strategy.max_evals}."
+    )
 
-        if half_sweep < iter_min or maxbond < bond_min:
-            return False
-        if error <= cross_strategy.tol:
-            logger(f"State converged within tolerance {cross_strategy.tol}")
-            return True
-        elif maxbond - maxbond_prev <= 0:
-            logger(f"Max. bond dimension converged with value {maxbond}")
-            return True
-        elif half_sweep >= iter_max:
-            logger(f"Max. iterations reached at {iter_max}")
-            return True
-        elif maxbond >= bond_max:
-            logger(f"Max. bond reached above the threshold {bond_max}")
-            return True
-        elif cross_strategy.max_time is not None and time >= cross_strategy.max_time:
-            logger(f"Max. time reached above the threshold {cross_strategy.max_time}")
-            return True
-        elif cross_strategy.max_evals is not None and evals >= cross_strategy.max_evals:
-            logger(f"Max. evals reached above the threshold {cross_strategy.max_evals}")
-            return True
+    if half_sweep < iter_min or maxbond < bond_min:
+        return False
+    if error <= cross_strategy.tol:
+        logger(f"State converged within tolerance {cross_strategy.tol}")
+        return True
+    elif maxbond - maxbond_prev <= 0:
+        logger(f"Max. bond dimension converged with value {maxbond}")
+        return True
+    elif half_sweep >= iter_max:
+        logger(f"Max. iterations reached at {iter_max}")
+        return True
+    elif maxbond >= bond_max:
+        logger(f"Max. bond reached above the threshold {bond_max}")
+        return True
+    elif cross_strategy.max_time is not None and time >= cross_strategy.max_time:
+        logger(f"Max. time reached above the threshold {cross_strategy.max_time}")
+        return True
+    elif cross_strategy.max_evals is not None and evals >= cross_strategy.max_evals:
+        logger(f"Max. evals reached above the threshold {cross_strategy.max_evals}")
+        return True
 
     return False
 

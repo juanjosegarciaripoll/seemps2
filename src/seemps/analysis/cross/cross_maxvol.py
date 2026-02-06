@@ -15,7 +15,7 @@ from .cross import (
     CrossInterpolation,
     CrossResults,
     CrossError,
-    check_convergence,
+    check_tci_convergence,
     maxvol_square,
 )
 
@@ -78,27 +78,29 @@ def cross_maxvol(
 
     converged = False
     trajectories: defaultdict[str, list[Any]] = defaultdict(list)
-    for i in range(cross_strategy.range_iters[1] // 2):
-        tick = perf_counter()
+    with make_logger(1) as logger:
+        for i in range(cross_strategy.range_iters[1] // 2):
+            tick = perf_counter()
 
-        # Left-to-right half sweep
-        for k in range(cross.sites):
-            _update_cross(cross, k, True, cross_strategy)
+            # Left-to-right half sweep
+            for k in range(cross.sites):
+                _update_cross(cross, k, True, cross_strategy)
 
-        # Right-to-left half sweep
-        for k in reversed(range(cross.sites)):
-            _update_cross(cross, k, False, cross_strategy)
+            # Right-to-left half sweep
+            for k in reversed(range(cross.sites)):
+                _update_cross(cross, k, False, cross_strategy)
 
-        sweep_time = perf_counter() - tick
-        trajectories["errors"].append(error_calculator.sample_error(cross))
-        trajectories["bonds"].append(cross.mps.bond_dimensions())
-        trajectories["times"].append(sweep_time)
-        trajectories["evals"].append(cross.black_box.evals)
-        if converged := check_convergence(2 * (i + 1), trajectories, cross_strategy):
-            break
+            sweep_time = perf_counter() - tick
+            trajectories["errors"].append(error_calculator.sample_error(cross))
+            trajectories["bonds"].append(cross.mps.bond_dimensions())
+            trajectories["times"].append(sweep_time)
+            trajectories["evals"].append(cross.black_box.evals)
+            if converged := check_tci_convergence(
+                logger, 2 * (i + 1), trajectories, cross_strategy
+            ):
+                break
 
-    if not converged:
-        with make_logger(2) as logger:
+        if not converged:
             logger("Maximum number of iterations reached")
 
     return CrossResults(
