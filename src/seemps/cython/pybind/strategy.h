@@ -20,6 +20,10 @@ enum Simplification
   VARIATIONAL_EXACT_GUESS = 3
 };
 
+inline constexpr double DEFAULT_TOLERANCE
+    = std::numeric_limits<double>::epsilon();
+inline constexpr size_t MAX_BOND_DIMENSION = 0x7fffffff;
+
 class Strategy
 {
 public:
@@ -41,10 +45,10 @@ private:
   TruncationFunction select_truncation_function() const;
 
   Truncation method{ Truncation::RELATIVE_NORM_SQUARED_ERROR };
-  double tolerance{ std::numeric_limits<double>::epsilon() };
+  double tolerance{ DEFAULT_TOLERANCE };
   Simplification simplification_method{ Simplification::VARIATIONAL };
-  double simplification_tolerance{ std::numeric_limits<double>::epsilon() };
-  size_t max_bond_dimension{ 0x7fffffff };
+  double simplification_tolerance{ DEFAULT_TOLERANCE };
+  size_t max_bond_dimension{ MAX_BOND_DIMENSION };
   int max_sweeps{ 16 };
   bool normalize{ false };
   TruncationFunction truncation_function{ truncate_do_not_truncate };

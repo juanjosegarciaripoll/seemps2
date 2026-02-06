@@ -3,7 +3,10 @@ from .tools import SeeMPSTestCase
 from seemps.cython import (
     Strategy,
     Truncation,
+    Simplification,
     NO_TRUNCATION,
+    DEFAULT_TOLERANCE,
+    MAX_BOND_DIMENSION,
     destructively_truncate_vector,
 )
 
@@ -11,6 +14,19 @@ from seemps.cython import (
 class TestStrategy(SeeMPSTestCase):
     def logarithmic_values(self):
         return np.array([1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7])
+
+    def test_strategy_object_default_values(self):
+        """Test the default values of the strategy objects are as supposed."""
+
+        s = Strategy()
+        self.assertEqual(s.get_tolerance(), DEFAULT_TOLERANCE)
+        self.assertEqual(s.get_simplification_tolerance(), DEFAULT_TOLERANCE)
+        self.assertEqual(s.get_simplification_method(), Simplification.VARIATIONAL)
+        self.assertEqual(s.get_max_bond_dimension(), MAX_BOND_DIMENSION)
+        self.assertEqual(s.get_max_sweeps(), 16)
+        self.assertEqual(s.get_method(), Truncation.RELATIVE_NORM_SQUARED_ERROR)
+        self.assertEqual(s.get_normalize_flag(), False)
+        self.assertEqual(s.get_simplify_flag(), True)
 
 
 class TestStrategyNoTruncation(TestStrategy):

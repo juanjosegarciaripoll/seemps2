@@ -77,9 +77,9 @@ PYBIND11_MODULE(pybind, m)
       .def(py::init<int, double, int, double, size_t, int, bool>(),
            py::arg("method")
            = static_cast<int>(Truncation::RELATIVE_NORM_SQUARED_ERROR),
-           py::arg("tolerance") = 1e-8,
+           py::arg("tolerance") = DEFAULT_TOLERANCE,
            py::arg("simplify") = static_cast<int>(Simplification::VARIATIONAL),
-           py::arg("simplification_tolerance") = 1e-8,
+           py::arg("simplification_tolerance") = DEFAULT_TOLERANCE,
            py::arg("max_bond_dimension") = 0x7fffffff,
            py::arg("max_sweeps") = 16, py::arg("normalize") = false)
       .def("replace", &Strategy::replace,
