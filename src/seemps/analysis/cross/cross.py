@@ -124,6 +124,10 @@ class CrossInterpolation:
         self.I_s = [np.arange(s).reshape(-1, 1) for s in black_box.physical_dimensions]
         self.mps = MPS([np.ones((1, s, 1)) for s in black_box.physical_dimensions])
 
+    @abstractmethod
+    def update(self, k: int, left_to_right: bool) -> None:
+        pass
+
     def sample_fiber(self, k: int) -> Tensor3:
         i_l, i_s, i_g = self.I_l[k], self.I_s[k], self.I_g[k]
         mps_indices = self.combine_indices(i_l, i_s, i_g)

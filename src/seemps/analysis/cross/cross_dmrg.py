@@ -54,17 +54,24 @@ class CrossStrategyDMRG(CrossStrategy):
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
-        return CrossInterpolationDMRG(black_box, initial_points)
+        return CrossInterpolationDMRG(self, black_box, initial_points)
 
 
 class CrossInterpolationDMRG(CrossInterpolation):
-    def update(
-        self: CrossInterpolation,
-        k: int,
-        left_to_right: bool,
-        cross_strategy: CrossStrategyDMRG,
-    ) -> None:
+    strategy: CrossStrategyDMRG
+
+    def __init__(
+        self,
+        strategy: CrossStrategyDMRG,
+        black_box: BlackBox,
+        initial_points: Matrix | None = None,
+    ):
+        super().__init__(black_box, initial_points)
+        self.strategy = strategy
+
+    def update(self, k: int, left_to_right: bool) -> None:
         superblock = self.sample_superblock(k)
+        cross_strategy = self.strategy
         r_l, s1, s2, r_g = superblock.shape
         A = superblock.reshape(r_l * s1, s2 * r_g)
 
@@ -149,7 +156,7 @@ def cross_dmrg(
         for i in range(cross_strategy.range_iters[1] // 2):
             # Left-to-right half sweep
             for k in range(cross.sites - 1):
-                cross.update(k, True, cross_strategy)
+                cross.update(k, True)
 
             results.update(
                 cross.mps,
@@ -164,7 +171,7 @@ def cross_dmrg(
 
             # Right-to-left half sweep
             for k in reversed(range(cross.sites - 1)):
-                cross.update(k, False, cross_strategy)
+                cross.update(k, False)
 
             results.update(
                 cross.mps,

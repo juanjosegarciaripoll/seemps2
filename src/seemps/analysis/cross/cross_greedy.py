@@ -49,18 +49,25 @@ class CrossStrategyGreedy(CrossStrategy):
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
-        return CrossInterpolationGreedy(black_box, initial_points)
+        return CrossInterpolationGreedy(self, black_box, initial_points)
 
 
 class CrossInterpolationGreedy(CrossInterpolation):
+    strategy: CrossStrategyGreedy
     fibers: list[Tensor3]
     list_Q3: list[Tensor3]
     list_R: list[Matrix]
     J_l: list
     J_g: list
 
-    def __init__(self, black_box: BlackBox, initial_points: Matrix | None):
+    def __init__(
+        self,
+        strategy: CrossStrategyGreedy,
+        black_box: BlackBox,
+        initial_points: Matrix | None,
+    ):
         super().__init__(black_box, initial_points)
+        self.strategy = strategy
 
         self.fibers = [self.sample_fiber(k) for k in range(self.sites)]
         self.list_Q3 = []  # Q factors of the QR decomposition of a fiber.
@@ -170,11 +177,8 @@ class CrossInterpolationGreedy(CrossInterpolation):
         G = _contract_last_and_first(Q, P)
         return G.reshape(r_l, r_s, r_g)
 
-    def update(
-        self: CrossInterpolationGreedy,
-        k: int,
-        cross_strategy: CrossStrategyGreedy,
-    ) -> None:
+    def update(self, k: int, left_to_right: bool) -> None:
+        cross_strategy = self.strategy
         max_pivots = self.black_box.physical_dimensions[k] ** (
             1 + min(k, self.sites - (k + 2))
         )
@@ -259,7 +263,7 @@ def cross_greedy(
         for i in range(cross_strategy.range_iters[1] // 2):
             # Left-to-right half sweep
             for k in range(cross.sites - 1):
-                cross.update(k, cross_strategy)
+                cross.update(k, True)
 
             # Update trajectories
             results.update(
@@ -277,7 +281,7 @@ def cross_greedy(
 
             # Right-to-left half sweep
             for k in reversed(range(cross.sites - 1)):
-                cross.update(k, cross_strategy)
+                cross.update(k, False)
 
             # Update trajectories
             results.update(

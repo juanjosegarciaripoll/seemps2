@@ -47,16 +47,23 @@ class CrossStrategyMaxvol(CrossStrategy):
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
-        return CrossInterpolationMaxvol(black_box, initial_points)
+        return CrossInterpolationMaxvol(self, black_box, initial_points)
 
 
 class CrossInterpolationMaxvol(CrossInterpolation):
-    def update(
-        self: CrossInterpolation,
-        k: int,
-        left_to_right: bool,
-        cross_strategy: CrossStrategyMaxvol,
-    ) -> None:
+    strategy: CrossStrategyMaxvol
+
+    def __init__(
+        self,
+        strategy: CrossStrategyMaxvol,
+        black_box: BlackBox,
+        initial_points: Matrix | None = None,
+    ):
+        super().__init__(black_box, initial_points)
+        self.strategy = strategy
+
+    def update(self, k: int, left_to_right: bool) -> None:
+        cross_strategy = self.strategy
         fiber = self.sample_fiber(k)
         r_l, s, r_g = fiber.shape
 
@@ -136,11 +143,11 @@ def cross_maxvol(
         for i in range(cross_strategy.range_iters[1] // 2):
             # Left-to-right half sweep
             for k in range(cross.sites):
-                cross.update(k, True, cross_strategy)
+                cross.update(k, True)
 
             # Right-to-left half sweep
             for k in reversed(range(cross.sites)):
-                cross.update(k, False, cross_strategy)
+                cross.update(k, False)
 
             results.update(
                 cross.mps,
