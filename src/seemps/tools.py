@@ -1,5 +1,6 @@
 from __future__ import annotations
 import sys
+import os
 from math import cos, sin, sqrt
 import numpy as np
 import scipy.sparse as sp
@@ -38,7 +39,8 @@ class Logger:
         pass
 
 
-DEBUG = 0
+# TODO: Document all environment variables
+DEBUG = int(os.environ.get("SEEMPS_DEBUG", 0))
 PREFIX = ""
 NO_LOGGER = Logger()
 
