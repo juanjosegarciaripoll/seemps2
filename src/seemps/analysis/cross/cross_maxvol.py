@@ -3,9 +3,7 @@ from __future__ import annotations
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from collections import defaultdict
-from time import perf_counter
-from typing import Callable, Any
+from typing import Callable
 
 from ...typing import Matrix
 from ...tools import make_logger
@@ -77,11 +75,9 @@ def cross_maxvol(
     error_calculator = CrossError(cross_strategy)
 
     converged = False
-    trajectories: defaultdict[str, list[Any]] = defaultdict(list)
     with make_logger(1) as logger:
+        results = CrossResults(cross.mps)
         for i in range(cross_strategy.range_iters[1] // 2):
-            tick = perf_counter()
-
             # Left-to-right half sweep
             for k in range(cross.sites):
                 _update_cross(cross, k, True, cross_strategy)
@@ -90,26 +86,21 @@ def cross_maxvol(
             for k in reversed(range(cross.sites)):
                 _update_cross(cross, k, False, cross_strategy)
 
-            sweep_time = perf_counter() - tick
-            trajectories["errors"].append(error_calculator.sample_error(cross))
-            trajectories["bonds"].append(cross.mps.bond_dimensions())
-            trajectories["times"].append(sweep_time)
-            trajectories["evals"].append(cross.black_box.evals)
+            results.update(
+                cross.mps,
+                error_calculator.sample_error(cross),
+                cross.mps.bond_dimensions(),
+                cross.black_box.evals,
+            )
             if converged := check_tci_convergence(
-                logger, 2 * (i + 1), trajectories, cross_strategy
+                logger, 2 * (i + 1), results, cross_strategy
             ):
                 break
 
         if not converged:
             logger("Maximum number of iterations reached")
 
-    return CrossResults(
-        mps=cross.mps,
-        errors=np.array(trajectories["errors"]),
-        bonds=np.array(trajectories["bonds"]),
-        times=np.cumsum(trajectories["times"]),
-        evals=np.array(trajectories["evals"]),
-    )
+    return results
 
 
 def _update_cross(

@@ -3,9 +3,7 @@ from __future__ import annotations
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from collections import defaultdict
-from time import perf_counter
-from typing import Callable, Any
+from typing import Callable
 
 from ...state import Strategy, DEFAULT_TOLERANCE, SIMPLIFICATION_STRATEGY
 from ...cython import destructively_truncate_vector
@@ -84,49 +82,43 @@ def cross_dmrg(
     error_calculator = CrossError(cross_strategy)
 
     converged = False
-    trajectories: defaultdict[str, list[Any]] = defaultdict(list)
     with make_logger(1) as logger:
+        results = CrossResults(cross.mps)
         for i in range(cross_strategy.range_iters[1] // 2):
             # Left-to-right half sweep
-            tick = perf_counter()
             for k in range(cross.sites - 1):
                 _update_cross(cross, k, True, cross_strategy)
-            time_ltr = perf_counter() - tick
 
-            trajectories["errors"].append(error_calculator.sample_error(cross))
-            trajectories["bonds"].append(cross.mps.bond_dimensions())
-            trajectories["times"].append(time_ltr)
-            trajectories["evals"].append(cross.black_box.evals)
+            results.update(
+                cross.mps,
+                error_calculator.sample_error(cross),
+                cross.mps.bond_dimensions(),
+                cross.black_box.evals,
+            )
             if converged := check_tci_convergence(
-                logger, 2 * i + 1, trajectories, cross_strategy
+                logger, 2 * i + 1, results, cross_strategy
             ):
                 break
 
             # Right-to-left half sweep
-            tick = perf_counter()
             for k in reversed(range(cross.sites - 1)):
                 _update_cross(cross, k, False, cross_strategy)
-            time_rtl = perf_counter() - tick
 
-            trajectories["errors"].append(error_calculator.sample_error(cross))
-            trajectories["bonds"].append(cross.mps.bond_dimensions())
-            trajectories["times"].append(time_rtl)
-            trajectories["evals"].append(cross.black_box.evals)
+            results.update(
+                cross.mps,
+                error_calculator.sample_error(cross),
+                cross.mps.bond_dimensions(),
+                cross.black_box.evals,
+            )
             if converged := check_tci_convergence(
-                logger, 2 * i + 2, trajectories, cross_strategy
+                logger, 2 * i + 2, results, cross_strategy
             ):
                 break
 
         if not converged:
             logger("Maximum number of iterations reached")
 
-    return CrossResults(
-        mps=cross.mps,
-        errors=np.array(trajectories["errors"]),
-        bonds=np.array(trajectories["bonds"]),
-        times=np.array(trajectories["times"]),
-        evals=np.array(trajectories["evals"]),
-    )
+    return results
 
 
 def _update_cross(

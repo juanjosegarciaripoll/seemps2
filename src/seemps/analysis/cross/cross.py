@@ -1,4 +1,6 @@
 from __future__ import annotations
+from collections.abc import Sequence
+from time import perf_counter
 import numpy as np
 import scipy
 import dataclasses
@@ -6,7 +8,7 @@ import functools
 from typing import Callable, TypeAlias
 
 from ...state import MPS
-from ...tools import make_logger, SEED, Logger
+from ...tools import SEED, Logger
 from ...typing import Vector, Matrix, Tensor3, Tensor4, Natural
 from ..evaluation import random_mps_indices, evaluate_mps
 from .black_box import BlackBox
@@ -175,6 +177,17 @@ class CrossInterpolation:
 
 
 @dataclasses.dataclass
+class CrossIterationResults:
+    error: float
+    bonds: Sequence[int]
+    time: float
+    evaluations: int
+
+    @property
+    def max_bond_dimension(self) -> int:
+        return max(self.bonds)
+
+
 class CrossResults:
     """
     Dataclass containing the results from TCI. Keeps track of values for every iteration (half-sweep).
@@ -194,10 +207,46 @@ class CrossResults:
     """
 
     mps: MPS
-    errors: Vector
-    bonds: Matrix
-    times: Vector
-    evals: Vector
+    _points: list[CrossIterationResults]
+    _start: float
+
+    def __init__(self, mps: MPS):
+        self.mps = mps
+        self._points = []
+        self._start = perf_counter()
+
+    @property
+    def errors(self) -> np.ndarray:
+        return np.asarray([r.error for r in self._points])
+
+    @property
+    def bonds(self) -> np.ndarray:
+        return np.asarray([r.bonds for r in self._points])
+
+    @property
+    def times(self) -> np.ndarray:
+        return np.asarray([r.time for r in self._points])
+
+    @property
+    def evals(self) -> np.ndarray:
+        return np.asarray([r.evaluations for r in self._points])
+
+    def update(
+        self,
+        mps: MPS,
+        error: float,
+        bonds: Sequence[int],
+        evaluations: int,
+    ):
+        self.mps = mps
+        self._points.append(
+            CrossIterationResults(
+                error, bonds, perf_counter() - self._start, evaluations
+            )
+        )
+
+    def get_result(self, index: int) -> CrossIterationResults:
+        return self._points[index]
 
 
 class CrossError:
@@ -250,24 +299,27 @@ class CrossError:
 
 
 def check_tci_convergence(
-    logger: Logger, half_sweep: int, trajectories: dict, cross_strategy: CrossStrategy
+    logger: Logger,
+    half_sweep: int,
+    results: CrossResults,
+    cross_strategy: CrossStrategy,
 ) -> bool:
     """Checks the convergence of TCI from its trajectories and logs the results for each iteration."""
     iter_min, iter_max = cross_strategy.range_iters
     bond_min, bond_max = cross_strategy.range_max_bonds
-    maxbond = np.max(trajectories["bonds"][-1])
-    maxbond_prev = np.max(trajectories["bonds"][-2]) if half_sweep > 2 else 0
-    time = np.sum(trajectories["times"])
-    evals = trajectories["evals"][-1]
-    error = trajectories["errors"][-1]
+    last = results.get_result(-1)
+    maxbond = last.max_bond_dimension
+    maxbond_prev = results.get_result(-2).max_bond_dimension if half_sweep > 2 else 0
+    evals = last.evaluations
+    error = last.error
 
-    logger(
-        f"Iteration (half-sweep): {half_sweep:3}/{iter_max}, "
-        + f"error: {trajectories['errors'][-1]:1.15e}/{cross_strategy.tol:.2e}, "
-        + f"maxbond: {maxbond:3}/{bond_max}, "
-        + f"time: {time:8.6f}/{cross_strategy.max_time}, "
-        + f"evals: {evals:8}/{cross_strategy.max_evals}."
-    )
+    if logger:
+        logger(
+            f"Iteration (half-sweep): {half_sweep:3}/{iter_max}, "
+            + f"error: {error:1.15e}/{cross_strategy.tol:.2e}, "
+            + f"maxbond: {maxbond:3}/{bond_max}, "
+            + f"evals: {evals:8}/{cross_strategy.max_evals}."
+        )
 
     if half_sweep < iter_min or maxbond < bond_min:
         return False
@@ -283,7 +335,7 @@ def check_tci_convergence(
     elif maxbond >= bond_max:
         logger(f"Max. bond reached above the threshold {bond_max}")
         return True
-    elif cross_strategy.max_time is not None and time >= cross_strategy.max_time:
+    elif cross_strategy.max_time is not None and last.time >= cross_strategy.max_time:
         logger(f"Max. time reached above the threshold {cross_strategy.max_time}")
         return True
     elif cross_strategy.max_evals is not None and evals >= cross_strategy.max_evals:
