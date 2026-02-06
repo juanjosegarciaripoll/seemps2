@@ -253,7 +253,7 @@ def mps_fejer(
         map_matrix=mps_to_mesh_matrix([sites]),
         physical_dimensions=[2] * sites,
     )
-    mps_k2 = cross_interpolation(black_box, cross_strategy).mps
+    mps_k2 = cross_interpolation(cross_strategy, black_box).mps
 
     # Encode phase term analytically
     p = 1j * np.pi / N  # prefactor

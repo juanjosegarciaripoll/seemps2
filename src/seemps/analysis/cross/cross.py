@@ -6,41 +6,13 @@ import numpy as np
 import scipy
 import dataclasses
 import functools
-from typing import Callable, TypeAlias
+from typing import TypeAlias
 
 from ...state import MPS
-from ...tools import SEED, Logger
+from ...tools import SEED, Logger, make_logger
 from ...typing import Vector, Matrix, Tensor3, Tensor4, Natural
 from ..evaluation import random_mps_indices, evaluate_mps
 from .black_box import BlackBox
-
-
-def cross_interpolation(
-    black_box: BlackBox,
-    cross_strategy: CrossStrategy,
-    initial_points: Matrix | None = None,
-) -> CrossResults:
-    """
-    Computes the MPS representation of a black box function using some TCI variant.
-    The TCI variant is dynamically dispatched based on the type of the given CrossStrategy.
-
-    Parameters
-    ----------
-    black_box : BlackBox
-        Black box to approximate as a MPS.
-    cross_strategy : CrossStrategy
-        Dataclass containing the parameters of the algorithm.
-    initial_points : Optional[Matrix], default=None
-        Coordinates of initial discretization points used to initialize the algorithm.
-        Defaults to the origin.
-
-    Returns
-    -------
-    CrossResults
-        Dataclass containing the MPS representation of the black-box function,
-        among other useful information.
-    """
-    return cross_strategy.algorithm(black_box, cross_strategy, initial_points)
 
 
 @dataclasses.dataclass
@@ -57,7 +29,11 @@ class CrossStrategy:
         default_factory=lambda: np.random.default_rng(SEED)
     )
     """
-    Dataclass containing the base parameters for TCI.
+    Abstract dataclass containing the base parameters for tensor cross interpolation.
+
+    See specializations :class:`~seemps.analysis.cross.CrossStrategyDMRG`,
+    :class:`~seemps.analysis.cross.CrossStrategyGreedy`, and
+    :class:`~seemps.analysis.cross.CrossStrategyMaxvol`.
 
     Parameters
     ----------
@@ -86,10 +62,6 @@ class CrossStrategy:
         assert self.range_iters[0] > 0
         assert self.range_max_bonds[0] > 0
 
-    @property
-    def algorithm(self) -> Callable:
-        raise NotImplementedError("Subclasses must override 'algorithm'")
-
     @abstractmethod
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
@@ -114,8 +86,16 @@ class CrossInterpolation:
     I_g: list[np.ndarray]
     I_s: list[np.ndarray]
     mps: MPS
+    two_sweeps_required: bool
+    iteration_range: range
 
-    def __init__(self, black_box: BlackBox, initial_points: Matrix | None = None):
+    def __init__(
+        self,
+        black_box: BlackBox,
+        initial_points: Matrix | None = None,
+        two_sweeps_required: bool = False,
+        two_site_algorithm: bool = True,
+    ):
         self.black_box = black_box
         self.sites = len(black_box.physical_dimensions)
         if initial_points is None:
@@ -123,6 +103,10 @@ class CrossInterpolation:
         self.I_l, self.I_g = self.points_to_indices(initial_points)
         self.I_s = [np.arange(s).reshape(-1, 1) for s in black_box.physical_dimensions]
         self.mps = MPS([np.ones((1, s, 1)) for s in black_box.physical_dimensions])
+        self.two_sweeps_required = two_sweeps_required
+        self.iteration_range = range(
+            self.sites - 1 if two_site_algorithm else self.sites
+        )
 
     @abstractmethod
     def update(self, k: int, left_to_right: bool) -> None:
@@ -402,3 +386,75 @@ def maxvol_square(
         bi[j] -= 1.0
         B -= np.outer(bj, bi / B[i, j])
     return I, B
+
+
+def cross_interpolation(
+    cross_strategy: CrossStrategy,
+    black_box: BlackBox,
+    initial_points: Matrix | None = None,
+) -> CrossResults:
+    """
+    Computes the MPS representation of a black-box function using different the tensor
+    cross-approximation (TCI) algorithm
+    The black-box function can represent several different data structures.
+    See `black_box` for usage examples.
+
+    Parameters
+    ----------
+    cross_strategy : CrossStrategy
+        A dataclass containing the parameters of the algorithm.
+        See :class:`CrossStrategy`.
+    black_box : BlackBox
+        The black box to approximate as a MPS.
+    initial_points : Matrix | None, default=None
+        A collection of initial points used to initialize the algorithm.
+        If None, an initial point at the origin is used.
+
+    Returns
+    -------
+    CrossResults
+        A dataclass containing the MPS representation of the black-box function,
+        among other useful information.
+    """
+    cross = cross_strategy.make_interpolator(black_box, initial_points)
+    error_calculator = CrossError(cross_strategy)
+
+    converged = False
+    with make_logger(1) as logger:
+        results = CrossResults(cross.mps)
+        for i in range(cross_strategy.range_iters[1] // 2):
+            # Left-to-right half sweep
+            for k in cross.iteration_range:
+                cross.update(k, True)
+
+            results.update(
+                cross.mps,
+                error_calculator.sample_error(cross),
+                cross.mps.bond_dimensions(),
+                cross.black_box.evals,
+            )
+            if not cross.two_sweeps_required:
+                if converged := check_tci_convergence(
+                    logger, 2 * i + 1, results, cross_strategy
+                ):
+                    break
+
+            # Right-to-left half sweep
+            for k in reversed(cross.iteration_range):
+                cross.update(k, False)
+
+            results.update(
+                cross.mps,
+                error_calculator.sample_error(cross),
+                cross.mps.bond_dimensions(),
+                cross.black_box.evals,
+            )
+            if converged := check_tci_convergence(
+                logger, 2 * i + 2, results, cross_strategy
+            ):
+                break
+
+        if not converged:
+            logger("Maximum number of iterations reached")
+
+    return results

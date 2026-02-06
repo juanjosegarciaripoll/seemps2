@@ -1,24 +1,19 @@
 from __future__ import annotations
-
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from typing import Callable, cast
-
 from ...state import MPS
 from ...cython import _contract_last_and_first
 from ...typing import Vector, Matrix, Tensor3
-from ...tools import make_logger
 from .black_box import BlackBox
 from .cross import (
     CrossStrategy,
     CrossInterpolation,
-    CrossError,
     CrossResults,
-    check_tci_convergence,
     IndexSlice,
     IndexMatrix,
     IndexVector,
+    cross_interpolation,
 )
 
 
@@ -42,10 +37,6 @@ class CrossStrategyGreedy(CrossStrategy):
         Number of initial random points used to initialize each partial search.
     """
 
-    @property
-    def algorithm(self) -> Callable:
-        return cross_greedy
-
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
@@ -66,7 +57,7 @@ class CrossInterpolationGreedy(CrossInterpolation):
         black_box: BlackBox,
         initial_points: Matrix | None,
     ):
-        super().__init__(black_box, initial_points)
+        super().__init__(black_box, initial_points, two_site_algorithm=True)
         self.strategy = strategy
 
         self.fibers = [self.sample_fiber(k) for k in range(self.sites)]
@@ -227,8 +218,8 @@ class CrossInterpolationGreedy(CrossInterpolation):
 
 def cross_greedy(
     black_box: BlackBox,
-    cross_strategy: CrossStrategyGreedy = CrossStrategyGreedy(),
     initial_points: Matrix | None = None,
+    cross_strategy: CrossStrategyGreedy = CrossStrategyGreedy(),
 ) -> CrossResults:
     """
     Computes the MPS representation of a black-box function using the tensor cross-approximation (TCI)
@@ -239,11 +230,11 @@ def cross_greedy(
     ----------
     black_box : BlackBox
         The black box to approximate as a MPS.
-    cross_strategy : CrossStrategy, default=CrossStrategy()
-        A dataclass containing the parameters of the algorithm.
     initial_points : np.ndarray, optional
         A collection of initial points used to initialize the algorithm.
         If None, an initial point at the origin is used.
+    cross_strategy : CrossStrategy, default=CrossStrategy()
+        A dataclass containing the parameters of the algorithm.
 
     Returns
     -------
@@ -251,53 +242,4 @@ def cross_greedy(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = cast(
-        CrossInterpolationGreedy,
-        cross_strategy.make_interpolator(black_box, initial_points),
-    )
-    error_calculator = CrossError(cross_strategy)
-
-    converged = False
-    with make_logger(1) as logger:
-        results = CrossResults(cross.mps)
-        for i in range(cross_strategy.range_iters[1] // 2):
-            # Left-to-right half sweep
-            for k in range(cross.sites - 1):
-                cross.update(k, True)
-
-            # Update trajectories
-            results.update(
-                cross.mps,
-                error_calculator.sample_error(cross),
-                cross.mps.bond_dimensions(),
-                cross.black_box.evals,
-            )
-
-            # Evaluate convergence
-            if converged := check_tci_convergence(
-                logger, 2 * i + 1, results, cross_strategy
-            ):
-                break
-
-            # Right-to-left half sweep
-            for k in reversed(range(cross.sites - 1)):
-                cross.update(k, False)
-
-            # Update trajectories
-            results.update(
-                cross.mps,
-                error_calculator.sample_error(cross),
-                cross.mps.bond_dimensions(),
-                cross.black_box.evals,
-            )
-
-            # Evaluate convergence
-            if converged := check_tci_convergence(
-                logger, 2 * i + 2, results, cross_strategy
-            ):
-                break
-
-        if not converged:
-            logger("Maximum number of iterations reached")
-
-    return results
+    return cross_interpolation(cross_strategy, black_box, initial_points)

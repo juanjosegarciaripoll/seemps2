@@ -1,20 +1,15 @@
 from __future__ import annotations
-
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from typing import Callable, cast
-
 from ...typing import Matrix
-from ...tools import make_logger
 from .black_box import BlackBox
 from .cross import (
     CrossStrategy,
     CrossInterpolation,
     CrossResults,
-    CrossError,
-    check_tci_convergence,
     maxvol_square,
+    cross_interpolation,
 )
 
 
@@ -40,10 +35,6 @@ class CrossStrategyMaxvol(CrossStrategy):
         Sensibility for the rectangular maxvol decomposition.
     """
 
-    @property
-    def algorithm(self) -> Callable:
-        return cross_maxvol
-
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
@@ -59,7 +50,12 @@ class CrossInterpolationMaxvol(CrossInterpolation):
         black_box: BlackBox,
         initial_points: Matrix | None = None,
     ):
-        super().__init__(black_box, initial_points)
+        super().__init__(
+            black_box,
+            initial_points,
+            two_sweeps_required=True,
+            two_site_algorithm=False,
+        )
         self.strategy = strategy
 
     def update(self, k: int, left_to_right: bool) -> None:
@@ -107,8 +103,8 @@ class CrossInterpolationMaxvol(CrossInterpolation):
 
 def cross_maxvol(
     black_box: BlackBox,
-    cross_strategy: CrossStrategyMaxvol = CrossStrategyMaxvol(),
     initial_points: Matrix | None = None,
+    cross_strategy: CrossStrategyMaxvol = CrossStrategyMaxvol(),
 ) -> CrossResults:
     """
     Computes the MPS representation of a black-box function using the tensor cross-approximation (TCI)
@@ -119,11 +115,11 @@ def cross_maxvol(
     ----------
     black_box : BlackBox
         The black box to approximate as a MPS.
-    cross_strategy : CrossStrategyMaxvol = CrossStrategyMaxvol()
-        A dataclass containing the parameters of the algorithm.
     initial_points : Optional[Matrix], default=None
         A collection of initial points used to initialize the algorithm.
         If None, the point at origin is used.
+    cross_strategy : CrossStrategyMaxvol = CrossStrategyMaxvol()
+        A dataclass containing the parameters of the algorithm.
 
     Returns
     -------
@@ -131,39 +127,7 @@ def cross_maxvol(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = cast(
-        CrossInterpolationMaxvol,
-        cross_strategy.make_interpolator(black_box, initial_points),
-    )
-    error_calculator = CrossError(cross_strategy)
-
-    converged = False
-    with make_logger(1) as logger:
-        results = CrossResults(cross.mps)
-        for i in range(cross_strategy.range_iters[1] // 2):
-            # Left-to-right half sweep
-            for k in range(cross.sites):
-                cross.update(k, True)
-
-            # Right-to-left half sweep
-            for k in reversed(range(cross.sites)):
-                cross.update(k, False)
-
-            results.update(
-                cross.mps,
-                error_calculator.sample_error(cross),
-                cross.mps.bond_dimensions(),
-                cross.black_box.evals,
-            )
-            if converged := check_tci_convergence(
-                logger, 2 * (i + 1), results, cross_strategy
-            ):
-                break
-
-        if not converged:
-            logger("Maximum number of iterations reached")
-
-    return results
+    return cross_interpolation(cross_strategy, black_box, initial_points)
 
 
 def _choose_maxvol(

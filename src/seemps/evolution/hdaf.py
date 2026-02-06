@@ -5,7 +5,7 @@ from ..state import MPS, Strategy, DEFAULT_STRATEGY
 from ..state.simplification import simplify
 from ..analysis.mesh import Mesh, QuantizedInterval, mps_to_mesh_matrix
 from ..analysis.cross.black_box import BlackBoxLoadMPS
-from ..analysis.cross.cross_dmrg import cross_dmrg, CrossStrategyDMRG
+from ..analysis.cross.cross_dmrg import cross_dmrg
 from ..analysis.hdaf import hdaf_mpo
 from .common import ode_solver, ODECallback, TimeSpan
 
@@ -94,7 +94,7 @@ def split_step(
     physical_dimensions = [2] * num_qubits
     map_matrix = mps_to_mesh_matrix([num_qubits], base=2)
     black_box = BlackBoxLoadMPS(propagator_func, mesh, map_matrix, physical_dimensions)
-    cross_results = cross_dmrg(black_box, CrossStrategyDMRG())
+    cross_results = cross_dmrg(black_box)
     U_potential_mps = cross_results.mps
 
     # Kinetic Propagator exp(-factor * T * dt) with T = -0.5 * d^2/dx^2
