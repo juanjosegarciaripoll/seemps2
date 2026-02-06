@@ -63,8 +63,9 @@ contract_last_and_first(py::object A, py::object B)
     {
       new_dims.emplace_back(array_dim(B, i));
     }
-  auto C = matrix_product(as_matrix(A, array_size(A) / Alast, Alast),
-                          as_matrix(B, Bfirst, array_size(B) / Bfirst));
+  auto C
+      = gemm(as_matrix(A, array_size(A) / Alast, Alast), Gemm::GEMM_NORMAL,
+             as_matrix(B, Bfirst, array_size(B) / Bfirst), Gemm::GEMM_NORMAL);
   return array_reshape(C, new_dims);
 }
 
