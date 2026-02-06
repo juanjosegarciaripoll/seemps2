@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, cast
 
 from ...typing import Matrix
 from ...tools import make_logger
@@ -47,7 +47,55 @@ class CrossStrategyMaxvol(CrossStrategy):
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
-        return CrossInterpolation(black_box, initial_points)
+        return CrossInterpolationMaxvol(black_box, initial_points)
+
+
+class CrossInterpolationMaxvol(CrossInterpolation):
+    def update(
+        self: CrossInterpolation,
+        k: int,
+        left_to_right: bool,
+        cross_strategy: CrossStrategyMaxvol,
+    ) -> None:
+        fiber = self.sample_fiber(k)
+        r_l, s, r_g = fiber.shape
+
+        if left_to_right:
+            C = fiber.reshape(r_l * s, r_g, order="F")
+            Q, _ = scipy.linalg.qr(
+                C, mode="economic", overwrite_a=True, check_finite=False
+            )  # type: ignore
+            I, _ = _choose_maxvol(
+                Q,  # type: ignore
+                cross_strategy.rank_kick,
+                cross_strategy.max_iters_maxvol,
+                cross_strategy.tol_maxvol_square,
+                cross_strategy.tol_maxvol_rect,
+            )
+            if k < self.sites - 1:
+                self.I_l[k + 1] = self.combine_indices(
+                    self.I_l[k], self.I_s[k], row_major=True
+                )[I]
+
+        else:
+            if k > 0:
+                R = fiber.reshape(r_l, s * r_g, order="F")
+                Q, _ = scipy.linalg.qr(
+                    R.T, mode="economic", overwrite_a=True, check_finite=False
+                )  # type: ignore
+                I, G = _choose_maxvol(
+                    Q,  # type: ignore
+                    cross_strategy.rank_kick,
+                    cross_strategy.max_iters_maxvol,
+                    cross_strategy.tol_maxvol_square,
+                    cross_strategy.tol_maxvol_rect,
+                )
+                self.mps[k] = (G.T).reshape(-1, s, r_g, order="F")
+                self.I_g[k - 1] = self.combine_indices(
+                    self.I_s[k], self.I_g[k], row_major=True
+                )[I]
+            else:
+                self.mps[0] = fiber
 
 
 def cross_maxvol(
@@ -76,7 +124,10 @@ def cross_maxvol(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = cross_strategy.make_interpolator(black_box, initial_points)
+    cross = cast(
+        CrossInterpolationMaxvol,
+        cross_strategy.make_interpolator(black_box, initial_points),
+    )
     error_calculator = CrossError(cross_strategy)
 
     converged = False
@@ -85,11 +136,11 @@ def cross_maxvol(
         for i in range(cross_strategy.range_iters[1] // 2):
             # Left-to-right half sweep
             for k in range(cross.sites):
-                _update_cross(cross, k, True, cross_strategy)
+                cross.update(k, True, cross_strategy)
 
             # Right-to-left half sweep
             for k in reversed(range(cross.sites)):
-                _update_cross(cross, k, False, cross_strategy)
+                cross.update(k, False, cross_strategy)
 
             results.update(
                 cross.mps,
@@ -106,51 +157,6 @@ def cross_maxvol(
             logger("Maximum number of iterations reached")
 
     return results
-
-
-def _update_cross(
-    cross: CrossInterpolation,
-    k: int,
-    left_to_right: bool,
-    cross_strategy: CrossStrategyMaxvol,
-) -> None:
-    fiber = cross.sample_fiber(k)
-    r_l, s, r_g = fiber.shape
-
-    if left_to_right:
-        C = fiber.reshape(r_l * s, r_g, order="F")
-        Q, _ = scipy.linalg.qr(C, mode="economic", overwrite_a=True, check_finite=False)  # type: ignore
-        I, _ = _choose_maxvol(
-            Q,  # type: ignore
-            cross_strategy.rank_kick,
-            cross_strategy.max_iters_maxvol,
-            cross_strategy.tol_maxvol_square,
-            cross_strategy.tol_maxvol_rect,
-        )
-        if k < cross.sites - 1:
-            cross.I_l[k + 1] = cross.combine_indices(
-                cross.I_l[k], cross.I_s[k], row_major=True
-            )[I]
-
-    else:
-        if k > 0:
-            R = fiber.reshape(r_l, s * r_g, order="F")
-            Q, _ = scipy.linalg.qr(
-                R.T, mode="economic", overwrite_a=True, check_finite=False
-            )  # type: ignore
-            I, G = _choose_maxvol(
-                Q,  # type: ignore
-                cross_strategy.rank_kick,
-                cross_strategy.max_iters_maxvol,
-                cross_strategy.tol_maxvol_square,
-                cross_strategy.tol_maxvol_rect,
-            )
-            cross.mps[k] = (G.T).reshape(-1, s, r_g, order="F")
-            cross.I_g[k - 1] = cross.combine_indices(
-                cross.I_s[k], cross.I_g[k], row_major=True
-            )[I]
-        else:
-            cross.mps[0] = fiber
 
 
 def _choose_maxvol(

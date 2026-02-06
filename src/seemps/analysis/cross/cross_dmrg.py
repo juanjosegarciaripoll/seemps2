@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, cast
 
 from ...state import Strategy, DEFAULT_TOLERANCE, SIMPLIFICATION_STRATEGY
 from ...cython import destructively_truncate_vector
@@ -54,7 +54,61 @@ class CrossStrategyDMRG(CrossStrategy):
     def make_interpolator(
         self, black_box: BlackBox, initial_points: Matrix | None = None
     ) -> CrossInterpolation:
-        return CrossInterpolation(black_box, initial_points)
+        return CrossInterpolationDMRG(black_box, initial_points)
+
+
+class CrossInterpolationDMRG(CrossInterpolation):
+    def update(
+        self: CrossInterpolation,
+        k: int,
+        left_to_right: bool,
+        cross_strategy: CrossStrategyDMRG,
+    ) -> None:
+        superblock = self.sample_superblock(k)
+        r_l, s1, s2, r_g = superblock.shape
+        A = superblock.reshape(r_l * s1, s2 * r_g)
+
+        ## Non-destructive SVD
+        U, S, V = scipy.linalg.svd(A, check_finite=False)
+        destructively_truncate_vector(S, cross_strategy.strategy)
+        r = S.size
+        U, S, V = U[:, :r], np.diag(S), V[:r, :]
+        ##
+        r = S.shape[0]
+
+        if left_to_right:
+            if k < self.sites - 2:
+                C = U.reshape(r_l * s1, r)
+                Q, _ = scipy.linalg.qr(
+                    C, mode="economic", overwrite_a=True, check_finite=False
+                )  # type: ignore
+                I, G = maxvol_square(
+                    Q,
+                    cross_strategy.maxiter_maxvol,
+                    cross_strategy.tol_maxvol_square,  # type: ignore
+                )
+                self.I_l[k + 1] = self.combine_indices(self.I_l[k], self.I_s[k])[I]
+                self.mps[k] = G.reshape(r_l, s1, r)
+            else:
+                self.mps[k] = U.reshape(r_l, s1, r)
+                self.mps[k + 1] = (S @ V).reshape(r, s2, r_g)
+
+        else:
+            if k > 0:
+                R = V.reshape(r, s2 * r_g)
+                Q, _ = scipy.linalg.qr(
+                    R.T, mode="economic", overwrite_a=True, check_finite=False
+                )  # type: ignore
+                I, G = maxvol_square(
+                    Q,
+                    cross_strategy.maxiter_maxvol,
+                    cross_strategy.tol_maxvol_square,  # type: ignore
+                )
+                self.I_g[k] = self.combine_indices(self.I_s[k + 1], self.I_g[k + 1])[I]
+                self.mps[k + 1] = (G.T).reshape(r, s2, r_g)
+            else:
+                self.mps[k] = (U @ S).reshape(r_l, s1, r)
+                self.mps[k + 1] = V.reshape(r, s2, r_g)
 
 
 def cross_dmrg(
@@ -83,7 +137,10 @@ def cross_dmrg(
         A dataclass containing the MPS representation of the black-box function,
         among other useful information.
     """
-    cross = cross_strategy.make_interpolator(black_box, initial_points)
+    cross = cast(
+        CrossInterpolationDMRG,
+        cross_strategy.make_interpolator(black_box, initial_points),
+    )
     error_calculator = CrossError(cross_strategy)
 
     converged = False
@@ -92,7 +149,7 @@ def cross_dmrg(
         for i in range(cross_strategy.range_iters[1] // 2):
             # Left-to-right half sweep
             for k in range(cross.sites - 1):
-                _update_cross(cross, k, True, cross_strategy)
+                cross.update(k, True, cross_strategy)
 
             results.update(
                 cross.mps,
@@ -107,7 +164,7 @@ def cross_dmrg(
 
             # Right-to-left half sweep
             for k in reversed(range(cross.sites - 1)):
-                _update_cross(cross, k, False, cross_strategy)
+                cross.update(k, False, cross_strategy)
 
             results.update(
                 cross.mps,
@@ -124,56 +181,3 @@ def cross_dmrg(
             logger("Maximum number of iterations reached")
 
     return results
-
-
-def _update_cross(
-    cross: CrossInterpolation,
-    k: int,
-    left_to_right: bool,
-    cross_strategy: CrossStrategyDMRG,
-) -> None:
-    superblock = cross.sample_superblock(k)
-    r_l, s1, s2, r_g = superblock.shape
-    A = superblock.reshape(r_l * s1, s2 * r_g)
-
-    ## Non-destructive SVD
-    U, S, V = scipy.linalg.svd(A, check_finite=False)
-    destructively_truncate_vector(S, cross_strategy.strategy)
-    r = S.size
-    U, S, V = U[:, :r], np.diag(S), V[:r, :]
-    ##
-    r = S.shape[0]
-
-    if left_to_right:
-        if k < cross.sites - 2:
-            C = U.reshape(r_l * s1, r)
-            Q, _ = scipy.linalg.qr(
-                C, mode="economic", overwrite_a=True, check_finite=False
-            )  # type: ignore
-            I, G = maxvol_square(
-                Q,
-                cross_strategy.maxiter_maxvol,
-                cross_strategy.tol_maxvol_square,  # type: ignore
-            )
-            cross.I_l[k + 1] = cross.combine_indices(cross.I_l[k], cross.I_s[k])[I]
-            cross.mps[k] = G.reshape(r_l, s1, r)
-        else:
-            cross.mps[k] = U.reshape(r_l, s1, r)
-            cross.mps[k + 1] = (S @ V).reshape(r, s2, r_g)
-
-    else:
-        if k > 0:
-            R = V.reshape(r, s2 * r_g)
-            Q, _ = scipy.linalg.qr(
-                R.T, mode="economic", overwrite_a=True, check_finite=False
-            )  # type: ignore
-            I, G = maxvol_square(
-                Q,
-                cross_strategy.maxiter_maxvol,
-                cross_strategy.tol_maxvol_square,  # type: ignore
-            )
-            cross.I_g[k] = cross.combine_indices(cross.I_s[k + 1], cross.I_g[k + 1])[I]
-            cross.mps[k + 1] = (G.T).reshape(r, s2, r_g)
-        else:
-            cross.mps[k] = (U @ S).reshape(r_l, s1, r)
-            cross.mps[k + 1] = V.reshape(r, s2, r_g)
