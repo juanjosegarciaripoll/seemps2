@@ -1,4 +1,5 @@
 from typing import Any, cast
+import os
 import pickle
 import numpy as np
 import seemps
@@ -10,6 +11,7 @@ import itertools
 FAILED_TEST_FILE_NAME = "failed_tests.pkl"
 LOADED_FAILED_TESTS: dict[str, Any] | None = None
 SAVED_FILE_TESTS: dict[str, Any] = {}
+SEEMPS_TEST_CORE = os.environ.get("SEEMPS_TEST_BACKEND", "off").lower() == "on"
 
 
 class CoreComparisonTestCase(SeeMPSTestCase):
@@ -33,6 +35,8 @@ class CoreComparisonTestCase(SeeMPSTestCase):
         return cast(dict[str, Any], LOADED_FAILED_TESTS)
 
     def setUp(self):
+        if not SEEMPS_TEST_CORE:
+            self.skipTest("SEEMPS_TEST_CORE is disabled")
         super().setUp()
         failed_tests = self._maybe_load_failed_tests()
         self.test_name = test_name = self.id()
