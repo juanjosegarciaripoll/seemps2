@@ -106,3 +106,27 @@ class TestMPSTensorProduct(SeeMPSTestCase):
 
             AB = (Av.reshape(2, 1, 2, 1, 1) * Bv.reshape(1, 3, 1, 3, 3)).reshape(-1)
             self.assertSimilar(C.to_vector(), AB.reshape(-1))
+
+    def test_tensor_product_B_order_three_states_with_step_simplification(self):
+        Av = np.array([1.0, 2.0j, -1.0, 0.5]).reshape(-1)
+        Bv = np.array([1.0, -1.0j, 2.0]).reshape(-1)
+        Cv = np.array([0.5, 1.0j, -2.0, 1.5]).reshape(-1)
+        A = MPS.from_vector(Av, [2, 2], normalize=False)
+        B = MPS.from_vector(Bv, [3], normalize=False)
+        C = MPS.from_vector(Cv, [2, 2], normalize=False)
+
+        result = mps_tensor_product(
+            [A, B, C], mps_order="B", strategy=NO_TRUNCATION, simplify_steps=True
+        )
+        expected = (
+            Av.reshape(2, 1, 1, 2, 1)
+            * Bv.reshape(1, 3, 1, 1, 1)
+            * Cv.reshape(1, 1, 2, 1, 2)
+        ).reshape(-1)
+        self.assertEqual(result.physical_dimensions(), [2, 3, 2, 2, 2])
+        self.assertSimilar(result.to_vector(), expected)
+
+    def test_tensor_product_rejects_invalid_order(self):
+        A = product_state(self.v1, 1)
+        with self.assertRaises(ValueError):
+            mps_tensor_product([A, A], mps_order="invalid")
