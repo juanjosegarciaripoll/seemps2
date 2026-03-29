@@ -5,6 +5,12 @@ from ..tools import SeeMPSTestCase
 
 
 class TestFactories(SeeMPSTestCase):
+    def assert_factory_dimensions(self, factory, sizes, base_dimension):
+        for size in sizes:
+            state = factory(size)
+            self.assertEqual(state.size, size)
+            self.assertEqual(state.dimension(), base_dimension**size)
+
     def test_product_state(self):
         a = np.array([1.0, 7.0])
         b = np.array([0.0, 1.0, 3.0])
@@ -34,34 +40,26 @@ class TestFactories(SeeMPSTestCase):
         ghz1 = np.array([1.0, 1.0]) / sqrt(2.0)
         ghz2 = np.array([1.0, 0.0, 0.0, 1.0]) / sqrt(2.0)
         ghz3 = np.array([1.0, 0, 0, 0, 0, 0, 0, 1.0]) / sqrt(2.0)
-        self.assertTrue(np.array_equal(GHZ(1).to_vector(), ghz1))
-        self.assertTrue(np.array_equal(GHZ(2).to_vector(), ghz2))
-        self.assertTrue(np.array_equal(GHZ(3).to_vector(), ghz3))
-
-        for i in range(1, 2):
-            state = GHZ(i)
-            self.assertEqual(state.size, i)
-            self.assertEqual(state.dimension(), 2**i)
+        self.assertSimilar(GHZ(1).to_vector(), ghz1)
+        self.assertSimilar(GHZ(2).to_vector(), ghz2)
+        self.assertSimilar(GHZ(3).to_vector(), ghz3)
+        self.assert_factory_dimensions(GHZ, range(1, 5), 2)
 
     def test_W(self):
         W1 = np.array([0, 1.0])
         W2 = np.array([0, 1, 1, 0]) / sqrt(2.0)
         W3 = np.array([0, 1, 1, 0, 1, 0, 0, 0]) / sqrt(3.0)
-        self.assertTrue(np.array_equal(W(1).to_vector(), W1))
-        self.assertTrue(np.array_equal(W(2).to_vector(), W2))
-        self.assertTrue(np.array_equal(W(3).to_vector(), W3))
-
-        for i in range(1, 2):
-            state = W(i)
-            self.assertEqual(state.size, i)
-            self.assertEqual(state.dimension(), 2**i)
+        self.assertSimilar(W(1).to_vector(), W1)
+        self.assertSimilar(W(2).to_vector(), W2)
+        self.assertSimilar(W(3).to_vector(), W3)
+        self.assert_factory_dimensions(W, range(1, 5), 2)
 
     def test_AKLT(self):
         AKLT2 = np.zeros(3**2)
         AKLT2[1] = 1
         AKLT2[3] = -1
         AKLT2 = AKLT2 / sqrt(2)
-        self.assertTrue(np.array_equal(AKLT(2).to_vector(), AKLT2))
+        self.assertSimilar(AKLT(2).to_vector(), AKLT2)
 
         AKLT3 = np.zeros(3**3)
         AKLT3[4] = 1
@@ -69,27 +67,19 @@ class TestFactories(SeeMPSTestCase):
         AKLT3[10] = -1
         AKLT3[12] = 1
         AKLT3 = AKLT3 / (sqrt(2) ** 2)
-        self.assertTrue(np.array_equal(AKLT(3).to_vector(), AKLT3))
-
-        for i in range(2, 5):
-            state = AKLT(i)
-            self.assertEqual(state.size, i)
-            self.assertEqual(state.dimension(), 3**i)
+        self.assertSimilar(AKLT(3).to_vector(), AKLT3)
+        self.assert_factory_dimensions(AKLT, range(2, 5), 3)
 
     def test_graph_state(self):
         graph2 = np.ones(2**2) / sqrt(2**2)
         graph2[-1] = -graph2[-1]
-        self.assertTrue(np.array_equal(graph_state(2).to_vector(), graph2))
+        self.assertSimilar(graph_state(2).to_vector(), graph2)
 
         graph3 = np.ones(2**3) / sqrt(2**3)
         graph3[3] = -graph3[3]
         graph3[-2] = -graph3[-2]
-        self.assertTrue(np.array_equal(graph_state(3).to_vector(), graph3))
-
-        for i in range(2, 4):
-            state = graph_state(i)
-            self.assertEqual(state.size, i)
-            self.assertEqual(state.dimension(), 2**i)
+        self.assertSimilar(graph_state(3).to_vector(), graph3)
+        self.assert_factory_dimensions(graph_state, range(2, 5), 2)
 
     def test_mps_ones(self):
         A23 = mps_ones([2, 3, 4])
