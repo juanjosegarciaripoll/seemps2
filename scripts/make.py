@@ -197,11 +197,21 @@ parser.add_argument(
     "--coverage", action="store_true", help="Run tests with coverage report"
 )
 parser.add_argument("--verbose", action="store_true", help="Verbose mode")
-parser.add_argument("--tests", action="store_true", help="Run unit tests")
-parser.add_argument("--pyright", action="store_true", help="Run pyright")
+parser.add_argument(
+    "--test", "--tests", dest="tests", action="store_true", help="Run unit tests"
+)
+parser.add_argument(
+    "--pyright",
+    "--basedpyright",
+    dest="pyright",
+    action="store_true",
+    help="Run basedpyright",
+)
 parser.add_argument("--ruff", action="store_true", help="Run ruff")
 parser.add_argument("--mypy", action="store_true", help="Run mypy")
-parser.add_argument("--docs", action="store_true", help="Run Sphynx")
+parser.add_argument(
+    "--doc", "--docs", dest="docs", action="store_true", help="Run Sphinx"
+)
 parser.add_argument("--pydocstyle", action="store_true", help="Run pydocstyle")
 parser.add_argument("--darglint", action="store_true", help="Run darglint")
 

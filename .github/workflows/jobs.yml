@@ -20,7 +20,7 @@ jobs:
           uv pip list
 
       - name: Run unit tests
-        run: uv run scripts/make.py --test
+        run: uv run scripts/make.py --tests
 
       - name: Check types with mypy
         run: uv run scripts/make.py --mypy

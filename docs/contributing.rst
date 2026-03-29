@@ -86,9 +86,9 @@ While editing, we recommend that you activate type checking in Visual Studio Cod
 
 Once you have completed a change, it is recommended to run the following set of steps, which are all the checks that we run in GitHub prior to a pull request::
 
-    uv run scripts/make.py --test
+    uv run scripts/make.py --tests
     uv run scripts/make.py --mypy
-    uv run scripts/make.py --basedpyright
+    uv run scripts/make.py --pyright
     uv run scripts/make.py --ruff
 
 These are, in order, the unit tests that verify all functions, two type checkers (Mypy and basedpyright), and the linter.
@@ -101,7 +101,7 @@ Documentation
 The documentation is automatically built for every release by `readthedocs <https://seemps.readthedocs.io>`_. However, it is recommended that you build this documentation locally, when developing new code::
 
     uv sync --group doc
-    uv run scripts/make.py --doc
+    uv run scripts/make.py --docs
 
 This will ensure that the documentation is consistent and you have not removed some function that is referenced there. As a bonus, it will provide you with a local copy of all docs under the `_site` folder, which you can open using, for instance::
 
