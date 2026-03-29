@@ -16,7 +16,7 @@ class InvalidOperation(TypeError):
 
     def __init__(self, op: str, *args: Any):
         super().__init__(
-            f"Invalid operation {op} between arguments of types {(type(x) for x in args)}"
+            f"Invalid operation {op} between arguments of types {tuple(type(x) for x in args)}"
         )
 
 
@@ -67,8 +67,10 @@ class VerboseLogger(Logger):
         super().__enter__()
         return self
 
-    def __call__(self, *args: Any, file: TextIO = sys.stderr, **kwdargs: Any):
+    def __call__(self, *args: Any, file: TextIO | None = None, **kwdargs: Any):
         if self.active:
+            if file is None:
+                file = sys.stderr
             txt = " ".join([str(a) for a in args])
             txt = " ".join([PREFIX + a for a in txt.split("\n")])
             print(txt, file=file, **kwdargs)
@@ -152,15 +154,20 @@ def random_Pauli(rng: np.random.Generator = DEFAULT_RNG):
 
 def creation(d: int) -> DenseOperator:
     """Bosonic creation operator for a Hilbert space with occupations 0 to `d-1`."""
-    return np.diag(sqrt(np.arange(1, d)), -1).astype(complex)
+    return np.diag(np.sqrt(np.arange(1, d)), -1).astype(complex)
 
 
 def annihilation(d: int) -> DenseOperator:
     """Bosonic annihilation operator for a Hilbert space with occupations 0 to `d-1`."""
-    return np.diag(sqrt(np.arange(1, d)), 1).astype(complex)
+    return np.diag(np.sqrt(np.arange(1, d)), 1).astype(complex)
 
 
 def mkron(A: Operator, *other_operators: Operator) -> Operator:
+    sparse = sp.issparse(A)
     for B in other_operators:
-        A = sp.kron(A, B)
+        if sparse or sp.issparse(B):
+            sparse = True
+            A = sp.kron(A, B)
+        else:
+            A = np.kron(A, B)
     return A
