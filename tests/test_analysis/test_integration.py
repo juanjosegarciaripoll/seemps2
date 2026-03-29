@@ -12,11 +12,14 @@ from seemps.analysis.mesh import (
 )
 from seemps.analysis.integration import mesh_to_quadrature_mesh, quadrature_mesh_to_mps
 from seemps.analysis.integration.mps_quadratures import (
+    mps_clenshaw_curtis,
     mps_trapezoidal,
     mps_simpson38,
     mps_fifth_order,
     mps_fejer,
 )
+from seemps.analysis.integration.integration import integrate_mps
+from seemps.analysis.mesh import ArrayInterval, RegularInterval
 
 from ..tools import SeeMPSTestCase
 
@@ -125,6 +128,55 @@ class TestMPSIntegration(SeeMPSTestCase):
 
         integral = scprod(f_mps_2d, q_mps_2d)
         self.assertAlmostEqual(integral_2d, integral)
+
+
+class TestIntegrationAPI(SeeMPSTestCase):
+    def setUp(self):
+        self.a, self.b = -2, 2
+        self.func = lambda x: np.exp(x)
+        self.integral = self.func(self.b) - self.func(self.a)
+
+    def test_integrate_mps_regular_interval_uses_newton_cotes_rules(self):
+        interval = RegularInterval(-1.0, 1.0, 8, endpoint_right=True)
+        values = np.exp(interval.to_vector())
+        mps = MPS.from_vector(values, [2] * 3, normalize=False)
+        expected = scprod(mps, mps_trapezoidal(interval[0], interval[-1], 3))
+        self.assertAlmostEqual(integrate_mps(mps, interval), expected)
+
+        interval = RegularInterval(-1.0, 1.0, 16, endpoint_right=True)
+        values = np.exp(interval.to_vector())
+        mps = MPS.from_vector(values, [2] * 4, normalize=False)
+        expected = scprod(mps, mps_fifth_order(interval[0], interval[-1], 4))
+        self.assertAlmostEqual(integrate_mps(mps, interval), expected)
+
+    def test_integrate_mps_chebyshev_intervals_support_fejer_and_clenshaw_curtis(self):
+        interval = ChebyshevInterval(-1.0, 1.0, 8)
+        values = np.exp(interval.to_vector())
+        mps = MPS.from_vector(values, [2] * 3, normalize=False)
+        expected = scprod(mps, mps_fejer(interval.start, interval.stop, 3))
+        self.assertAlmostEqual(integrate_mps(mps, interval), expected)
+
+        interval = ChebyshevInterval(-1.0, 1.0, 4, endpoints=True)
+        values = np.exp(interval.to_vector())
+        mps = MPS.from_vector(values, [2] * 2, normalize=False)
+        expected = scprod(mps, mps_clenshaw_curtis(interval.start, interval.stop, 2))
+        self.assertAlmostEqual(integrate_mps(mps, interval), expected)
+
+    def test_integrate_mps_rejects_nonquadrature_intervals(self):
+        interval = ArrayInterval(np.array([0.0, 1.0, 2.0, 3.0]))
+        mps = MPS.from_vector(interval.to_vector(), [2, 2], normalize=False)
+        with self.assertRaises(ValueError):
+            integrate_mps(mps, interval)
+
+    def test_mesh_to_quadrature_mesh_regular_interval_and_invalid_interval(self):
+        mesh = Mesh([RegularInterval(-1.0, 1.0, 5, endpoint_right=True)])
+        q_mesh = mesh_to_quadrature_mesh(mesh)
+        self.assertSimilar(
+            q_mesh.intervals[0].to_vector(), np.array([7, 32, 12, 32, 7]) / 45.0
+        )
+
+        with self.assertRaises(ValueError):
+            mesh_to_quadrature_mesh(Mesh([ArrayInterval([1.0, 2.0, 3.0])]))
 
     def test_multivariate_integral_order_B(self):
         n = 4
