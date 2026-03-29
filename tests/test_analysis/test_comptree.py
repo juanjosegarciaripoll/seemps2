@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from ..tools import SeeMPSTestCase
 
 from seemps.analysis.mesh import RegularInterval
@@ -34,6 +35,17 @@ class TestBranchNode(SeeMPSTestCase):
         transitions = get_transitions([node], images)
         for (_, s), k_out in transitions[0].items():
             self.assertEqual(images[1][k_out], x[s])
+
+    def test_binning_near_zero_does_not_emit_runtime_warning(self):
+        node = BranchNode(
+            lambda x_in, x_s: x_in + x_s,
+            grid=np.array([0.0, 1e-8]),
+            binning_tol=1e-3,
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            image = node.compute_image(np.array([0.0]))
+        self.assertSimilar(image, [5e-9])
 
 
 class TestChainTree(SeeMPSTestCase):
