@@ -100,7 +100,7 @@ def simplify(
     simplification_tolerance = strategy.get_simplification_tolerance()
     if not (norm_state_sqr := state.norm_squared()):
         return CanonicalMPS(state.zero_state(), is_canonical=True)
-    form = AntilinearForm(mps, state, center=start)
+    form = AntilinearForm(mps, state, center=mps.center)
     err = 2.0
     if logger:
         logger(
@@ -221,7 +221,7 @@ def simplify_mps_sum(
 
     size = mps.size
     weights, states = sum_state.weights, sum_state.states
-    forms = [AntilinearForm(mps, si, center=start) for si in states]
+    forms = [AntilinearForm(mps, si, center=mps.center) for si in states]
     if logger:
         logger(
             f"COMBINE state with |state|={norm_state_sqr**0.5:5e} for {strategy.get_max_sweeps():5e}"
@@ -288,7 +288,7 @@ def combine(
     guess: MPS | None = None,
 ) -> CanonicalMPS:
     """Deprecated, use `simplify` instead."""
-    return simplify_mps_sum(MPSSum(weights, states))
+    return simplify_mps_sum(MPSSum(weights, states), strategy, direction, guess)
 
 
 simplify_mps = simplify
