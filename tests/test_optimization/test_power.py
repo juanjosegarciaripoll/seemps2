@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from typing import Any, cast
 import numpy as np
 from seemps.state import MPS
 from seemps.operators import MPO
@@ -55,7 +56,7 @@ class TestPowerMethodInternals(SeeMPSTestCase):
 
         with patch("seemps.optimization.power.simplify", side_effect=lambda state, strategy: state):
             results = power_method(
-                H,
+                cast(Any, H),
                 guess=guess,
                 shift=0.25,
                 inverse=False,
@@ -79,7 +80,7 @@ class TestPowerMethodInternals(SeeMPSTestCase):
 
         with patch("seemps.optimization.power.simplify", side_effect=lambda state, strategy: state):
             results = power_method(
-                H,
+                cast(Any, H),
                 guess=guess,
                 inverse=False,
                 maxiter=2,
@@ -102,13 +103,13 @@ class TestPowerMethodInternals(SeeMPSTestCase):
 
         with patch("seemps.optimization.power.cgs_solve", side_effect=fake_cgs_solve):
             results = power_method(
-                H,
+                cast(Any, H),
                 guess=guess,
                 inverse=True,
                 maxiter=2,
                 tol=1e-9,
                 tol_variance=0.5,
-                tol_cgs=None,
+                tol_cgs=0.5,
             )
 
         self.assertEqual(captured["tolerance"], 0.5)
