@@ -169,5 +169,5 @@ def mkron(A: Operator, *other_operators: Operator) -> Operator:
             sparse = True
             A = sp.kron(A, B)
         else:
-            A = np.kron(cast(DenseOperator, A), cast(DenseOperator, B))
+            A = np.kron(cast(DenseOperator, A), B) # type: ignore
     return A

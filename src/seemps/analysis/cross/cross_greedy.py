@@ -50,6 +50,7 @@ class CrossInterpolationGreedy(CrossInterpolation):
     list_R: list[Matrix]
     J_l: list
     J_g: list
+    mps: MPS
 
     def __init__(
         self,

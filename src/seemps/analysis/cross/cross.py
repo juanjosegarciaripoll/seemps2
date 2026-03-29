@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from time import perf_counter
 import numpy as np
@@ -16,7 +16,7 @@ from .black_box import BlackBox
 
 
 @dataclasses.dataclass
-class CrossStrategy:
+class CrossStrategy(ABC):
     tol: float = 1e-8
     num_samples: Natural = 2**10
     error_norm: float = np.inf
@@ -74,7 +74,7 @@ IndexVector: TypeAlias = np.ndarray[tuple[int], np.dtype[np.integer]]
 IndexSlice: TypeAlias = np.intp | IndexVector | slice
 
 
-class CrossInterpolation:
+class CrossInterpolation(ABC):
     """
     Auxiliar base class for TCI used to keep track of the required interpolation
     information.
