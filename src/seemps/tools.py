@@ -1,10 +1,10 @@
 from __future__ import annotations
 import sys
 import os
-from math import cos, sin, sqrt
+from math import cos, sin
 import numpy as np
 import scipy.sparse as sp
-from typing import Any, TextIO
+from typing import Any, TextIO, cast
 from .typing import DenseOperator, Operator
 
 SEED = 0x874665212
@@ -169,5 +169,5 @@ def mkron(A: Operator, *other_operators: Operator) -> Operator:
             sparse = True
             A = sp.kron(A, B)
         else:
-            A = np.kron(A, B)
+            A = np.kron(cast(DenseOperator, A), cast(DenseOperator, B))
     return A
