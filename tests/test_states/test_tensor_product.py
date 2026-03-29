@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 from seemps.state import (
     MPS,
@@ -128,5 +129,6 @@ class TestMPSTensorProduct(SeeMPSTestCase):
 
     def test_tensor_product_rejects_invalid_order(self):
         A = product_state(self.v1, 1)
+        invalid_order: Any = "invalid"
         with self.assertRaises(ValueError):
-            mps_tensor_product([A, A], mps_order="invalid")
+            mps_tensor_product([A, A], mps_order=invalid_order)
