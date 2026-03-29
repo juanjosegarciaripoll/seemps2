@@ -13,6 +13,7 @@ from . import (
     test_optimization,
     test_polynomials,
     test_space,
+    test_vector_quadratures,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "test_optimization",
     "test_polynomials",
     "test_space",
+    "test_vector_quadratures",
 ]
