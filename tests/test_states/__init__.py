@@ -1,6 +1,7 @@
 from . import (
     test_array,
     test_canonical,
+    test_entropies,
     test_gemm,
     test_mps,
     test_mpssum,
@@ -14,6 +15,7 @@ from . import (
 __all__ = [
     "test_array",
     "test_canonical",
+    "test_entropies",
     "test_gemm",
     "test_mps",
     "test_mpssum",
