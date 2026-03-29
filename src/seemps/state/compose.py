@@ -174,11 +174,11 @@ def _mps_tensor_sum_serial_order(mps_list: list[MPS]) -> MPS:
         output[1, :, 1] = np.ones(d)  # One MPS applied
         if first:
             if last:
-                output[[0], :, [1]] = A
+                output[0:1, :, 1:2] = A
             else:
-                output[[0], :, 2:] = A
+                output[0:1, :, 2:] = A
         elif last:
-            output[2:, :, [1]] = A
+            output[2:, :, 1:2] = A
         else:
             output[2:, :, 2:] = A
         return output
