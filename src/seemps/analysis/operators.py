@@ -304,7 +304,7 @@ def mpo_affine(
     b = 0.5 * ((u1 + u0) - a * (x0 + x1))
     mpo_affine = a * mpo
     if abs(b) > np.finfo(np.float64).eps:
-        I = MPO([np.ones((1, 2, 2, 1))] * len(mpo_affine))
+        I = MPO([np.eye(2).reshape(1, 2, 2, 1)] * len(mpo_affine))
         mpo_affine = MPOSum(mpos=[mpo_affine, I], weights=[1, b]).join()
     return mpo_affine
 
