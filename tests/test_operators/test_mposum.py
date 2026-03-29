@@ -1,3 +1,4 @@
+from typing import Any
 from seemps.operators import MPO, MPOList, MPOSum
 from seemps.state import (
     MPSSum,
@@ -157,16 +158,17 @@ class TestMPOSum(SeeMPSTestCase):
 
     def test_mposum_scalar_and_binary_invalid_operations_raise(self):
         mposum = MPOSum([self.mpoA, self.mpoB])
+        invalid: Any = object()
         with self.assertRaises(TypeError):
-            _ = mposum + object()
+            _ = mposum + invalid
         with self.assertRaises(TypeError):
-            _ = mposum - object()
+            _ = mposum - invalid
         with self.assertRaises(TypeError):
-            _ = object() * mposum
+            _ = invalid * mposum
         with self.assertRaises(Exception):
-            _ = mposum * object()
+            _ = mposum * invalid
         with self.assertRaises(TypeError):
-            _ = mposum / object()
+            _ = mposum / invalid
 
     def test_mposum_set_strategy_can_update_components(self):
         mpo1 = MPO([σx.reshape(1, 2, 2, 1)] * 2)
