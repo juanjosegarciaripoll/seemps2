@@ -1,3 +1,4 @@
+from typing import cast
 import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.analysis.interpolation import twos_complement
@@ -82,6 +83,12 @@ class TestAlgebraic(SeeMPSTestCase):
         op1 = qubo_exponential_mpo(J=J, h=h, beta=beta1)
         op2 = qubo_exponential_mpo(J=J, h=h, beta=beta2)
         op12 = qubo_exponential_mpo(J=J, h=h, beta=beta1 + beta2)
+        self.assertIsInstance(op1, MPOList)
+        self.assertIsInstance(op2, MPOList)
+        self.assertIsInstance(op12, MPOList)
+        op1 = cast(MPOList, op1)
+        op2 = cast(MPOList, op2)
+        op12 = cast(MPOList, op12)
         self.assertTrue(all(mpo.size == len(h) for mpo in op1.mpos))
         self.assertSimilar(op1.to_matrix(), np.diag(np.diag(op1.to_matrix())))
         self.assertSimilar(op1.to_matrix() @ op2.to_matrix(), op12.to_matrix())
