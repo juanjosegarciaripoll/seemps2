@@ -125,7 +125,11 @@ class BranchNode:
         binned_image = []
         bin = [image[0]]
         for x in image[1:]:
-            error = abs((x - bin[0]) / bin[0])
+            reference = bin[0]
+            if reference == 0:
+                error = abs(x - reference)
+            else:
+                error = abs((x - reference) / reference)
             if error <= binning_tol:
                 bin.append(x)
             else:
