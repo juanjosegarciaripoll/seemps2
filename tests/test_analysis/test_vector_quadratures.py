@@ -3,8 +3,7 @@ from seemps.analysis.integration.mps_quadratures import (
     mps_clenshaw_curtis,
     mps_fejer,
     mps_fifth_order,
-    mps_simpson38,
-    mps_trapezoidal,
+    mps_simpson38
 )
 from seemps.analysis.integration.vector_quadratures import (
     vector_best_newton_cotes,

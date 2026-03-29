@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 from seemps.state import MPS, NO_TRUNCATION, mps_tensor_sum
 from ..tools import SeeMPSTestCase
@@ -78,5 +79,6 @@ class TestMPSOperations(SeeMPSTestCase):
 
     def test_tensor_sum_rejects_invalid_order(self):
         A = self.random_mps([2, 3])
+        invalid_order: Any = "invalid"
         with self.assertRaises(ValueError):
-            mps_tensor_sum([A, A], mps_order="invalid", strategy=NO_TRUNCATION)
+            mps_tensor_sum([A, A], mps_order=invalid_order, strategy=NO_TRUNCATION)
