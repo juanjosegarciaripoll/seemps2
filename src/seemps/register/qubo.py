@@ -3,6 +3,7 @@ import numpy as np
 from ..typing import Vector, Operator
 from ..state import Strategy, DEFAULT_STRATEGY
 from ..operators import MPOList, MPO
+from ..operators.projectors import identity_mpo
 
 
 def qubo_mpo(
@@ -106,33 +107,55 @@ def qubo_exponential_mpo(
         if h is None:
             raise Exception("Must provide either J or h")
         #
+        dtype = np.result_type(h, beta)
         data = []
         for i, hi in enumerate(h):
-            A = np.zeros((1, 2, 2, 1))
-            A[0, 1, 1, 1] = np.exp(beta * hi)
+            A = np.zeros((1, 2, 2, 1), dtype=dtype)
+            A[0, 1, 1, 0] = np.exp(beta * hi)
             A[0, 0, 0, 0] = 1.0
             data.append(A)
         return MPO(data, strategy)
     else:
         Jmatrix = np.asarray(J)
-        if h is not None:
-            Jmatrix += np.diag(h)
-        Jmatrix = (Jmatrix + Jmatrix.T) / 2
         L = len(Jmatrix)
-        noop = np.eye(2).reshape(1, 2, 2, 1)
+        dtype = np.result_type(Jmatrix, beta)
+        if h is not None:
+            dtype = np.result_type(dtype, h)
+        id2 = np.eye(2, dtype=dtype)
+        noop = id2.reshape(1, 2, 2, 1)
         out = []
-        for i in range(L):
+        local_terms = np.diag(Jmatrix).copy()
+        if h is not None:
+            local_terms = local_terms + np.asarray(h)
+
+        for i, Ji in enumerate(local_terms):
+            couplings = [Jmatrix[i, j] + Jmatrix[j, i] for j in range(i + 1, L)]
+            if Ji == 0 and all(Jij == 0 for Jij in couplings):
+                continue
             data = [noop] * i
-            A = np.zeros((1, 2, 2, 2))
-            A[0, 1, 1, 1] = np.exp(beta * Jmatrix[i, i])
-            A[0, 0, 0, 0] = 1.0
-            for j in range(i + 1, L):
-                A = np.zeros((2, 2, 2, 2))
-                A[1, 1, 1, 1] = np.exp(beta * Jmatrix[i, j])
-                A[1, 0, 0, 1] = 1.0
+            if i == L - 1:
+                A = np.zeros((1, 2, 2, 1), dtype=dtype)
                 A[0, 0, 0, 0] = 1.0
-                A[0, 1, 1, 0] = 1.0
+                A[0, 1, 1, 0] = np.exp(beta * Ji)
                 data.append(A)
-            data[-1] = A[:, :, :, [0]] + A[:, :, :, [1]]
+            else:
+                A = np.zeros((1, 2, 2, 2), dtype=dtype)
+                A[0, 0, 0, 0] = 1.0
+                A[0, 1, 1, 1] = np.exp(beta * Ji)
+                data.append(A)
+                for Jij in couplings[:-1]:
+                    B = np.zeros((2, 2, 2, 2), dtype=dtype)
+                    B[0, :, :, 0] = id2
+                    B[1, 0, 0, 1] = 1.0
+                    B[1, 1, 1, 1] = np.exp(beta * Jij)
+                    data.append(B)
+                C = np.zeros((2, 2, 2, 1), dtype=dtype)
+                C[0, :, :, 0] = id2
+                C[1, 0, 0, 0] = 1.0
+                C[1, 1, 1, 0] = np.exp(beta * couplings[-1])
+                data.append(C)
             out.append(MPO(data, strategy))
+
+        if not out:
+            out = [identity_mpo([2] * L, strategy)]
         return MPOList(out)
