@@ -6,6 +6,7 @@ from seemps.state import (
     Simplification,
     Strategy,
     simplify,
+    product_state,
 )
 from seemps.tools import σx, σy, σz
 from ..tools import SeeMPSTestCase, contain_same_objects
@@ -144,3 +145,63 @@ class TestMPOSum(SeeMPSTestCase):
         conj_mposum = mposum.conj()
         self.assertIsInstance(conj_mposum, MPOSum)
         self.assertSimilar(conj_mposum.to_matrix(), mposum.to_matrix().conj())
+
+    def test_mposum_dimensions_and_tomatrix_are_deprecated_aliases(self):
+        mposum = MPOSum([self.mpoA, self.mpoB])
+        with self.assertWarns(DeprecationWarning):
+            dimensions = mposum.dimensions()
+        with self.assertWarns(DeprecationWarning):
+            matrix = mposum.tomatrix()
+        self.assertEqual(dimensions, mposum.physical_dimensions())
+        self.assertSimilar(matrix, mposum.to_matrix())
+
+    def test_mposum_scalar_and_binary_invalid_operations_raise(self):
+        mposum = MPOSum([self.mpoA, self.mpoB])
+        with self.assertRaises(TypeError):
+            _ = mposum + object()
+        with self.assertRaises(TypeError):
+            _ = mposum - object()
+        with self.assertRaises(TypeError):
+            _ = object() * mposum
+        with self.assertRaises(Exception):
+            _ = mposum * object()
+        with self.assertRaises(TypeError):
+            _ = mposum / object()
+
+    def test_mposum_set_strategy_can_update_components(self):
+        mpo1 = MPO([σx.reshape(1, 2, 2, 1)] * 2)
+        mpo2 = MPOList([MPO([σz.reshape(1, 2, 2, 1)] * 2), MPO([σy.reshape(1, 2, 2, 1)] * 2)])
+        outer_strategy = Strategy(tolerance=1e-10)
+        inner_strategy = Strategy(tolerance=1e-8)
+        updated = MPOSum([mpo1, mpo2]).set_strategy(
+            outer_strategy, strategy_components=inner_strategy
+        )
+        self.assertIs(updated.strategy, outer_strategy)
+        self.assertTrue(all(mpo.strategy is inner_strategy for mpo in updated.mpos))
+
+    def test_mposum_extend_and_reverse_match_componentwise_operations(self):
+        mpo1 = MPO([σx.reshape(1, 2, 2, 1)] * 2)
+        mpo2 = MPO([σz.reshape(1, 2, 2, 1)] * 2)
+        mposum = MPOSum([mpo1, mpo2], [1.5, -0.25])
+        extended = mposum.extend(3, sites=[0, 2], dimensions=2)
+        reversed_mposum = mposum.reverse()
+        self.assertSimilar(
+            extended.to_matrix(),
+            1.5 * mpo1.extend(3, sites=[0, 2], dimensions=2).to_matrix()
+            - 0.25 * mpo2.extend(3, sites=[0, 2], dimensions=2).to_matrix(),
+        )
+        self.assertSimilar(
+            reversed_mposum.to_matrix(),
+            1.5 * mpo1.reverse().to_matrix() - 0.25 * mpo2.reverse().to_matrix(),
+        )
+
+    def test_mposum_join_handles_mpolists_and_expectation_uses_weights(self):
+        mpo1 = MPO([σx.reshape(1, 2, 2, 1)] * 2)
+        mpo2 = MPO([σz.reshape(1, 2, 2, 1)] * 2)
+        mpo_list = MPOList([mpo1, mpo2])
+        mposum = MPOSum([mpo_list, mpo2], [1j, 2 - 1j])
+        self.assertSimilar(mposum.join().to_matrix(), mposum.to_matrix())
+
+        state = product_state([1.0, 0.0], 2)
+        weighted = MPOSum([mpo1, mpo2], [3.0, 2.0 + 1.0j])
+        self.assertAlmostEqual(weighted.expectation(state), 2.0 + 1.0j)

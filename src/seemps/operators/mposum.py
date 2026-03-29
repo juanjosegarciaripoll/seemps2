@@ -281,7 +281,7 @@ class MPOSum(object):
             :math:`\\langle\\psi\\vert{O}\\vert\\phi\\rangle` where `O`
             is the matrix-product operator.
         """
-        return sum([m.expectation(bra, ket) for m in self.mpos])
+        return sum(w * m.expectation(bra, ket) for w, m in zip(self.weights, self.mpos))
 
     def reverse(self) -> MPOSum:
         """Reverse the sites (see :meth:`~seemps.operators.MPO.reverse`)."""
