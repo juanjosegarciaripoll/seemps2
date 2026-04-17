@@ -1,11 +1,29 @@
 from __future__ import annotations
+from typing import Callable
 import numpy as np
 import scipy.sparse.linalg
 from ..tools import make_logger
+from ..typing import Tensor4
 from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..state.simplification import AntilinearForm
+from ..cython import _contract_last_and_first
 from ..operators import MPO
-from ..optimization.dmrg import QuadraticForm
+from ..operators.quadratic import QuadraticForm
+
+
+def _solve_two_site(
+    QF: QuadraticForm,
+    i: int,
+    b: Tensor4,
+    atol: float,
+    rtol: float,
+    solver: Callable,
+) -> tuple[Tensor4, int, float]:
+    Op = QF.two_site_operator(i)
+    v = _contract_last_and_first(QF.state[i], QF.state[i + 1])
+    x, info = solver(Op, b.reshape(-1), v.reshape(-1), atol=atol, rtol=rtol)
+    res = np.linalg.norm(Op @ x - b.reshape(-1))
+    return x.reshape(v.shape), info, float(res)
 
 
 def dmrg_solve(
@@ -87,8 +105,8 @@ def dmrg_solve(
         if step:
             if direction > 0:
                 for i in range(0, A.size - 1):
-                    AB, info, local_residual = QF.solve(
-                        i, LF.tensor2site(+1), atol, rtol, solver=solver
+                    AB, info, local_residual = _solve_two_site(
+                        QF, i, LF.tensor2site(+1), atol, rtol, solver
                     )
                     QF.update_2site_right(AB, i, strategy)
                     LF.update_right()
@@ -99,8 +117,8 @@ def dmrg_solve(
                         message = "Local optimization with gmres() did not converge"
             else:
                 for i in range(A.size - 2, -1, -1):
-                    AB, info, local_residual = QF.solve(
-                        i, LF.tensor2site(-1), atol, rtol, solver=solver
+                    AB, info, local_residual = _solve_two_site(
+                        QF, i, LF.tensor2site(-1), atol, rtol, solver
                     )
                     QF.update_2site_left(AB, i, strategy)
                     LF.update_left()
