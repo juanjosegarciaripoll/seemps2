@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 
-
 from .mpo import MPO
 from ..typing import Tensor3, Tensor4
 from ..state import MPS, CanonicalMPS, Strategy
@@ -34,7 +33,12 @@ class QuadraticForm:
     def __init__(
         self, O: MPO, state: CanonicalMPS, start: int = 0, ket: MPS | None = None
     ):
+        # Initialize self.O, self.state and self.ket by reference
         self.O = O
+        if not isinstance(state, CanonicalMPS):
+            raise Exception("QuadraticForm: state must be a CanonicalMPS")
+        if state.center not in [start, start + 1]:
+            raise Exception(f"QuadraticForm: state must be centered at start={start} or {start+1}")
         self.state = state
         self.ket = ket if ket is not None else state
         self.size = size = state.size
