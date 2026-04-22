@@ -48,7 +48,7 @@ class QuadraticForm:
 
         # Build right environments
         env = right_env[-1]
-        for i in range(size - 1, start, -1):
+        for i in range(size - 1, max(0, start - 1), -1):
             right_env[i - 1] = env = update_right_mpo_environment(
                 env, state[i], O[i], self.ket[i]
             )
