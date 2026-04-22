@@ -90,12 +90,14 @@ def dmrg(
     logger(f"DMRG initiated with maxiter={maxiter}, relative tolerance={tol}")
     if not isinstance(guess, CanonicalMPS):
         guess = CanonicalMPS(guess, center=0)
-    if guess.center == 0:
+    if guess.center <= guess.size // 2:
         direction = +1
+        guess = CanonicalMPS(guess, center=0)
         QF = QuadraticForm(H, guess, start=0)
     else:
         direction = -1
-        QF = QuadraticForm(H, guess, start=H.size - 2)
+        guess = CanonicalMPS(guess, center=-1)
+        QF = QuadraticForm(H, guess, start=guess.size - 2)
     energy = H.expectation(QF.state).real
     variance = abs(H.apply(QF.state).norm_squared() - energy * energy)
     results = OptimizeResults(
