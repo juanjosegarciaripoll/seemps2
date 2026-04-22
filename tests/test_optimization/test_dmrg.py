@@ -50,12 +50,12 @@ class TestDMRG(SeeMPSTestCase):
         self.assertAlmostEqual(Hmpo.expectation(result.state), -2)
 
     def test_dmrg_uses_guess_with_canonical_centers_other_than_zero(self):
-        """Check we can compute ground state of Sz * Sz on two sites"""
-        H = ConstantTIHamiltonian(size=2, interaction=-np.kron(self.Sz, self.Sz))
-        mps = CanonicalMPS(product_state([1.0, 1.0], 2), center=-1, normalize=True)
+        """Check we can compute ground state of Sz * Sz on three sites"""
+        H = ConstantTIHamiltonian(size=5, interaction=-np.kron(self.Sz, self.Sz))
+        mps = CanonicalMPS(product_state([1.0, 1.0], 5), center=3, normalize=True)
         Hmpo = H.to_mpo()
         result = dmrg(Hmpo, guess=mps, maxiter=100)
-        self.assertAlmostEqual(result.energy, -1)
+        self.assertAlmostEqual(result.energy, -4)
         v = result.state.to_vector()
-        self.assertAlmostEqual(v[0] ** 2 + v[3] ** 2, 1.0)
-        self.assertAlmostEqual(v[1] ** 2 + v[2] ** 2, 0.0)
+        self.assertAlmostEqual(v[0] ** 2 + v[-1] ** 2, 1.0)
+        self.assertAlmostEqual(sum(v[1:-1] ** 2), 0.0)
