@@ -5,7 +5,7 @@ import numpy as np
 from scipy.sparse.linalg import LinearOperator
 
 from .mpo import MPO
-from ..typing import Tensor3, Tensor4
+from ..typing import Tensor3, Tensor4, Weight
 from ..state import MPS, CanonicalMPS, Strategy
 from ..cython import _contract_last_and_first
 from ..state.environments import (
@@ -21,7 +21,7 @@ def _make_operator(
     dtype: Any,
     matvec: Callable[[np.ndarray], np.ndarray],
     rmatvec: Callable[[np.ndarray], np.ndarray],
-    trace: Callable[[], complex],
+    trace: Callable[[], Weight],
 ) -> LinearOperator:
     op = LinearOperator(shape=shape, dtype=dtype, matvec=matvec, rmatvec=rmatvec)
     setattr(op, "trace", trace)
@@ -132,7 +132,7 @@ class QuadraticForm:
             aux = np.tensordot(v, _L.conj(), axes=(0, 0))
             return np.tensordot(aux, _R.conj(), axes=([0, 1], [0, 1])).reshape(-1)
 
-        def _trace(_L: np.ndarray = L, _R: np.ndarray = R) -> complex:
+        def _trace(_L: np.ndarray = L, _R: np.ndarray = R) -> Weight:
             l_c = np.trace(_L, axis1=0, axis2=2)
             r_e = np.trace(_R, axis1=0, axis2=2)
             return np.vdot(l_c, r_e)
@@ -175,7 +175,7 @@ class QuadraticForm:
 
         def _trace(
             _L: np.ndarray = L, _H: np.ndarray = H, _R: np.ndarray = R
-        ) -> complex:
+        ) -> Weight:
             l_c = np.trace(_L, axis1=0, axis2=2)
             w_ce = np.trace(_H, axis1=1, axis2=2)
             r_e = np.trace(_R, axis1=0, axis2=2)
@@ -220,7 +220,7 @@ class QuadraticForm:
 
         def _trace(
             _L: np.ndarray = L, _H: np.ndarray = H, _R: np.ndarray = R
-        ) -> complex:
+        ) -> Weight:
             l_c = np.trace(_L, axis1=0, axis2=2)
             tmp = np.trace(_H, axis1=1, axis2=2)
             w_ce = np.trace(tmp, axis1=1, axis2=2)
