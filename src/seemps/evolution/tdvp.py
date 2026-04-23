@@ -17,9 +17,9 @@ def _evolve(
 ) -> np.ndarray:
     """Apply time evolution operator to tensor."""
     shape = tensor.shape
-    v = expm_multiply(
-        factor * operator, tensor.ravel(), traceA=factor * operator.trace()  # type: ignore[attr-defined]
-    )
+    operator_trace = getattr(operator, "trace", None)
+    traceA = None if operator_trace is None else factor * operator_trace()
+    v = expm_multiply(factor * operator, tensor.ravel(), traceA=traceA)
     if normalize:
         v = v / np.linalg.norm(v)
 

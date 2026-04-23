@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Callable, Any
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 
@@ -15,9 +16,15 @@ from ..state.environments import (
 )
 
 
-def _make_operator(shape, dtype, matvec, rmatvec, trace):
+def _make_operator(
+    shape: tuple[int, int],
+    dtype: Any,
+    matvec: Callable[[np.ndarray], np.ndarray],
+    rmatvec: Callable[[np.ndarray], np.ndarray],
+    trace: Callable[[], complex],
+) -> LinearOperator:
     op = LinearOperator(shape=shape, dtype=dtype, matvec=matvec, rmatvec=rmatvec)
-    op.trace = trace  # type: ignore[attr-defined]
+    setattr(op, "trace", trace)
     return op
 
 
@@ -38,7 +45,9 @@ class QuadraticForm:
         if not isinstance(state, CanonicalMPS):
             raise Exception("QuadraticForm: state must be a CanonicalMPS")
         if state.center not in [start, start + 1]:
-            raise Exception(f"QuadraticForm: state must be centered at start={start} or {start+1}")
+            raise Exception(
+                f"QuadraticForm: state must be centered at start={start} or {start + 1}"
+            )
         self.state = state
         self.ket = ket if ket is not None else state
         self.size = size = state.size
@@ -103,17 +112,27 @@ class QuadraticForm:
         n = b * f
         dtype = np.result_type(L.dtype, R.dtype)
 
-        def _matvec(v: np.ndarray, _L=L, _R=R, _vs=v_shape) -> np.ndarray:
+        def _matvec(
+            v: np.ndarray,
+            _L: np.ndarray = L,
+            _R: np.ndarray = R,
+            _vs: tuple[int, ...] = v_shape,
+        ) -> np.ndarray:
             v = v.reshape(_vs)
             aux = np.tensordot(v, _L, axes=(0, 2))
             return np.tensordot(aux, _R, axes=([0, 2], [2, 1])).reshape(-1)
 
-        def _rmatvec(v: np.ndarray, _L=L, _R=R, _vs=v_shape) -> np.ndarray:
+        def _rmatvec(
+            v: np.ndarray,
+            _L: np.ndarray = L,
+            _R: np.ndarray = R,
+            _vs: tuple[int, ...] = v_shape,
+        ) -> np.ndarray:
             v = v.reshape(_vs)
             aux = np.tensordot(v, _L.conj(), axes=(0, 0))
             return np.tensordot(aux, _R.conj(), axes=([0, 1], [0, 1])).reshape(-1)
 
-        def _trace(_L=L, _R=R) -> complex:
+        def _trace(_L: np.ndarray = L, _R: np.ndarray = R) -> complex:
             l_c = np.trace(_L, axis1=0, axis2=2)
             r_e = np.trace(_R, axis1=0, axis2=2)
             return np.vdot(l_c, r_e)
@@ -130,19 +149,33 @@ class QuadraticForm:
         n = b * s * f
         dtype = np.result_type(L.dtype, R.dtype, H.dtype)
 
-        def _matvec(v: np.ndarray, _L=L, _H=H, _R=R, _vs=v_shape) -> np.ndarray:
+        def _matvec(
+            v: np.ndarray,
+            _L: np.ndarray = L,
+            _H: np.ndarray = H,
+            _R: np.ndarray = R,
+            _vs: tuple[int, ...] = v_shape,
+        ) -> np.ndarray:
             v = v.reshape(_vs)
             aux = np.tensordot(v, _L, axes=(0, 2))
             aux = np.tensordot(aux, _H, axes=([0, 3], [2, 0]))
             return np.tensordot(aux, _R, axes=([0, 3], [2, 1])).reshape(-1)
 
-        def _rmatvec(v: np.ndarray, _L=L, _H=H, _R=R, _vs=v_shape) -> np.ndarray:
+        def _rmatvec(
+            v: np.ndarray,
+            _L: np.ndarray = L,
+            _H: np.ndarray = H,
+            _R: np.ndarray = R,
+            _vs: tuple[int, ...] = v_shape,
+        ) -> np.ndarray:
             v = v.reshape(_vs)
             aux = np.tensordot(v, _L.conj(), axes=(0, 0))
             aux = np.tensordot(aux, _H.conj(), axes=([0, 2], [1, 0]))
             return np.tensordot(aux, _R.conj(), axes=([0, 3], [0, 1])).reshape(-1)
 
-        def _trace(_L=L, _H=H, _R=R) -> complex:
+        def _trace(
+            _L: np.ndarray = L, _H: np.ndarray = H, _R: np.ndarray = R
+        ) -> complex:
             l_c = np.trace(_L, axis1=0, axis2=2)
             w_ce = np.trace(_H, axis1=1, axis2=2)
             r_e = np.trace(_R, axis1=0, axis2=2)
@@ -161,19 +194,33 @@ class QuadraticForm:
         n = b * k * l * f
         dtype = np.result_type(L.dtype, R.dtype, H.dtype)
 
-        def _matvec(v: np.ndarray, _L=L, _H=H, _R=R, _vs=v_shape) -> np.ndarray:
+        def _matvec(
+            v: np.ndarray,
+            _L: np.ndarray = L,
+            _H: np.ndarray = H,
+            _R: np.ndarray = R,
+            _vs: tuple[int, ...] = v_shape,
+        ) -> np.ndarray:
             v = v.reshape(_vs)
             aux = np.tensordot(v, _L, ((0,), (2,)))
             aux = np.tensordot(aux, _H, ((0, 1, 4), (2, 4, 0)))
             return np.tensordot(aux, _R, ((0, 4), (2, 1))).reshape(-1)
 
-        def _rmatvec(v: np.ndarray, _L=L, _H=H, _R=R, _vs=v_shape) -> np.ndarray:
+        def _rmatvec(
+            v: np.ndarray,
+            _L: np.ndarray = L,
+            _H: np.ndarray = H,
+            _R: np.ndarray = R,
+            _vs: tuple[int, ...] = v_shape,
+        ) -> np.ndarray:
             v = v.reshape(_vs)
             aux = np.tensordot(v, _L.conj(), axes=(0, 0))
             aux = np.tensordot(aux, _H.conj(), axes=([3, 0, 1], [0, 1, 3]))
             return np.tensordot(aux, _R.conj(), axes=([0, 4], [0, 1])).reshape(-1)
 
-        def _trace(_L=L, _H=H, _R=R) -> complex:
+        def _trace(
+            _L: np.ndarray = L, _H: np.ndarray = H, _R: np.ndarray = R
+        ) -> complex:
             l_c = np.trace(_L, axis1=0, axis2=2)
             tmp = np.trace(_H, axis1=1, axis2=2)
             w_ce = np.trace(tmp, axis1=1, axis2=2)
