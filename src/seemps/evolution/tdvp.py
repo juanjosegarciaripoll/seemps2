@@ -1,46 +1,25 @@
 from __future__ import annotations
 
 import numpy as np
-from scipy.sparse.linalg import expm_multiply
+from scipy.sparse.linalg import LinearOperator, expm_multiply
 from seemps.state import MPS, CanonicalMPS, Strategy, DEFAULT_STRATEGY
 from seemps.cython import _contract_last_and_first
-from seemps.optimization.dmrg import (
-    QuadraticForm,
-    DMRGMatrixOperator,
-    OneSiteDMRGOperator,
-)
 from seemps.operators import MPO
+from seemps.operators.quadratic import QuadraticForm
 from seemps.evolution.common import ode_solver, ODECallback, TimeSpan
 
 
-class TDVPForm(QuadraticForm):
-    def one_site_Hamiltonian(self, i: int) -> OneSiteDMRGOperator:
-        return OneSiteDMRGOperator(  # pyright: ignore[reportCallIssue]
-            self.left_env[i],  # pyright: ignore[reportArgumentType]
-            self.H[i],  # pyright: ignore[reportArgumentType]
-            self.right_env[i],  # pyright: ignore[reportArgumentType]
-        )
-
-    def two_site_Hamiltonian(self, i: int) -> DMRGMatrixOperator:
-        assert i == self.site
-        return DMRGMatrixOperator(  # pyright: ignore[reportCallIssue]
-            self.left_env[i],  # pyright: ignore[reportArgumentType]
-            _contract_last_and_first(self.H[i], self.H[i + 1]),  # pyright: ignore[reportArgumentType]
-            self.right_env[i + 1],  # pyright: ignore[reportArgumentType]
-        )
-
-
 def _evolve(
-    operator: OneSiteDMRGOperator | DMRGMatrixOperator,
+    operator: LinearOperator,
     tensor: np.ndarray,
     factor: float | complex,
     normalize: bool = False,
 ) -> np.ndarray:
     """Apply time evolution operator to tensor."""
     shape = tensor.shape
-    v = expm_multiply(
-        factor * operator, tensor.ravel(), traceA=factor * operator.trace()
-    )
+    operator_trace = getattr(operator, "trace", None)
+    traceA = None if operator_trace is None else factor * operator_trace()
+    v = expm_multiply(factor * operator, tensor.ravel(), traceA=traceA)
     if normalize:
         v = v / np.linalg.norm(v)
 
@@ -53,33 +32,33 @@ def tdvp_step(
     if not isinstance(state, CanonicalMPS):
         state = CanonicalMPS(state, center=0, strategy=strategy)
 
-    QF = TDVPForm(H, state, start=0)
+    QF = QuadraticForm(H, state, start=0)
     normalize = strategy.get_normalize_flag()
 
     # Sweep Right
     for i in range(H.size - 1):
         # Evolve 2-site
-        Op2 = QF.two_site_Hamiltonian(i)
+        Op2 = QF.two_site_operator(i)
         A2 = _contract_last_and_first(QF.state[i], QF.state[i + 1])
         A2 = _evolve(Op2, A2, -0.5 * dt, normalize)
         QF.update_2site_right(A2, i, strategy)
 
         # Evolve 1-site backward
         if i < H.size - 2:
-            Op1 = QF.one_site_Hamiltonian(i + 1)
+            Op1 = QF.one_site_operator(i + 1)
             QF.state[i + 1] = _evolve(Op1, QF.state[i + 1], 0.5 * dt, normalize)
 
     # Sweep Left
     for i in range(H.size - 2, -1, -1):
         # Evolve 2-site
-        Op2 = QF.two_site_Hamiltonian(i)
+        Op2 = QF.two_site_operator(i)
         A2 = _contract_last_and_first(QF.state[i], QF.state[i + 1])
         A2 = _evolve(Op2, A2, -0.5 * dt, normalize)
         QF.update_2site_left(A2, i, strategy)
 
         # Evolve 1-site backward
         if i > 0:
-            Op1 = QF.one_site_Hamiltonian(i)
+            Op1 = QF.one_site_operator(i)
             QF.state[i] = _evolve(Op1, QF.state[i], 0.5 * dt, normalize)
 
     return QF.state
