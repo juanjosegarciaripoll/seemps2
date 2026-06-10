@@ -155,6 +155,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
 
     Examples
     --------
+    >>> from seemps.state import random_uniform_mps
     >>> state = random_uniform_mps(2, 3)
     >>> U = LocalRotationsLayer(register_size=state.size, operator="Sz")
     >>> Ustate = U @ state
@@ -307,8 +308,11 @@ class HamiltonianEvolutionLayer(ParameterizedCircuit):
 
     Examples
     --------
+    >>> from seemps.state import random_uniform_mps
+    >>> from seemps.hamiltonians import HeisenbergHamiltonian
+    >>> H = HeisenbergHamiltonian(3).to_mpo()
     >>> state = random_uniform_mps(2, 3)
-    >>> U = LocalRotationsLayer(register_size=state.size, operator="Sz")
+    >>> U = HamiltonianEvolutionLayer(H)
     >>> Ustate = U @ state
     """
 

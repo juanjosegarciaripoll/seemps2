@@ -1,5 +1,9 @@
 Version 3.0.1
 =============
+* Docstring examples are now executed as doctests within the unit test
+  suite, ensuring the documented examples stay correct. Fixed the examples
+  that had rotted.
+
 * Rearchitected tests to always use preseeded RNG for better reproducibility.
 
 * Simplified the PolynomialExpansion class hierarchy to allow for other

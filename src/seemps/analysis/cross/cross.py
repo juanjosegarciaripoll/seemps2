@@ -140,11 +140,13 @@ class CrossInterpolation:
 
         Examples
         --------
-        >>> combine_indices(np.array([[1, 2, 3], [4, 5, 6]]), np.array([[0], [1]]))
+        >>> CrossInterpolation.combine_indices(
+        ...     np.array([[1, 2, 3], [4, 5, 6]]), np.array([[0], [1]])
+        ... )
         array([[1, 2, 3, 0],
-            [1, 2, 3, 1],
-            [4, 5, 6, 0],
-            [4, 5, 6, 1]])
+               [1, 2, 3, 1],
+               [4, 5, 6, 0],
+               [4, 5, 6, 1]])
         """
 
         def cartesian_column(A: Matrix, B: Matrix) -> Matrix:

@@ -67,9 +67,12 @@ def basis_states_projector_mpo(
     Examples
     --------
     Projector onto the :math:`|0,0,0\rangle` state.
-    >>> P000 = basis_states_projector_mpo([0,0,0], [2,2,2])
+
+    >>> P000 = basis_states_projector_mpo([[0, 0, 0]], [2, 2, 2])
+
     Composite operator :math:`I\otimes|0\rangle\langle0|\otimes I` state.
-    >>> P000 = basis_states_projector_mpo([ALL_STATES,0,ALL_STATES], [2,2,2])
+
+    >>> P = basis_states_projector_mpo([[ALL_STATES, 0, ALL_STATES]], [2, 2, 2])
     """
     tensors = []
     D = len(selectors)

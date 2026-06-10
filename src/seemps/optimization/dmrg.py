@@ -80,7 +80,7 @@ def dmrg(
     if isinstance(H, NNHamiltonian):
         H = H.to_mpo()
     if guess is None:
-        guess = random_mps(H.dimensions(), D=2)
+        guess = random_mps(H.physical_dimensions(), D=2)
     if tol_up is None:
         tol_up = abs(tol)
     if tol_eigs is None:

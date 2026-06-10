@@ -1,4 +1,5 @@
 from . import (
+    test_doctests,
     test_tools,
     test_contractions,
     test_strategy,
@@ -14,6 +15,7 @@ from . import (
 )
 
 __all__ = [
+    "test_doctests",
     "test_tools",
     "test_contractions",
     "test_strategy",

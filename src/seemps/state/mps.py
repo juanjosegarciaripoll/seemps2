@@ -84,8 +84,8 @@ class MPS(array.TensorArray):
 
         Examples
         --------
-        >>> A = np.ones(1,2,3)
-        >>> B = np.ones(3,2,1)
+        >>> A = np.ones((1, 2, 3))
+        >>> B = np.ones((3, 2, 1))
         >>> mps = MPS([A, B])
         >>> mps.bond_dimensions()
         [1, 3, 1]
