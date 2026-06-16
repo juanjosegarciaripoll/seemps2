@@ -6,22 +6,20 @@ from seemps.evolution import ODECallback, TimeSpan, runge_kutta
 
 
 class TestRungeKutta(RKTypeEvolutionTestcase):
-    def solve_Schroedinger(
+    def solve_ode(
         self,
-        H: MPO,
+        L: MPO,
         time: TimeSpan,
         state: MPS,
         steps: int = 1000,
         strategy: Strategy = DEFAULT_STRATEGY,
         callback: ODECallback | None = None,
-        itime: bool = False,
     ) -> MPS | list[Any]:
         return runge_kutta(
-            H,
+            L,
             time,
             state,
             steps=steps,
             strategy=strategy,
             callback=callback,
-            itime=itime,
         )
