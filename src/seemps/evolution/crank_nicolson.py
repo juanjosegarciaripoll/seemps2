@@ -8,7 +8,7 @@ from .common import ODECallback, TimeSpan, ode_solver
 
 
 def crank_nicolson(
-    H: MPO,
+    L: MPO,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
@@ -16,9 +16,8 @@ def crank_nicolson(
     maxiter_cgs: int = 50,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ):
-    r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
+    r"""Solve ``d|state>/dt = L|state>`` using the Crank-Nicolson method.
 
     See :func:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
@@ -33,24 +32,22 @@ def crank_nicolson(
     A: MPO | None = None
     B: MPO | None = None
     last_dt: float = np.inf
-    id = id_mpo(state.size, strategy=H.strategy)
+    id = id_mpo(state.size, strategy=L.strategy)
 
     def evolve_for_dt(
         t: float,
         state: MPS,
-        factor: complex | float,
         dt: float,
-        normalize_strategy: Strategy,
+        strategy: Strategy,
     ) -> MPS:
         nonlocal A, B, last_dt
         if last_dt != dt or A is None or B is None:
             last_dt = dt
-            idt = factor * dt
-            A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt], strategy=H.strategy).join(
-                strategy=H.strategy
+            A = MPOSum(mpos=[id, L], weights=[1, -0.5 * dt], strategy=L.strategy).join(
+                strategy=L.strategy
             )
-            B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt], strategy=H.strategy).join(
-                strategy=H.strategy
+            B = MPOSum(mpos=[id, L], weights=[1, 0.5 * dt], strategy=L.strategy).join(
+                strategy=L.strategy
             )
         # TODO: Consider using dmrg_solve or other algorithm
         state, _ = cgs_solve(
@@ -58,9 +55,9 @@ def crank_nicolson(
             B @ state,
             guess=state,
             tolerance=tol_cgs,
-            strategy=normalize_strategy,
+            strategy=strategy,
             maxiter=maxiter_cgs,
         )
         return state
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)

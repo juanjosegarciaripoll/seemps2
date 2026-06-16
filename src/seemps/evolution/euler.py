@@ -8,41 +8,19 @@ from .common import ode_solver, ODECallback, TimeSpan
 
 
 def euler(
-    H: MPO,
+    L: MPO,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ):
-    r"""Solve a Schrodinger equation using the Euler method.
+    r"""Solve ``d|state>/dt = L|state>`` using the Euler method.
 
-    Integrates the Schrodinger equation in real or imaginary time using
-    a first order Euler method. The equation is defined as
-
-    .. math::
-        i\frac{d}{dt}\psi = H(t) \psi
-
-    in real time and as
+    Integrates a linear ODE using the update
 
     .. math::
-        \frac{d}{dt}\psi = -H(t) \psi
-
-    in imaginary time evolution.
-
-    The integration algorithm is very simple. It is
-
-    .. math::
-        \psi(t_{n+1}) = \psi(t_{n}) - i \delta t H \psi(t_{n})
-
-    for real time and
-
-    .. math::
-        \psi(t_{n+1}) = \psi(t_{n}) - \delta t H \psi(t_{n})
-
-    for imaginary time evolution. The integration step is deduced from
-    the arguments as explained below.
+        \psi(t_{n+1}) = \psi(t_{n}) + \delta t L \psi(t_{n}).
 
     The `time` denotes the integration interval.
 
@@ -62,8 +40,8 @@ def euler(
 
     Parameters
     ----------
-    H : MPO
-        Hamiltonian in MPO form.
+    L : MPO
+        Linear operator in MPO form.
     time : Real | tuple[Real, Real] | Sequence[Real]
         Integration interval, or sequence of time steps.
     state : MPS
@@ -74,8 +52,6 @@ def euler(
         Truncation strategy for MPO and MPS algebra.
     callback : Callable[[float, MPS], Any] | None
         A callable called after each iteration (defaults to None).
-    itime : bool, default = False
-        Whether to solve the imaginary time evolution problem.
 
     Returns
     -------
@@ -86,32 +62,29 @@ def euler(
     def evolve_for_dt(
         t: float,
         state: MPS,
-        factor: complex | float,
         dt: float,
-        normalize_strategy: Strategy,
+        strategy: Strategy,
     ) -> MPS:
-        idt = factor * dt
-        return simplify(state - idt * (H @ state), strategy=normalize_strategy)
+        return simplify(state + dt * (L @ state), strategy=strategy)
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)
 
 
 def euler2(
-    H: MPO,
+    L: MPO,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ):
-    r"""Solve a Schrodinger equation using the 2nd order Euler method.
+    r"""Solve ``d|state>/dt = L|state>`` using the 2nd order Euler method.
 
-    Implements a two-step integration method. In imaginary time this is
+    Implements a two-step integration method,
 
     .. math::
-        \xi(t_{n}) = 2 \psi(t_{n}) - i \delta t H \psi(t_{n})
-        \psi(t_{n+1}) = \psi(t_{n}) - (i \delta t/2) H \xi(t_{n})
+        \xi(t_{n}) = 2 \psi(t_{n}) + \delta t L \psi(t_{n})
+        \psi(t_{n+1}) = \psi(t_{n}) + (\delta t/2) L \xi(t_{n})
 
     The Euler algorithm is a very bad integrator and is offered only for
     illustrative purposes. See :func:`euler` to understand the parameters
@@ -121,29 +94,26 @@ def euler2(
     def evolve_for_dt(
         t: float,
         state: MPS,
-        factor: complex | float,
         dt: float,
-        normalize_strategy: Strategy,
+        strategy: Strategy,
     ) -> MPS:
-        idt = factor * dt
-        xi = simplify(2.0 * state - idt * (H @ state), strategy=strategy)
-        return simplify(state - (0.5 * idt) * (H @ xi), strategy=normalize_strategy)
+        xi = simplify(2.0 * state + dt * (L @ state), strategy=strategy)
+        return simplify(state + (0.5 * dt) * (L @ xi), strategy=strategy)
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)
 
 
 def implicit_euler(
-    H: MPO,
+    L: MPO,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
     tolerance: float = 1e-10,
     maxiter_cgs: int = 50,
 ):
-    r"""Solve a Schrodinger equation using a second order implicit Euler method.
+    r"""Solve ``d|state>/dt = L|state>`` using a 2nd order implicit Euler method.
 
     See :func:`seemps.evolution.euler` for a description of the missing
     function arguments and the function's output
@@ -163,24 +133,22 @@ def implicit_euler(
     def evolve_for_dt(
         t: float,
         state: MPS,
-        factor: complex | float,
         dt: float,
-        normalize_strategy: Strategy,
+        strategy: Strategy,
     ) -> MPS:
         nonlocal A, B, last_dt
         if last_dt != dt or A is None or B is None:
             last_dt = dt
-            idt = factor * dt
-            A = MPOSum(mpos=[id, H], weights=[1, 0.5 * idt]).join(strategy=strategy)
-            B = MPOSum(mpos=[id, H], weights=[1, -0.5 * idt]).join(strategy=strategy)
+            A = MPOSum(mpos=[id, L], weights=[1, -0.5 * dt]).join(strategy=strategy)
+            B = MPOSum(mpos=[id, L], weights=[1, 0.5 * dt]).join(strategy=strategy)
             # TODO: Fixed tolerance criteria
             state, _ = cgs_solve(
                 A,
                 B @ state,
-                strategy=normalize_strategy,
+                strategy=strategy,
                 tolerance=tolerance,
                 maxiter=maxiter_cgs,
             )
         return state
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)
