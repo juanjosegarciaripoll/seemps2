@@ -173,6 +173,7 @@ class MPOSum(object):
         # TODO: Is this really needed?
         if strategy is None:
             strategy = self.strategy
+        assert strategy is not None
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if simplify:
