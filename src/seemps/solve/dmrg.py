@@ -12,7 +12,9 @@ from ..operators import MPO
 from ..operators.quadratic import QuadraticForm
 
 
-_SOLVERS = {
+SolverFn = Callable[..., tuple[np.ndarray, int]]
+
+_SOLVERS: dict[str, SolverFn] = {
     "cg": scipy.sparse.linalg.cg,
     "bicg": scipy.sparse.linalg.bicg,
     "gmres": scipy.sparse.linalg.gmres,
@@ -40,15 +42,17 @@ def _solve_local(
     b_tensor: Tensor4,
     atol: float,
     rtol: float,
-    solver: Callable,
+    solver: SolverFn,
 ) -> Tensor4:
     """Solve the local two-site linear system at bond `i`."""
     Op = QF.two_site_operator(i)
     v = _contract_last_and_first(QF.state[i], QF.state[i + 1])
     b_flat = b_tensor.reshape(-1)
     x0 = v.reshape(-1)
-    tol = max(atol, rtol * np.linalg.norm(b_flat))
-    if np.linalg.norm(Op @ x0 - b_flat) <= tol:
+    # Early escape
+    residual_norm = float(np.linalg.norm(Op @ x0 - b_flat))
+    tol = max(atol, rtol * float(np.linalg.norm(b_flat)))
+    if residual_norm <= tol:
         return v
     x, _ = solver(Op, b_flat, x0, atol=atol, rtol=rtol)
     return x.reshape(v.shape)
@@ -60,7 +64,7 @@ def _sweep(
     direction: int,
     atol: float,
     rtol: float,
-    solver: Callable,
+    solver: SolverFn,
     strategy: Strategy,
 ) -> None:
     """One full two-site sweep updating `QF` and `LF` in place."""
@@ -145,7 +149,7 @@ def dmrg_solve(
         QF = QuadraticForm(A, guess, start=A.size - 2)
         LF = AntilinearForm(guess, b, center=A.size - 1)
 
-    residual: float = np.inf
+    residual: float | None = np.inf
     change_tol = max(rtol, atol / b_norm) if b_norm > 0 else rtol
     if compute_residuals:
         residual = (A @ QF.state - b).norm()
@@ -155,6 +159,7 @@ def dmrg_solve(
             logger.close()
             return QF.state, residual
 
+    psi_old: MPS | None = None
     for sweep in range(1, maxiter + 1):
         if not compute_residuals:
             psi_old = QF.state.copy()
@@ -168,6 +173,7 @@ def dmrg_solve(
                 logger(f"Converged below tolerance {tol}")
                 break
         else:
+            assert psi_old is not None # To make pyright happy
             change = _relative_change(QF.state, psi_old)
             logger(f"sweep={sweep}, relative_change={change}")
             if change <= change_tol:
