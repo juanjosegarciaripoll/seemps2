@@ -22,60 +22,54 @@ def split_step(
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
     hdaf_order: int = 10,
-    itime: bool = False,
 ) -> MPS | list[Any]:
-    """
-    Implements a second-order Strang splitting time evolution for a Hamiltonian :math:`H = -\\frac{1}{2}\\frac{d^2}{dx^2} + V(x)`.
+    r"""Solve the Schrödinger equation via second-order Strang splitting.
+
+    Evolves a state under the Hamiltonian
+
+    .. math::
+        H = -\frac{1}{2}\frac{d^2}{dx^2} + V(x)
+
+    by alternating half-steps of the potential propagator
+    :math:`e^{-i V(x) \delta t/2}` with a full kinetic step
+    :math:`e^{i \delta t/2 \, d^2/dx^2}` approximated via HDAF.
 
     Parameters
     ----------
     potential_func : Callable[[np.ndarray], np.ndarray]
-        A function representing V(x).
+        Function representing the potential :math:`V(x)`.
     time : TimeSpan
         Integration interval. Only constant time steps (float or tuple) are supported.
     state : MPS
-        The initial MPS wavefunction.
+        Initial MPS wavefunction.
     a : float
-        Start of the interval.
+        Left endpoint of the spatial interval.
     num_qubits : int
-        Number of qubits for the discretization.
+        Number of qubits for the discretization (:math:`2^N` grid points).
     dx : float
-        Step size.
+        Grid spacing.
     periodic : bool
-        If True, the interval is open [a, b) (Periodic BCs).
-        If False, it is closed [a, b] (Closed BCs).
+        If True, the interval is half-open :math:`[a, b)` (periodic BCs).
+        If False, it is closed :math:`[a, b]`.
     steps : int, default=1000
         Number of time steps.
     strategy : Strategy
         Truncation strategy for MPS simplification.
     callback : ODECallback | None
-        Function called after each step.
+        Called after each step; if provided, returns a list of callback values.
     hdaf_order : int, default=10
         Order of the HDAF approximation for the kinetic propagator.
-    itime : bool, default=False
-        Whether to perform imaginary time evolution.
 
     Returns
     -------
     MPS | list[Any]
-        The evolved state or callback results.
+        Evolved state, or list of callback values if `callback` is provided.
     """
-    # Build space
     size = 2**num_qubits
-    if periodic:
-        b = a + dx * size
-    else:
-        b = a + dx * (size - 1)
-
+    b = a + dx * (size if periodic else size - 1)
     interval = QuantizedInterval(a, b, num_qubits, endpoint_right=not periodic)
     mesh = Mesh([interval])
 
-    if itime:
-        factor: complex | float = 1.0
-    else:
-        factor = 1j
-
-    # Determine dt and steps
     if isinstance(time, (float, int)):
         start, stop = 0.0, float(time)
     elif isinstance(time, tuple):
@@ -84,55 +78,32 @@ def split_step(
         raise ValueError(
             "split_step only supports constant time steps (float or tuple)."
         )
-
     dt = (stop - start) / steps
 
-    # Potential Propagator exp(-factor * V(x) * dt / 2)
+    # Potential half-step: exp(-i * V(x) * dt/2)
     def propagator_func(x: np.ndarray) -> np.ndarray:
-        return np.exp(-factor * potential_func(x) * dt / 2)
+        return np.exp(-1j * potential_func(x) * (dt / 2))
 
     physical_dimensions = [2] * num_qubits
     map_matrix = mps_to_mesh_matrix([num_qubits], base=2)
     black_box = BlackBoxLoadMPS(propagator_func, mesh, map_matrix, physical_dimensions)
-    cross_results = cross_dmrg(black_box)
-    U_potential_mps = cross_results.mps
+    U_potential_mps = cross_dmrg(black_box).mps
 
-    # Kinetic Propagator exp(-factor * T * dt) with T = -0.5 * d^2/dx^2
-    hdaf_time: complex | float
-    if isinstance(factor, complex) and factor.imag != 0:
-        hdaf_time = dt  # Imaginary time
-    else:
-        hdaf_time = -1j * dt  # Real time
-
+    # Kinetic full-step: exp(-i * dt * K) with K = -1/2 d^2/dx^2
     U_kinetic_mpo = hdaf_mpo(
         num_qubits=num_qubits,
         dx=dx,
         M=hdaf_order,
-        time=hdaf_time,
+        time=dt,
         derivative=0,
         periodic=periodic,
         strategy=strategy,
     )
 
-    def evolve_for_dt(
-        t: float,
-        state: MPS,
-        factor: complex | float,
-        dt_step: float,
-        strategy: Strategy,
-    ) -> MPS:
-        # Apply half-step potential
-        state = U_potential_mps * state
-        state = simplify(state, strategy)
-
-        # Apply full-step kinetic
-        state = U_kinetic_mpo @ state
-        state = simplify(state, strategy)
-
-        # Apply half-step potential
-        state = U_potential_mps * state
-        state = simplify(state, strategy)
-
+    def evolve_for_dt(t: float, state: MPS, dt_step: float, strategy: Strategy) -> MPS:
+        state = simplify(U_potential_mps * state, strategy)
+        state = simplify(U_kinetic_mpo @ state, strategy)
+        state = simplify(U_potential_mps * state, strategy)
         return state
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)

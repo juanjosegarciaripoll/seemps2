@@ -30,6 +30,7 @@ class MPSArnoldiRepresentation:
     tol_ill_conditioning: float
     gamma: float
     orthogonalize: bool
+    _normalize_strategy: Strategy
     _eigenvector: CanonicalMPS | None
     _energy: float | None
     _variance: float | None
@@ -46,8 +47,9 @@ class MPSArnoldiRepresentation:
         self.H = self.empty
         self.N = self.empty
         self.V = []
-        self.strategy = strategy.replace(normalize=True)
+        self.strategy = strategy
         self.tol_ill_conditioning = float(tol_ill_conditioning)
+        self._normalize_strategy = strategy.replace(normalize=True)
         self._eigenvector = None
         self._variance = None
         self._energy = None
@@ -66,11 +68,11 @@ class MPSArnoldiRepresentation:
         if isinstance(v, CanonicalMPS):
             v.normalize_inplace()
         else:
-            v = simplify_mps(v, strategy=self.strategy)
+            v = simplify_mps(v, strategy=self._normalize_strategy)
         if self.orthogonalize and len(self.V):
             w = np.linalg.solve(self.N, [-scprod(vi, v) for vi in self.V])
             v = simplify_mps(
-                MPSSum([1] + w.tolist(), [v] + self.V), strategy=self.strategy
+                MPSSum([1] + w.tolist(), [v] + self.V), strategy=self._normalize_strategy
             )  # type: ignore
         n = np.asarray([scprod(vi, v) for vi in self.V]).reshape(-1, 1)
         new_N = np.block([[self.N, n], [n.T.conj(), 1.0]])
@@ -98,13 +100,13 @@ class MPSArnoldiRepresentation:
         eigenvalues, eigenstates = scipy.linalg.eig(self.H, self.N)
         eigenvalues = eigenvalues.real
         ndx = np.argmin(eigenvalues)
-        v = simplify_mps(MPSSum(eigenstates[:, ndx], self.V), strategy=self.strategy)
+        v = simplify_mps(MPSSum(eigenstates[:, ndx], self.V), strategy=self._normalize_strategy)
         if self.gamma == 0 or self._eigenvector is None:
             new_v = v
         else:
             new_v = simplify_mps(
                 MPSSum([1 - self.gamma, self.gamma], [v, self._eigenvector]),
-                strategy=self.strategy,
+                strategy=self._normalize_strategy,
             )
         new_v = self.restart_with_vector(new_v)
         self._eigenvector = v
