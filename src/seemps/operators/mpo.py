@@ -738,5 +738,12 @@ class MPOList(object):
         return MPOList([o.reverse() for o in self.mpos], self.strategy)
 
 
+# FIXME: `MPOList` should be renamed to `MPOProd`, since it represents a
+# *product* of MPOs, not an arbitrary list. `MPOProd` is provided as an alias
+# for now to avoid a disruptive rename; replace `MPOList` with `MPOProd`
+# throughout the code base and drop this alias.
+MPOProd = MPOList
+
+
 from ..state.simplification import simplify_mps  # noqa: E402
 from .mposum import MPOSum  # noqa: E402
