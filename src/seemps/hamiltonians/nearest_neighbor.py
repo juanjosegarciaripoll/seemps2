@@ -9,7 +9,7 @@ from abc import abstractmethod, ABC
 from ..cython import destructively_truncate_vector
 from ..operators import MPO
 from ..state import schmidt, DEFAULT_STRATEGY, Strategy
-from ..typing import SparseOperator, Operator, Real
+from ..typing import SparseOperator, Operator, Real, Tensor4
 from ..tools import σx, σy, σz
 
 
@@ -117,7 +117,7 @@ class NNHamiltonian(ABC):
         MPO
             Matrix-product operator.
         """
-        tensors = [
+        tensors: list[Tensor4] = [
             np.zeros((2, di, di, 2))
             for i in range(self.size)
             for di in [self.dimension(i)]
