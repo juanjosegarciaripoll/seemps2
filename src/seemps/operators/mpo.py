@@ -302,6 +302,21 @@ class MPO(TensorArray):
             return MPOList(b.mpos + [self], b.strategy)
         raise TypeError(f"Cannot multiply MPO with {b}")
 
+    @overload
+    def __rmatmul__(self, b: MPS) -> MPS: ...
+
+    @overload
+    def __rmatmul__(self, b: MPSSum) -> MPS | MPSSum: ...
+
+    def __rmatmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+        """Implement multiplication `b @ self` of a state `b` by this operator.
+
+        Following the `numpy` convention, in which `v @ M` contracts a vector
+        with the rows of a matrix, this returns the state ``self.T @ b``."""
+        if isinstance(b, (MPS, MPSSum)):
+            return self.T.apply(b)
+        raise TypeError(f"Cannot multiply {b} with MPO")
+
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
     # needed. In this case, 'dimensions' will only list the dimensions of the added
@@ -624,6 +639,21 @@ class MPOList(object):
         if isinstance(b, MPOList):
             return MPOList(b.mpos + self.mpos, b.strategy)
         raise TypeError(f"Cannot multiply MPO with {b}")
+
+    @overload
+    def __rmatmul__(self, b: MPS) -> MPS: ...
+
+    @overload
+    def __rmatmul__(self, b: MPSSum) -> MPS | MPSSum: ...
+
+    def __rmatmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+        """Implement multiplication `b @ self` of a state `b` by this operator.
+
+        Following the `numpy` convention, in which `v @ M` contracts a vector
+        with the rows of a matrix, this returns the state ``self.T @ b``."""
+        if isinstance(b, (MPS, MPSSum)):
+            return self.T.apply(b)
+        raise TypeError(f"Cannot multiply {b} with MPOList")
 
     def extend(
         self, L: int, sites: list[int] | None = None, dimensions: int | list[int] = 2
