@@ -57,7 +57,8 @@ def write_mps(parent: h5py.File | h5py.Group, name: str, M: MPS) -> None:
     >>> seemps.hdf5.write_mps(file, "state", mps)
     >>> file.close()
     """
-    assert isinstance(M, MPS)
+    if not isinstance(M, MPS):
+        raise TypeError("write_mps() requires an MPS object")
     g = parent.create_group(name)
     g.attrs["type"] = "MPS"
     g.attrs["version"] = 1
@@ -121,7 +122,8 @@ def write_mpo(parent: h5py.File | h5py.Group, name: str, M: MPO) -> None:
     M : MPO
         The quantum operator to save.
     """
-    assert isinstance(M, MPO)
+    if not isinstance(M, MPO):
+        raise TypeError("write_mpo() requires an MPO object")
     g = parent.create_group(name)
     g.attrs["type"] = "MPO"
     g.attrs["version"] = 1

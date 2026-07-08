@@ -35,7 +35,8 @@ class MPOSum(object):
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         self.mpos = mpos = list(mpos)
-        assert len(mpos) >= 1
+        if len(mpos) < 1:
+            raise ValueError("MPOSum requires at least one MPO")
         self.size = self.mpos[0].size
         self.weights = [1.0] * len(mpos) if weights is None else list(weights)
         self.strategy = strategy

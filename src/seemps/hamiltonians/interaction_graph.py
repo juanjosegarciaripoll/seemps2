@@ -58,7 +58,8 @@ class InteractionGraph:
     _interactions: list[str]
 
     def __init__(self, dimensions: list[int]):
-        assert all(isinstance(d, int) and (d > 1) for d in dimensions)
+        if not all(isinstance(d, int) and (d > 1) for d in dimensions):
+            raise ValueError("All physical dimensions must be integers greater than 1")
         self.size = len(dimensions)
         self.dimensions = dimensions
         self._last_key = None
@@ -99,9 +100,12 @@ class InteractionGraph:
 
     def add_local_term(self, i: int, O: Operator) -> None:
         """Add a single local term `O` acting on the i-th component."""
-        assert 0 <= i < self.size
-        assert O.ndim == 2
-        assert O.shape[0] == self.dimensions[i] and O.shape[1] == self.dimensions[i]
+        if not 0 <= i < self.size:
+            raise IndexError("Site index i out of range")
+        if O.ndim != 2:
+            raise ValueError("Local term operator must be a matrix")
+        if O.shape[0] != self.dimensions[i] or O.shape[1] != self.dimensions[i]:
+            raise ValueError("Local term operator does not match the site dimension")
         self._interactions.append(
             self._identity[:i] + self._operator_name(O) + self._identity[i + 1 :]
         )
@@ -134,7 +138,8 @@ class InteractionGraph:
         """
         if isinstance(weights, (float, int)):
             weights = weights * np.ones(self.size - 1)
-        assert len(weights) == (self.size - 1)
+        if len(weights) != (self.size - 1):
+            raise ValueError("weights must have length size - 1")
         for i, w in enumerate(weights):
             self.add_interaction_term(i, A, i + 1, w * B)
 
@@ -157,7 +162,8 @@ class InteractionGraph:
         keep_diagonals : bool
             If False, the terms :math:`A_iB_i` are not included (defaults to False).
         """
-        assert J.shape == (self.size, self.size)
+        if J.shape != (self.size, self.size):
+            raise ValueError("J must be a (size, size) matrix")
         J = to_dense_operator(J)
         A = to_dense_operator(A)
         if B is None:

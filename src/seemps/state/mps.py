@@ -434,11 +434,14 @@ class MPS(array.TensorArray):
             final_dimensions = [dimensions] * max(L - self.size, 0)
         else:
             final_dimensions = dimensions.copy()
-            assert len(dimensions) == L - self.size
+            if len(dimensions) != L - self.size:
+                raise ValueError("len(dimensions) must equal L - self.size")
         if sites is None:
             sites = range(self.size)
-        assert L >= self.size
-        assert len(sites) == self.size
+        if L < self.size:
+            raise ValueError("New size L must be at least the current size")
+        if len(sites) != self.size:
+            raise ValueError("len(sites) must equal the current size")
 
         data: list[np.ndarray] = [np.ndarray(())] * L
         for ndx, A in zip(sites, self):

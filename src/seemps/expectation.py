@@ -92,7 +92,8 @@ def product_expectation(state: MPS, operator_list: list[Operator]) -> Weight:
     float | complex
         Expectation value.
     """
-    assert len(state) == len(operator_list)
+    if len(state) != len(operator_list):
+        raise ValueError("state and operator_list must have the same length")
     # TODO: Choose contraction order based on whether the state is
     # in a given canonical order or another
     rho = _begin_environment()

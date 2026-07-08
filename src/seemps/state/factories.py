@@ -31,7 +31,8 @@ def product_state(
 
     def to_tensor(v: VectorLike | Iterable[VectorLike]) -> Tensor3:
         v = np.asarray(v, copy=True)
-        assert v.ndim == 1
+        if v.ndim != 1:
+            raise ValueError("Each site vector must be one-dimensional")
         return v.reshape(1, v.size, 1)
 
     if length is not None:
@@ -96,7 +97,8 @@ def graph_state(n: int) -> MPS:
     # Choose entangled pair state as : |00>+|11>
     # Apply Hadamard H on the left virtual spins
     # (which are the right spins of the entangled bond pairs)
-    assert n > 1
+    if n <= 1:
+        raise ValueError("graph_state requires n > 1")
     H = np.array([[1, 1], [1, -1]])
     # which gives |0>x(|0>+|1>)+|1>x(|0>-|1>) = |00>+|01>+|10>-|11>
     # Project as  |0><00| + |1><11|
@@ -113,7 +115,8 @@ def graph_state(n: int) -> MPS:
 
 def AKLT(n: int) -> MPS:
     """Create an :class:`MPS` for the AKLT spin-1 state with `n` sites."""
-    assert n > 1
+    if n <= 1:
+        raise ValueError("AKLT requires n > 1")
     # Choose entangled pair state as : |00>+|11>
     # Apply i * Pauli Y matrix on the left virtual spins (which are the right spins of the entangled bond pairs)
     iY = np.array([[0, 1], [-1, 0]])

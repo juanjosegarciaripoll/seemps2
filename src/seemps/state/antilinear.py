@@ -36,7 +36,8 @@ class AntilinearForm:
     center: int
 
     def __init__(self, bra: MPS, ket: MPS, center: int = 0):
-        assert bra.size == ket.size
+        if bra.size != ket.size:
+            raise ValueError("bra and ket must have the same size")
         size = bra.size
         ρ = _begin_environment()
         R = [ρ] * size
@@ -121,7 +122,8 @@ class AntilinearForm:
         """
         prev = self.center
         nxt = prev + 1
-        assert nxt < self.size
+        if nxt >= self.size:
+            raise RuntimeError("Cannot move the center beyond the last site")
         self.L[nxt] = _update_left_environment(
             self.bra[prev], self.ket[prev], self.L[prev]
         )
@@ -136,7 +138,8 @@ class AntilinearForm:
         """
         prev = self.center
         nxt = prev - 1
-        assert nxt >= 0
+        if nxt < 0:
+            raise RuntimeError("Cannot move the center before the first site")
         self.R[nxt] = _update_right_environment(
             self.bra[prev], self.ket[prev], self.R[prev]
         )

@@ -58,9 +58,12 @@ class CrossStrategy:
     """
 
     def __post_init__(self) -> None:
-        assert self.num_samples > 0
-        assert self.range_iters[0] > 0
-        assert self.range_max_bonds[0] > 0
+        if self.num_samples <= 0:
+            raise ValueError("num_samples must be positive")
+        if self.range_iters[0] <= 0:
+            raise ValueError("range_iters lower bound must be positive")
+        if self.range_max_bonds[0] <= 0:
+            raise ValueError("range_max_bonds lower bound must be positive")
 
     @abstractmethod
     def make_interpolator(

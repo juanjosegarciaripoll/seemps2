@@ -256,7 +256,8 @@ class MPO(TensorArray):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(state, MPSSum):
-            assert self.size == state.size
+            if self.size != state.size:
+                raise ValueError("MPO and state must have the same size")
             for i, (w, mps) in enumerate(zip(state.weights, state.states)):
                 Ostate = w * MPS(
                     [_mpo_multiply_tensor(A, B) for A, B in zip(self, mps)],
@@ -264,7 +265,8 @@ class MPO(TensorArray):
                 )
                 state = Ostate if i == 0 else state + Ostate
         elif isinstance(state, MPS):
-            assert self.size == state.size
+            if self.size != state.size:
+                raise ValueError("MPO and state must have the same size")
             state = MPS(
                 [_mpo_multiply_tensor(A, B) for A, B in zip(self, state)],
                 error=state.error(),
@@ -332,11 +334,14 @@ class MPO(TensorArray):
             final_dimensions = [dimensions] * max(L - self.size, 0)
         else:
             final_dimensions = dimensions.copy()
-            assert len(dimensions) == L - self.size
+            if len(dimensions) != L - self.size:
+                raise ValueError("len(dimensions) must equal L - self.size")
         if sites is None:
             sites = range(self.size)
-        assert L >= self.size
-        assert len(sites) == self.size
+        if L < self.size:
+            raise ValueError("New size L must be at least the current size")
+        if len(sites) != self.size:
+            raise ValueError("len(sites) must equal the current size")
 
         data: list[np.ndarray] = [np.ndarray(())] * L
         for ndx, A in zip(sites, self):
@@ -450,7 +455,8 @@ class MPOList(object):
     size: int
 
     def __init__(self, mpos: Sequence[MPO], strategy: Strategy = DEFAULT_STRATEGY):
-        assert len(mpos) > 1
+        if len(mpos) <= 1:
+            raise ValueError("MPOList requires more than one MPO")
         self.mpos = mpos = list(mpos)
         self.size = mpos[0].size
         self.strategy = strategy

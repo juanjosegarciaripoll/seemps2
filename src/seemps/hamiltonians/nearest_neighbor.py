@@ -193,8 +193,9 @@ class ConstantNNHamiltonian(NNHamiltonian):
         #
         super(ConstantNNHamiltonian, self).__init__(size, True)
         if isinstance(dimension, list):
+            if len(dimension) != size:
+                raise ValueError("len(dimension) must equal the Hamiltonian size")
             self.dimensions = dimension
-            assert len(dimension) == size
         else:
             self.dimensions = [dimension] * size
         self.interactions = [

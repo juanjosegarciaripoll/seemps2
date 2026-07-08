@@ -201,7 +201,8 @@ class LocalRotationsLayer(ParameterizedCircuit):
     def apply_inplace(
         self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS:
-        assert self.register_size == state.size
+        if self.register_size != state.size:
+            raise ValueError("Circuit register size does not match the state size")
         if parameters is None:
             parameters = self.parameters
         if len(parameters) == 1:
@@ -256,7 +257,8 @@ class TwoQubitGatesLayer(UnitaryCircuit):
     def apply_inplace(
         self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS:
-        assert self.register_size == state.size
+        if self.register_size != state.size:
+            raise ValueError("Circuit register size does not match the state size")
         if parameters is not None and len(parameters) > 0:
             raise Exception("{self.cls} does not accept parameters")
         if not isinstance(state, CanonicalMPS):
@@ -330,7 +332,8 @@ class HamiltonianEvolutionLayer(ParameterizedCircuit):
         register_size = len(H)
         if not all(d == 2 for d in H.physical_dimensions()):
             raise Exception("Hamiltonian not defined over qubit spaces")
-        assert order > 1 and isinstance(order, int)
+        if not (isinstance(order, int) and order > 1):
+            raise ValueError("order must be an integer greater than 1")
 
         default_parameters = [default_parameter]
         super().__init__(register_size, 1, default_parameters, strategy)
@@ -341,10 +344,12 @@ class HamiltonianEvolutionLayer(ParameterizedCircuit):
     def apply_inplace(
         self, state: MPS, parameters: Parameters | None = None
     ) -> CanonicalMPS:
-        assert self.register_size == state.size
+        if self.register_size != state.size:
+            raise ValueError("Circuit register size does not match the state size")
         if parameters is None:
             parameters = self.parameters
-        assert len(parameters) == 1
+        if len(parameters) != 1:
+            raise ValueError("This circuit accepts exactly one parameter")
         angle = parameters[0]
         if angle == 0:
             return CanonicalMPS(state)

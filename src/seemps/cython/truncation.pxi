@@ -327,7 +327,8 @@ cdef double _truncate_absolute_singular_value(cnp.ndarray s, Strategy strategy):
     return max_error
 
 def destructively_truncate_vector(s, Strategy strategy) -> float:
-    assert (cnp.PyArray_Check(s) and
+    if not (cnp.PyArray_Check(s) and
             cnp.PyArray_TYPE(<cnp.ndarray>s) == cnp.NPY_FLOAT64 or
-            cnp.PyArray_NDIM(<cnp.ndarray>s) == 1)
+            cnp.PyArray_NDIM(<cnp.ndarray>s) == 1):
+        raise TypeError("destructively_truncate_vector requires a 1D float64 ndarray")
     return strategy._truncate(<cnp.ndarray>s, strategy)
