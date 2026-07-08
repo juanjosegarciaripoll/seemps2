@@ -47,7 +47,7 @@ def interpret_operator(op: str | Operator) -> DenseOperator:
     if isinstance(op, str):
         O = known_operators[op.lower()]
     elif not isinstance(op, np.ndarray) or op.ndim != 2 or op.shape[0] != op.shape[1]:
-        raise Exception(f"Invalid qubit operator of type '{type(op)}")
+        raise TypeError(f"Invalid qubit operator of type '{type(op)}")
     else:
         O = op
     return O
@@ -94,7 +94,7 @@ class ParameterizedCircuit(UnitaryCircuit, ABC):
         super().__init__(register_size, strategy)
         if default_parameters is None:
             if parameters_size is None:
-                raise Exception(
+                raise ValueError(
                     "In ParameterizedUnitaries, either parameter_size or default_parameters must be provided"
                 )
             self.parameters = np.zeros(parameters_size)
@@ -124,7 +124,7 @@ class ParameterFreeMPO(ParameterizedCircuit):
     def __init__(self, operator: MPO | MPOList):
         dimensions = operator.physical_dimensions()
         if not all(d == 2 for d in dimensions):
-            raise Exception("MPO layer not defined over qubit spaces")
+            raise ValueError("MPO layer not defined over qubit spaces")
         super().__init__(operator.size, 0, [], operator.strategy)
         self.operator = operator
 
@@ -176,7 +176,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
             parameters_size = 1
             if default_parameters is not None:
                 if len(default_parameters) > 1:
-                    raise Exception(
+                    raise ValueError(
                         "Cannot provide more than one parameter if same_parameter is True"
                     )
         else:
@@ -189,7 +189,7 @@ class LocalRotationsLayer(ParameterizedCircuit):
         )
         O = interpret_operator(operator)
         if O.shape != (2, 2):
-            raise Exception("Not a valid one-qubit operator")
+            raise ValueError("Not a valid one-qubit operator")
         #
         # self.operator is a Pauli operator with det = 1. We
         # extract the original determinant into a prefactor for the
@@ -250,7 +250,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         super().__init__(register_size, strategy)
         O = interpret_operator(operator)
         if O.shape != (4, 4):
-            raise Exception("Not a valid two-qubit operator")
+            raise ValueError("Not a valid two-qubit operator")
         self.operator = O
         self.direction = direction
 
@@ -260,7 +260,7 @@ class TwoQubitGatesLayer(UnitaryCircuit):
         if self.register_size != state.size:
             raise ValueError("Circuit register size does not match the state size")
         if parameters is not None and len(parameters) > 0:
-            raise Exception("{self.cls} does not accept parameters")
+            raise ValueError(f"{type(self).__name__} does not accept parameters")
         if not isinstance(state, CanonicalMPS):
             state = CanonicalMPS(state, center=0, strategy=self.strategy)
         L = self.register_size
@@ -331,7 +331,7 @@ class HamiltonianEvolutionLayer(ParameterizedCircuit):
     ):
         register_size = len(H)
         if not all(d == 2 for d in H.physical_dimensions()):
-            raise Exception("Hamiltonian not defined over qubit spaces")
+            raise ValueError("Hamiltonian not defined over qubit spaces")
         if not (isinstance(order, int) and order > 1):
             raise ValueError("order must be an integer greater than 1")
 

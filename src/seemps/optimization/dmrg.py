@@ -76,7 +76,7 @@ def dmrg(
     >>> result = dmrg(H)
     """
     if maxiter < 1:
-        raise Exception("maxiter cannot be zero or negative")
+        raise ValueError("maxiter cannot be zero or negative")
     if isinstance(H, NNHamiltonian):
         H = H.to_mpo()
     if guess is None:

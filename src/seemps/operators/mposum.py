@@ -105,7 +105,7 @@ class MPOSum(object):
     def __mul__(self, n: Weight) -> MPOSum:
         """Multiply an MPOSum operator by an scalar n (MPOSum * n)"""
         if not isinstance(n, (int, float, complex)):
-            raise Exception(f"Cannot multiply MPOSum by {n}")
+            raise TypeError(f"Cannot multiply MPOSum by {n}")
         return MPOSum(
             mpos=self.mpos,
             weights=[n * weight for weight in self.weights],

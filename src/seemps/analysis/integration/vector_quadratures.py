@@ -72,7 +72,7 @@ def vector_best_newton_cotes(start: float, stop: float, nodes: int) -> Vector:
             return method(start, stop, nodes)
         except ValueError:
             continue
-    raise Exception("No suitable Newton-Cotes formula found.")
+    raise ValueError("No suitable Newton-Cotes formula found.")
 
 
 def vector_fejer(start: float, stop: float, nodes: int) -> Vector:

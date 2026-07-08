@@ -72,7 +72,7 @@ def dmrg_solve(
         Residual :math:`\Vert{A x - b}\Vert`.
     """
     if maxiter < 1:
-        raise Exception("maxiter cannot be zero or negative")
+        raise ValueError("maxiter cannot be zero or negative")
     if guess is None:
         guess = b.copy()
     tol = max(atol, rtol * b.norm())
@@ -96,7 +96,7 @@ def dmrg_solve(
         case "bicgstab":
             solver = scipy.sparse.linalg.bicgstab
         case _:
-            raise Exception(f'Unknown solver "{method}"')
+            raise ValueError(f'Unknown solver "{method}"')
     strategy = strategy.replace(normalize=True)
     step: int = 0
     residual: float = np.inf

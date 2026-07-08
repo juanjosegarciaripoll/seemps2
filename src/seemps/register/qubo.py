@@ -35,7 +35,7 @@ def qubo_mpo(
         #
         # Just magnetic field. A much simpler operator
         if h is None:
-            raise Exception("Must provide either J or h")
+            raise ValueError("Must provide either J or h")
         #
         data = []
         id2 = np.eye(2)
@@ -104,7 +104,7 @@ def qubo_exponential_mpo(
         #
         # Just magnetic field. A much simpler operator
         if h is None:
-            raise Exception("Must provide either J or h")
+            raise ValueError("Must provide either J or h")
         #
         data = []
         for i, hi in enumerate(h):

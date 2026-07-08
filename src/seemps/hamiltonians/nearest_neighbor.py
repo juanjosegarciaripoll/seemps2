@@ -268,7 +268,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
             or H12.shape[0] != H12.shape[1]
             or H12.shape[1] != self.dimension(i) * self.dimension(i + 1)
         ):
-            raise Exception("Invalid operators supplied to add_interaction_term()")
+            raise ValueError("Invalid operators supplied to add_interaction_term()")
         self.interactions[i] = self.interactions[i] + H12  # type: ignore
         return self
 
@@ -305,7 +305,7 @@ class ConstantTIHamiltonian(ConstantNNHamiltonian):
         elif interaction is not None:
             dimension = round(sqrt(interaction.shape[0]))
         else:
-            raise Exception("Either interactions or local term must be supplied")
+            raise ValueError("Either interactions or local term must be supplied")
 
         super().__init__(size, dimension)
         for site in range(size - 1):

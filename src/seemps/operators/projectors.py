@@ -99,7 +99,7 @@ def basis_states_projector_mpo(
                         break
                     e[wi] = 1.0
             if not ok:
-                raise Exception(f"Invalid basis state selector {w}")
+                raise ValueError(f"Invalid basis state selector {w}")
             A[i, :, :, i] = np.diag(e)
     tensors[0] = np.sum(tensors[0], 0)[np.newaxis, :, :, :]
     tensors[-1] = np.sum(tensors[-1], -1)[:, :, :, np.newaxis]

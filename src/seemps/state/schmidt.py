@@ -56,12 +56,12 @@ def _vector2mps(
     ψ: NDArray = np.asarray(state).copy().reshape(1, -1, 1)
     L = len(dimensions)
     if math.prod(dimensions) != ψ.size:
-        raise Exception("Wrong dimensions specified when converting a vector to MPS")
+        raise ValueError("Wrong dimensions specified when converting a vector to MPS")
     output = [ψ] * L
     if center < 0:
         center = L + center
     if center < 0 or center >= L:
-        raise Exception("Invalid value of center in _vector2mps")
+        raise ValueError("Invalid value of center in _vector2mps")
     err: float = 0.0
     for i in range(center):
         output[i], ψ, new_err = _left_orth_2site(

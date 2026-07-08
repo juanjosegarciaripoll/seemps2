@@ -106,7 +106,7 @@ def read_mps(parent: h5py.File | h5py.Group, name: str) -> MPS:
                         for i in range(N)
                     ]
                 )
-    raise Exception(f"Unable to read MPS from HDF5 group {parent}")
+    raise ValueError(f"Unable to read MPS from HDF5 group {parent}")
 
 
 # TODO: Add functions to read and write strategies
@@ -160,7 +160,7 @@ def read_mpo(parent: h5py.File | h5py.Group, name: str) -> MPO:
                     for i in range(N)
                 ]
             )
-    raise Exception(f"Unable to read MPO from HDF5 group {parent}")
+    raise ValueError(f"Unable to read MPO from HDF5 group {parent}")
 
 
 __all__ = [

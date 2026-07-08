@@ -204,7 +204,7 @@ class Space:
         new_positions = self.sites.copy()
         for d, n in enumerate(space.qubits_per_dimension):
             if n > self.qubits_per_dimension[d]:
-                raise Exception(
+                raise ValueError(
                     f"I cannot map a larger map into a smaller one.\nOld: {space}\nNew: {self}"
                 )
             new_positions[d] = new_positions[d][:n]

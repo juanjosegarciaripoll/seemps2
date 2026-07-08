@@ -386,11 +386,11 @@ class MPO(TensorArray):
         elif isinstance(bra, MPS):
             center = self.size - 1
         else:
-            raise Exception("MPS required")
+            raise TypeError("MPS required")
         if ket is None:
             ket = bra
         elif not isinstance(ket, MPS):
-            raise Exception("MPS required")
+            raise TypeError("MPS required")
         left = right = begin_mpo_environment()
         for i in range(0, center):
             left = update_left_mpo_environment(left, bra[i], self[i], ket[i])
