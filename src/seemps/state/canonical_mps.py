@@ -2,7 +2,17 @@ from __future__ import annotations
 import warnings
 import numpy as np
 from collections.abc import Sequence, Iterable
-from ..typing import Vector, Tensor3, Tensor4, VectorLike, Environment
+from ..typing import (
+    Vector,
+    Tensor3,
+    Tensor4,
+    VectorLike,
+    Environment,
+    Weight,
+    Operator,
+    DenseOperator,
+    to_dense_operator,
+)
 from ..cython import (
     DEFAULT_STRATEGY,
     Strategy,
@@ -21,6 +31,7 @@ from .environments import (
     _begin_environment,
     _update_left_environment,
     _update_right_environment,
+    _join_environments,
 )
 from .mps import MPS
 
@@ -168,6 +179,48 @@ class CanonicalMPS(MPS):
         for A in self._data[start:site:-1]:
             ρ = _update_right_environment(A, A, ρ)
         return ρ
+
+    def all_expectation1(self, operator: Operator | list[Operator]) -> Vector:
+        """Optimized version of :py:meth:`~seemps.state.MPS.all_expectation1`.
+
+        Exploits the canonical form: the left environment is the identity for
+        every site at or before the center, and the right environment is the
+        identity for every site at or after it. We therefore sweep outwards
+        from the center, accumulating only the non-trivial environment on each
+        side."""
+        L = self.size
+        center = self.center
+
+        def local_operator(i: int) -> DenseOperator:
+            op = operator[i] if isinstance(operator, list) else operator
+            return to_dense_operator(op)
+
+        output: list[Weight] = [0.0] * L
+
+        # Center and sites to its left: the left environment is the identity,
+        # so we only carry the right environment inwards from the center.
+        right_env = _begin_environment(self[center].shape[-1])
+        for i in range(center, -1, -1):
+            A = self[i]
+            left_env = _begin_environment(A.shape[0])
+            op_left = _update_left_environment(
+                A, np.matmul(local_operator(i), A), left_env
+            )
+            output[i] = _join_environments(op_left, right_env)
+            right_env = _update_right_environment(A, A, right_env)
+
+        # Sites to the right of the center: the right environment is the
+        # identity, so we carry the left environment outwards from the center.
+        A = self[center]
+        left_env = _update_left_environment(A, A, _begin_environment(A.shape[0]))
+        for i in range(center + 1, L):
+            A = self[i]
+            op_left = _update_left_environment(
+                A, np.matmul(local_operator(i), A), left_env
+            )
+            output[i] = _join_environments(op_left, _begin_environment(A.shape[-1]))
+            left_env = _update_left_environment(A, A, left_env)
+        return np.array(output)
 
     def Schmidt_weights(self, site: int | None = None) -> Vector:
         """Return the Schmidt weights for a bipartition around `site`.
