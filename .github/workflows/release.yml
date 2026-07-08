@@ -52,6 +52,20 @@ jobs:
           git push origin "v${{ inputs.version }}"
           git push origin main
 
+      - name: Extract release notes from CHANGELOG
+        id: changelog
+        run: |
+          {
+            echo 'notes<<CHANGELOG_EOF'
+            awk '
+              { sub(/\r$/, "") }
+              /^Version /            { c++; if (c == 2) exit; next }
+              /^=+$/                 { if (c == 1) next }
+                                     { if (c == 1) print }
+            ' CHANGELOG
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
@@ -61,18 +75,13 @@ jobs:
           release_name: "seemps v${{ inputs.version }}"
           body: |
             ## Changes in v${{ inputs.version }}
-
-            <!-- Add release notes here -->
-
+            ${{ steps.changelog.outputs.notes }}
             ## Installation
 
             ```bash
             pip install seemps==${{ inputs.version }}
             ```
 
-            ## What's Changed
-            * See commit history for detailed changes
-
-            **Full Changelog**: https://github.com/juanjosegarciaripoll/seemps2/compare/v${{ inputs.version }}...HEAD
+            **Full Changelog**: https://github.com/juanjosegarciaripoll/seemps2/blob/v${{ inputs.version }}/CHANGELOG
           draft: false
           prerelease: ${{ inputs.prerelease }}
