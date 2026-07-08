@@ -49,9 +49,14 @@ class CanonicalMPS(MPS):
         algorithms. Defaults to `DEFAULT_STRATEGY`.
     """
 
-    center: int
+    _center: int
     strategy: Strategy
     _error: float  # inherited, but Pyright wants us to confirm the type
+
+    @property
+    def center(self) -> int:
+        """Site of the orthogonality center of the canonical form (read-only)."""
+        return self._center
 
     #
     # This class contains all the matrices and vectors that form
@@ -70,13 +75,13 @@ class CanonicalMPS(MPS):
         actual_center: int
         self.strategy = strategy
         if isinstance(data, CanonicalMPS):
-            actual_center = self.center = data.center
+            actual_center = self._center = data.center
             self._error = data._error
             if center is not None:
                 actual_center = center
                 self.recenter(actual_center)
         else:
-            self.center = actual_center = self._interpret_center(
+            self._center = actual_center = self._interpret_center(
                 0 if center is None else center
             )
             if not is_canonical:
@@ -255,11 +260,11 @@ class CanonicalMPS(MPS):
             The truncation error of this update.
         """
         if direction > 0:
-            self.center, error = _update_in_canonical_form_right(
+            self._center, error = _update_in_canonical_form_right(
                 self._data, A, self.center, truncation
             )
         else:
-            self.center, error = _update_in_canonical_form_left(
+            self._center, error = _update_in_canonical_form_left(
                 self._data, A, self.center, truncation
             )
         self._error += error
@@ -283,7 +288,7 @@ class CanonicalMPS(MPS):
             bond dimensions
         """
         self._data[site], self._data[site + 1], error = _left_orth_2site(AA, strategy)
-        self.center = site + 1
+        self._center = site + 1
         self._error += error
 
     def update_2site_left(self, AA: Tensor4, site: int, strategy: Strategy) -> None:
@@ -304,7 +309,7 @@ class CanonicalMPS(MPS):
             bond dimensions
         """
         self._data[site], self._data[site + 1], error = _right_orth_2site(AA, strategy)
-        self.center = site
+        self._center = site
         self._error += error
 
     def _interpret_center(self, center: int) -> int:
@@ -344,7 +349,7 @@ class CanonicalMPS(MPS):
                 newcenter,
                 self.strategy if strategy is None else strategy,
             )
-            self.center = newcenter
+            self._center = newcenter
         return self
 
     def normalize_inplace(self) -> CanonicalMPS:
