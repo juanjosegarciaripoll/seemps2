@@ -45,10 +45,11 @@ Methods for solving systems of linear equations :math:`A \psi = b`.
    gmres
    dmrg_solve
 
-Time evolution
-==============
+Time evolution and PDE operators
+================================
 
-Methods for evolving quantum states under Hamiltonian dynamics.
+Methods for evolving MPS states under generic linear, time-dependent, or
+problem-specific operators.
 
 .. toctree::
    :maxdepth: 1

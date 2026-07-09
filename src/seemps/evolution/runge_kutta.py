@@ -21,16 +21,17 @@ def runge_kutta(
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
 ) -> MPS | list[Any]:
-    r"""Solve ``d|state>/dt = L|state>`` using a fourth order Runge-Kutta method.
+    r"""Solve ``d|state>/dt = F(t, state)`` using a fourth order Runge-Kutta method.
 
     See :func:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
 
     Parameters
     ----------
-    L : MPO | Callback[[float, MPS], MPS]
-        Linear operator in MPO form, or a function that takes the time :math:`t`
-        and a MPS and transforms it as in :math:`L(t)\psi`
+    L : MPO | ODEFunction
+        Right-hand side of the ODE. If ``L`` is an MPO, the solver uses
+        ``F(t, state) = L @ state``. If ``L`` is callable, it must take
+        ``(t, state)`` and return the MPS derivative at that point.
     """
     GL: ODEFunction = make_generalized_MPO(L)
 
@@ -60,16 +61,17 @@ def runge_kutta_fehlberg(
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
 ) -> MPS | list[Any]:
-    r"""Solve ``d|state>/dt = L|state>`` using a Runge-Kutta-Fehlberg method.
+    r"""Solve ``d|state>/dt = F(t, state)`` using a Runge-Kutta-Fehlberg method.
 
     See :func:`seemps.evolution.euler` for a description of the
     function arguments that are not described below and the function's output.
 
     Parameters
     ----------
-    L : MPO | Callback[[float, MPS], MPS]
-        Linear operator in MPO form, or a function that takes the time :math:`t`
-        and a MPS and transforms it as in :math:`L(t)\psi`
+    L : MPO | ODEFunction
+        Right-hand side of the ODE. If ``L`` is an MPO, the solver uses
+        ``F(t, state) = L @ state``. If ``L`` is callable, it must take
+        ``(t, state)`` and return the MPS derivative at that point.
     tolerance : float, default = 1e-8
         Tolerance for determination of evolution step.
     """
