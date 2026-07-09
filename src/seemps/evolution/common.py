@@ -15,29 +15,28 @@ ODECallback: TypeAlias = Callable[[float, MPS], Any]
 TimeSpan: TypeAlias = float | tuple[Real, Real] | Sequence[Real] | Vector
 
 
-def make_generalized_MPO(H: GeneralizedMPO) -> ODEFunction:
+def make_generalized_MPO(L: GeneralizedMPO) -> ODEFunction:
     the_MPO: MPO
 
     def mpo_derivative(t: float, state: MPS) -> MPS:
         return the_MPO.apply(state)
 
-    if isinstance(H, MPO):
-        the_MPO = H
+    if isinstance(L, MPO):
+        the_MPO = L
         return mpo_derivative
     else:
-        return H
+        return L
 
 
 def ode_solver(
-    evolve_for_dt: Callable[[float, MPS, complex | float, float, Strategy], MPS],
+    evolve_for_dt: Callable[[float, MPS, float, Strategy], MPS],
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ):
-    r"""Abstract class for solving a Schrodinger equation using MPOs and MPS.
+    r"""Common driver for ODE solvers acting on MPS states.
 
     Parameters
     ----------
@@ -46,15 +45,13 @@ def ode_solver(
     time : float | tuple[float, float] | Vector
         Integration interval, or sequence of time steps.
     state : MPS
-        Initial guess of the ground state.
+        Initial state.
     steps : int, default = 1000
-        Integration steps, if not defined by `t_span`.
+        Integration steps, if not defined by `time`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
     callback : Callable[[float, MPS], Any]
         A callable called after each iteration (defaults to None).
-    itime : bool, default = False
-        Whether to solve the imaginary time evolution problem.
     """
     if isinstance(time, (int, float)):
         time = (0.0, float(time))
@@ -65,21 +62,11 @@ def ode_solver(
     else:
         t_span = np.asarray(time, dtype=np.float64)
 
-    factor: complex | float
-    if itime:
-        factor = 1.0
-        normalize_strategy = strategy.replace(normalize=True)
-    else:
-        factor = 1j
-        normalize_strategy = strategy
-
     output = []
     last_t = t_span[0]
     for t in t_span:
         if t != last_t:
-            state = evolve_for_dt(
-                t, state, factor, float(t - last_t), normalize_strategy
-            )
+            state = evolve_for_dt(t, state, float(t - last_t), strategy)
         if callback:
             output.append(callback(t, state))
         last_t = t

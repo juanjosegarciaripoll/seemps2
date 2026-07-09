@@ -186,25 +186,32 @@ class QuadraticForm:
     # Effective 2-site operator
     def two_site_operator(self, i: int) -> LinearOperator:
         L, H, R = self.two_site_block(i)
-        k = H.shape[2]
-        l = H.shape[4]
-        b = L.shape[2]
+        a, c, b = L.shape
+        _, ko, k, lo, l, d = H.shape
+        g = R.shape[0]
         f = R.shape[2]
         v_shape = (b, k, l, f)
         n = b * k * l * f
         dtype = np.result_type(L.dtype, R.dtype, H.dtype)
 
+        # Precompute operator-side reshapes to accelerate _matvec
+        Lm = L.reshape(a * c, b)
+        Hm = np.ascontiguousarray(H.transpose(0, 2, 4, 1, 3, 5)).reshape(
+            c * k * l, ko * lo * d
+        )
+        Rm = np.ascontiguousarray(R.transpose(2, 1, 0)).reshape(f * d, g)
+
         def _matvec(
             v: np.ndarray,
-            _L: np.ndarray = L,
-            _H: np.ndarray = H,
-            _R: np.ndarray = R,
-            _vs: tuple[int, ...] = v_shape,
+            _Lm: np.ndarray = Lm,
+            _Hm: np.ndarray = Hm,
+            _Rm: np.ndarray = Rm,
         ) -> np.ndarray:
-            v = v.reshape(_vs)
-            aux = np.tensordot(v, _L, ((0,), (2,)))
-            aux = np.tensordot(aux, _H, ((0, 1, 4), (2, 4, 0)))
-            return np.tensordot(aux, _R, ((0, 4), (2, 1))).reshape(-1)
+            x = (_Lm @ v.reshape(b, k * l * f)).reshape(a, c, k, l, f)
+            x = x.transpose(0, 4, 1, 2, 3).reshape(a * f, c * k * l)
+            x = (x @ _Hm).reshape(a, f, ko, lo, d)
+            x = x.transpose(0, 2, 3, 1, 4).reshape(a * ko * lo, f * d)
+            return (x @ _Rm).reshape(-1)
 
         def _rmatvec(
             v: np.ndarray,

@@ -94,9 +94,8 @@ def radau_step(
     Dm = simplify_mpo((Im - dt * Lm).join(), strategy)
 
     # Solve linear system
-    if inv_tol is None:
-        inv_tol = strategy.get_simplification_tolerance()
-    Km, _ = dmrg_solve(Dm, rhs, strategy=strategy, rtol=inv_tol)
+    rtol = strategy.get_simplification_tolerance() if inv_tol is None else inv_tol
+    Km, _ = dmrg_solve(Dm, rhs, strategy=strategy, rtol=rtol)
 
     # Sum over step weights b
     # np.einsum('b,abc,cde->ade', b, KM[0], KM[1])
@@ -111,7 +110,7 @@ def radau_step(
 
 
 def radau(
-    H: MPO,
+    L: MPO,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
@@ -119,9 +118,8 @@ def radau(
     inv_tol: float = 1e-7,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ) -> MPS | list[Any]:
-    r"""Solve a Schrödinger equation using an implicit Radau IIA method with either
+    r"""Solve ``d|state>/dt = L|state>`` using an implicit Radau IIA method with either
     3 or 5 stages (order 5 or 9, respectively).
 
     See :func:`seemps.evolution.euler` for a description of the
@@ -138,18 +136,16 @@ def radau(
     def evolve_for_dt(
         t: float,
         state: MPS,
-        factor: complex | float,
         dt: float,
-        normalize_strategy: Strategy,
+        strategy: Strategy,
     ) -> MPS:
-        idt = factor * dt
         return radau_step(
-            L=H,
+            L=L,
             v=state,
-            dt=-idt,
+            dt=dt,
             inv_tol=inv_tol,
-            strategy=normalize_strategy,
+            strategy=strategy,
             stages=stages,
         )
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)

@@ -1,29 +1,83 @@
 from __future__ import annotations
+from math import sqrt
 from typing import Callable
 import numpy as np
 import scipy.sparse.linalg
 from ..tools import make_logger
 from ..typing import Tensor4
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, scprod
 from ..state.simplification import AntilinearForm
 from ..cython import _contract_last_and_first
 from ..operators import MPO
 from ..operators.quadratic import QuadraticForm
 
 
-def _solve_two_site(
+SolverFn = Callable[..., tuple[np.ndarray, int]]
+
+_SOLVERS: dict[str, SolverFn] = {
+    "cg": scipy.sparse.linalg.cg,
+    "bicg": scipy.sparse.linalg.bicg,
+    "gmres": scipy.sparse.linalg.gmres,
+    "lgmres": scipy.sparse.linalg.lgmres,
+    "bicgstab": scipy.sparse.linalg.bicgstab,
+}
+
+
+def _relative_change(a: MPS, b: MPS) -> float:
+    a_norm_sq = a.norm_squared()
+    b_norm_sq = b.norm_squared()
+    if a_norm_sq == 0:
+        if b_norm_sq == 0:
+            return 0.0
+        else:
+            return np.inf
+
+    d_sq = a_norm_sq - 2.0 * scprod(a, b).real + b_norm_sq
+    return sqrt(max(d_sq, 0.0) / a_norm_sq)
+
+
+def _solve_local(
     QF: QuadraticForm,
     i: int,
-    b: Tensor4,
+    b_tensor: Tensor4,
     atol: float,
     rtol: float,
-    solver: Callable,
-) -> tuple[Tensor4, int, float]:
+    solver: SolverFn,
+) -> Tensor4:
+    """Solve the local two-site linear system at bond `i`."""
     Op = QF.two_site_operator(i)
     v = _contract_last_and_first(QF.state[i], QF.state[i + 1])
-    x, info = solver(Op, b.reshape(-1), v.reshape(-1), atol=atol, rtol=rtol)
-    res = np.linalg.norm(Op @ x - b.reshape(-1))
-    return x.reshape(v.shape), info, float(res)
+    b_flat = b_tensor.reshape(-1)
+    x0 = v.reshape(-1)
+    # Early escape
+    residual_norm = float(np.linalg.norm(Op @ x0 - b_flat))
+    tol = max(atol, rtol * float(np.linalg.norm(b_flat)))
+    if residual_norm <= tol:
+        return v
+    x, _ = solver(Op, b_flat, x0, atol=atol, rtol=rtol)
+    return x.reshape(v.shape)
+
+
+def _sweep(
+    QF: QuadraticForm,
+    LF: AntilinearForm,
+    direction: int,
+    atol: float,
+    rtol: float,
+    solver: SolverFn,
+    strategy: Strategy,
+) -> None:
+    """One full two-site sweep updating `QF` and `LF` in place."""
+    size = QF.state.size
+    sites = range(size - 1) if direction > 0 else range(size - 2, -1, -1)
+    for i in sites:
+        AB = _solve_local(QF, i, LF.tensor2site(direction), atol, rtol, solver)
+        if direction > 0:
+            QF.update_2site_right(AB, i, strategy)
+            LF.update_right()
+        else:
+            QF.update_2site_left(AB, i, strategy)
+            LF.update_left()
 
 
 def dmrg_solve(
@@ -35,51 +89,57 @@ def dmrg_solve(
     rtol: float = 1e-5,
     strategy: Strategy = DEFAULT_STRATEGY,
     method: str = "bicgstab",
-) -> tuple[MPS, float]:
-    r"""Solve an inverse problem :math:`A x = b` for an MPO `A` and an MPS `b` using DMRG.
-
-    Given the :class:`MPO` `A` and the :class:`MPS` `b`, use the DMRG
-    method to estimate another MPS that solves the linear system of
-    equations :math:`A \\psi = b`. Convergence is determined by the
-    residual :math:`\\Vert{A \\psi - b}\\Vert` being smaller than `tol`.
+    compute_residuals: bool = True,
+) -> tuple[MPS, float | None]:
+    r"""Solve :math:`A x = b` for an MPO `A` and an MPS `b` using two-site DMRG.
 
     Parameters
     ----------
     A : MPO
-        The linear operator that on the left-hand-side of the equation.
+        Linear operator on the left-hand side.
     b : MPS
-        The state at the right-hand-side of the equation.
-    guess : MPS, default = b
-        An initial guess for the ground state.
+        Right-hand side.
+    guess : MPS | None, default = None
+        Initial guess (defaults to `b`).
     maxiter : int, default = 20
-        Maximum number of steps of the DMRG. Each step is a sweep that runs
-        over every pair of neighborin sites. Defaults to 20.
+        Maximum number of sweeps.
     atol, rtol : float
-        Absolute and relative tolerance for the convergence of the algorithm.
-        `norm(A@x - b) <= max(rtol * norm(b), atol)`. Defaults are
-        `rtol=1e-5` and `atol=0`
+        Convergence tolerance. With ``compute_residuals=True``, convergence
+        requires ``norm(A@x - b) <= max(rtol * norm(b), atol)``. With
+        ``compute_residuals=False``, the relative change of the solution
+        between sweeps is used instead. Defaults are `rtol=1e-5` and `atol=0`.
     strategy : Strategy, default = DEFAULT_STRATEGY
-        Truncation strategy to keep bond dimensions in check. Defaults to
-        `DEFAULT_STRATEGY`, which is very strict.
-    method: str, default = 'bicgstab'
-        One of 'cg', 'bicg', 'bicgstab'
+        Truncation strategy for the bond dimension.
+    method : str, deafult = 'bicgstab'
+        Iterative solver: ``'cg'``, ``'bicg'``, ``'bicgstab'``, ``'gmres'``,
+        or ``'lgmres'``.
+    compute_residuals : bool, default = True
+        If True, check the full residual at each sweep for convergence (robust).
+        If False, use a cheaper relative-change criterion (faster).
 
     Returns
     -------
     MPS
-        The unknown :math:`x`.
-    float
-        Residual :math:`\Vert{A x - b}\Vert`.
+        The solution `x`.
+    float | None
+        Residual :math:``\Vert A x - b\Vert_2``, or None when ``compute_residuals=False``.
     """
     if maxiter < 1:
-        raise ValueError("maxiter cannot be zero or negative")
+        raise ValueError("maxiter must be positive")
     if guess is None:
         guess = b.copy()
-    tol = max(atol, rtol * b.norm())
+    solver = _SOLVERS.get(method)
+    if solver is None:
+        raise ValueError(f'Unknown solver "{method}"')
+
+    b_norm = b.norm()
+    tol = max(atol, rtol * b_norm)
+    strat = strategy.replace(normalize=False)
     logger = make_logger()
-    logger(f"DMRG solver initiated with maxiter={maxiter}, absolute tolerance={tol}")
-    if not isinstance(guess, CanonicalMPS):
-        guess = CanonicalMPS(guess, center=0)
+    logger(f"DMRG solver initiated with maxiter={maxiter}, tolerance={tol}")
+
+    if not isinstance(guess, CanonicalMPS) or guess.center not in (0, A.size - 1):
+        guess = CanonicalMPS(guess, center=0, strategy=strat)
     if guess.center == 0:
         direction = +1
         QF = QuadraticForm(A, guess, start=0)
@@ -87,56 +147,41 @@ def dmrg_solve(
     else:
         direction = -1
         QF = QuadraticForm(A, guess, start=A.size - 2)
-        LF = AntilinearForm(guess, b, center=A.size - 2)
-    match method:
-        case "cg":
-            solver = scipy.sparse.linalg.cg
-        case "bicg":
-            solver = scipy.sparse.linalg.bicg
-        case "bicgstab":
-            solver = scipy.sparse.linalg.bicgstab
-        case _:
-            raise ValueError(f'Unknown solver "{method}"')
-    strategy = strategy.replace(normalize=True)
-    step: int = 0
-    residual: float = np.inf
-    message: str = f"Exceeded number of steps {maxiter}"
-    for step in range(maxiter):
-        if step:
-            if direction > 0:
-                for i in range(0, A.size - 1):
-                    AB, info, local_residual = _solve_two_site(
-                        QF, i, LF.tensor2site(+1), atol, rtol, solver
-                    )
-                    QF.update_2site_right(AB, i, strategy)
-                    LF.update_right()
-                    logger(
-                        f"-> site={i}, error={local_residual}, converged={info == 0}"
-                    )
-                    if info:
-                        message = "Local optimization with gmres() did not converge"
-            else:
-                for i in range(A.size - 2, -1, -1):
-                    AB, info, local_residual = _solve_two_site(
-                        QF, i, LF.tensor2site(-1), atol, rtol, solver
-                    )
-                    QF.update_2site_left(AB, i, strategy)
-                    LF.update_left()
-                    logger(
-                        f"-> site={i}, error={local_residual}, converged={info == 0}"
-                    )
-                    if info:
-                        message = "Local optimization with gmres() did not converge"
-            direction = -direction
+        LF = AntilinearForm(guess, b, center=A.size - 1)
 
-        # In principle, E is the exact eigenvalue. However, we have
-        # truncated the eigenvector, which means that the computation of
-        # the residual cannot use that value
+    residual: float | None = np.inf
+    change_tol = max(rtol, atol / b_norm) if b_norm > 0 else rtol
+    if compute_residuals:
         residual = (A @ QF.state - b).norm()
-        logger(f"step={step}, error={residual}")
-        if residual < tol:
-            message = f"Algorithm converged below tolerance {tol}"
-            break
-    logger(f"DMRG finished with {step + 1} iterations:\nmessage = {message}")
+        logger(f"initial residual={residual}")
+        if residual <= tol:
+            logger(f"Converged below tolerance {tol}")
+            logger.close()
+            return QF.state, residual
+
+    psi_old: MPS | None = None
+    for sweep in range(1, maxiter + 1):
+        if not compute_residuals:
+            psi_old = QF.state.copy()
+        _sweep(QF, LF, direction, atol, rtol, solver, strat)
+        direction = -direction
+
+        if compute_residuals:
+            residual = (A @ QF.state - b).norm()
+            logger(f"sweep={sweep}, residual={residual}")
+            if residual <= tol:
+                logger(f"Converged below tolerance {tol}")
+                break
+        else:
+            assert psi_old is not None # To make pyright happy
+            change = _relative_change(QF.state, psi_old)
+            logger(f"sweep={sweep}, relative_change={change}")
+            if change <= change_tol:
+                logger(f"Converged below tolerance {change_tol}")
+                break
+
     logger.close()
-    return QF.state, abs(residual)
+    if not compute_residuals:
+        residual = None
+
+    return QF.state, residual

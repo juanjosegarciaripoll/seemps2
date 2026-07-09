@@ -7,22 +7,23 @@ from seemps.evolution import ODECallback, TimeSpan
 
 
 class TestCrankNicolson(RKTypeEvolutionTestcase):
-    def solve_Schroedinger(
+    def solve_ode(
         self,
-        H: MPO,
+        L: MPO,
         time: TimeSpan,
         state: MPS,
         steps: int = 1000,
         strategy: Strategy = DEFAULT_STRATEGY,
         callback: ODECallback | None = None,
-        itime: bool = False,
     ) -> MPS | list[Any]:
         return crank_nicolson(
-            H,
+            L,
             time,
             state,
             steps=steps,
             strategy=strategy,
             callback=callback,
-            itime=itime,
         )
+
+    def accumulated_amplification(self, E, dt, steps):
+        return ((1 + 0.5 * E * dt) / (1 - 0.5 * E * dt)) ** steps

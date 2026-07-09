@@ -253,6 +253,7 @@ class MPO(TensorArray):
         # TODO: Remove implicit conversion of MPSSum to MPS
         if strategy is None:
             strategy = self.strategy
+        assert strategy is not None
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(state, MPSSum):
@@ -606,6 +607,7 @@ class MPOList(object):
         """
         if strategy is None:
             strategy = self.strategy
+        assert strategy is not None
         if simplify is None:
             simplify = strategy.get_simplify_flag()
 

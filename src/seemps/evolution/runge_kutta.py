@@ -14,97 +14,93 @@ from .common import (
 
 
 def runge_kutta(
-    H: MPO | ODEFunction,
+    L: MPO | ODEFunction,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ) -> MPS | list[Any]:
-    r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
+    r"""Solve ``d|state>/dt = F(t, state)`` using a fourth order Runge-Kutta method.
 
     See :func:`seemps.evolution.euler` for a description of the
     missing function arguments and the function's output.
 
     Parameters
     ----------
-    H : MPO | Callback[[float, MPS], MPS]
-        Hamiltonian in MPO form, or a function that takes the time :math:`t` and
-        a MPS and transforms it as in :math:`H(t)\psi`
+    L : MPO | ODEFunction
+        Right-hand side of the ODE. If ``L`` is an MPO, the solver uses
+        ``F(t, state) = L @ state``. If ``L`` is callable, it must take
+        ``(t, state)`` and return the MPS derivative at that point.
     """
-    GH: ODEFunction = make_generalized_MPO(H)
+    GL: ODEFunction = make_generalized_MPO(L)
 
-    def evolve_for_dt(
-        t: float, state: MPS, factor: complex | float, dt: float, strategy: Strategy
-    ) -> MPS:
-        h = -factor * dt
-        H_state = GH(t, state)
-        state2 = simplify(state + (0.5 * h) * H_state, strategy=strategy)
-        H_state2 = GH(t + dt / 2, state2)
-        state3 = simplify(state + (0.5 * h) * H_state2, strategy=strategy)
-        H_state3 = GH(t + dt / 2, state3)
-        state4 = simplify(state + h * H_state3, strategy=strategy)
-        H_state4 = GH(t + dt, state4)
+    def evolve_for_dt(t: float, state: MPS, dt: float, strategy: Strategy) -> MPS:
+        h = dt
+        L_state = GL(t, state)
+        state2 = simplify(state + (0.5 * h) * L_state, strategy=strategy)
+        L_state2 = GL(t + dt / 2, state2)
+        state3 = simplify(state + (0.5 * h) * L_state2, strategy=strategy)
+        L_state3 = GL(t + dt / 2, state3)
+        state4 = simplify(state + h * L_state3, strategy=strategy)
+        L_state4 = GL(t + dt, state4)
         return simplify(
-            state + (h / 6) * (H_state + 2 * H_state2 + 2 * H_state3 + H_state4),
+            state + (h / 6) * (L_state + 2 * L_state2 + 2 * L_state3 + L_state4),
             strategy=strategy,
         )
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)
 
 
-# TODO: URGENT - Fix this integrator
 def runge_kutta_fehlberg(
-    H: MPO | ODEFunction,
+    L: MPO | ODEFunction,
     time: TimeSpan,
     state: MPS,
     steps: int = 1000,
     tolerance: float = 1e-8,
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
-    itime: bool = False,
 ) -> MPS | list[Any]:
-    r"""Solve a Schrodinger equation using a fourth order Runge-Kutta method.
+    r"""Solve ``d|state>/dt = F(t, state)`` using a Runge-Kutta-Fehlberg method.
 
     See :func:`seemps.evolution.euler` for a description of the
     function arguments that are not described below and the function's output.
 
     Parameters
     ----------
-    H : MPO | Callback[[float, MPS], MPS]
-        Hamiltonian in MPO form, or a function that takes the time :math:`t` and
-        a MPS and transforms it as in :math:`H(t)\psi`
+    L : MPO | ODEFunction
+        Right-hand side of the ODE. If ``L`` is an MPO, the solver uses
+        ``F(t, state) = L @ state``. If ``L`` is callable, it must take
+        ``(t, state)`` and return the MPS derivative at that point.
     tolerance : float, default = 1e-8
         Tolerance for determination of evolution step.
     """
     desired_dt: float = np.inf
     epsilon = np.finfo(np.float64).eps
-    GH: ODEFunction = make_generalized_MPO(H)
+    GL: ODEFunction = make_generalized_MPO(L)
 
     def evolve_for_dt(
         t: float,
         state: MPS,
-        factor: complex | float,
         max_dt: float,
-        normalize_strategy: Strategy,
+        strategy: Strategy,
     ) -> MPS:
         """Solve one evolution step with 4th-5th order Runge-Kutta-Fehlberg.
-        We solve the equation dv/dt = factor * H.
+        We solve the equation dv/dt = L(t)v.
         """
         nonlocal desired_dt
         left_dt = max_dt
         while left_dt > epsilon:
             while True:
                 dt = min(desired_dt, max_dt)
-                h = -factor * dt
-                k1 = GH(t, state)
+                h = dt
+                k1 = GL(t, state)
                 state2 = simplify(state + (0.25 * h) * k1, strategy=strategy)
-                k2 = GH(t + dt / 4, state2)
+                k2 = GL(t + dt / 4, state2)
                 state3 = simplify(
                     state + (3 * h / 32) * k1 + (9 * h / 32) * k2, strategy=strategy
                 )
-                k3 = GH(t + 3 * dt / 8, state3)
+                k3 = GL(t + 3 * dt / 8, state3)
                 state4 = simplify(
                     state
                     + (1932 * h / 2197) * k1
@@ -112,7 +108,7 @@ def runge_kutta_fehlberg(
                     + (7296 * h / 2197) * k3,
                     strategy=strategy,
                 )
-                k4 = GH(t + 12 * dt / 13, state4)
+                k4 = GL(t + 12 * dt / 13, state4)
                 state5 = simplify(
                     state
                     + (439 / 216 * h) * k1
@@ -121,7 +117,7 @@ def runge_kutta_fehlberg(
                     - (845 * h / 4104) * k4,
                     strategy=strategy,
                 )
-                k5 = GH(t + dt, state5)
+                k5 = GL(t + dt, state5)
                 state6 = simplify(
                     state
                     - (8 * h / 27) * k1
@@ -131,7 +127,7 @@ def runge_kutta_fehlberg(
                     - (11 * h / 40) * k5,
                     strategy=strategy,
                 )
-                k6 = GH(t + dt / 2, state6)
+                k6 = GL(t + dt / 2, state6)
                 state_ord5 = simplify(
                     state
                     + (16 * h / 135) * k1
@@ -139,7 +135,7 @@ def runge_kutta_fehlberg(
                     + (28561 * h / 56430) * k4
                     - (9 * h / 50) * k5
                     + (2 * h / 55) * k6,
-                    strategy=normalize_strategy,
+                    strategy=strategy,
                 )
                 norm_ord5 = state_ord5.norm_squared()
                 state_ord4 = simplify(
@@ -148,7 +144,7 @@ def runge_kutta_fehlberg(
                     + (1408 * h / 2565) * k3
                     + (2197 * h / 4104) * k4
                     - (h / 5) * k5,
-                    strategy=normalize_strategy,
+                    strategy=strategy,
                 )
                 norm_ord4 = state_ord5.norm_squared()
                 delta = abs(
@@ -167,4 +163,4 @@ def runge_kutta_fehlberg(
                     break
         return state
 
-    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback, itime)
+    return ode_solver(evolve_for_dt, time, state, steps, strategy, callback)
