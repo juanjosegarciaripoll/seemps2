@@ -106,32 +106,42 @@ def qubo_exponential_mpo(
         if h is None:
             raise ValueError("Must provide either J or h")
         #
+        exp_field = np.exp(beta * np.asarray(h))
+        dtype = exp_field.dtype
         data = []
-        for i, hi in enumerate(h):
-            A = np.zeros((1, 2, 2, 1))
-            A[0, 1, 1, 1] = np.exp(beta * hi)
+        for value in exp_field:
+            A = np.zeros((1, 2, 2, 1), dtype=dtype)
             A[0, 0, 0, 0] = 1.0
+            A[0, 1, 1, 0] = value
             data.append(A)
         return MPO(data, strategy)
     else:
         Jmatrix = np.asarray(J)
-        if h is not None:
-            Jmatrix += np.diag(h)
-        Jmatrix = (Jmatrix + Jmatrix.T) / 2
         L = len(Jmatrix)
-        noop = np.eye(2).reshape(1, 2, 2, 1)
+        # Reproduce the operator that ``qubo_mpo`` encodes, ``s^T J s + h·s``:
+        # the local field sits on the diagonal and each unordered pair {i, j}
+        # gets the coupling ``J_ij + J_ji``.
+        diagonal = np.diagonal(Jmatrix).astype(complex if np.iscomplexobj(Jmatrix) else float)
+        if h is not None:
+            diagonal = diagonal + np.asarray(h)
+        coupling = Jmatrix + Jmatrix.T
+        exp_diag = np.exp(beta * diagonal)
+        exp_coupling = np.exp(beta * coupling)
+        dtype = np.result_type(exp_diag, exp_coupling)
+        noop = np.eye(2, dtype=dtype).reshape(1, 2, 2, 1)
         out = []
         for i in range(L):
             data = [noop] * i
-            A = np.zeros((1, 2, 2, 2))
-            A[0, 1, 1, 1] = np.exp(beta * Jmatrix[i, i])
+            A = np.zeros((1, 2, 2, 2), dtype=dtype)
             A[0, 0, 0, 0] = 1.0
+            A[0, 1, 1, 1] = exp_diag[i]
+            data.append(A)
             for j in range(i + 1, L):
-                A = np.zeros((2, 2, 2, 2))
-                A[1, 1, 1, 1] = np.exp(beta * Jmatrix[i, j])
-                A[1, 0, 0, 1] = 1.0
+                A = np.zeros((2, 2, 2, 2), dtype=dtype)
                 A[0, 0, 0, 0] = 1.0
                 A[0, 1, 1, 0] = 1.0
+                A[1, 0, 0, 1] = 1.0
+                A[1, 1, 1, 1] = exp_coupling[i, j]
                 data.append(A)
             data[-1] = A[:, :, :, [0]] + A[:, :, :, [1]]
             out.append(MPO(data, strategy))

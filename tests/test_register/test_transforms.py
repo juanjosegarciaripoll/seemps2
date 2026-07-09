@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.state import MPS
 from seemps.register import qubo_mpo
+from seemps.register.qubo import qubo_exponential_mpo
 from seemps.register.transforms import mpo_shifts, twoscomplement
 from ..tools import SeeMPSTestCase
 
@@ -89,3 +90,43 @@ class TestShiftsAndComplement(SeeMPSTestCase):
         O = twoscomplement(L, control=1, sites=[1, 2, 3]).to_matrix()
         self.assertEqual(O.shape, (2**L, 2**L))
         self.assertSimilar(O @ O, np.eye(2**L))
+
+
+class TestQuboExponential(SeeMPSTestCase):
+    """`qubo_exponential_mpo` must equal exp(beta * H) for the same diagonal
+    Hamiltonian H that `qubo_mpo` encodes."""
+
+    @staticmethod
+    def exact_exponential(beta, J=None, h=None):
+        H = qubo_mpo(J=J, h=h).to_matrix()
+        return np.diag(np.exp(beta * np.diag(H)))
+
+    def test_magnetic_field_only(self):
+        for L in range(2, 9):
+            for beta in (-1.0, -0.3, 0.5):
+                h = self.rng.standard_normal(L)
+                O = qubo_exponential_mpo(h=h, beta=beta).to_matrix()
+                self.assertEqual(O.shape, (2**L, 2**L))
+                self.assertSimilar(O, self.exact_exponential(beta, h=h))
+
+    def test_two_body_interactions(self):
+        for L in range(2, 9):
+            for beta in (-1.0, -0.3, 0.5):
+                # Random, deliberately non-symmetric couplings.
+                J = self.rng.standard_normal((L, L))
+                O = qubo_exponential_mpo(J=J, beta=beta).to_matrix()
+                self.assertEqual(O.shape, (2**L, 2**L))
+                self.assertSimilar(O, self.exact_exponential(beta, J=J))
+
+    def test_interactions_and_field(self):
+        for L in range(2, 9):
+            for beta in (-1.0, 0.5):
+                J = self.rng.standard_normal((L, L))
+                h = self.rng.standard_normal(L)
+                O = qubo_exponential_mpo(J=J, h=h, beta=beta).to_matrix()
+                self.assertEqual(O.shape, (2**L, 2**L))
+                self.assertSimilar(O, self.exact_exponential(beta, J=J, h=h))
+
+    def test_requires_some_argument(self):
+        with self.assertRaises(ValueError):
+            qubo_exponential_mpo()
