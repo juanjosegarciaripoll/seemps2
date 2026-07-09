@@ -166,7 +166,7 @@ def finite_differences_interpolation_1D(
             weights = [-3 / 256, 21 / 256, -35 / 128, 105 / 128, 105 / 256, -7 / 256]
             shifts = [2, 1, 0, -1, -2, -3]
         case _:
-            raise Exception("Invalid interpolation order")
+            raise ValueError("Invalid interpolation order")
     interpolant = mpo_weighted_shifts(
         vector.size, weights, shifts, periodic=space.closed
     )

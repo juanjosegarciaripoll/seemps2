@@ -257,7 +257,8 @@ class MPO(TensorArray):
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if isinstance(state, MPSSum):
-            assert self.size == state.size
+            if self.size != state.size:
+                raise ValueError("MPO and state must have the same size")
             for i, (w, mps) in enumerate(zip(state.weights, state.states)):
                 Ostate = w * MPS(
                     [_mpo_multiply_tensor(A, B) for A, B in zip(self, mps)],
@@ -265,7 +266,8 @@ class MPO(TensorArray):
                 )
                 state = Ostate if i == 0 else state + Ostate
         elif isinstance(state, MPS):
-            assert self.size == state.size
+            if self.size != state.size:
+                raise ValueError("MPO and state must have the same size")
             state = MPS(
                 [_mpo_multiply_tensor(A, B) for A, B in zip(self, state)],
                 error=state.error(),
@@ -301,6 +303,21 @@ class MPO(TensorArray):
             return MPOList(b.mpos + [self], b.strategy)
         raise TypeError(f"Cannot multiply MPO with {b}")
 
+    @overload
+    def __rmatmul__(self, b: MPS) -> MPS: ...
+
+    @overload
+    def __rmatmul__(self, b: MPSSum) -> MPS | MPSSum: ...
+
+    def __rmatmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+        """Implement multiplication `b @ self` of a state `b` by this operator.
+
+        Following the `numpy` convention, in which `v @ M` contracts a vector
+        with the rows of a matrix, this returns the state ``self.T @ b``."""
+        if isinstance(b, (MPS, MPSSum)):
+            return self.T.apply(b)
+        raise TypeError(f"Cannot multiply {b} with MPO")
+
     # TODO: We have to change the signature and working of this function, so that
     # 'sites' only contains the locations of the _new_ sites, and 'L' is no longer
     # needed. In this case, 'dimensions' will only list the dimensions of the added
@@ -333,11 +350,14 @@ class MPO(TensorArray):
             final_dimensions = [dimensions] * max(L - self.size, 0)
         else:
             final_dimensions = dimensions.copy()
-            assert len(dimensions) == L - self.size
+            if len(dimensions) != L - self.size:
+                raise ValueError("len(dimensions) must equal L - self.size")
         if sites is None:
             sites = range(self.size)
-        assert L >= self.size
-        assert len(sites) == self.size
+        if L < self.size:
+            raise ValueError("New size L must be at least the current size")
+        if len(sites) != self.size:
+            raise ValueError("len(sites) must equal the current size")
 
         data: list[np.ndarray] = [np.ndarray(())] * L
         for ndx, A in zip(sites, self):
@@ -382,11 +402,11 @@ class MPO(TensorArray):
         elif isinstance(bra, MPS):
             center = self.size - 1
         else:
-            raise Exception("MPS required")
+            raise TypeError("MPS required")
         if ket is None:
             ket = bra
         elif not isinstance(ket, MPS):
-            raise Exception("MPS required")
+            raise TypeError("MPS required")
         left = right = begin_mpo_environment()
         for i in range(0, center):
             left = update_left_mpo_environment(left, bra[i], self[i], ket[i])
@@ -451,7 +471,8 @@ class MPOList(object):
     size: int
 
     def __init__(self, mpos: Sequence[MPO], strategy: Strategy = DEFAULT_STRATEGY):
-        assert len(mpos) > 1
+        if len(mpos) <= 1:
+            raise ValueError("MPOList requires more than one MPO")
         self.mpos = mpos = list(mpos)
         self.size = mpos[0].size
         self.strategy = strategy
@@ -621,6 +642,21 @@ class MPOList(object):
             return MPOList(b.mpos + self.mpos, b.strategy)
         raise TypeError(f"Cannot multiply MPO with {b}")
 
+    @overload
+    def __rmatmul__(self, b: MPS) -> MPS: ...
+
+    @overload
+    def __rmatmul__(self, b: MPSSum) -> MPS | MPSSum: ...
+
+    def __rmatmul__(self, b: MPS | MPSSum) -> MPS | MPSSum:
+        """Implement multiplication `b @ self` of a state `b` by this operator.
+
+        Following the `numpy` convention, in which `v @ M` contracts a vector
+        with the rows of a matrix, this returns the state ``self.T @ b``."""
+        if isinstance(b, (MPS, MPSSum)):
+            return self.T.apply(b)
+        raise TypeError(f"Cannot multiply {b} with MPOList")
+
     def extend(
         self, L: int, sites: list[int] | None = None, dimensions: int | list[int] = 2
     ) -> MPOList:
@@ -702,6 +738,13 @@ class MPOList(object):
     def reverse(self) -> MPOList:
         """Reverse the sites (see :meth:`~seemps.operators.MPO.reverse`)."""
         return MPOList([o.reverse() for o in self.mpos], self.strategy)
+
+
+# FIXME: `MPOList` should be renamed to `MPOProd`, since it represents a
+# *product* of MPOs, not an arbitrary list. `MPOProd` is provided as an alias
+# for now to avoid a disruptive rename; replace `MPOList` with `MPOProd`
+# throughout the code base and drop this alias.
+MPOProd = MPOList
 
 
 from ..state.simplification import simplify_mps  # noqa: E402

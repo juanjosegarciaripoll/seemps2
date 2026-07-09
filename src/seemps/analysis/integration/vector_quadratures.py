@@ -72,7 +72,7 @@ def vector_best_newton_cotes(start: float, stop: float, nodes: int) -> Vector:
             return method(start, stop, nodes)
         except ValueError:
             continue
-    raise Exception("No suitable Newton-Cotes formula found.")
+    raise ValueError("No suitable Newton-Cotes formula found.")
 
 
 def vector_fejer(start: float, stop: float, nodes: int) -> Vector:
@@ -86,7 +86,7 @@ def vector_fejer(start: float, stop: float, nodes: int) -> Vector:
     if N % 2 == 0:
         v[N // 2] = 0
     h = (stop - start) / 2
-    q = np.fft.ifft(v).reshape(-1).real
+    q = np.real(np.fft.ifft(v).reshape(-1))
     return h * q
 
 

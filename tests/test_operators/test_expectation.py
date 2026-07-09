@@ -1,6 +1,6 @@
 import numpy as np
 import seemps
-from seemps.state import CanonicalMPS, scprod, product_state
+from seemps.state import MPS, CanonicalMPS, scprod, product_state
 from seemps.expectation import (
     all_expectation1,
     expectation1,
@@ -131,6 +131,42 @@ class TestExpectation(SeeMPSTestCase):
                     xi = ψmps.expectation1(O, i)
                     self.assertEqual(si, xi)
                     self.assertAlmostEqual(ni[i], si)
+
+    def test_all_expectation1_canonical_matches_mps(self):
+        # The specialized CanonicalMPS.all_expectation1 must agree, for every
+        # position of the orthogonality center, both with the generic MPS
+        # implementation run on the same tensors and with per-site expectation1.
+        O1 = np.array([[0.3, 1.0 + 0.2j], [1.0 - 0.2j, 0.5]])
+
+        def all_expectation1_ok(ϕ):
+            for center in range(ϕ.size):
+                ψ = CanonicalMPS(ϕ, center=center)
+                # Reference from the generic algorithm on the same canonical
+                # tensors, so any difference is due to the specialization alone.
+                reference = MPS.all_expectation1(ψ, O1)
+                values = ψ.all_expectation1(O1)
+                per_site = [ψ.expectation1(O1, i) for i in range(ϕ.size)]
+                # States are not normalized, so compare with a relative tolerance.
+                np.testing.assert_allclose(values, reference, rtol=1e-9)
+                np.testing.assert_allclose(values, per_site, rtol=1e-9)
+
+        self.run_over_random_uniform_mps(all_expectation1_ok)
+
+    def test_all_expectation1_canonical_with_operator_list(self):
+        # The list-of-operators form must also match the generic version for
+        # every center position.
+        def all_expectation1_list_ok(ϕ):
+            operators = [
+                np.array([[0.3 + i, 1.0 + 0.2j], [1.0 - 0.2j, 0.5 - i]])
+                for i in range(ϕ.size)
+            ]
+            for center in range(ϕ.size):
+                ψ = CanonicalMPS(ϕ, center=center)
+                reference = MPS.all_expectation1(ψ, operators)
+                values = ψ.all_expectation1(operators)
+                np.testing.assert_allclose(values, reference, rtol=1e-9)
+
+        self.run_over_random_uniform_mps(all_expectation1_list_ok)
 
     def test_expected2_GHZ(self):
         σz = np.array([[1, 0], [0, -1]])

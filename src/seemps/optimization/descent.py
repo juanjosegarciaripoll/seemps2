@@ -86,7 +86,7 @@ def gradient_descent(
         Results from the optimization. See :class:`OptimizeResults`.
     """
     if maxiter < 1:
-        raise Exception("maxiter cannot be zero or negative")
+        raise ValueError("maxiter cannot be zero or negative")
     if tol_up is None:
         tol_up = tol
     normalization_strategy = strategy.replace(normalize=True)

@@ -4,62 +4,85 @@
 Runge-Kutta methods
 *******************
 
-Runge-Kutta methods use a Taylor expansion of the state to approximate
+Runge-Kutta methods integrate an MPS-valued ordinary differential equation
 
 .. math::
-    \psi_{k+1} = \psi_k + \sum_{p}\frac{1}{p!}(-\Delta \beta H)^p\frac{\partial^{(p)} \psi}{\partial \beta^{(p)}}.
+    \frac{d\psi}{dt} = F(t, \psi).
 
-:math:`\Delta \beta` can either be real or imaginary time, and hence these
-methods are suitable for both evolution and optimization problems. When using
-MPS, these methods perform a global optimization of the MPS at each step,
-i.e., they update all tensors simultaneously.
+For :func:`~seemps.evolution.runge_kutta` and
+:func:`~seemps.evolution.runge_kutta_fehlberg`, the right-hand side can be
+provided either as an :class:`~seemps.operators.MPO` or as a Python callable.
+If an MPO ``L`` is provided, the solver uses ``F(t, state) = L @ state``. If a
+callable is provided, it must have the signature ``F(t, state)`` and return the
+MPS derivative at that point. This allows the same solvers to handle
+time-independent MPOs, time-dependent operators, and problem-specific PDE
+right-hand sides.
 
-The order of the expansion :math:`p` determines the truncation error of the method, which
-is :math:`O(\Delta \beta ^{p+1})`, and also the cost of the method, since
-a higher order implies more operations. Thus, it is important to consider
-trade-off in cost and accuracy to choose the most suitable method for each application.
+The order of the method determines the local truncation error and the number of
+operator applications required per step. Thus, it is important to consider the
+trade-off between cost and accuracy when choosing the most suitable method for
+each application.
 
 The SeeMPS library considers four methods.
 
 1. Euler method
 ----------------
 
-This is an explicit, first-order Taylor approximation of the evolution, with an error :math:`\mathcal{O}(\Delta\beta^2)`
-and a simple update with a fixed time-step :math:`\beta_k = k \Delta\beta`.
+This is an explicit, first-order Taylor approximation of the evolution, with a
+simple update with a fixed time step.
 
 .. math::
-    \psi_0 &= \psi(\beta_0), \\
-    \psi_{k+1} &= \psi_k - \Delta\beta H \psi_k, \quad \text{for } k=0,1,\dots,N-1.
+    \psi_{k+1} = \psi_k + \Delta t F(t_k, \psi_k).
 
 2. Improved Euler or Heun method
 ---------------------------------
 
-This is a second-order, fixed-step explicit method that uses two matrix-vector multiplications and two linear combinations of
-vectors to achieve an error :math:`\mathcal{O}(\Delta\beta^3)`.
+This is a second-order, fixed-step explicit method that uses two evaluations of
+the right-hand side and two linear combinations of states.
 
 .. math::
-    \psi_{k+1} = \psi_k - \frac{\Delta\beta}{2} \left[v_1 + H(\psi_k - \Delta\beta v_1)\right], \\
-    \text{with } v_1 = H \psi_k.
+    v_1 &= F(t_k, \psi_k), \\
+    v_2 &= F(t_k + \Delta t, \psi_k + \Delta t v_1), \\
+    \psi_{k+1} &= \psi_k + \frac{\Delta t}{2}(v_1 + v_2).
 
 3. Fourth-order Runge-Kutta method
 -----------------------------------
 
-This algorithm achieves an error :math:`\mathcal{O}(\Delta\beta^5)` using four matrix-vector multiplications and four linear combinations of vectors.
+This algorithm uses four evaluations of the right-hand side and four linear
+combinations of states.
 
 .. math::
-    \psi_{k+1} &= \psi_k + \frac{\Delta\beta}{6}(v_1 + 2v_2 + 2v_3 + v_4), \\
-    v_1 &= -H \psi_k, \\
-    v_2 &= -H\left(\psi_k + \frac{\Delta\beta}{2}v_1\right), \\
-    v_3 &= -H\left(\psi_k + \frac{\Delta\beta}{2}v_2\right), \\
-    v_4 &= -H\left(\psi_k + \Delta\beta v_3\right).
+    v_1 &= F(t_k, \psi_k), \\
+    v_2 &= F(t_k + \Delta t/2, \psi_k + \Delta t v_1/2), \\
+    v_3 &= F(t_k + \Delta t/2, \psi_k + \Delta t v_2/2), \\
+    v_4 &= F(t_k + \Delta t, \psi_k + \Delta t v_3), \\
+    \psi_{k+1} &= \psi_k + \frac{\Delta t}{6}(v_1 + 2v_2 + 2v_3 + v_4).
 
 4. Runge-Kutta-Fehlberg method
 -------------------------------
-The Runge-Kutta-Fehlberg algorithm is an adaptative step-size solver that combines a fifth-order accurate integrator
-:math:`O(\Delta\beta^5)` with a sixth-order error estimator  :math:`O(\Delta\beta^6)`. This combination dynamically adjusts the step size  :math:`\Delta\beta`
-to maintain the integration error within a specified tolerance. The method requires an initial estimate of the step size, which can be obtained from a simpler
-method. Each iteration involves six matrix-vector multiplications and six linear combinations, and it may repeat the evolution steps if the proposed step size
-is deemed unsuitable.
+The Runge-Kutta-Fehlberg algorithm is an adaptive step-size solver that combines
+two embedded Runge-Kutta formulas. This combination dynamically adjusts the step
+size to keep the integration error within a specified tolerance. Each attempted
+step evaluates the right-hand side six times, and the solver may repeat a step
+if the proposed step size is not suitable.
+
+Examples
+========
+
+Using a time-independent MPO:
+
+.. code-block:: python
+
+    final = runge_kutta(L, time=1.0, state=initial, steps=100)
+
+Using a time-dependent or problem-specific operator:
+
+.. code-block:: python
+
+    def rhs(t, state):
+        return diffusion_mpo(t) @ state + source(t, state)
+
+    final = runge_kutta_fehlberg(rhs, time=(0.0, 1.0), state=initial)
 
 .. autosummary::
 

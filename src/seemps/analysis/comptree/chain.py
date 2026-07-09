@@ -172,7 +172,8 @@ def _recompress_transitions(
         left_node = chain_tree.left_nodes[i]
         x_in = left_images[i]
         left_image = left_node.evaluate(x_in[:, np.newaxis], np.arange(left_node.N))
-        assert left_image is not None  # To keep the type checker happy
+        if left_image is None:  # Should not happen; also narrows the type
+            raise RuntimeError("Node evaluation unexpectedly returned None")
         A = _map_to_group(left_image, x_grouped)
         transition = _build_transition(A)
         left_transitions.append(transition)

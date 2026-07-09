@@ -36,7 +36,7 @@ def ode_solver(
     strategy: Strategy = DEFAULT_STRATEGY,
     callback: ODECallback | None = None,
 ):
-    r"""Abstract class for solving a linear ODE using MPOs and MPS.
+    r"""Common driver for ODE solvers acting on MPS states.
 
     Parameters
     ----------
@@ -45,9 +45,9 @@ def ode_solver(
     time : float | tuple[float, float] | Vector
         Integration interval, or sequence of time steps.
     state : MPS
-        Initial guess of the ground state.
+        Initial state.
     steps : int, default = 1000
-        Integration steps, if not defined by `t_span`.
+        Integration steps, if not defined by `time`.
     strategy : Strategy, default = DEFAULT_STRATEGY
         Truncation strategy for MPO and MPS algebra.
     callback : Callable[[float, MPS], Any]
