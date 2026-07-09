@@ -9,7 +9,7 @@ from abc import abstractmethod, ABC
 from ..cython import destructively_truncate_vector
 from ..operators import MPO
 from ..state import schmidt, DEFAULT_STRATEGY, Strategy
-from ..typing import SparseOperator, Operator, Real
+from ..typing import SparseOperator, Operator, Real, Tensor4
 from ..tools import σx, σy, σz
 
 
@@ -117,7 +117,7 @@ class NNHamiltonian(ABC):
         MPO
             Matrix-product operator.
         """
-        tensors = [
+        tensors: list[Tensor4] = [
             np.zeros((2, di, di, 2))
             for i in range(self.size)
             for di in [self.dimension(i)]
@@ -193,8 +193,9 @@ class ConstantNNHamiltonian(NNHamiltonian):
         #
         super(ConstantNNHamiltonian, self).__init__(size, True)
         if isinstance(dimension, list):
+            if len(dimension) != size:
+                raise ValueError("len(dimension) must equal the Hamiltonian size")
             self.dimensions = dimension
-            assert len(dimension) == size
         else:
             self.dimensions = [dimension] * size
         self.interactions = [
@@ -267,7 +268,7 @@ class ConstantNNHamiltonian(NNHamiltonian):
             or H12.shape[0] != H12.shape[1]
             or H12.shape[1] != self.dimension(i) * self.dimension(i + 1)
         ):
-            raise Exception("Invalid operators supplied to add_interaction_term()")
+            raise ValueError("Invalid operators supplied to add_interaction_term()")
         self.interactions[i] = self.interactions[i] + H12  # type: ignore
         return self
 
@@ -304,7 +305,7 @@ class ConstantTIHamiltonian(ConstantNNHamiltonian):
         elif interaction is not None:
             dimension = round(sqrt(interaction.shape[0]))
         else:
-            raise Exception("Either interactions or local term must be supplied")
+            raise ValueError("Either interactions or local term must be supplied")
 
         super().__init__(size, dimension)
         for site in range(size - 1):

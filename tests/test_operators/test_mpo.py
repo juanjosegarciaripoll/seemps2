@@ -57,6 +57,28 @@ class TestMPO(SeeMPSTestCase):
             (mpo.to_matrix() @ mps.to_vector()),
         )
 
+    def test_mps_matmul_mpo_is_matrix_multiplication(self):
+        # Use a non-symmetric operator so that `mps @ mpo` differs from `mpo @ mps`.
+        O = np.array([[0.3, 1.0 + 0.2j], [-0.5, 0.7]])
+        mpo = MPO([O.reshape(1, 2, 2, 1)] * 5)
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
+        self.assertSimilar((mps @ mpo).to_vector(), (mps.to_vector() @ mpo.to_matrix()))
+
+    def test_mps_matmul_mpo_works_on_mpssum(self):
+        O = np.array([[0.3, 1.0 + 0.2j], [-0.5, 0.7]])
+        mpo = MPO([O.reshape(1, 2, 2, 1)] * 5)
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
+        self.assertSimilar((mps + mps) @ mpo, 2 * (mps.to_vector() @ mpo.to_matrix()))
+
+    def test_mps_matmul_mpolist_is_matrix_multiplication(self):
+        O = np.array([[0.3, 1.0 + 0.2j], [-0.5, 0.7]])
+        mpo = MPO([O.reshape(1, 2, 2, 1)] * 5)
+        mpolist = MPOList([mpo, mpo])
+        mps = self.random_uniform_mps(2, mpo.size, D=2)
+        self.assertSimilar(
+            (mps @ mpolist).to_vector(), (mps.to_vector() @ mpolist.to_matrix())
+        )
+
     def test_mpo_set_strategy(self):
         new_strategy = Strategy(tolerance=1e-10)
         mpo = MPO([σx.reshape(1, 2, 2, 1)] * 5).set_strategy(new_strategy)

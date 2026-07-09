@@ -110,7 +110,7 @@ class Trotter(ABC):
         CanonicalMPS
             A fresh new MPS wih the state evolved by one time step.
         """
-        raise Exception("Called abstract method Trotter.apply")
+        raise NotImplementedError("Called abstract method Trotter.apply")
 
     @abstractmethod
     def apply_inplace(self, state: MPS) -> CanonicalMPS:
@@ -128,7 +128,7 @@ class Trotter(ABC):
         CanonicalMPS
             The same `state` object, whenever possible.
         """
-        raise Exception("Called abstract method Trotter.apply")
+        raise NotImplementedError("Called abstract method Trotter.apply")
 
     def __matmul__(self, state: MPS) -> CanonicalMPS:
         return self.apply(state)

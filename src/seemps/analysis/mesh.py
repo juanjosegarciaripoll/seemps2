@@ -170,7 +170,8 @@ class QuantizedInterval(RegularInterval):
         endpoint_left: bool = True,
         endpoint_right: bool = False,
     ):
-        assert isinstance(qubits, int) and (qubits > 0)
+        if not (isinstance(qubits, int) and (qubits > 0)):
+            raise ValueError("qubits must be a positive integer")
         super().__init__(start, stop, 2**qubits, endpoint_left, endpoint_right)
         self.qubits = qubits
 

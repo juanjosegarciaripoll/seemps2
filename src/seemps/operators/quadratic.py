@@ -43,18 +43,18 @@ class QuadraticForm:
         # Initialize self.O, self.state and self.ket by reference
         self.O = O
         if not isinstance(state, CanonicalMPS):
-            raise Exception("QuadraticForm: state must be a CanonicalMPS")
+            raise TypeError("QuadraticForm: state must be a CanonicalMPS")
         if state.center not in [start, start + 1]:
-            raise Exception(
+            raise ValueError(
                 f"QuadraticForm: state must be centered at start={start} or {start + 1}"
             )
         self.state = state
         self.ket = ket if ket is not None else state
         self.size = size = state.size
         if size != O.size:
-            raise Exception("QuadraticForm: MPO and MPS do not have the same size")
+            raise ValueError("QuadraticForm: MPO and MPS do not have the same size")
         if any(Op.shape[1] != A.shape[1] for Op, A in zip(O, state)):
-            raise Exception("QuadraticForm: MPO and MPS dimensions do not match")
+            raise ValueError("QuadraticForm: MPO and MPS dimensions do not match")
 
         left_env: list[MPOEnvironment] = [begin_mpo_environment()] * size
         right_env: list[MPOEnvironment] = left_env.copy()

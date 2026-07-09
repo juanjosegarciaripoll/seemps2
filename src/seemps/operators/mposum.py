@@ -35,7 +35,8 @@ class MPOSum(object):
         strategy: Strategy = DEFAULT_STRATEGY,
     ):
         self.mpos = mpos = list(mpos)
-        assert len(mpos) >= 1
+        if len(mpos) < 1:
+            raise ValueError("MPOSum requires at least one MPO")
         self.size = self.mpos[0].size
         self.weights = [1.0] * len(mpos) if weights is None else list(weights)
         self.strategy = strategy
@@ -104,7 +105,7 @@ class MPOSum(object):
     def __mul__(self, n: Weight) -> MPOSum:
         """Multiply an MPOSum operator by an scalar n (MPOSum * n)"""
         if not isinstance(n, (int, float, complex)):
-            raise Exception(f"Cannot multiply MPOSum by {n}")
+            raise TypeError(f"Cannot multiply MPOSum by {n}")
         return MPOSum(
             mpos=self.mpos,
             weights=[n * weight for weight in self.weights],

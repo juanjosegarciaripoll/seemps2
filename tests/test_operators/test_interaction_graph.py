@@ -13,17 +13,17 @@ class TestInteractionGraph(SeeMPSTestCase):
         self.SX = np.asarray([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
 
     def test_ig_requires_integer_dimensions(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             InteractionGraph([3.0, 2])  # type: ignore
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             InteractionGraph([3.0, 2, 3 / 2])  # type: ignore
 
     def test_ig_requires_dimensions_above_one(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             InteractionGraph([1, 2, 3])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             InteractionGraph([0, 2, 3])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             InteractionGraph([-1, 2, 3])
 
     def test_ig_dimension_is_adequately_computed(self):

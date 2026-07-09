@@ -1,16 +1,40 @@
-Version 3.0.1
-=============
-* Docstring examples are now executed as doctests within the unit test
-  suite, ensuring the documented examples stay correct. Fixed the examples
-  that had rotted.
+Version 3.1
+===========
 
-* Rearchitected tests to always use preseeded RNG for better reproducibility.
+Backwards-incompatible changes:
+* QuadraticForm moved from DMRG to seemps.operators.quadratic (import path
+  change).
+* DMRG, TDVP and linear-system solvers migrated to a new API.
+* TCI entry points consolidated into a single cross_interpolation function.
+* CanonicalMPS.center is now read-only and can no longer be assigned.
+* Core routines raise specific exceptions instead of generic ones and asserts.
 
-* Simplified the PolynomialExpansion class hierarchy to allow for other
-  expansions in the future.
+New features and API:
+* MPS @ MPO products via __rmatmul__ on MPO and MPOList.
+* MPOProd alias for MPOList (precursor to a future rename).
+* New helper to construct diagonal MPOs.
+* Operator traces may now be real or complex.
 
-* Environment variable SEEMPS_DEBUG determines the debug level in SeeMPS's
-  routines. Now the logger outputs those messages to sys.stderr.
+Performance:
+* CanonicalMPS.all_expectation1 specialized to exploit the canonical center.
+
+Tensor cross interpolation:
+* cross_interpolation is now backed by strategy objects and a common logger.
+
+Robustness:
+* Fixed canonical-center handling; no longer assume the center sits on a
+  boundary.
+
+Reliability and tooling:
+* Docstring examples now run as doctests in the test suite; fixed rotted
+  examples.
+* Common preseeded RNG and SeeMPSTestCase for reproducible tests, plus a
+  hand-made profiler.
+* Simplified the PolynomialExpansion hierarchy and added default values for
+  approximation_domain.
+* SEEMPS_DEBUG environment variable sets the debug level; logger now writes
+  to sys.stderr.
+* Numpy/pyright typing fixes throughout.
 
 Version 3.0.0
 =============

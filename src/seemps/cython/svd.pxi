@@ -29,7 +29,7 @@ def _select_svd_driver(name: str):
     elif name == "gesdd":
         __use_gesdd = 1
     else:
-        raise Exception(f"Invalid LAPACK SVD driver name: {name}")
+        raise ValueError(f"Invalid LAPACK SVD driver name: {name}")
 
 # TODO: Allow selecting other drivers
 cdef tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray] __svd(cnp.ndarray A):
@@ -78,7 +78,7 @@ cdef tuple[cnp.ndarray, cnp.ndarray, cnp.ndarray] __svd(cnp.ndarray A):
     if err == 0:
         return VT, s, U
     elif err < 0:
-        raise Exception(f"Wrong argument {-err} to LAPACK SVD.")
+        raise RuntimeError(f"Wrong argument {-err} to LAPACK SVD.")
     else:
         raise LinAlgError("SVD did not converge")
 
