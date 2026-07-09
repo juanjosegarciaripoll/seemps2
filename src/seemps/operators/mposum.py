@@ -174,7 +174,8 @@ class MPOSum(object):
         # TODO: Is this really needed?
         if strategy is None:
             strategy = self.strategy
-        assert strategy is not None
+        if strategy is None:
+            raise RuntimeError("MPOSum has no truncation strategy")
         if simplify is None:
             simplify = strategy.get_simplify_flag()
         if simplify:

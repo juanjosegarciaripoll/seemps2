@@ -173,7 +173,8 @@ def dmrg_solve(
                 logger(f"Converged below tolerance {tol}")
                 break
         else:
-            assert psi_old is not None # To make pyright happy
+            if psi_old is None:
+                raise RuntimeError("psi_old was not initialized before comparison")
             change = _relative_change(QF.state, psi_old)
             logger(f"sweep={sweep}, relative_change={change}")
             if change <= change_tol:

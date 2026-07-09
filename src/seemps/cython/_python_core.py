@@ -355,7 +355,7 @@ def _select_svd_driver(name: str) -> None:
     if name in ("gesvd", "gesdd"):
         _svd_driver = name  # type: ignore[assignment]
     else:
-        raise Exception(f"Invalid LAPACK SVD driver name: {name}")
+        raise ValueError(f"Invalid LAPACK SVD driver name: {name}")
 
 
 def _destructive_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

@@ -56,7 +56,8 @@ def _expmv(
         abs_tau_pow *= abs_tau
         inv_fact /= m
         Q[:, j + 1] = w / hn
-    assert mu is not None
+    if mu is None:
+        raise RuntimeError("Arnoldi iteration produced no vectors")
     if e1p is None:
         Hm = H[:m, :m].copy()
         Hm.flat[:: m + 1] -= mu
