@@ -1,3 +1,48 @@
+Version 3.2
+===========
+
+Backwards-incompatible changes:
+* Time-evolution solvers now integrate the generic linear equation
+  d|state>/dt = L|state> directly. Pass the full generator L instead of a
+  Hamiltonian H: use L = -1j * H for real-time Schrodinger evolution and
+  L = -H for imaginary time. The `itime` keyword argument has been removed.
+  This affects runge_kutta, runge_kutta_fehlberg, euler, crank_nicolson,
+  radau, arnoldi and the shared ode_solver driver.
+* The HDAF split-step integrator now supports the Schrodinger equation only.
+
+New features and API:
+* Selectable pure-Python backend: set the environment variable
+  SEEMPS_BACKEND=python before importing SeeMPS to route all numerical
+  kernels and configuration types through a NumPy/SciPy reference
+  implementation, useful for benchmarking, debugging and environments
+  without the compiled Cython core.
+
+Performance:
+* Faster matrix exponential in TDVP.
+* dmrg_solve refactored with a dedicated fast path.
+* Accelerated the optimization DMRG eigensolver.
+* Precomputed operator-side reshapes in the _matvec kernel.
+
+Bug fixes:
+* qubo_exponential_mpo now produces a valid operator. Both branches were
+  broken (a magnetic-field-only IndexError and coupling MPOs that were one
+  site short and dropped their diagonal terms); it now equals exp(beta * H)
+  for the same Hamiltonian H that qubo_mpo encodes, with complex support.
+* Restored the explicit-exception convention in the core library: a delayed
+  merge had reintroduced `assert` statements and a bare `Exception` that the
+  3.1 cleanup had removed. These are again specific exceptions that survive
+  `python -O`.
+* The Arnoldi eigensolver output normalization now respects the truncation
+  strategy.
+
+Reliability and tooling:
+* Extended tests for dmrg_solve and the optimization DMRG.
+* Added tests raising coverage of the analysis (quadrature vectors, finite
+  differences), state (entanglement/Renyi entropies) and register (shifts,
+  two's complement, QUBO) modules.
+* Numpy/pyright typing fixes and updated Runge-Kutta documentation.
+
+
 Version 3.1
 ===========
 
