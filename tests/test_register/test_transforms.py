@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp  # type: ignore
 from seemps.state import MPS
 from seemps.register import qubo_mpo
+from seemps.register.transforms import mpo_shifts, twoscomplement
 from ..tools import SeeMPSTestCase
 
 
@@ -53,3 +54,38 @@ class TestAlgebraic(SeeMPSTestCase):
             ξ = ξmps.to_vector()
 
             self.assertSimilar(ψmps * ξmps, ψ * ξ)
+
+    def test_qubo_combined_field_and_coupling(self):
+        # Providing both J and h folds h into the diagonal of J (qubo.py:53).
+        for N in range(1, 6):
+            J = self.rng.random(size=(N, N)) - 0.5
+            h = self.rng.random(size=N) - 0.5
+            expected = self.quadratic_operator(J) + self.linear_operator(h)
+            self.assertSimilar(qubo_mpo(J=J, h=h).to_matrix(), expected)
+
+    def test_qubo_requires_some_argument(self):
+        with self.assertRaises(ValueError):
+            qubo_mpo()
+
+
+class TestShiftsAndComplement(SeeMPSTestCase):
+    def test_mpo_shifts_tuple_matches_list(self):
+        # A tuple is interpreted as a range of displacements.
+        for L in range(1, 5):
+            from_tuple = mpo_shifts(L, (0, 3)).to_matrix()
+            from_list = mpo_shifts(L, [0, 1, 2]).to_matrix()
+            self.assertSimilar(from_tuple, from_list)
+
+    def test_twoscomplement_is_an_involution(self):
+        # Two's complement negates the register, so applying it twice is the
+        # identity; the operator is also a 0/1 permutation matrix.
+        for L in range(1, 5):
+            O = twoscomplement(L).to_matrix()
+            self.assertSimilar(O @ O, np.eye(2**L))
+            self.assertSimilar(O @ O.T, np.eye(2**L))
+
+    def test_twoscomplement_on_a_subset_of_sites(self):
+        L = 4
+        O = twoscomplement(L, control=1, sites=[1, 2, 3]).to_matrix()
+        self.assertEqual(O.shape, (2**L, 2**L))
+        self.assertSimilar(O @ O, np.eye(2**L))
