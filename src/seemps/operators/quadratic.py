@@ -36,6 +36,7 @@ class QuadraticForm:
     left_env: list[MPOEnvironment]
     right_env: list[MPOEnvironment]
     site: int
+    plus_identity: Weight
 
     def __init__(
         self,

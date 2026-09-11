@@ -419,7 +419,7 @@ def destructively_truncate_vector(s: np.ndarray, strategy: Strategy) -> float:
     """Truncate ``s`` in place and return the squared truncation error."""
     final_size, error = _truncate(s, strategy)
     if final_size != s.shape[0]:
-        s.resize(final_size, refcheck=False)
+        s.resize(final_size, refcheck=False)  # pyright: ignore[reportDeprecated]
     return error
 
 
