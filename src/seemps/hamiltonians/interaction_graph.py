@@ -239,7 +239,7 @@ class InteractionGraph:
         """Construct the sparse matrix associated to these interactions."""
 
         def build_sparse_matrix(term: str) -> SparseOperator:
-            output = sp.identity(1).tobsr()  # type: ignore
+            output: SparseOperator = sp.identity(1).tobsr()  # type: ignore
             for name in term:
                 output = sp.kron(output, sp.bsr_matrix(self._operators[name]))
             return output.tocsr()
