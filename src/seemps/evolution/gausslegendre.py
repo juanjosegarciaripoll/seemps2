@@ -15,7 +15,6 @@ from ..state import (
     CanonicalMPS,
     MPSSum,
     Strategy,
-    distance,
     simplify,
 )
 from .common import ODECallback, TimeSpan, ode_solver
@@ -141,7 +140,7 @@ def _nonlinear_step(
             w[s] += 1.0
             rhs = _combination(state, w, Y, Y[s], strategy)
             new = _solve_stage(op, Y[s].copy(), rhs, eps, strategy)
-            change = max(change, distance(new, Y[s]) / norm)
+            change = max(change, (new - Y[s]).norm() / norm)
             Y[s] = new
         if _converged(change, prev, eps, sweep):
             break

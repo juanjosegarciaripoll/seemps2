@@ -5,7 +5,7 @@ import numpy as np
 import scipy.sparse.linalg
 from ..tools import make_logger
 from ..typing import Tensor4
-from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy, distance, scprod
+from ..state import DEFAULT_STRATEGY, MPS, CanonicalMPS, Strategy
 from ..state.simplification import AntilinearForm
 from ..cython import _contract_last_and_first
 from ..operators import MPO
@@ -27,22 +27,14 @@ def _relative_change(a: MPS, b: MPS) -> float:
     a_norm_sq = a.norm_squared()
     if a_norm_sq == 0:
         return 0.0 if b.norm_squared() == 0 else np.inf
-    return distance(a, b, a_norm_sq=a_norm_sq) / sqrt(a_norm_sq)
+    return (a - b).norm() / sqrt(a_norm_sq)
 
 
-def _residual_norm(
-    A: MPO, x: MPS, b: MPS, b_norm_sq: float, plus_identity: complex
-) -> float:
-    """Norm of `(A + plus_identity) x - b`, without simplifying `A x`."""
-    Ax = A.apply(x, simplify=False)
-    r = distance(Ax, b, b_norm_sq=b_norm_sq)
+def _residual_norm(A: MPO, x: MPS, b: MPS, plus_identity: complex) -> float:
+    """Norm of `(A + plus_identity) x - b`."""
     if not plus_identity:
-        return r
-    # ||Ax + p x - b||^2 = ||Ax - b||^2 + |p|^2 ||x||^2 + 2 Re(p <Ax - b|x>)
-    p = plus_identity
-    cross = scprod(Ax, x) - scprod(b, x)
-    r_sq = r * r + abs(p) ** 2 * x.norm_squared() + 2.0 * (p * cross).real
-    return sqrt(max(r_sq, 0.0))
+        return (A @ x - b).norm()
+    return (A @ x + plus_identity * x - b).norm()
 
 
 def _solve_local(
@@ -143,7 +135,6 @@ def dmrg_solve(
         raise ValueError(f'Unknown solver "{method}"')
 
     b_norm = b.norm()
-    b_norm_sq = b_norm * b_norm
     tol = max(atol, rtol * b_norm)
     strat = strategy.replace(normalize=False)
     logger = make_logger()
@@ -163,7 +154,7 @@ def dmrg_solve(
     residual: float | None = np.inf
     change_tol = max(rtol, atol / b_norm) if b_norm > 0 else rtol
     if compute_residuals:
-        residual = _residual_norm(A, QF.state, b, b_norm_sq, plus_identity)
+        residual = _residual_norm(A, QF.state, b, plus_identity)
         logger(f"initial residual={residual}")
         if residual <= tol:
             logger(f"Converged below tolerance {tol}")
@@ -178,7 +169,7 @@ def dmrg_solve(
         direction = -direction
 
         if compute_residuals:
-            residual = _residual_norm(A, QF.state, b, b_norm_sq, plus_identity)
+            residual = _residual_norm(A, QF.state, b, plus_identity)
             logger(f"sweep={sweep}, residual={residual}")
             if residual <= tol:
                 logger(f"Converged below tolerance {tol}")
