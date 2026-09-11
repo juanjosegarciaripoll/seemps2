@@ -75,6 +75,8 @@ line-length = 88
 indent-width = 4
 
 [tool.ruff.lint]
+# ruff 0.16 enables more rules. Pin checks to < 0.16
+select = ["E4", "E7", "E9", "F"]
 # Checks to ignore or add
 ignore = ["E741",
     "D100",  # Missing docstring in public module
