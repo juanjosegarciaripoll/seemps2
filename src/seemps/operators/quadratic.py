@@ -38,8 +38,15 @@ class QuadraticForm:
     site: int
 
     def __init__(
-        self, O: MPO, state: CanonicalMPS, start: int = 0, ket: MPS | None = None
+        self,
+        O: MPO,
+        state: CanonicalMPS,
+        start: int = 0,
+        ket: MPS | None = None,
+        plus_identity: Weight = 0,
     ):
+        # Represent the operator `plus_identity * I + O`.
+        self.plus_identity = plus_identity
         # Initialize self.O, self.state and self.ket by reference
         self.O = O
         if not isinstance(state, CanonicalMPS):
@@ -200,6 +207,7 @@ class QuadraticForm:
             c * k * l, ko * lo * d
         )
         Rm = np.ascontiguousarray(R.transpose(2, 1, 0)).reshape(f * d, g)
+        pid = self.plus_identity
 
         def _matvec(
             v: np.ndarray,
@@ -220,21 +228,34 @@ class QuadraticForm:
             _R: np.ndarray = R,
             _vs: tuple[int, ...] = v_shape,
         ) -> np.ndarray:
-            v = v.reshape(_vs)
-            aux = np.tensordot(v, _L.conj(), axes=(0, 0))
+            aux = np.tensordot(v.reshape(_vs), _L.conj(), axes=(0, 0))
             aux = np.tensordot(aux, _H.conj(), axes=([3, 0, 1], [0, 1, 3]))
             return np.tensordot(aux, _R.conj(), axes=([0, 4], [0, 1])).reshape(-1)
 
-        def _trace(
-            _L: np.ndarray = L, _H: np.ndarray = H, _R: np.ndarray = R
-        ) -> Weight:
+        def _trace(_L: np.ndarray = L, _H: np.ndarray = H, _R: np.ndarray = R) -> Weight:
             l_c = np.trace(_L, axis1=0, axis2=2)
             tmp = np.trace(_H, axis1=1, axis2=2)
             w_ce = np.trace(tmp, axis1=1, axis2=2)
             r_e = np.trace(_R, axis1=0, axis2=2)
             return np.dot(l_c, np.dot(w_ce, r_e))
 
-        return _make_operator((n, n), dtype, _matvec, _rmatvec, _trace)
+        # `plus_identity` is fixed for the lifetime of this operator, so the
+        # shift is resolved once here instead of branching on every matvec.
+        if not pid:
+            return _make_operator((n, n), dtype, _matvec, _rmatvec, _trace)
+
+        def _shifted_matvec(v: np.ndarray) -> np.ndarray:
+            return _matvec(v) + pid * v
+
+        def _shifted_rmatvec(v: np.ndarray) -> np.ndarray:
+            return _rmatvec(v) + np.conj(pid) * v
+
+        def _shifted_trace() -> Weight:
+            return _trace() + pid * n
+
+        return _make_operator(
+            (n, n), dtype, _shifted_matvec, _shifted_rmatvec, _shifted_trace
+        )
 
     def gradient_1site(self) -> Tensor3:
         """Return the gradient tensor d<state|O|ket>/dstate* at the current
