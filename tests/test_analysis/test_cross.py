@@ -17,10 +17,12 @@ from seemps.analysis.cross import (
     cross_maxvol,
     cross_dmrg,
     cross_greedy,
+    cross_prrlu,
     CrossStrategyGreedy,
 )
 from seemps.analysis.cross.cross import maxvol_square, CrossResults
 from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
+from seemps.analysis.cross.cross_prrlu import _prrlu
 from seemps.operators import mps_as_mpo
 from .tools_analysis import reorder_tensor
 from ..tools import SeeMPSTestCase
@@ -155,6 +157,11 @@ class TestCrossGreedy(CrossTests):
         return cross_greedy(function, *args, **kwdargs)
 
 
+class TestCrossPRRLU(CrossTests):
+    def cross_method(self, function, *args, **kwdargs):
+        return cross_prrlu(function, *args, **kwdargs)
+
+
 class TestSkeleton(SeeMPSTestCase):
     def random_matrix(self, m=1000, n=1000, r=5):
         """Computes a m x n random matrix of rank r"""
@@ -184,3 +191,56 @@ class TestSkeleton(SeeMPSTestCase):
         I, _ = maxvol_square(A[:, J])
         A_new = A[:, J] @ np.linalg.inv(A[I, :][:, J]) @ A[I, :]
         self.assertSimilar(A, A_new)
+
+
+class TestPRRLU(SeeMPSTestCase):
+    def test_rank_revelation(self):
+        for complex_values in (False, True):
+            with self.subTest(complex_values=complex_values):
+                left = self.rng.normal(size=(23, 4))
+                right = self.rng.normal(size=(4, 17))
+                if complex_values:
+                    left = left + 1j * self.rng.normal(size=left.shape)
+                    right = right + 1j * self.rng.normal(size=right.shape)
+                matrix = left @ right
+                original = matrix.copy()
+
+                rows, columns, lower, upper = _prrlu(matrix, 1e-11, 17)
+
+                self.assertEqual(len(rows), 4)
+                self.assertEqual(len(columns), 4)
+                self.assertSimilar(lower @ upper, matrix, atol=1e-12)
+                self.assertEqualTensors(matrix, original)
+                self.assertSimilar(lower[rows], np.tril(lower[rows]))
+                self.assertSimilar(np.diag(lower[rows]), np.ones(4))
+                self.assertSimilar(upper[:, columns], np.triu(upper[:, columns]))
+
+    def test_truncation_and_rank_cap(self):
+        matrix = np.diag([1e-14, 1.0, 1e-3, 1e-7])
+        cases = ((1e-6, 4, 2), (0, 2, 2), (0, 4, 4))
+        for tolerance, max_rank, expected_rank in cases:
+            with self.subTest(tolerance=tolerance, max_rank=max_rank):
+                rows, columns, lower, upper = _prrlu(
+                    matrix, tolerance, max_rank
+                )
+                self.assertEqual(len(rows), expected_rank)
+                self.assertEqual(len(columns), expected_rank)
+                self.assertLessEqual(
+                    np.max(np.abs(matrix - lower @ upper)),
+                    max(tolerance, 1e-7),
+                )
+
+    def test_zero_and_nonfinite_matrices(self):
+        for dtype in (int, float, complex):
+            with self.subTest(dtype=dtype):
+                rows, columns, lower, upper = _prrlu(
+                    np.zeros((3, 5), dtype=dtype), 0, 3
+                )
+                self.assertEqual(len(rows), 1)
+                self.assertEqual(len(columns), 1)
+                self.assertSimilar(lower @ upper, np.zeros((3, 5)))
+
+        for value in (np.inf, np.nan):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    _prrlu(np.array([[value]]), 1e-10, 1)

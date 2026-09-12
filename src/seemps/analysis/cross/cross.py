@@ -32,8 +32,9 @@ class CrossStrategy:
     Abstract dataclass containing the base parameters for tensor cross interpolation.
 
     See specializations :class:`~seemps.analysis.cross.CrossStrategyDMRG`,
-    :class:`~seemps.analysis.cross.CrossStrategyGreedy`, and
-    :class:`~seemps.analysis.cross.CrossStrategyMaxvol`.
+    :class:`~seemps.analysis.cross.CrossStrategyGreedy`,
+    :class:`~seemps.analysis.cross.CrossStrategyMaxvol`, and
+    :class:`~seemps.analysis.cross.CrossStrategyPRRLU`.
 
     Parameters
     ----------
@@ -295,7 +296,7 @@ class CrossError:
             self.norm = self.lp_distance(self.black_box_evals)
         mps_evals = evaluate_mps(cross.mps, self.mps_indices)
         error = self.lp_distance(mps_evals - self.black_box_evals)
-        return error / self.norm if self.error_relative else error
+        return error / self.norm if self.error_relative and self.norm else error
 
 
 def check_tci_convergence(
@@ -427,10 +428,13 @@ def cross_interpolation(
     converged = False
     with make_logger(1) as logger:
         results = CrossResults(cross.mps)
-        for i in range(cross_strategy.range_iters[1] // 2):
-            # Left-to-right half sweep
-            for k in cross.iteration_range:
-                cross.update(k, True)
+        for half_sweep in range(1, cross_strategy.range_iters[1] + 1):
+            forward = half_sweep % 2 == 1
+            sites = (
+                cross.iteration_range if forward else reversed(cross.iteration_range)
+            )
+            for k in sites:
+                cross.update(k, forward)
 
             results.update(
                 cross.mps,
@@ -438,26 +442,11 @@ def cross_interpolation(
                 cross.mps.bond_dimensions(),
                 cross.black_box.evals,
             )
-            if not cross.two_sweeps_required:
+            if not cross.two_sweeps_required or not forward:
                 if converged := check_tci_convergence(
-                    logger, 2 * i + 1, results, cross_strategy
+                    logger, half_sweep, results, cross_strategy
                 ):
                     break
-
-            # Right-to-left half sweep
-            for k in reversed(cross.iteration_range):
-                cross.update(k, False)
-
-            results.update(
-                cross.mps,
-                error_calculator.sample_error(cross),
-                cross.mps.bond_dimensions(),
-                cross.black_box.evals,
-            )
-            if converged := check_tci_convergence(
-                logger, 2 * i + 2, results, cross_strategy
-            ):
-                break
 
         if not converged:
             logger("Maximum number of iterations reached")

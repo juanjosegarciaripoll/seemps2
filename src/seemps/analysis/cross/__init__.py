@@ -7,6 +7,7 @@ from .cross import cross_interpolation, CrossStrategy, maxvol_square
 from .cross_maxvol import cross_maxvol, CrossStrategyMaxvol
 from .cross_dmrg import cross_dmrg, CrossStrategyDMRG
 from .cross_greedy import cross_greedy, CrossStrategyGreedy
+from .cross_prrlu import cross_prrlu, CrossStrategyPRRLU
 
 __all__ = [
     "BlackBoxLoadMPS",
@@ -16,9 +17,11 @@ __all__ = [
     "cross_maxvol",
     "cross_dmrg",
     "cross_greedy",
+    "cross_prrlu",
     "CrossStrategy",
     "CrossStrategyMaxvol",
     "CrossStrategyDMRG",
     "CrossStrategyGreedy",
+    "CrossStrategyPRRLU",
     "maxvol_square",
 ]
