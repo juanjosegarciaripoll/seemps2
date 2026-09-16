@@ -90,7 +90,7 @@ def dmrg_solve(
     strategy: Strategy = DEFAULT_STRATEGY,
     method: str = "bicgstab",
     compute_residuals: bool = True,
-) -> tuple[MPS, float | None]:
+) -> tuple[CanonicalMPS, float | None]:
     r"""Solve :math:`A x = b` for an MPO `A` and an MPS `b` using two-site DMRG.
 
     Parameters
