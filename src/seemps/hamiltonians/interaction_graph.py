@@ -241,7 +241,9 @@ class InteractionGraph:
         def build_sparse_matrix(term: str) -> SparseOperator:
             output = sp.identity(1).tobsr()  # type: ignore
             for name in term:
-                output = sp.kron(output, sp.bsr_matrix(self._operators[name]))
+                output = sp.kron(
+                    output, sp.bsr_matrix(self._operators[name]), format="bsr"
+                )
             return output.tocsr()
 
         return sum(

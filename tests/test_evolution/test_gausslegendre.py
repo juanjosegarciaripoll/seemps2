@@ -3,25 +3,25 @@ from typing import Any
 import numpy as np
 import scipy.linalg
 
-from seemps.evolution import ODECallback, TimeSpan, radau
-from seemps.evolution.radau import _radau_tableau, radau_step
+from seemps.evolution import ODECallback, TimeSpan, gausslegendre
+from seemps.evolution.gausslegendre import _gl_tableau, gausslegendre_step
 from seemps.hamiltonians import HeisenbergHamiltonian
 from seemps.operators import MPO
 from seemps.operators.projectors import identity_mpo
-from seemps.state import MPS, DEFAULT_STRATEGY, Strategy
+from seemps.state import DEFAULT_STRATEGY, MPS, Strategy
 
 from .problem import EvolutionTestCase, RKTypeEvolutionTestcase
 
 
 def stability_function(z: complex, stages: int) -> complex:
-    """R(z) = 1 + z b^T (I - z A)^{-1} 1."""
-    _, A, b, _ = _radau_tableau(stages)
+    """R(z) = 1 + z b^T (I - z A)^{-1} 1, the Pade approximant of exp(z)."""
+    _, A, b, _ = _gl_tableau(stages)
     ones = np.ones(stages)
     return 1.0 + z * (b @ np.linalg.solve(np.eye(stages) - z * A, ones))
 
 
-class TestRadau(RKTypeEvolutionTestcase):
-    stages: int = 3
+class TestGaussLegendre(RKTypeEvolutionTestcase):
+    stages: int = 2
 
     def solve_ode(
         self,
@@ -32,7 +32,7 @@ class TestRadau(RKTypeEvolutionTestcase):
         strategy: Strategy = DEFAULT_STRATEGY,
         callback: ODECallback | None = None,
     ) -> MPS | list[Any]:
-        return radau(
+        return gausslegendre(
             L,
             time,
             state,
@@ -43,16 +43,16 @@ class TestRadau(RKTypeEvolutionTestcase):
         )
 
     def accumulated_amplification(self, E, dt, steps):
-        # A Radau IIA step amplifies an eigenstate by its stability function,
-        # which at the quadrature node c=1 coincides with the exponential.
+        # A Gauss-Legendre step amplifies an eigenstate by the (s, s) Pade
+        # approximant of the exponential, not by the exponential itself.
         return stability_function(dt * E, self.stages) ** steps
 
 
-class TestRadau5Stages(TestRadau):
-    stages = 5
+class TestGaussLegendre3Stages(TestGaussLegendre):
+    stages = 3
 
 
-class TestRadauLinear(EvolutionTestCase):
+class TestGaussLegendreLinear(EvolutionTestCase):
     """The linear branch, checked against dense algebra."""
 
     # The stage solves must not be what limits the accuracy under test, so
@@ -74,11 +74,9 @@ class TestRadauLinear(EvolutionTestCase):
         L = (-1j) * HeisenbergHamiltonian(nqubits).to_mpo()
         exact = scipy.linalg.expm(T * L.to_matrix()) @ state.to_vector()
 
-        # `stages = 1` is the backward Euler step: its error is not small
-        # enough to compare element-wise against the exact solution.
-        for stages in (3, 5):
+        for stages in (1, 2, 3):
             with self.subTest(stages=stages):
-                final = radau(
+                final = gausslegendre(
                     L,
                     T,
                     state,
@@ -91,7 +89,7 @@ class TestRadauLinear(EvolutionTestCase):
                 self.assertSimilar(final, exact)
 
     def test_order_of_convergence(self):
-        """The local error of the s-stage method scales as dt^(2s-1)."""
+        """The local error of the s-stage method scales as dt^(2s)."""
         nqubits = 3
         T = 0.5
         strategy = self.tight_strategy()
@@ -99,13 +97,13 @@ class TestRadauLinear(EvolutionTestCase):
         L = (-1j) * HeisenbergHamiltonian(nqubits).to_mpo()
         exact = scipy.linalg.expm(T * L.to_matrix()) @ state.to_vector()
 
-        # Only the low orders are checked: with `stages = 5` the error is
+        # Only the low orders are checked: with `stages = 3` the error is
         # already at the 1e-10 truncation floor, where the rate is meaningless.
-        for stages in (1, 3):
+        for stages in (1, 2):
             with self.subTest(stages=stages):
                 errors = []
                 for steps in (2, 4):
-                    final = radau(
+                    final = gausslegendre(
                         L,
                         T,
                         state,
@@ -116,8 +114,8 @@ class TestRadauLinear(EvolutionTestCase):
                     )
                     assert isinstance(final, MPS)
                     errors.append(np.linalg.norm(final.to_vector() - exact))
-                # Halving dt must reduce the error by ~2^(2*stages-1).
-                self.assertGreater(errors[0] / errors[1], 0.8 * 2 ** (2 * stages - 1))
+                # Halving dt must reduce the error by ~2^(2*stages).
+                self.assertGreater(errors[0] / errors[1], 0.8 * 2 ** (2 * stages))
 
     def test_rtol_controls_the_stage_solves(self):
         """An explicit `rtol` reaches the linear solver."""
@@ -129,7 +127,7 @@ class TestRadauLinear(EvolutionTestCase):
         exact = scipy.linalg.expm(T * L.to_matrix()) @ state.to_vector()
 
         def error(rtol):
-            final = radau(L, T, state, steps=4, stages=3, strategy=strategy, rtol=rtol)
+            final = gausslegendre(L, T, state, steps=4, strategy=strategy, rtol=rtol)
             assert isinstance(final, MPS)
             return np.linalg.norm(final.to_vector() - exact)
 
@@ -140,10 +138,10 @@ class TestRadauLinear(EvolutionTestCase):
         state = self.random_initial_state(2)
         L = (-1j) * HeisenbergHamiltonian(2).to_mpo()
         with self.assertRaises(ValueError):
-            radau_step(L, 0.0, state, 0.1, stages=0)
+            gausslegendre_step(L, 0.0, state, 0.1, stages=0)
 
 
-class TestRadauNonlinear(EvolutionTestCase):
+class TestGaussLegendreNonlinear(EvolutionTestCase):
     """The Gauss-Seidel branch driven by a state-dependent term N."""
 
     # The stage solves must not be what limits the accuracy under test, so
@@ -166,10 +164,10 @@ class TestRadauNonlinear(EvolutionTestCase):
         L = (-1j) * H
         M = (-0.5j) * H
 
-        linear = radau(
+        linear = gausslegendre(
             (-1.5j) * H, T, state, steps=4, strategy=strategy, rtol=self.RTOL
         )
-        nonlinear = radau(
+        nonlinear = gausslegendre(
             L,
             T,
             state,
@@ -196,7 +194,7 @@ class TestRadauNonlinear(EvolutionTestCase):
         zero = 0.0 * identity
 
         n0 = state.norm()
-        final = radau(
+        final = gausslegendre(
             zero,
             T,
             state,

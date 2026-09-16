@@ -1,6 +1,7 @@
 from .arnoldi import arnoldi
 from .crank_nicolson import crank_nicolson
 from .euler import euler, euler2
+from .gausslegendre import gausslegendre
 from .radau import radau
 from .runge_kutta import runge_kutta, runge_kutta_fehlberg
 from .tdvp import tdvp
@@ -17,6 +18,7 @@ __all__ = [
     "runge_kutta_fehlberg",
     "tdvp",
     "trotter",
+    "gausslegendre",
     "radau",
     "TimeSpan",
     "ODECallback",

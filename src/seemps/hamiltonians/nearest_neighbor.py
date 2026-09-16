@@ -94,7 +94,7 @@ class NNHamiltonian(ABC):
         H: sp.bsr_matrix = sp.bsr_matrix((self.dimension(0), self.dimension(0)))
         for i in range(self.size - 1):
             # We extend the existing Hamiltonian to cover site 'i+1'
-            H = sp.kron(H, sp.eye(self.dimension(i + 1)))
+            H = sp.kron(H, sp.eye(self.dimension(i + 1)), format="bsr")
             # We add now the interaction on the sites (i,i+1)
             H = H + sp.kron(sp.eye(dleft if dleft else 1), self.interaction_term(i, t))
             # We extend the dimension covered
