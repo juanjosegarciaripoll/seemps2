@@ -6,6 +6,7 @@ from ...state import MPS
 from ...cython import _contract_last_and_first
 from ...typing import Vector, Matrix, Tensor3
 from .black_box import BlackBox
+from .kernels import _combine_indices
 from .cross import (
     CrossStrategy,
     CrossInterpolation,
@@ -15,6 +16,8 @@ from .cross import (
     IndexVector,
     cross_interpolation,
 )
+
+# TODO: Remove from the library (much slower than other variants)
 
 
 @dataclass
@@ -57,7 +60,12 @@ class CrossInterpolationGreedy(CrossInterpolation):
         black_box: BlackBox,
         initial_points: Matrix | None,
     ):
-        super().__init__(black_box, initial_points, two_site_algorithm=True)
+        super().__init__(
+            black_box,
+            initial_points,
+            two_site_algorithm=True,
+            cache_samples=strategy.cache_samples,
+        )
         self.strategy = strategy
         if strategy.maxiter < 1 or strategy.initial_points < 1:
             raise ValueError("maxiter and initial_points must be positive")
@@ -72,8 +80,8 @@ class CrossInterpolationGreedy(CrossInterpolation):
         J_l = []
         J_g = []
         for k in range(self.sites - 1):
-            i_l = self.combine_indices(self.I_l[k], self.I_s[k])
-            i_g = self.combine_indices(self.I_s[k + 1], self.I_g[k + 1])
+            i_l = _combine_indices(self.I_l[k], self.I_s[k])
+            i_g = _combine_indices(self.I_s[k + 1], self.I_g[k + 1])
             J_l.append(get_row_indices(self.I_l[k + 1], i_l))
             J_g.append(get_row_indices(self.I_g[k], i_g))
 
@@ -89,12 +97,11 @@ class CrossInterpolationGreedy(CrossInterpolation):
     def sample_superblock(
         self, k: int, j_l: IndexSlice = slice(None), j_g: IndexSlice = slice(None)
     ) -> Matrix:
-        i_ls = self.combine_indices(self.I_l[k], self.I_s[k])[j_l]
+        i_ls = _combine_indices(self.I_l[k], self.I_s[k])[j_l]
         i_ls = i_ls.reshape(1, -1) if i_ls.ndim == 1 else i_ls  # Prevent collapse to 1D
-        i_sg = self.combine_indices(self.I_s[k + 1], self.I_g[k + 1])[j_g]
+        i_sg = _combine_indices(self.I_s[k + 1], self.I_g[k + 1])[j_g]
         i_sg = i_sg.reshape(1, -1) if i_sg.ndim == 1 else i_sg
-        mps_indices = self.combine_indices(i_ls, i_sg)
-        return self.black_box[mps_indices].reshape((len(i_ls), len(i_sg)))
+        return self.sample(i_ls, i_sg).reshape((len(i_ls), len(i_sg)))
 
     def sample_skeleton(
         self, k: int, j_l: IndexSlice = slice(None), j_g: IndexSlice = slice(None)
@@ -108,8 +115,8 @@ class CrossInterpolationGreedy(CrossInterpolation):
     def update_indices(
         self, k: int, j_l: np.intp | IndexVector, j_g: np.intp | IndexVector
     ) -> None:
-        i_l = self.combine_indices(self.I_l[k], self.I_s[k])[j_l]
-        i_g = self.combine_indices(self.I_s[k + 1], self.I_g[k + 1])[j_g]
+        i_l = _combine_indices(self.I_l[k], self.I_s[k])[j_l]
+        i_g = _combine_indices(self.I_s[k + 1], self.I_g[k + 1])[j_g]
         self.I_l[k + 1] = np.vstack((self.I_l[k + 1], i_l))
         self.J_l[k + 1] = np.append(self.J_l[k + 1], j_l)
         self.I_g[k] = np.vstack((self.I_g[k], i_g))

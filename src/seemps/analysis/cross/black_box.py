@@ -7,6 +7,7 @@ from ..mesh import Mesh, mps_to_mesh_matrix
 from ..evaluation import evaluate_mps
 from ...state import MPS
 from ...typing import Matrix, Vector
+from .kernels import _indices_to_mesh_coordinates
 
 
 class BlackBox(ABC):
@@ -23,18 +24,13 @@ class BlackBox(ABC):
 
     func: Callable
     physical_dimensions: list[int]
-    evals: int
 
     def __init__(self, func: Callable, physical_dimensions: list):
         self.func = func
         self.physical_dimensions = physical_dimensions
-        self.evals = 0
 
     @abstractmethod
     def __getitem__(self, mps_indices: Matrix) -> Vector: ...
-
-    def record_evaluations(self, n: int = 1) -> None:
-        self.evals += n
 
 
 class BlackBoxLoadMPS(BlackBox):
@@ -43,6 +39,12 @@ class BlackBoxLoadMPS(BlackBox):
     Each function degree of freedom is quantized and arranged according to an arbitrary
     `map_matrix` operator and assigned a collection of MPS tensors with the given
     `physical_dimensions`.
+
+    Regular and Chebyshev intervals, including mixed meshes, use a native
+    index-to-coordinate fast path for native-integer index batches. Other
+    intervals and index types retain ordinary mesh indexing. The user function
+    is called once per batch with contiguous coordinates in channels-first
+    order.
 
     Parameters
     ----------
@@ -107,11 +109,16 @@ class BlackBoxLoadMPS(BlackBox):
         self.map_matrix = map_matrix
 
     def __getitem__(self, mps_indices: Matrix) -> Vector:
-        self.record_evaluations(len(mps_indices))
-        mesh_indices = (
-            mps_indices if self.map_matrix is None else mps_indices @ self.map_matrix
+        coordinates = _indices_to_mesh_coordinates(
+            self.mesh, mps_indices, self.map_matrix
         )
-        coordinates = self.mesh[mesh_indices]
+        if coordinates is None:
+            mesh_indices = (
+                mps_indices
+                if self.map_matrix is None
+                else mps_indices @ self.map_matrix
+            )
+            coordinates = self.mesh[mesh_indices]
         # Transpose because of opposite conventions for mesh (dimension index last)
         # and cross (dimension index first).
         return self.func(coordinates.T)  # type: ignore
@@ -199,8 +206,7 @@ class BlackBoxLoadMPO(BlackBox):
             [s * base_mpo + s for s in range(base_mpo)] if self.is_diagonal else None
         )
 
-    def __getitem__(self, mps_indices: np.ndarray) -> np.ndarray:
-        self.record_evaluations(len(mps_indices))
+    def __getitem__(self, mps_indices: Matrix) -> np.ndarray:
         row_indices = (mps_indices // self.base_mpo) @ self.map_matrix
         col_indices = (mps_indices % self.base_mpo) @ self.map_matrix
         mesh_indices = np.hstack((row_indices, col_indices))
@@ -257,7 +263,6 @@ class BlackBoxComposeMPS(BlackBox):
         self.mps_list = mps_list
 
     def __getitem__(self, mps_indices: Matrix) -> Vector:
-        self.record_evaluations(len(mps_indices))
         mps_values = []
         for mps in self.mps_list:
             mps_values.append(evaluate_mps(mps, mps_indices))
