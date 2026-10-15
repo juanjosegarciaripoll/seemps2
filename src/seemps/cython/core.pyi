@@ -1,6 +1,6 @@
 from enum import IntEnum
 import numpy as np
-from ..typing import Vector, Unitary, Tensor3, Tensor4, Environment, Weight
+from ..typing import Vector, Matrix, Unitary, Tensor3, Tensor4, Environment, Weight
 
 MAX_BOND_DIMENSION: int
 
@@ -86,6 +86,7 @@ def _right_orth_2site(
 ) -> tuple[Tensor3, Tensor3, float]: ...
 def _select_svd_driver(which: str): ...
 def _destructive_svd(A: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]: ...
+def _evaluate_mps(mps: MPS, mps_indices: Matrix) -> Vector: ...
 
 class GemmOrder(IntEnum):
     NORMAL = 0

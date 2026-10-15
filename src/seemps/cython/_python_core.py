@@ -532,3 +532,28 @@ def _right_orth_2site(
         V.reshape(D, d2, b),
         np.sqrt(error),
     )
+
+
+# MPS evaluation (mirror evaluation.pxi)
+
+
+def _evaluate_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
+    """Evaluate an open-boundary MPS at one index or a batch of indices."""
+    sites = len(mps)
+    if sites == 0:
+        raise ValueError("Cannot evaluate an empty MPS")
+    indices = np.asarray(mps_indices)
+    if indices.ndim == 1:
+        indices = indices.reshape(1, -1)
+    if indices.ndim != 2 or indices.shape[1] != sites:
+        raise ValueError("Expected one index per MPS site")
+    if indices.dtype.kind not in "iu":
+        raise TypeError("MPS indices must be integers")
+    if np.result_type(*mps).kind not in "fc":
+        raise TypeError("MPS evaluation requires floating-point cores")
+    A = mps[0][:, indices[:, 0], :]
+    for site in range(1, sites):
+        B = mps[site][:, indices[:, site], :]
+        # np.einsum("iqk,kqr->iqr", A, B)
+        A = np.matmul(A.transpose(1, 0, 2), B.transpose(1, 0, 2)).transpose(1, 0, 2)
+    return A.reshape(-1)
