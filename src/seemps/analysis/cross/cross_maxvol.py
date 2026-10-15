@@ -59,6 +59,8 @@ class CrossInterpolationMaxvol(CrossInterpolation):
         self.strategy = strategy
 
     def update(self, k: int, left_to_right: bool) -> None:
+        if left_to_right and k == self.sites - 1:
+            return
         cross_strategy = self.strategy
         fiber = self.sample_fiber(k)
         r_l, s, r_g = fiber.shape

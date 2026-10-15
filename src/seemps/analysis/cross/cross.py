@@ -153,19 +153,20 @@ class CrossInterpolation:
                [4, 5, 6, 1]])
         """
 
-        def cartesian_column(A: Matrix, B: Matrix) -> Matrix:
-            A_repeated = np.repeat(A, repeats=B.shape[0], axis=0)
-            B_tiled = np.tile(B, (A.shape[0], 1))
-            return np.hstack((A_repeated, B_tiled))
-
-        def cartesian_row(A: Matrix, B: Matrix) -> Matrix:
-            A_tiled = np.tile(A, (B.shape[0], 1))
-            B_repeated = np.repeat(B, repeats=A.shape[0], axis=0)
-            return np.hstack((A_tiled, B_repeated))
-
-        if row_major:
-            return functools.reduce(cartesian_row, indices)
-        return functools.reduce(cartesian_column, indices)
+        if len(indices) == 1:
+            return indices[0]
+        lengths = [len(a) for a in indices]
+        shape = lengths[::-1] if row_major else lengths
+        width = sum(a.shape[1] for a in indices)
+        result = np.empty((*shape, width), dtype=np.result_type(*indices))
+        offset = 0
+        for k, a in enumerate(indices):
+            # Broadcast each block into the final allocation; no repeat/tile copies.
+            view_shape = [1] * len(indices) + [a.shape[1]]
+            view_shape[len(indices) - 1 - k if row_major else k] = len(a)
+            result[..., offset : offset + a.shape[1]] = a.reshape(view_shape)
+            offset += a.shape[1]
+        return result.reshape(int(np.prod(lengths)), width)
 
     @staticmethod
     def points_to_indices(points: Matrix) -> tuple[list[Matrix], list[Matrix]]:

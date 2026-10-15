@@ -1,5 +1,4 @@
 from __future__ import annotations
-import numpy as np
 import scipy.linalg
 from dataclasses import dataclass
 from ...state import Strategy, DEFAULT_TOLERANCE, SIMPLIFICATION_STRATEGY
@@ -67,21 +66,16 @@ class CrossInterpolationDMRG(CrossInterpolation):
         A = superblock.reshape(r_l * s1, s2 * r_g)
 
         ## Non-destructive SVD
-        U, S, V = scipy.linalg.svd(A, check_finite=False)
+        U, S, V = scipy.linalg.svd(A, full_matrices=False, check_finite=False)
         destructively_truncate_vector(S, cross_strategy.strategy)
         r = S.size
-        U, S, V = U[:, :r], np.diag(S), V[:r, :]
+        U, V = U[:, :r], V[:r, :]
         ##
-        r = S.shape[0]
 
         if left_to_right:
             if k < self.sites - 2:
-                C = U.reshape(r_l * s1, r)
-                Q, _ = scipy.linalg.qr(
-                    C, mode="economic", overwrite_a=True, check_finite=False
-                )  # type: ignore
                 I, G = maxvol_square(
-                    Q,
+                    U,
                     cross_strategy.maxiter_maxvol,
                     cross_strategy.tol_maxvol_square,  # type: ignore
                 )
@@ -89,23 +83,19 @@ class CrossInterpolationDMRG(CrossInterpolation):
                 self.mps[k] = G.reshape(r_l, s1, r)
             else:
                 self.mps[k] = U.reshape(r_l, s1, r)
-                self.mps[k + 1] = (S @ V).reshape(r, s2, r_g)
+                self.mps[k + 1] = (S[:, None] * V).reshape(r, s2, r_g)
 
         else:
             if k > 0:
-                R = V.reshape(r, s2 * r_g)
-                Q, _ = scipy.linalg.qr(
-                    R.T, mode="economic", overwrite_a=True, check_finite=False
-                )  # type: ignore
                 I, G = maxvol_square(
-                    Q,
+                    V.T,
                     cross_strategy.maxiter_maxvol,
                     cross_strategy.tol_maxvol_square,  # type: ignore
                 )
                 self.I_g[k] = self.combine_indices(self.I_s[k + 1], self.I_g[k + 1])[I]
                 self.mps[k + 1] = (G.T).reshape(r, s2, r_g)
             else:
-                self.mps[k] = (U @ S).reshape(r_l, s1, r)
+                self.mps[k] = (U * S).reshape(r_l, s1, r)
                 self.mps[k + 1] = V.reshape(r, s2, r_g)
 
 

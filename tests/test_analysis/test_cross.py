@@ -22,6 +22,7 @@ from seemps.analysis.cross import (
 )
 from seemps.analysis.cross.cross import maxvol_square, CrossResults
 from seemps.analysis.cross.cross_maxvol import maxvol_rectangular
+from seemps.analysis.cross.cross_greedy import CrossInterpolationGreedy
 from seemps.analysis.cross.cross_prrlu import _prrlu
 from seemps.operators import mps_as_mpo
 from .tools_analysis import reorder_tensor
@@ -220,9 +221,7 @@ class TestPRRLU(SeeMPSTestCase):
         cases = ((1e-6, 4, 2), (0, 2, 2), (0, 4, 4))
         for tolerance, max_rank, expected_rank in cases:
             with self.subTest(tolerance=tolerance, max_rank=max_rank):
-                rows, columns, lower, upper = _prrlu(
-                    matrix, tolerance, max_rank
-                )
+                rows, columns, lower, upper = _prrlu(matrix, tolerance, max_rank)
                 self.assertEqual(len(rows), expected_rank)
                 self.assertEqual(len(columns), expected_rank)
                 self.assertLessEqual(
@@ -244,3 +243,72 @@ class TestPRRLU(SeeMPSTestCase):
             with self.subTest(value=value):
                 with self.assertRaises(ValueError):
                     _prrlu(np.array([[value]]), 1e-10, 1)
+
+
+class TestGreedyStability(SeeMPSTestCase):
+    def assert_indices_are_consistent(self, cross):
+        for k in range(cross.sites - 1):
+            left = cross.combine_indices(cross.I_l[k], cross.I_s[k])
+            right = cross.combine_indices(cross.I_s[k + 1], cross.I_g[k + 1])
+            self.assertEqualTensors(left[cross.J_l[k + 1]], cross.I_l[k + 1])
+            self.assertEqualTensors(right[cross.J_g[k]], cross.I_g[k])
+
+    def test_stable_core_construction(self):
+        """Selected rows remain an identity despite large row-scale differences."""
+        fiber = np.array([[1e-20, 1e-20], [3e-20, 6e-20], [1, 3], [1, -1], [0, 0]])
+        selected_rows = np.array([0, 1])
+        core = CrossInterpolationGreedy.fiber_to_core(
+            fiber.reshape(1, 5, 2), selected_rows
+        ).reshape(5, 2)
+        self.assertEqualTensors(core[selected_rows], np.eye(2))
+        self.assertSimilar(core @ fiber[selected_rows], fiber, atol=1e-14, rtol=1e-14)
+
+    def test_rook_search_keeps_matching_column(self):
+        """A bounded rook search stores the column matching its final pivot."""
+        tensor = np.array([[1.0, 1.0, 1.0], [1.0, 2.0, 3.0], [1.0, 4.0, 5.0]])
+        mps = MPS.from_vector(tensor.reshape(-1), [3, 3], normalize=False)
+        black_box = BlackBoxComposeMPS(lambda values: values[0], [mps])
+        cross = CrossInterpolationGreedy(
+            CrossStrategyGreedy(
+                maxiter=1, initial_points=1, rng=np.random.default_rng(2)
+            ),
+            black_box,
+            None,
+        )
+        cross.update(0, True)
+        self.assertEqual(cross.I_g[0][-1, 0], 2)
+        self.assert_indices_are_consistent(cross)
+
+    def test_nonzero_initial_indices(self):
+        """Right flattened indices keep the correct stride as bonds grow."""
+        tensor = self.rng.uniform(0.5, 1.5, (3, 4, 5, 3))
+        mps = MPS.from_vector(tensor.reshape(-1), list(tensor.shape), normalize=False)
+        black_box = BlackBoxComposeMPS(lambda values: values[0], [mps])
+        cross = CrossInterpolationGreedy(
+            CrossStrategyGreedy(rng=np.random.default_rng(7)),
+            black_box,
+            np.array([1, 2, 3, 1]),
+        )
+        self.assert_indices_are_consistent(cross)
+        for sweep in range(8):
+            sites = range(3) if sweep % 2 == 0 else reversed(range(3))
+            for k in sites:
+                cross.update(k, sweep % 2 == 0)
+                self.assert_indices_are_consistent(cross)
+
+    def test_roundoff_does_not_inflate_rank(self):
+        """Cancellation noise does not add pivots beyond the matrix rank."""
+        left = self.rng.normal(size=(256, 8))
+        right = self.rng.normal(size=(8, 256))
+        matrix = 1e8 * (left @ right)
+        mps = MPS.from_vector(matrix.reshape(-1), [256, 256], normalize=False)
+        black_box = BlackBoxComposeMPS(lambda values: values[0], [mps])
+        cross = CrossInterpolationGreedy(
+            CrossStrategyGreedy(rng=np.random.default_rng(12345)), black_box, None
+        )
+        for _ in range(40):
+            cross.update(0, True)
+        self.assertEqual(len(cross.I_g[0]), 8)
+        approximation = cross.mps.to_vector().reshape(matrix.shape)
+        relative_error = np.max(np.abs(approximation - matrix)) / np.max(np.abs(matrix))
+        self.assertLess(relative_error, 1e-13)
