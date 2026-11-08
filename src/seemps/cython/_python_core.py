@@ -224,9 +224,7 @@ def _contract_last_and_first(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     return np.tensordot(A, B, axes=1)
 
 
-def _contract_nrjl_ijk_klm(
-    U: np.ndarray, A: np.ndarray, B: np.ndarray
-) -> np.ndarray:
+def _contract_nrjl_ijk_klm(U: np.ndarray, A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """Implements ``np.einsum('ijk,klm,nrjl->inrm', A, B, U)`` with ``U`` given
     as the matrix ``U[n*r, j*l]`` and the new physical dimensions equal to the
     old ones (``n == j``, ``r == l``)."""
@@ -491,9 +489,7 @@ def _recanonicalize(
     return err
 
 
-def _canonicalize(
-    state: list[np.ndarray], center: int, truncation: Strategy
-) -> float:
+def _canonicalize(state: list[np.ndarray], center: int, truncation: Strategy) -> float:
     """Bring ``state`` (a list of rank-3 tensors) into canonical form."""
     L = len(state)
     err = 0.0
@@ -532,3 +528,33 @@ def _right_orth_2site(
         V.reshape(D, d2, b),
         np.sqrt(error),
     )
+
+
+# MPS evaluation (mirror evaluation.pxi)
+
+
+def _evaluate_mps(mps: MPS, mps_indices: np.ndarray) -> np.ndarray:
+    """Evaluate an open-boundary MPS at one index or a batch of indices."""
+    sites = len(mps)
+    if sites == 0:
+        raise ValueError("Cannot evaluate an empty MPS")
+    indices = np.asarray(mps_indices)
+    if indices.ndim == 1:
+        indices = indices.reshape(1, -1)
+    if indices.ndim != 2 or indices.shape[1] != sites:
+        raise ValueError("Expected one index per MPS site")
+    if indices.dtype.kind not in "iu":
+        raise TypeError("MPS indices must be integers")
+    if np.result_type(*mps).kind not in "fc":
+        raise TypeError("MPS evaluation requires floating-point cores")
+    # Group the samples by their physical index s at each site, so that each
+    # group needs a single matrix product left[group] @ A[:, s, :].
+    left = np.ones((len(indices), 1), dtype=mps[0].dtype)
+    for A, site_indices in zip(mps, indices.T):
+        site_indices = np.arange(A.shape[1])[site_indices]  # Bounds, negatives
+        right = np.empty((len(left), A.shape[2]), dtype=np.result_type(left, A))
+        for s in range(A.shape[1]):
+            group = site_indices == s
+            right[group] = left[group] @ A[:, s, :]
+        left = right
+    return left[:, 0]

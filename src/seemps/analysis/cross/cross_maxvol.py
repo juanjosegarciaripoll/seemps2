@@ -4,18 +4,18 @@ import scipy.linalg
 from dataclasses import dataclass
 from ...typing import Matrix
 from .black_box import BlackBox
+from .kernels import combine_indices, maxvol_square, maxvol_rectangular
 from .cross import (
     CrossStrategy,
     CrossInterpolation,
     CrossResults,
-    maxvol_square,
     cross_interpolation,
 )
 
 
 @dataclass
 class CrossStrategyMaxvol(CrossStrategy):
-    rank_kick: tuple = (0, 1)
+    rank_kick: tuple = (1, 4)
     max_iters_maxvol: int = 10
     tol_maxvol_square: float = 1.05
     tol_maxvol_rect: float = 1.05
@@ -25,7 +25,7 @@ class CrossStrategyMaxvol(CrossStrategy):
     
     Parameters
     ----------
-    rank_kick : tuple, default=(0, 1)
+    rank_kick : tuple, default=(1, 4)
         Minimum and maximum rank increase or 'kick' at each rectangular maxvol decomposition.
     max_iters_maxvol : int, default=10
         Maximum number of iterations for the square maxvol decomposition.
@@ -55,10 +55,13 @@ class CrossInterpolationMaxvol(CrossInterpolation):
             initial_points,
             two_sweeps_required=True,
             two_site_algorithm=False,
+            cache_evals=strategy.cache_evals,
         )
         self.strategy = strategy
 
     def update(self, k: int, left_to_right: bool) -> None:
+        if left_to_right and k == self.sites - 1:
+            return
         cross_strategy = self.strategy
         fiber = self.sample_fiber(k)
         r_l, s, r_g = fiber.shape
@@ -76,7 +79,7 @@ class CrossInterpolationMaxvol(CrossInterpolation):
                 cross_strategy.tol_maxvol_rect,
             )
             if k < self.sites - 1:
-                self.I_l[k + 1] = self.combine_indices(
+                self.I_l[k + 1] = combine_indices(
                     self.I_l[k], self.I_s[k], row_major=True
                 )[I]
 
@@ -94,7 +97,7 @@ class CrossInterpolationMaxvol(CrossInterpolation):
                     cross_strategy.tol_maxvol_rect,
                 )
                 self.mps[k] = (G.T).reshape(-1, s, r_g, order="F")
-                self.I_g[k - 1] = self.combine_indices(
+                self.I_g[k - 1] = combine_indices(
                     self.I_s[k], self.I_g[k], row_major=True
                 )[I]
             else:
@@ -107,7 +110,7 @@ def cross_maxvol(
     cross_strategy: CrossStrategyMaxvol = CrossStrategyMaxvol(),
 ) -> CrossResults:
     """
-    Computes the MPS representation of a black-box function using the tensor cross-approximation (TCI)
+    Computes the MPS representation of a black-box function using the tensor cross-interpolation (TCI)
     algorithm based on one-site optimizations using the rectangular maxvol decomposition.
     The black-box function can represent several different structures. See `black_box` for usage examples.
 
@@ -143,41 +146,8 @@ def _choose_maxvol(
     min_kick = min(min_kick, max_kick)
     if n <= r:
         I, B = np.arange(n, dtype=int), np.eye(n)
-    elif rank_kick == 0:
+    elif max_kick == 0:
         I, B = maxvol_square(A, max_iter, tol)
     else:
         I, B = maxvol_rectangular(A, (min_kick, max_kick), max_iter, tol, tol_rect)
-    return I, B
-
-
-def maxvol_rectangular(
-    A: Matrix,
-    rank_kick: tuple = (0, 1),
-    max_iter: int = 10,
-    tol: float = 1.05,
-    tol_rect: float = 1.05,
-) -> tuple[Matrix, Matrix]:
-    # TODO: Add a docstring
-    n, r = A.shape
-    min_rank = r + rank_kick[0]
-    max_rank = min(r + rank_kick[1], n)
-    if min_rank < r or min_rank > max_rank or max_rank > n:
-        raise ValueError("Invalid minimum/maximum number of added rows")
-    I0, B = maxvol_square(A, max_iter, tol)
-    I = np.hstack([I0, np.zeros(max_rank - r, dtype=I0.dtype)])
-    S = np.ones(n, dtype=int)
-    S[I0] = 0
-    F = S * np.linalg.norm(B) ** 2
-    for k in range(r, max_rank):
-        i = np.argmax(F)
-        if k >= min_rank and F[i] <= tol_rect**2:
-            break
-        I[k] = i
-        S[i] = 0
-        v = B.dot(B[i])
-        l = 1.0 / (1 + v[i])
-        B = np.hstack([B - l * np.outer(v, B[i]), l * v.reshape(-1, 1)])
-        F = S * (F - l * v * v)
-    I = I[: B.shape[1]]
-    B[I] = np.eye(B.shape[1], dtype=B.dtype)
     return I, B

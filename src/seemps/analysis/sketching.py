@@ -1,8 +1,6 @@
 from __future__ import annotations
 import numpy as np
 import scipy.linalg
-import functools
-from typing import TypeAlias
 
 from seemps.state import MPS, Strategy, DEFAULT_STRATEGY
 from seemps.state.schmidt import _destructive_svd
@@ -10,9 +8,8 @@ from seemps.cython import destructively_truncate_vector, _contract_last_and_firs
 from seemps.analysis.mesh import Mesh, mesh_to_mps_indices
 from seemps.analysis.cross import BlackBoxLoadMPS
 from seemps.typing import Vector, Matrix, Tensor3
+from .cross.kernels import combine_indices
 from ..tools import DEFAULT_RNG
-
-IndexMatrix: TypeAlias = np.ndarray[tuple[int, int], np.dtype[np.integer]]
 
 
 class SketchedCross:
@@ -54,18 +51,9 @@ class SketchedCross:
         self.I_s = [np.arange(s).reshape(-1, 1) for s in black_box.physical_dimensions]
         self.I_r = [np.unique(mps_indices[:, ℓ:], axis=0) for ℓ in range(n + 1)]  # noqa: E741
 
-    @staticmethod
-    def combine_indices(*indices: IndexMatrix) -> IndexMatrix:
-        def cartesian_column(A: Matrix, B: Matrix) -> Matrix:
-            A_repeated = np.repeat(A, repeats=B.shape[0], axis=0)
-            B_tiled = np.tile(B, (A.shape[0], 1))
-            return np.hstack((A_repeated, B_tiled))
-
-        return functools.reduce(cartesian_column, indices)
-
     def sample_fiber(self, k: int) -> Tensor3:
         i_l, i_s, i_r = self.I_l[k], self.I_s[k], self.I_r[k + 1]
-        mps_indices = self.combine_indices(i_l, i_s, i_r)
+        mps_indices = combine_indices(i_l, i_s, i_r)
         return self.black_box[mps_indices].reshape((len(i_l), len(i_s), len(i_r)))
 
     @property

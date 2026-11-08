@@ -8,13 +8,15 @@ Tensor cross-interpolation (TCI)
 
 Tensor cross-interpolation, known as TCI or TT-Cross, is a method that computes the tensor-train representation of a black-box function by sampling some of its elements along some patterns known as crosses. As it does not act on the explicit tensor representation, it provides an exponential advantage over the standard Schmidt decomposition and evades the *curse of dimensionality*.
 
-There are several variants available for TCI. Each shows different advantages and disadvantages in terms of computational cost and accuracy for different initial conditions. This library implements three:
+There are several variants available for TCI. Each shows different advantages and disadvantages in terms of computational cost and accuracy for different initial conditions. This library implements four:
 
 1. :func:`~cross_dmrg`: Based on two-site optimizations combining the skeleton decomposition and the Schmidt decomposition. It is efficient for structures of low physical dimension, such as binary MPS, as it can increase the bond dimension by several units for each sweep. Inefficient for structures of large physical dimension due to its computational complexity. Has an associated parameter dataclass given by :class:`~CrossStrategyDMRG`.
 
 2. :func:`~cross_greedy`: Based on two-site optimizations performing greedy searches for maximum-volume pivots. Efficient for structures of large physical dimension, such as tensor-trains with dense modes, due to its advantageous computational complexity. Inefficient for structures of reduced physical dimension, as it increases the bond dimension by one each sweep. Has an associated parameter dataclass given by :class:`~CrossStrategyGreedy`.
 
 3. :func:`~cross_maxvol`: Based on rank-adaptive one-site optimizations using the rectangular skeleton decomposition. Can be seen as a middle ground between the former two methods. Has an associated parameter dataclass given by :class:`~CrossStrategyMaxvol`.
+
+4. :func:`~cross_prrlu`: Two-site interpolation using partially rank-revealing LU. Each update can replace pivots and increase or decrease the local rank. Triangular solves construct the MPS cores without pivot-matrix inversion. Has an associated parameter dataclass given by :class:`~CrossStrategyPRRLU`.
 
 Moreover, this method performs the decomposition of a given input black-box. This black-box can take several different forms and serve for different application domains. This library implements the class :class:`~black_box.BlackBox` and the following subclasses:
 
@@ -31,9 +33,11 @@ An example on how to use TCI for all these scenarios is shown in `TCI.ipynb <htt
     ~cross_dmrg
     ~cross_greedy
     ~cross_maxvol
+    ~cross_prrlu
     ~BlackBoxLoadMPS
     ~BlackBoxLoadMPO
     ~BlackBoxComposeMPS
     ~CrossStrategyDMRG
     ~CrossStrategyGreedy
     ~CrossStrategyMaxvol
+    ~CrossStrategyPRRLU

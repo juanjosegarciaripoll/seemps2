@@ -39,6 +39,7 @@ _contract_last_and_first = _impl._contract_last_and_first
 _contract_nrjl_ijk_klm = _impl._contract_nrjl_ijk_klm
 _destructive_svd = _impl._destructive_svd
 _end_environment = _impl._end_environment
+_evaluate_mps = _impl._evaluate_mps
 _gemm = _impl._gemm
 _join_environments = _impl._join_environments
 _left_orth_2site = _impl._left_orth_2site
@@ -74,6 +75,7 @@ __all__ = [
     "_contract_nrjl_ijk_klm",
     "_destructive_svd",
     "_end_environment",
+    "_evaluate_mps",
     "_gemm",
     "_join_environments",
     "_left_orth_2site",

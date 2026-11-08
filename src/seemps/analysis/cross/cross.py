@@ -2,17 +2,17 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Sequence
 from time import perf_counter
+from math import prod
 import numpy as np
-import scipy
 import dataclasses
-import functools
 from typing import TypeAlias
 
 from ...state import MPS
 from ...tools import SEED, Logger, make_logger
 from ...typing import Vector, Matrix, Tensor3, Tensor4, Natural
 from ..evaluation import random_mps_indices, evaluate_mps
-from .black_box import BlackBox
+from .black_box import BlackBox, BlackBoxLoadMPS
+from .kernels import combine_indices
 
 
 @dataclasses.dataclass
@@ -25,15 +25,18 @@ class CrossStrategy:
     range_max_bonds: tuple[Natural, Natural] = (1, 1000)
     max_time: float | None = None
     max_evals: Natural | None = None
+    cache_evals: bool = dataclasses.field(default=False, kw_only=True)
     rng: np.random.Generator = dataclasses.field(
         default_factory=lambda: np.random.default_rng(SEED)
     )
     """
     Abstract dataclass containing the base parameters for tensor cross interpolation.
 
-    See specializations :class:`~seemps.analysis.cross.CrossStrategyDMRG`,
-    :class:`~seemps.analysis.cross.CrossStrategyGreedy`, and
-    :class:`~seemps.analysis.cross.CrossStrategyMaxvol`.
+    See specializations 
+    :class:`~seemps.analysis.cross.CrossStrategyDMRG`,
+    :class:`~seemps.analysis.cross.CrossStrategyGreedy`,
+    :class:`~seemps.analysis.cross.CrossStrategyMaxvol`,
+    :class:`~seemps.analysis.cross.CrossStrategyPRRLU`.
 
     Parameters
     ----------
@@ -52,7 +55,9 @@ class CrossStrategy:
     max_time : float | None, default=None
         Maximum computation time allowed.
     max_evals : Natural | None, default=None
-        Maximum number of evaluations allowed.
+        Maximum number of evaluations allowed (cache misses).
+    cache_evals : bool, default=False
+        Cache black-box evaluations. Useful for expensive deterministic functions.
     rng : np.random.Generator, default=`numpy.random.default_rng(seemps.tools.SEED)`
         Random number generator used to initialize the algorithm and sample the error.
     """
@@ -78,10 +83,7 @@ IndexSlice: TypeAlias = np.intp | IndexVector | slice
 
 
 class CrossInterpolation:
-    """
-    Auxiliar base class for TCI used to keep track of the required interpolation
-    information.
-    """
+    """Auxiliar base class for TCI used to keep track of required information."""
 
     black_box: BlackBox
     sites: int
@@ -91,6 +93,9 @@ class CrossInterpolation:
     mps: MPS
     two_sweeps_required: bool
     iteration_range: range
+    evals: int
+    cache_evals: bool
+    cache: dict[int | tuple[int, ...], np.generic]
 
     def __init__(
         self,
@@ -98,8 +103,12 @@ class CrossInterpolation:
         initial_points: Matrix | None = None,
         two_sweeps_required: bool = False,
         two_site_algorithm: bool = True,
+        cache_evals: bool = False,
     ):
         self.black_box = black_box
+        self.cache_evals = cache_evals
+        self.cache = {}
+        self.evals = 0
         self.sites = len(black_box.physical_dimensions)
         if initial_points is None:
             initial_points = np.zeros(self.sites, dtype=int)
@@ -115,56 +124,41 @@ class CrossInterpolation:
     def update(self, k: int, left_to_right: bool) -> None:
         pass
 
+    def sample(self, *indices: IndexMatrix) -> Vector:
+        """Evaluate the black box on the Cartesian product of index blocks.
+
+        This method is used instead of indexing the black box directly.
+        It allows counting evaluations, caching them when `cache_evals` is set,
+        and implementing optimizations for specific black boxes.
+        """
+        if not self.cache_evals:
+            self.evals += prod(len(block) for block in indices)
+            if isinstance(self.black_box, BlackBoxLoadMPS):
+                values = self.black_box.evaluate_blocks(*indices)  # Much faster
+            else:
+                values = self.black_box[combine_indices(*indices)]
+            return np.asarray(values).reshape(-1)
+
+        # Evaluate only the points not in the cache, each one once
+        points = combine_indices(*indices)
+        keys = list(map(tuple, points.tolist()))
+        missing = {key: n for n, key in enumerate(keys) if key not in self.cache}
+        if missing:
+            values = self.black_box[points[list(missing.values())]]
+            self.cache.update(zip(missing, np.asarray(values).reshape(-1)))
+            self.evals += len(missing)
+        return np.array([self.cache[key] for key in keys])
+
     def sample_fiber(self, k: int) -> Tensor3:
         i_l, i_s, i_g = self.I_l[k], self.I_s[k], self.I_g[k]
-        mps_indices = self.combine_indices(i_l, i_s, i_g)
-        return self.black_box[mps_indices].reshape((len(i_l), len(i_s), len(i_g)))
+        return self.sample(i_l, i_s, i_g).reshape((len(i_l), len(i_s), len(i_g)))
 
     def sample_superblock(self, k: int) -> Tensor4:
         i_l, i_g = self.I_l[k], self.I_g[k + 1]
         i_s1, i_s2 = self.I_s[k], self.I_s[k + 1]
-        mps_indices = self.combine_indices(i_l, i_s1, i_s2, i_g)
-        return self.black_box[mps_indices].reshape(
+        return self.sample(i_l, i_s1, i_s2, i_g).reshape(
             (len(i_l), len(i_s1), len(i_s2), len(i_g))
         )
-
-    @staticmethod
-    def combine_indices(*indices: IndexMatrix, row_major: bool = False) -> IndexMatrix:
-        """
-        Computes the Cartesian product of a set of multi-indices arrays and arranges the
-        result as concatenated indices in column or row-major order.
-
-        Parameters
-        ----------
-        indices : *np.ndarray
-            A variable number of arrays where each array is treated as a set of multi-indices.
-        row_major : bool, default=False
-            Whether to compute the Cartesian product in row-major order.
-
-        Examples
-        --------
-        >>> CrossInterpolation.combine_indices(
-        ...     np.array([[1, 2, 3], [4, 5, 6]]), np.array([[0], [1]])
-        ... )
-        array([[1, 2, 3, 0],
-               [1, 2, 3, 1],
-               [4, 5, 6, 0],
-               [4, 5, 6, 1]])
-        """
-
-        def cartesian_column(A: Matrix, B: Matrix) -> Matrix:
-            A_repeated = np.repeat(A, repeats=B.shape[0], axis=0)
-            B_tiled = np.tile(B, (A.shape[0], 1))
-            return np.hstack((A_repeated, B_tiled))
-
-        def cartesian_row(A: Matrix, B: Matrix) -> Matrix:
-            A_tiled = np.tile(A, (B.shape[0], 1))
-            B_repeated = np.repeat(B, repeats=A.shape[0], axis=0)
-            return np.hstack((A_tiled, B_repeated))
-
-        if row_major:
-            return functools.reduce(cartesian_row, indices)
-        return functools.reduce(cartesian_column, indices)
 
     @staticmethod
     def points_to_indices(points: Matrix) -> tuple[list[Matrix], list[Matrix]]:
@@ -291,11 +285,11 @@ class CrossError:
                 allowed_indices,
                 self.rng,
             )
-            self.black_box_evals = cross.black_box[self.mps_indices].reshape(-1)
+            self.black_box_evals = cross.sample(self.mps_indices).reshape(-1)
             self.norm = self.lp_distance(self.black_box_evals)
         mps_evals = evaluate_mps(cross.mps, self.mps_indices)
         error = self.lp_distance(mps_evals - self.black_box_evals)
-        return error / self.norm if self.error_relative else error
+        return error / self.norm if self.error_relative and self.norm else error
 
 
 def check_tci_convergence(
@@ -345,54 +339,6 @@ def check_tci_convergence(
     return False
 
 
-def maxvol_square(
-    A: Matrix,
-    max_iter: int = 10,
-    tol: float = 1.05,
-) -> tuple[Matrix, Matrix]:
-    """
-    Returns the row indices I of a tall matrix A of size (n x r) with n > r that give place
-    to a square submatrix of (quasi-)maximum volume (modulus of the submatrix determinant).
-    Also, returns a matrix of coefficients B such that A ≈ B A[I, :].
-
-    Parameters
-    ----------
-    A : np.ndarray
-        A tall (n x r) matrix with more rows than columns (n > r).
-    maxiter : int, default=100
-        Maximum number of iterations allowed.
-    tol : float, default=1.1
-        Sensibility of the algorithm.
-
-    Returns
-    -------
-    I : np.ndarray
-        An array of r indices that determine a square submatrix of A with (quasi-)maximum volume.
-    B : np.ndarray
-        A (r x r) submatrix of coefficients such that A ≈ B A[I, :].
-    """
-    n, r = A.shape
-    if n <= r:
-        I, B = np.arange(n, dtype=int), np.eye(n)
-        return I, B
-    P, L, U = scipy.linalg.lu(A)
-    I = P[:, :r].argmax(axis=0)
-    Q = scipy.linalg.solve_triangular(U, A.T, trans=1)
-    B = scipy.linalg.solve_triangular(
-        L[:r, :], Q, trans=1, unit_diagonal=True, lower=True
-    ).T
-    for _ in range(max_iter):
-        i, j = np.divmod(abs(B).argmax(), r)
-        if abs(B[i, j]) <= tol:
-            break
-        I[j] = i
-        bj = B[:, j]
-        bi = B[i, :].copy()
-        bi[j] -= 1.0
-        B -= np.outer(bj, bi / B[i, j])
-    return I, B
-
-
 def cross_interpolation(
     cross_strategy: CrossStrategy,
     black_box: BlackBox,
@@ -427,37 +373,25 @@ def cross_interpolation(
     converged = False
     with make_logger(1) as logger:
         results = CrossResults(cross.mps)
-        for i in range(cross_strategy.range_iters[1] // 2):
-            # Left-to-right half sweep
-            for k in cross.iteration_range:
-                cross.update(k, True)
+        for half_sweep in range(1, cross_strategy.range_iters[1] + 1):
+            forward = half_sweep % 2 == 1
+            sites = (
+                cross.iteration_range if forward else reversed(cross.iteration_range)
+            )
+            for k in sites:
+                cross.update(k, forward)
 
             results.update(
                 cross.mps,
                 error_calculator.sample_error(cross),
                 cross.mps.bond_dimensions(),
-                cross.black_box.evals,
+                cross.evals,
             )
-            if not cross.two_sweeps_required:
+            if not cross.two_sweeps_required or not forward:
                 if converged := check_tci_convergence(
-                    logger, 2 * i + 1, results, cross_strategy
+                    logger, half_sweep, results, cross_strategy
                 ):
                     break
-
-            # Right-to-left half sweep
-            for k in reversed(cross.iteration_range):
-                cross.update(k, False)
-
-            results.update(
-                cross.mps,
-                error_calculator.sample_error(cross),
-                cross.mps.bond_dimensions(),
-                cross.black_box.evals,
-            )
-            if converged := check_tci_convergence(
-                logger, 2 * i + 2, results, cross_strategy
-            ):
-                break
 
         if not converged:
             logger("Maximum number of iterations reached")

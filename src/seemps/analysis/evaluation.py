@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from ..cython import _evaluate_mps
 from ..tools import DEFAULT_RNG
 from ..state import MPS
 from ..typing import Vector, Matrix
@@ -21,14 +22,7 @@ def evaluate_mps(mps: MPS, mps_indices: Matrix) -> Vector:
     Vector
         The vector of evaluations corresponding to the provided indices.
     """
-    if mps_indices.ndim == 1:
-        mps_indices = mps_indices.reshape(1, -1)
-    A = mps[0][:, mps_indices[:, 0], :]
-    for idx, site in enumerate(mps[1:]):
-        B = site[:, mps_indices[:, idx + 1], :]
-        # np.einsum("kq,qkr->kr", A, B)
-        A = np.matmul(A.transpose(1, 0, 2), B.transpose(1, 0, 2)).transpose(1, 0, 2)
-    return A.reshape(-1)
+    return _evaluate_mps(mps, mps_indices)
 
 
 def random_mps_indices(
