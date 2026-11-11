@@ -122,6 +122,13 @@ class TestMPSSum(MPSStatesFixture):
         C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join()
         self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
 
+    def test_mpssum_join_single_site(self):
+        A = MPS([self.rng.normal(size=(1, 3, 1))])
+        B = MPS([self.rng.normal(size=(1, 3, 1))])
+        C = MPSSum(weights=[0.5, -1.0], states=[A, B]).join()
+        self.assertSimilar(0.5 * A.to_vector() - B.to_vector(), C.to_vector())
+        self.assertSimilar((A - A).join().to_vector(), np.zeros(3))
+
     def test_mpssum_norm_squared(self):
         A = self.random_uniform_mps(2, 3)
         B = self.random_uniform_mps(2, 3)

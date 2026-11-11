@@ -130,6 +130,8 @@ class MPSSum:
     def _joined_tensors(self, i: int, L: int) -> Tensor3:
         """Join the tensors from all MPS into bigger tensors."""
         As: list[Tensor3] = [s[i] for s in self.states]
+        if L == 1:
+            return np.sum([w * A for w, A in zip(self.weights, As)], axis=0)
         if i == 0:
             return np.concatenate([w * A for w, A in zip(self.weights, As)], axis=2)
         if i == L - 1:
