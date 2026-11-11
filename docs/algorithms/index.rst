@@ -44,6 +44,7 @@ Methods for solving systems of linear equations :math:`A \psi = b`.
    bicgs
    gmres
    dmrg_solve
+   amen
 
 Time evolution and PDE operators
 ================================
